@@ -1,8 +1,8 @@
 #!/bin/sh
 
 ASCIIDOC="asciidoc -b xhtml11 -f layout2.conf -a linkcss -a icons -a badges"
-ASCIIDOC_INDEX="$ASCIIDOC -a iconsdir=_asciidoc/images/icons -a stylesdir=_asciidoc/stylesheets -a scriptsdir=_asciidoc/javascripts"
-ASCIIDOC_ARTICLE="$ASCIIDOC -a iconsdir=../../_asciidoc/images/icons -a stylesdir=../../_asciidoc/stylesheets -a scriptsdir=../../_asciidoc/javascripts"
+ASCIIDOC_INDEX="$ASCIIDOC -a iconsdir=_asciidoc/images/icons -a stylesdir=asciidoc/stylesheets -a scriptsdir=asciidoc/javascripts"
+ASCIIDOC_ARTICLE="$ASCIIDOC -a iconsdir=../../asciidoc/images/icons -a stylesdir=../../asciidoc/stylesheets -a scriptsdir=../../asciidoc/javascripts"
 
 $ASCIIDOC_INDEX index.txt 
 $ASCIIDOC_ARTICLE article/asciidoc/asciidoc.txt
