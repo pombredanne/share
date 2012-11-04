@@ -1,0 +1,69 @@
+= [AsciiDoc] 配置 CSS =
+
+.`xhtml11.conf`
+--------------------------------------------------------------------------------
+524 [header]
+525 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+526     "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+527 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="{lang=en}">
+528 <head>
+529 <meta http-equiv="Content-Type" content="{quirks=application/xhtml+xml}{quirks?text/html}; charset={encoding}" />
+530 <meta name="generator" content="AsciiDoc {asciidoc-version}" />
+531 <meta name="description" content="{description}" />
+532 <meta name="keywords" content="{keywords}" />
+533 <title>{title}</title>
+534 {title%}<title>{doctitle=}</title>
+535 ifdef::linkcss[] <1>
+536 <link rel="stylesheet" href="{stylesdir=.}/{theme=asciidoc}.css" type="text/css" />
+537 ifdef::quirks[]
+538 <link rel="stylesheet" href="{stylesdir=.}/xhtml11-quirks.css" type="text/css" />
+539 endif::quirks[]
+540 ifeval::["{source-highlighter}"=="pygments"]
+541 <link rel="stylesheet" href="{stylesdir=.}/pygments.css" type="text/css">
+542 endif::[]
+543 
+544 # DEPRECATED: 'pygments' attribute.
+545 ifdef::pygments[<link rel="stylesheet" href="{stylesdir=.}/pygments.css" type="text/css" />]
+546 
+547 ifdef::toc2[<link rel="stylesheet" href="{stylesdir=.}/toc2.css" type="text/css" />]
+548 <link rel="stylesheet" href="{stylesdir=.}/{stylesheet}" type="text/css" />
+549 endif::linkcss[]
+550 ifndef::linkcss[]
+551 <style type="text/css">
+552 include1::{theme%}{stylesdir=./stylesheets}/asciidoc.css[]
+553 include1::{themedir}/{theme}.css[]
+554 ifdef::quirks[]
+555 include1::{stylesdir=./stylesheets}/xhtml11-quirks.css[]
+556 endif::quirks[]
+557 ifeval::["{source-highlighter}"=="pygments"]
+558 include1::{stylesdir=./stylesheets}/pygments.css[]
+559 endif::[]
+560 
+561 # DEPRECATED: 'pygments' attribute.
+562 ifdef::pygments[]
+563 include1::{stylesdir=./stylesheets}/pygments.css[]
+564 endif::pygments[]
+565 
+566 ifdef::toc2[]
+567 include1::{stylesdir=./stylesheets}/toc2.css[]
+568 endif::toc2[]
+569 include1::{stylesheet}[]
+570 </style>
+571 endif::linkcss[]
+572 ifndef::disable-javascript[]
+573 ifdef::linkcss[] <1>
+574 <script type="text/javascript" src="{scriptsdir=.}/asciidoc.js"></script>
+575 <script type="text/javascript" src="{scriptsdir=.}/{theme}.js"></script>
+576 <script type="text/javascript">
+577 # Escape as CDATA to pass validators.
+578 /*<![CDATA[*/
+579 asciidoc.install({toc,toc2?{toclevels}});
+580 /*]]>*/
+581 </script>
+582 endif::linkcss[]
+--------------------------------------------------------------------------------
+<1> 如果有定義 `linkcss` 的話，CSS 就會以外部檔的方式引進來（另外 JavaScript 也會受影響），可以分別用 `stylesdir` 跟 `scriptsdir` 來定義相對的位置。例如：
++
+ asciidoc -a linkcss -a stylesdir=../../stylesheets -a scriptsdir=../../javascripts
+
+
