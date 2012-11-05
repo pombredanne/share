@@ -16,4 +16,6 @@ $ASCIIDOC_ARTICLE article/asciidoc/asciidoc-install.txt
 $ASCIIDOC_ARTICLE article/asciidoc/asciidoc-link.txt
 $ASCIIDOC_ARTICLE article/asciidoc/asciidoc-site.txt
 $ASCIIDOC_ARTICLE article/asciidoc/asciidoc-slides.txt
+$ASCIIDOC_ARTICLE article/asciidoc/asciidoc-chinese.txt
+$ASCIIDOC_ARTICLE article/asciidoc/asciidoc-toc.txt
 

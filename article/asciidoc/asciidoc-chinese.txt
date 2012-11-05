@@ -1,0 +1,79 @@
+= 用 AsciiDoc 撰寫中文文件要注意的地方 =
+
+== 中文標點符號 ==
+
+Constrained quotes 必須用在 word boundaries 才行，不過這對中文字行不通（每個字都會形成一個 word，沒有英文 letters 的概念）。例如：
+
+ 按'下一步'繼續
+ 在命令提示字元輸入 `ping`：
+
+其中 `'下一步'` 跟 ++pass:[`ping`]++ 分別都無法正常被解譯成斜體字跟等寬字。問題出在 `asciidoc.py` 跟 `asciidoc.conf` 裡 regular expressions 的 Unicode flag。
+
+--------------------------------------------------------------------------------
+>>> import re
+>>> re.search(r"'(?P<content>\S|\S.*?\S)'(?=\W|$)", u"按'下一步'繼續")
+<_sre.SRE_Match object at 0x7f0cd0afac60>
+>>> re.search(r"'(?P<content>\S|\S.*?\S)'(?=\W|$)", u"按'下一步'。")
+<_sre.SRE_Match object at 0x7f0cd0a96378>
+>>> re.search(r"'(?P<content>\S|\S.*?\S)'(?=\W|$)", u"按'下一步'繼續", re.U)
+>>> re.search(r"'(?P<content>\S|\S.*?\S)'(?=\W|$)", u"按'下一步'。", re.U)
+<_sre.SRE_Match object at 0x7f0cd0afac60>
+>>> re.search(r"'(?P<content>\S|\S.*?\S)'(?=\b)", u"按'下一步'繼續", re.U)
+<_sre.SRE_Match object at 0x7f0cd0a96378>
+>>> re.search(r"'(?P<content>\S|\S.*?\S)'(?=\b)", u"按'下一步'。", re.U) <1>
+--------------------------------------------------------------------------------
+<1> 為什麼反而 `。` 不會形成 word boundary？
+
+.`asciidoc.py`
+--------------------------------------------------------------------------------
+505             # The text within constrained quotes must be bounded by white space.
+506             # Non-word (\W) characters are allowed at boundaries to accomodate
+507             # enveloping quotes and punctuation e.g. a='x', ('x'), 'x', ['x'].
+508             reo = re.compile(r'(?msu)(^|[^\w;:}])(\[(?P<attrlist>[^[\]]+?)\])?' \
+509                 + r'(?:' + re.escape(lq) + r')' \
+510                 + r'(?P<content>\S|\S.*?\S)(?:'+re.escape(rq)+r')(?=\W|$)')
+--------------------------------------------------------------------------------
+
+.`asciidoc.conf`
+--------------------------------------------------------------------------------
+253 # Inline literal.
+254 ifndef::no-inline-literal[]
+255 (?su)(?<![`\w])([\\]?`(?P<passtext>[^`\s]|[^`\s].*?\S)`)(?![`\w])=literal[specialcharacters]
+256 endif::no-inline-literal[]
+--------------------------------------------------------------------------------
+
+實驗發現，只要將 Unicode flag 拿掉，就可以正常識別中文的 word boundaries。可能的話，把所有 `(?...)` 裡面的 `u` 拿掉，或許問題就都解決了？
+
+--------------------------------------------------------------------------------
+>>> re.match(r'\w', u'你')
+>>> re.match(r'\W', u'你')
+<_sre.SRE_Match object at 0x7f8c61897718>
+>>> re.match(r'\w', u'。')
+>>> re.match(r'\W', u'。')
+<_sre.SRE_Match object at 0x7f8c618976b0>
+>>> re.match(r'\w', u'你', re.U)
+<_sre.SRE_Match object at 0x7f8c61897718>
+>>> re.match(r'\W', u'你', re.U)
+>>> re.match(r'\w', u'。', re.U)
+>>> re.match(r'\W', u'。', re.U)
+<_sre.SRE_Match object at 0x7f8c618976b0>
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+>>> import re
+>>> re.match(r'123\b', u'123。')
+<_sre.SRE_Match object at 0x7fc1c7508718>
+>>> re.match(r'123\b', u'123你')
+<_sre.SRE_Match object at 0x7fc1c7508780>
+>>> re.match(r'123\b', u'123你', re.U)
+>>> re.match(r'123\b', u'123。', re.U)
+<_sre.SRE_Match object at 0x7fc1c7508718>
+--------------------------------------------------------------------------------
+
+== 參考資料 ==
+
+.其他文件
+--
+ * http://tinylee.blogspot.tw/2007/08/asciidoc.html[拒绝懒惰的家: AsciiDoc中文标题-出现问题原因] (2007-08-25) - two line titles 不適用於中文標題
+--
+
