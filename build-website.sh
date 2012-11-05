@@ -18,4 +18,14 @@ $ASCIIDOC_ARTICLE article/asciidoc/asciidoc-site.txt
 $ASCIIDOC_ARTICLE article/asciidoc/asciidoc-slides.txt
 $ASCIIDOC_ARTICLE article/asciidoc/asciidoc-chinese.txt
 $ASCIIDOC_ARTICLE article/asciidoc/asciidoc-toc.txt
+$ASCIIDOC_ARTICLE article/asciidoc/asciidoc-title.txt
+$ASCIIDOC_ARTICLE article/selenium/selenium-rc-api.txt
+$ASCIIDOC_ARTICLE article/selenium/selenium-rc-checkbox.txt
+$ASCIIDOC_ARTICLE article/selenium/selenium-rc-exist.txt
+$ASCIIDOC_ARTICLE article/selenium/selenium-rc-form.txt
+$ASCIIDOC_ARTICLE article/selenium/selenium-rc-install.txt
+$ASCIIDOC_ARTICLE article/selenium/selenium-rc-keystroke.txt
+$ASCIIDOC_ARTICLE article/selenium/selenium-rc-text.txt
+$ASCIIDOC_ARTICLE article/selenium/selenium-rc.txt
+$ASCIIDOC_ARTICLE article/selenium/selenium.txt
 

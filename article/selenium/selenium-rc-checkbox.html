@@ -4,7 +4,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <meta name="generator" content="AsciiDoc 8.6.8" />
-<title>安裝 AsciiDoc</title>
+<title>[Selenium][RC] 操作表單控制項 - Checkbox</title>
 <link rel="stylesheet" href="../../asciidoc/stylesheets/asciidoc.css" type="text/css" />
 <link rel="stylesheet" href="../../asciidoc/stylesheets/layout2.css" type="text/css" />
 <script type="text/javascript" src="../../asciidoc/javascripts/asciidoc.js"></script>
@@ -20,7 +20,7 @@ asciidoc.install();
   <div>&#187;<a href="/">首頁</a></div>
   <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
   <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
-  <div id="page-source">&#187;<a href="asciidoc-install.txt">頁面原始碼</a></div>
+  <div id="page-source">&#187;<a href="selenium-rc-checkbox.txt">頁面原始碼</a></div>
 </div>
 </div>
 <div id="layout-content-box">
@@ -30,60 +30,72 @@ asciidoc.install();
 </div>
 <div id="layout-content">
 <div id="header">
-<h1><a href="asciidoc.html">AsciiDoc</a> / 安裝</h1>
+<h1><a href="selenium.html">Selenium</a> / <a href="selenium-rc.html">RC</a> / <a href="selenium-rc-api.html">API</a> / 操作表單控制項 - Checkbox</h1>
 </div>
 <div id="content">
 <div id="preamble">
 <div class="sectionbody">
-<div class="olist arabic"><ol class="arabic">
+<div class="paragraph"><p>跟 checkbox 操作相關的 API 有：</p></div>
+<div class="ulist"><ul>
 <li>
 <p>
-從 <a href="http://sourceforge.net/projects/asciidoc/">SourceForge.net</a> 下載 <code>asciidoc-&lt;version&gt;.tar.gz</code>。
+<code>check(locator)</code> - 勾選。如果原來已經勾選，則不受影響。
 </p>
 </li>
 <li>
 <p>
-將壓縮檔解開到 <code>asciidoc-&lt;version&gt;/</code> 資料夾（<code>$ASCIIDOC_HOME</code>）。
+<code>uncheck(locator)</code> - 取消勾選
 </p>
 </li>
 <li>
 <p>
-建立一個 symbolic link 指向 <code>$ASCIIDOC_HOME/asciidoc.py</code>，放到 <code>PATH</code> 其中一個目錄。例如：
+<code>is_checked(locator)</code> - 檢查是否有勾選。
 </p>
-<div class="literalblock">
+</li>
+</ul></div>
+<div class="paragraph"><p>以 <a href="http://www.w3schools.com/html/html_forms.asp">HTML Forms and Input - W3Schools</a> 為例。</p></div>
+<div class="listingblock">
 <div class="content">
-<pre><code>~/bin$ ln -s $ASCIIDOC_HOME/asciidoc.py asciidoc</code></pre>
+<pre><code>&lt;form&gt;
+&lt;input type="checkbox" name="vehicle" value="Bike"&gt;I have a bike&lt;br&gt;
+&lt;input type="checkbox" name="vehicle" value="Car"&gt;I have a car
+&lt;/form&gt;</code></pre>
 </div></div>
-</li>
-<li>
-<p>
-用 <code>asciidoc --version</code> 測試安裝。
-</p>
-</li>
-</ol></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; sel.check('name=vehicle value=Bike')
+&gt;&gt;&gt; sel.is_checked('name=vehicle value=Bike') <img src="../../asciidoc/images/icons/callouts/1.png" alt="1" />
+True
+&gt;&gt;&gt; sel.is_checked('name=vehicle value=Car')
+False</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+其中 <code>value=Bike</code> 是 <em>element filter</em>，借以識別相同 <code>name</code> 屬性的 checkbox。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>實驗發現，<code>check()</code> 跟 <code>uncheck()</code> 觸發的事件跟使用者用滑鼠點選的結果不同，可以改用 <code>click(locator)</code> 來避開這個問題。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>def check(locator, checked):
+    status = sel.is_checked(locator)
+    if checked == status: return
+
+    sel.click(locator)
+    assert sel.is_checked(locator) == checked</code></pre>
+</div></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_參考資料">參考資料</h2>
 <div class="sectionbody">
 <div class="openblock">
-<div class="title">網站</div>
-<div class="content">
-<div class="ulist"><ul>
-<li>
-<p>
-<a href="http://sourceforge.net/projects/asciidoc/">AsciiDoc - text based documentation | Free Development software downloads at SourceForge.net</a>
-</p>
-</li>
-</ul></div>
-</div></div>
-<div class="openblock">
 <div class="title">文件</div>
 <div class="content">
 <div class="ulist"><ul>
 <li>
 <p>
-<a href="http://www.methods.co.nz/asciidoc/INSTALL.html">AsciiDoc Installation</a> (PDF)
+<a href="http://selenium.googlecode.com/svn/trunk/docs/api/py/selenium/selenium.selenium.html">selenium.selenium — Selenium 2.0 documentation</a> (PDF)
 </p>
 </li>
 </ul></div>
@@ -94,7 +106,7 @@ asciidoc.install();
 <div id="footnotes"><hr /></div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2012-11-05 14:04:08 CST
+Last updated 2012-11-05 14:04:15 CST
 </div>
 <div id="footer-badges">
 <a href="http://validator.w3.org/check?uri=referer">
