@@ -1,0 +1,220 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Selenium][Server] Interactive Mode</title>
+<link rel="stylesheet" href="../../asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <div id="page-source">&#187;<a href="selenium-server-interactive-mode.txt">頁面原始碼</a></div>
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="selenium.html">Selenium</a> / <a href="selenium-server.html">Server</a> / Interactive Mode</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">官方文件上很少提到 interactive mode，但碰到 "browser 開不起來" 或 "開啟第一個 URL 就錯誤" 這類系統層級的問題時，都很適合透過 interactive mode 來找出問題。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>啟動 Selenium Server 時，加上 <code>-interactive</code> 就可以進入 interactive mode：</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>$ java -jar selenium-server.jar -interactive</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ java -jar selenium-server-standalone-2.24.1.jar -interactive
+Jul 5, 2012 3:36:14 PM org.openqa.grid.selenium.GridLauncher main
+INFO: Launching a standalone server
+15:36:14.221 INFO - Java: Sun Microsystems Inc. 19.0-b09
+15:36:14.224 INFO - OS: Linux 2.6.35-32-generic amd64
+15:36:14.247 INFO - v2.24.1, with Core v2.24.1. Built from revision 17205
+15:36:14.470 INFO - RemoteWebDriver instances should connect to: http://127.0.0.1:4444/wd/hub
+15:36:14.471 INFO - Version Jetty/5.1.x
+15:36:14.473 INFO - Started HttpContext[/selenium-server/driver,/selenium-server/driver]
+15:36:14.474 INFO - Started HttpContext[/selenium-server,/selenium-server]
+15:36:14.474 INFO - Started HttpContext[/,/]
+15:36:14.504 INFO - Started org.openqa.jetty.jetty.servlet.ServletHandler@3f77b3cd
+15:36:14.504 INFO - Started HttpContext[/wd,/wd]
+15:36:14.510 INFO - Started SocketListener on 0.0.0.0:4444
+15:36:14.510 INFO - Started org.openqa.jetty.jetty.Server@1ff4689e
+Entering interactive mode... type Selenium commands here (e.g: cmd=open&amp;1=http://www.yahoo.com) <img src="../../asciidoc/images/icons/callouts/1.png" alt="1" /></code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+下一行可以開始輸入 Selenium command。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>注意 <code>cmd=xxx</code> 之後，參數之間固定用 <code>&amp;</code> 隔開，跟 query string 第一個參數要用 <code>?</code> 隔開的做法不同。參數名稱固定是 <code>1</code> 跟 <code>2</code>，分別表示 Selenium command 裡的 target 跟 value。</p></div>
+<div class="paragraph"><p>下面示範打開 Firefox 瀏覽 <a href="http://www.google.com/webhp">http://www.google.com/webhp</a>，然後輸入關鍵字 <code>selenium rc</code>：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>cmd=getNewBrowserSession&amp;1=*firefox&amp;2=http://www.google.com <img src="../../asciidoc/images/icons/callouts/1.png" alt="1" />
+15:39:00.460 INFO - ---&gt; Requesting http://localhost:4444/selenium-server/driver?cmd=getNewBrowserSession&amp;1=*firefox&amp;2=http://www.google.com
+15:39:00.661 INFO - Checking Resource aliases
+15:39:00.672 INFO - Command request: getNewBrowserSession[*firefox, http://www.google.com] on session null
+15:39:00.678 INFO - creating new remote session
+15:39:00.826 INFO - Allocated session 62897a5af5ac442a9e36179b5dc0d561 for http://www.google.com, launching...
+jar:file:/storage/dev/selenium-server-2.24.1/selenium-server-standalone-2.24.1.jar!/customProfileDirCUSTFFCHROME
+15:39:00.965 INFO - Preparing Firefox profile...
+15:39:03.177 INFO - Launching Firefox...
+15:39:08.691 INFO - Got result: OK,62897a5af5ac442a9e36179b5dc0d561 on session 62897a5af5ac442a9e36179b5dc0d561
+cmd=open&amp;1=/webhp <img src="../../asciidoc/images/icons/callouts/2.png" alt="2" />
+15:39:27.428 INFO - ---&gt; Requesting http://localhost:4444/selenium-server/driver?cmd=open&amp;1=/webhp&amp;sessionId=62897a5af5ac442a9e36179b5dc0d561
+15:39:27.437 INFO - Command request: open[/webhp, ] on session 62897a5af5ac442a9e36179b5dc0d561
+15:39:28.128 INFO - Got result: OK on session 62897a5af5ac442a9e36179b5dc0d561
+cmd=type&amp;1=q&amp;2=selenium rc&amp;sessionId=62897a5af5ac442a9e36179b5dc0d561 <img src="../../asciidoc/images/icons/callouts/3.png" alt="3" />
+15:43:15.007 INFO - ---&gt; Requesting http://localhost:4444/selenium-server/driver?cmd=type&amp;1=q&amp;2=selenium rc&amp;sessionId=62897a5af5ac442a9e36179b5dc0d561
+15:43:15.018 INFO - Command request: type[q, selenium rc] on session 62897a5af5ac442a9e36179b5dc0d561
+15:43:15.060 INFO - Got result: OK on session 62897a5af5ac442a9e36179b5dc0d561</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+開新的 browser，最後會得到一個 session ID。
+</td></tr>
+<tr><td><img src="../../asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+預設採用上一個步驟的 session。
+</td></tr>
+<tr><td><img src="../../asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+也可以明確給定 session ID（串上 <code>&amp;sessionId=xxx</code>），可以用來穿插操控多個 session。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>這裡整理出幾個 browser 的代碼：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+Mozilla Firefox - <code>*firefox</code>
+</p>
+</li>
+<li>
+<p>
+Google Chrome - <code>*googlechrome</code>
+</p>
+</li>
+<li>
+<p>
+Safari - <code>*safari</code>
+</p>
+</li>
+<li>
+<p>
+Internet Explorer - <code>*iexplore</code>
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>事實上，只要在執行 <code>cmd=getNewBrowserSession</code> 時給一個不存在的代碼，畫面上就會印出所有支援的代碼：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>cmd=getNewBrowserSession&amp;1=xxx&amp;2=http://www.google.com
+15:50:17.217 INFO - ---&gt; Requesting http://localhost:4444/selenium-server/driver?cmd=getNewBrowserSession&amp;1=xxx&amp;2=http://www.google.com
+15:50:17.227 INFO - Command request: getNewBrowserSession[xxx, http://www.google.com] on session null
+15:50:17.227 INFO - creating new remote session
+15:50:17.231 INFO - Got result: Failed to start new browser session: Browser not supported: xxx
+(Did you forget to add a *?)
+
+Supported browsers include:
+  *firefox
+  *mock
+  *firefoxproxy
+  *pifirefox
+  *chrome
+  *iexploreproxy
+  *iexplore
+  *firefox3
+  *safariproxy
+  *googlechrome
+  *konqueror
+  *firefox2
+  *safari
+  *piiexplore
+  *firefoxchrome
+  *opera
+  *webdriver
+  *iehta
+  *custom
+ on session null</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://seleniumhq.org/docs/05_selenium_rc.html">Selenium 1 (Selenium RC) — Selenium Documentation</a> (PDF)
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">其他文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.adempiere.com/index.php/PMC:QA:selenium#Selenium_rc_Interactive_Mode">PMC:QA:selenium - ADempiere ERP Wiki</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.sqaforums.com/showflat.php?Number=473360">Software Quality Assurance Forums: What is the use of selenium interactive mode</a> (2008-04-08)
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-11-24 15:58:57 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>

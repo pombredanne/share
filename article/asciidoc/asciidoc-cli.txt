@@ -1,0 +1,47 @@
+= link:asciidoc.html[AsciiDoc] / CLI - `asciidoc` =
+:title: [AsciiDoc] CLI - asciidoc
+
+`asciidoc` 可以將 AsciiDoc 文件link:asciidoc-output.html[輸出成其他格式]。
+
+ asciidoc [OPTIONS] FILE
+
+其中 'FILE' 是 AsciiDoc 文件：
+
+--------------------------------------------------------------------------------
+$ echo 'Hello, AsciiDoc!!' > hello.txt
+$ asciidoc hello.txt <1>
+$ grep -H Hello hello.html
+hello.html:<div class="paragraph"><p>Hello, AsciiDoc!!</p></div>
+$
+$ echo 'Hello, AsciiDoc!!' | asciidoc - | grep -H Hello <2>
+(standard input):<div class="paragraph"><p>Hello, AsciiDoc!!</p></div>
+--------------------------------------------------------------------------------
+<1> 預設會輸出 HTML (`.html`)。
+<2> 可以用 `-` 來表示 standard input，相對地會輸出到 standard output。
+
+常用的 option 有：
+
+[[attribute]]
+`-a, --attribute=ATTRIBUTE`:: 從 command line 定義（define）/取消定義（undefine） link:asciidoc-attribute.html[document attribute]。
++
+--
+其中 'ATTRIBUTE' 接受四種不同的寫法：
+
+ * `NAME` - 定義 'NAME' attribute，內容是空字串。
+ * `NAME=VALUE` - 定義 'NAME' attribute。
+ * `NAME=VALUE@` - 同 `NAME=VALUE`，但不會覆寫 define 在 AsciiDoc 文件裡或組態檔裡頭的 document attribute，可以用來提供預設值。
+ * `NAME!` - 刪除／取消 'NAME' attribute 的定義。
+
+--------------------------------------------------------------------------------
+$ echo '{greeting}' | asciidoc -s -a greeting=Hello -
+<div class="paragraph"><p>Hello</p></div>
+$ echo '{greeting}' | asciidoc -s --attribute greeting="Hello, AsciiDoc" - <1>
+<div class="paragraph"><p>Hello, AsciiDoc</p></div>
+--------------------------------------------------------------------------------
+<1> 'VALUE' 如果包含空白字元，要用雙引號（單引號也可以）括起來。
+--
+
+
+== 參考資料 ==
+
+ * http://www.methods.co.nz/asciidoc/manpage.html[ASCIIDOC(1)]

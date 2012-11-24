@@ -1,0 +1,285 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Python] 查看目錄的內容，並過濾出符合條件的檔案清單</title>
+<link rel="stylesheet" href="../../asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <div id="page-source">&#187;<a href="python-file-listing.txt">頁面原始碼</a></div>
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="python.html">Python</a> / <a href="python-file.html">Files</a> / Listing</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>要知道某個目錄底下有哪些檔案或目錄，最簡單的方式就是用 <code>os.listdir()</code>。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ pwd; tree -aNF
+/tmp/dir
+.
+|-- file.txt
+|-- .hidden.txt
+|-- subdir/
+|   |-- file.png
+|   |-- file.txt
+|   |-- .hidden.txt
+|   |-- subdir2-1/
+|   |   |-- file.png
+|   |   |-- file.txt
+|   |   `-- .hidden.txt
+|   |-- subdir2-2/
+|   `-- subdir2-3/
+`-- 子目錄/
+    |-- a.png
+    |-- b.png
+    |-- c.png
+    `-- 檔案.txt
+$
+$ python
+&gt;&gt;&gt; import os
+&gt;&gt;&gt; files = os.listdir('/tmp/dir') <img src="../../asciidoc/images/icons/callouts/1.png" alt="1" />
+&gt;&gt;&gt; print files
+['.hidden.txt', 'subdir', '\xe5\xad\x90\xe7\x9b\xae\xe9\x8c\x84', 'file.txt']
+&gt;&gt;&gt; for file in files: print file,
+...
+.hidden.txt subdir 子目錄 file.txt
+&gt;&gt;&gt;
+&gt;&gt;&gt; print os.getcwd(), os.listdir('subdir') <img src="../../asciidoc/images/icons/callouts/2.png" alt="2" />
+/tmp/dir ['subdir2-2', 'subdir2-1', '.hidden.txt', 'file.png', 'subdir2-3', 'file.txt']
+&gt;&gt;&gt;
+&gt;&gt;&gt; files = os.listdir('/tmp/dir/\xe5\xad\x90\xe7\x9b\xae\xe9\x8c\x84'.decode('utf-8')) <img src="../../asciidoc/images/icons/callouts/3.png" alt="3" />
+&gt;&gt;&gt; print files
+[u'a.png', u'c.png', u'\u6a94\u6848.txt', u'b.png']
+&gt;&gt;&gt; for file in files: print file,
+...
+a.png c.png 檔案.txt b.png</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+<code>listdir(path)</code> 可以列出 <em>path</em> 底下的檔案跟子目錄（包括隱藏檔，但不包含 <code>.</code> 跟 <code>..</code> 這兩個項目）。
+</td></tr>
+<tr><td><img src="../../asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+<code>listdir(path)</code> 的 <em>path</em> 也可以是相對於 <a href="python-file-cwd.html">CWD</a> 的路徑。
+</td></tr>
+<tr><td><img src="../../asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+<code>listdir()</code> 回傳的結果並沒有排序過，而且回傳結果的字串型態（<code>str</code> 或 <code>unicode</code>）會跟著 <em>path</em> 走。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>如果要過濾路徑名稱符合某些條件的檔案，改用 <code>glob.glob()</code> 可以省掉一些工。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; import glob
+&gt;&gt;&gt; glob.glob('/tmp/dir/*') <img src="../../asciidoc/images/icons/callouts/1.png" alt="1" />
+['/tmp/dir/subdir', '/tmp/dir/\xe5\xad\x90\xe7\x9b\xae\xe9\x8c\x84', '/tmp/dir/file.txt']
+&gt;&gt;&gt; print os.getcwd(), glob.glob(u'*')
+/tmp/dir [u'subdir', u'\u5b50\u76ee\u9304', u'file.txt']
+&gt;&gt;&gt;
+&gt;&gt;&gt; for entry in glob.iglob(u'*'): print repr(entry), <img src="../../asciidoc/images/icons/callouts/2.png" alt="2" />
+...
+u'subdir' u'\u5b50\u76ee\u9304' u'file.txt'
+&gt;&gt;&gt;
+&gt;&gt;&gt; glob.glob('.*.txt') <img src="../../asciidoc/images/icons/callouts/3.png" alt="3" />
+['.hidden.txt']
+&gt;&gt;&gt;
+&gt;&gt;&gt; glob.glob(u'*/*.txt') <img src="../../asciidoc/images/icons/callouts/4.png" alt="4" />
+[u'subdir/file.txt', u'\u5b50\u76ee\u9304/\u6a94\u6848.txt']
+&gt;&gt;&gt; glob.glob(u'**/*.txt')
+[u'subdir/file.txt', u'\u5b50\u76ee\u9304/\u6a94\u6848.txt']
+&gt;&gt;&gt;
+&gt;&gt;&gt;</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+<code>glob(pathname)</code> 會列出符合 <em>pathname</em> 這個 pattern 的檔案或目錄（但不包含隱藏檔）。
+<div class="openblock">
+<div class="content">
+<div class="paragraph"><p>由於 <code>glob()</code> 背後也是呼叫 <code>listdir()</code>，回傳結果的字串型態（<code>str</code> 或 <code>unicode</code>）會跟著 <em>pathname</em> 走。</p></div>
+<div class="paragraph"><p><em>pathname</em> 也可以是相對於 <a href="python-file-cwd.html">CWD</a> 的路徑，但注意結果也變成相對路徑了。也就是說結果是用絕對路徑或相對路徑來表示，跟 <em>pathname</em> 的表示法有關。另外 <em>pathname</em> 支援 shell-style wildcards 的用法，包括 <code>*</code>、<code>?</code> 以及 <code>[]</code>，更多的細節可以參考 <a href="http://docs.python.org/library/fnmatch.html"><code>fnmatch</code> 模組</a>。</p></div>
+</div></div>
+</td></tr>
+<tr><td><img src="../../asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+<code>iglob()</code> 跟 <code>glob()</code> 一樣，只是回傳 iterator 而已，適用目錄下的檔案數很多時。
+</td></tr>
+<tr><td><img src="../../asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+在 pattern 前面明確加上 <code>.</code> 可以列出隱藏檔，但這麼一來非隱藏檔就都被濾除了。
+</td></tr>
+<tr><td><img src="../../asciidoc/images/icons/callouts/4.png" alt="4" /></td><td>
+<code>glob()</code> 支援 <code>*/*</code> 的用法，但也僅限於該層目錄，並不會自動往下鑽（改成 <code>**/*</code> 的寫法也沒用）。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>如果搜尋的範圍是整個樹狀結構（directory tree）而非單個目錄，<code>os.walk()</code> 會更為適用。</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>walk(top, topdown=True, onerror=None, followlinks=False)</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; for dirpath, dirnames, filenames in os.walk('/tmp/dir/subdir'): <img src="../../asciidoc/images/icons/callouts/1.png" alt="1" />
+...     print dirpath
+...     print '    sub directories:', dirnames
+...     print '    files:', filenames
+...
+/tmp/dir/subdir
+    sub directories: ['subdir2-2', 'subdir2-1', 'subdir2-3']
+    files: ['.hidden.txt', 'file.png', 'file.txt']
+/tmp/dir/subdir/subdir2-2
+    sub directories: []
+    files: []
+/tmp/dir/subdir/subdir2-1
+    sub directories: []
+    files: ['.hidden.txt', 'file.png', 'file.txt']
+/tmp/dir/subdir/subdir2-3
+    sub directories: []
+    files: []
+&gt;&gt;&gt;
+&gt;&gt;&gt; for dirpath, dirnames, filenames in os.walk(u'subdir', topdown=False): <img src="../../asciidoc/images/icons/callouts/2.png" alt="2" />
+...     print dirpath
+...     print '    sub directories:', dirnames
+...     print '    files:', filenames
+...
+subdir/subdir2-2
+    sub directories: []
+    files: []
+subdir/subdir2-1
+    sub directories: []
+    files: [u'.hidden.txt', u'file.png', u'file.txt']
+subdir/subdir2-3
+    sub directories: []
+    files: []
+subdir
+    sub directories: [u'subdir2-2', u'subdir2-1', u'subdir2-3']
+    files: [u'.hidden.txt', u'file.png', u'file.txt']</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+<code>walk()</code> 會鑽進樹狀結構，傳回每一層目錄的內容（3-tuple <code>(dirpath, dirnames, filenames)</code>）。其中 <em>dirpath</em> 是某一層目錄的路徑名稱，至於是用絕對路徑或相對路徑來表示，則跟一開始傳入的 <em>top</em> 有關。<em>dirnames</em> 是 <em>dirpath</em> 底下零或多個子目錄的清單，至於檔案的清單則在 <em>filenames</em>。
+</td></tr>
+<tr><td><img src="../../asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+改用 <code>topdown=False</code> 後，目錄處理的順序變成由下而上（bottom-up; <code>subdir/subdir2-*</code> &#8594; <code>subdir</code>），跟預設 <code>topdown=True</code> 的由上而下（top-down; <code>subdir</code> &#8594; <code>subdir/subdir2-*</code>）不同。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>使用 <code>walk()</code> 時，最關鍵的就是瞭解 top-down 跟 bottom-up 的差異，因為這將關係到能否在過程中對 <em>dirnames</em> 動手腳，進而影響 <code>walk()</code> 接下來處理子目錄的順序，甚至選擇性地只處理某些目錄。</p></div>
+<div class="paragraph"><p>觀察上面的例子，處理到 <code>/tmp/dir/subdir</code> 時，子目錄的處理順序是 <code>subdir2-2</code> &#8594; <code>subdir2-1</code> &#8594; <code>subdir2-3</code>。如果想讓處理的順序變成 <code>subdir2-1</code> &#8594; <code>subdir2-2</code> &#8594; <code>subdir2-3</code>，就必須在處理到 <code>/tmp/dir/subdir</code> 時，對 <code>dirnames</code> 動點手腳：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; for dirpath, dirnames, filenames in os.walk('/tmp/dir/subdir'):
+...     dirnames.sort() <img src="../../asciidoc/images/icons/callouts/1.png" alt="1" />
+...     print dirpath
+...     print '    sub directories:', dirnames
+...     print '    files:', filenames
+...
+/tmp/dir/subdir
+    sub directories: ['subdir2-1', 'subdir2-2', 'subdir2-3']
+    files: ['.hidden.txt', 'file.png', 'file.txt']
+/tmp/dir/subdir/subdir2-1
+    sub directories: []
+    files: ['.hidden.txt', 'file.png', 'file.txt']
+/tmp/dir/subdir/subdir2-2
+    sub directories: []
+    files: []
+/tmp/dir/subdir/subdir2-3
+    sub directories: []
+    files: []
+&gt;&gt;&gt;
+&gt;&gt;&gt; for dirpath, dirnames, filenames in os.walk('/tmp/dir/subdir', topdown=False): <img src="../../asciidoc/images/icons/callouts/2.png" alt="2" />
+...     dirnames.sort()
+...     print dirpath
+...     print '    sub directories:', dirnames
+...     print '    files:', filenames
+...
+/tmp/dir/subdir/subdir2-2
+    sub directories: []
+    files: []
+/tmp/dir/subdir/subdir2-1
+    sub directories: []
+    files: ['.hidden.txt', 'file.png', 'file.txt']
+/tmp/dir/subdir/subdir2-3
+    sub directories: []
+    files: []
+/tmp/dir/subdir
+    sub directories: ['subdir2-1', 'subdir2-2', 'subdir2-3']
+    files: ['.hidden.txt', 'file.png', 'file.txt']</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+對 <code>dirnames</code> 做 in-place 的排序，就可以影響 "接下來" 處理子目錄的順序。
+</td></tr>
+<tr><td><img src="../../asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+同樣的動作在 bottom-up 時起不了作用，因為處理到 <code>/tmp/dir/subdir</code> 之前，<code>walk()</code> 早已走過底下的子目錄。
+</td></tr>
+</table></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://docs.python.org/library/os.html#files-and-directories">os — Miscellaneous operating system interfaces &gt; Files and Directories</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://docs.python.org/library/glob.html">glob — Unix style pathname pattern expansion</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://docs.python.org/library/fnmatch.html">fnmatch — Unix filename pattern matching</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-11-24 16:01:48 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>

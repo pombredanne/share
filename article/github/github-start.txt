@@ -1,0 +1,132 @@
+= link:github.html[GitHub] / 入門 =
+:title: 入門 GitHub
+
+ 1. link:../git/git-install.html[安裝 Git] 並完成 link:../git/git-configure.html[user name 跟 email 的設定]，其中 email 會用來連結 GitHub 的帳號。
+ 2. 申請 GitHub 帳號
+ 3. Description 可以略過不填寫。之後如果要修改則必須http://stackoverflow.com/questions/7757751/how-do-you-change-a-repository-description-on-github[把滑鼠游標停在 description 上，才會出現 Edit 按鈕]，不是很直覺。
++
+image::github-start/modify_desc.png[]
++
+ 4. 參考https://help.github.com/articles/create-a-repo[這裡]，建立一個名為 `hello-github` 的 repo。不要勾選 "Initialize this repository with a README"，至於 "Add .gitignore" 則保持 None。
++
+--
+image::github-start/init.png[]
+
+TIP: 這裡不勾選 "Initialize this repository with a README" 是刻意的安排，因為在 "first commit" 之前，畫面會提示 "Quick setup — if you've done this kind of thing before"，表現方式跟一般的 repository 不太一樣。
+--
+
+假設你在本機已經寫好一支 Hello World 的程式：
+
+.`/tmp/hello-github`
+--------------------------------------------------------------------------------
+$ ls -a1
+.
+..
+.gitignore
+greet.py
+greet.pyc
+hello.py
+README
+$
+$ cat greet.py
+def greet(who):
+    return 'Hello World!! Hello %s' % who
+$
+$ cat hello.py 
+from greet import greet
+print greet('GitHub')
+$
+$ cat .gitignore
+*.pyc
+$
+$ cat README 
+Hello World!! Hello GitHub!!
+--------------------------------------------------------------------------------
+
+透過下面幾個步驟可以上傳到 GitHub 的 remote repo：
+
+--------------------------------------------------------------------------------
+$ git init <1>
+Initialized empty Git repository in /tmp/hello-github/.git/
+$
+$ git status
+# On branch master
+#
+# Initial commit
+#
+# Untracked files:
+#   (use "git add <file>..." to include in what will be committed)
+#
+#	.gitignore
+#	README
+#	greet.py
+#	hello.py
+nothing added to commit but untracked files present (use "git add" to track)
+$
+$ git add --all <2>
+$ git status
+# On branch master
+#
+# Initial commit
+#
+# Changes to be committed:
+#   (use "git rm --cached <file>..." to unstage)
+#
+#	new file:   .gitignore
+#	new file:   README
+#	new file:   greet.py
+#	new file:   hello.py
+#
+$
+$ git commit -m "first commit"
+[master (root-commit) 254eb16] first commit
+ 4 files changed, 6 insertions(+), 0 deletions(-)
+ create mode 100644 .gitignore
+ create mode 100644 README
+ create mode 100644 greet.py
+ create mode 100644 hello.py
+$
+$ git remote add origin https://github.com/username/hello-github.git
+$ git remote -v
+origin	https://github.com/username/hello-github.git (fetch)
+origin	https://github.com/username/hello-github.git (push)
+$
+$ git push origin master <3>
+Counting objects: 6, done.
+Delta compression using up to 2 threads.
+Compressing objects: 100% (3/3), done.
+Writing objects: 100% (6/6), 462 bytes, done.
+Total 6 (delta 0), reused 0 (delta 0)
+To https://github.com/username/hello-github.git
+ * [new branch]      master -> master
+$
+--------------------------------------------------------------------------------
+<1> 將整個目錄加入 Git 管理。
+<2> 將所有檔案加到 staging area。注意 `greet.pyc` 並沒有進到 staging area，顯然 `.gitignore` 發生了作用。
+<3> 如果過程中遇到類似下面的錯誤，通常是因為 Git 版本太舊的關係。
++
+--------------------------------------------------------------------------------
+error: The requested URL returned error: 403 while accessing https://github.com/username/hello-github.git/info/refs
+
+fatal: HTTP request failed
+--------------------------------------------------------------------------------
+
+之後就可以在 GitHub 上看到下面的畫面：
+
+image::github-start/first_commit.png[]
+
+== 參考資料 ==
+
+.文件
+--
+ * https://help.github.com/articles/set-up-git[GitHub Help > Set Up Git]
+ * https://help.github.com/articles/create-a-repo[GitHub Help > Create A Repo]
+ * https://help.github.com/articles/https-cloning-errors[GitHub Help > HTTPS cloning errors] - 403 應該是因為 Git 版本太舊的關係。
+ * https://help.github.com/articles/generating-ssh-keys[GitHub Help > Generating SSH Keys] - 如果採用 SSH protocol，必須先產生 SSH key 才行；這裡提到 HTTPS 是比較建議的做法。
+--
+
+.其他文件
+--
+ * http://stackoverflow.com/questions/7438313/pushing-to-git-returning-error-code-403-fatal-http-request-failed[github - Pushing to Git returning Error Code 403 fatal: HTTP request failed - Stack Overflow] (2011-09-15) - HTTP URL 遇到 403 時，可以改用 SSH URL。
+--
+

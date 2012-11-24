@@ -1,0 +1,58 @@
+= link:python.html[Python] / 時間的處理 =
+:title: [Python] 時間的處理
+
+`time` 裡最常用的兩個 function 就是 `time()` 跟 `sleep()`。
+
+`time()` 會傳回從 http://en.wikipedia.org/wiki/Unix_time[Unix epoch] （00:00:00 UTC，也就是 1 January 1970） 開始到現在所經過的秒數。而 `sleep(secs)` 則可以讓程式暫停執行 'secs' 秒鐘：
+
+--------------------------------------------------------------------------------
+>>> import time
+>>> time.time() <1>
+1339384461.6652391
+>>> for i in range(5): time.sleep(0.00001); print time.time() <2>
+... 
+1323914988.19
+1323914988.2
+1323914988.22
+1323914988.22
+1323914988.22
+>>> begin = time.time(); time.sleep(2.5); end = time.time()
+>>> print end - begin
+2.50261187553 <3>
+--------------------------------------------------------------------------------
+<1> `time.time()` 固定傳回浮點數，而且數值只會越來越大（non-decreasing），除非過程中系統的時間有被調整過。
+<2> 'secs' 傳入小數可以做更細微的控制。
+<3> 真正暫停的時間會有一些小誤差。
+
+CAUTION: `time` 模組將 epoch 視為時間的起點，無法表示 epoch 之前的時間點，最大也只能表示到 2038 年，未來將會遭遇 http://en.wikipedia.org/wiki/Year_2038_problem[Y2K38] 的問題，使用上要非常小心。
+
+雖然 `time` 也有處理日期時間的能力，但建議改用 `datetime`，裡面常用的 class 有：
+
+ * `datetime.datetime`
+ * `datetime.date`
+ * `datetime.time`
+ * `datetime.tzinfo`
+
+雖然 `datetime.today()` 跟 `datetime.now()` 都可以用來取得當下的 local time，但寫成 `datetime.now()` 的可讀性較高：
+
+--------------------------------------------------------------------------------
+>>> from datetime import datetime
+>>> dt = datetime.today()
+>>> print type(dt), dt, dt.tzinfo
+<type 'datetime.datetime'> 2012-06-11 13:56:10.565558 None <1>
+>>> print dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second, dt.microsecond
+2012 6 11 13 56 10 565558
+--------------------------------------------------------------------------------
+<1> 不帶 time zone 資訊
+
+== 延伸閱讀 ==
+
+ * link:time-time-exec.html[量測 Python Code 的執行時間]
+
+== 參考資料 ==
+
+.文件
+--
+ * http://docs.python.org/library/time.html[time — Time access and conversions]
+--
+

@@ -1,0 +1,70 @@
+= link:python.html[Python] / Logging =
+
+Python 由 `logging` 模組來提供 logging 的功能。有四個很重要的角色：
+
+ * Logger
+ * Handler
+ * Filter
+ * Formatter
+
+Logger 主要提供的 API 有：
+
+ * `Logger.debug()`
+ * `Logger.info()`
+ * `Logger.warning()` - 雖然從原始碼來看，`warning()` 有另一個別名 `warn()`，但官方文件對這件事隻字未題，還是守規矩用 `warning()` 比較穩當。
+ * `Logger.error()`
+ * `Logger.critical()`
+
+http://stackoverflow.com/questions/5191830/python-exception-logging[python exception logging - Stack Overflow]
+
+CLI 整合 Options 與 Logging 的範本
+
+--------------------------------------------------------------------------------
+import optparse, logging
+
+_logger = logging.getLogger(__name__)
+
+def main(opts, args):
+  ...
+
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(threadName)s] %(levelname)-6s %(name)s - %(message)s')
+
+    parser = OptionParser(usage='%prog [options] xxx ooo')
+    parser.add_option('--debug', action='store_true', dest="debug", default=True, help="Enable debug mode")
+    opts, args = parser.parse_args()
+
+    if opts.debug: logging.getLogger().setLevel(loggin.DEBUG)
+    main(opts, args)
+--------------------------------------------------------------------------------
+
+畫面上印少量的訊息，但檔案裡記錄最詳細的訊息：
+
+--------------------------------------------------------------------------------
+_logger = logging.getLogger(__name__)
+_LOG_FORMAT = '%(asctime)s [%(threadName)s] %(levelname)-6s %(name)s - %(message)s'
+
+def main():
+    options, args = parser.parse_args()
+    _init_logger()
+
+def _init_logger():
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.DEBUG)
+
+    default_hdr = logging.StreamHandler()
+    default_hdr.setFormatter(logging.Formatter(_LOG_FORMAT, None))
+    default_hdr.setLevel(logging.DEBUG if options.debug else logging.WARNING)
+    root_logger.addHandler(default_hdr)
+
+    # file handler always have more detailed output
+    file_handler = logging.FileHandler(_logger_file, 'w')
+    file_handler.setFormatter(logging.Formatter(_LOG_FORMAT, None))
+    file_handler.setLevel(logging.DEBUG)
+    root_logger.addHandler(file_handler)
+--------------------------------------------------------------------------------
+
+== 參考資料 ==
+
+ * http://docs.python.org/library/logging.html[logging — Logging facility for Python] (https://dl.dropbox.com/u/42335152/read/docs.python.org/library/logging.html.pdf[PDF])
+

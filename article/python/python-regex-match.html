@@ -1,0 +1,147 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>Python Regular Expression: Matching</title>
+<link rel="stylesheet" href="../../asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <div id="page-source">&#187;<a href="python-regex-match.txt">頁面原始碼</a></div>
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>Python Regular Expression: Matching</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p><code>(?P&lt;name&gt;...)</code> 表示 symbolic group，之後可以用 <em>name</em> 取回匹配的字串。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; PATTERN = r'(?P&lt;major&gt;\d+)(\.(?P&lt;minor&gt;\d+))?' <img src="../../asciidoc/images/icons/callouts/1.png" alt="1" />
+&gt;&gt;&gt; match = re.match(PATTERN, '3.1')
+&gt;&gt;&gt; match.groupdict(), match.group('major'), match.group('minor') <img src="../../asciidoc/images/icons/callouts/2.png" alt="2" />
+({'major': '3', 'minor': '1'}, '3', '1')
+&gt;&gt;&gt; match.group(1), match.group(3) <img src="../../asciidoc/images/icons/callouts/3.png" alt="3" />
+('3', '1')
+&gt;&gt;&gt;
+&gt;&gt;&gt; match = re.match(PATTERN, '3')
+&gt;&gt;&gt; match.groupdict(), match.group('major'), match.group('minor') <img src="../../asciidoc/images/icons/callouts/4.png" alt="4" />
+({'major': '3', 'minor': None}, '3', None)
+&gt;&gt;&gt; match.group(1), match.group(3)
+('3', None)</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+<em>name</em> 可以是任何有效的 Python identifier，但在同一個 regular expression 裡不能重複。
+</td></tr>
+<tr><td><img src="../../asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+<code>MatchObject.groupdict()</code> 傳回以 group name 為 key 值的 dict，也可以個別用 <code>group(name)</code> 取回。
+</td></tr>
+<tr><td><img src="../../asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+Symbolic group 同時也是 numbered group，也可以用 index 取回匹配的結果。
+</td></tr>
+<tr><td><img src="../../asciidoc/images/icons/callouts/4.png" alt="4" /></td><td>
+沒有匹配的 group，對應的值用 <code>None</code> 來表示。
+<div class="ulist"><ul>
+<li>
+<p>
+<code>(?=...)</code>
+</p>
+</li>
+</ul></div>
+</td></tr>
+</table></div>
+<div class="paragraph"><p>都還滿實用的</p></div>
+<div class="paragraph"><p><code>|</code> 搭配 group：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; import re
+&gt;&gt;&gt; agent = 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.2; WOW64)'
+&gt;&gt;&gt; pattern = r'(Firefox) (\d+)\.(\d+)|(MSIE) (\d+)\.(\d+)'
+&gt;&gt;&gt; match = re.search(pattern, agent)
+&gt;&gt;&gt; match.groups()
+(None, None, None, 'MSIE', '7', '0') <img src="../../asciidoc/images/icons/callouts/1.png" alt="1" /></code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+雖然是 alternation，但卻不能固定取用 group 1/2/3。
+</td></tr>
+</table></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; import re
+&gt;&gt;&gt; print re.match('pid=(123|456)', 'pid=123').groups()
+('123',)
+&gt;&gt;&gt; print re.match('pid=(123|456)', 'pid=456').groups()
+('456',)
+&gt;&gt;&gt; print re.match('pid=(123|456)', 'pid=457').groups()
+Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+AttributeError: 'NoneType' object has no attribute 'groups'
+&gt;&gt;&gt;</code></pre>
+</div></div>
+<div class="ulist"><ul>
+<li>
+<p>
+named group 可以提高程式碼的可讀性。
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://docs.python.org/library/re.html">re — Regular expression operations</a> (PDF)
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-11-24 16:00:24 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>

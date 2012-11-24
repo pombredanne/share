@@ -1,0 +1,287 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Python] Decorators</title>
+<link rel="stylesheet" href="../../asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <div id="page-source">&#187;<a href="python-decorator.txt">頁面原始碼</a></div>
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="python.html">Python</a> / Decorators</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>Decorator 其實就是 Python 對於 <a href="../aop/aop.html">AOP</a> 的實現。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; def plus_five(func):
+...     x = func()
+...     return x + 5
+...
+&gt;&gt;&gt; @plus_five
+... def add_nums():
+...     return 1 + 2
+...
+&gt;&gt;&gt; type(add_nums) <img src="../../asciidoc/images/icons/callouts/1.png" alt="1" />
+&lt;type 'int'&gt;
+&gt;&gt;&gt; type(add_nums), add_nums
+(&lt;type 'int'&gt;, 8)</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+型態 <code>add_nums</code> 的型態竟是 <code>int</code>。那是因為過程中已經發生 add_nums = plus_five(add_nums) 這件事，結果 <code>add_nums</code> 就是一個運算結果，而非包裝過一層的 function。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>解法就是 <code>plus_five</code> 回傳一個 function 而非運算結果。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; def plus_five(func):
+...     def inner(*args, **kwargs):
+...         x = func(*args, **kwargs) + 5
+...         return x
+...     return inner
+...
+&gt;&gt;&gt; @plus_five
+... def add_nums(num1, num2):
+...     return num1 + num2
+&gt;&gt;&gt; type(add_nums), add_nums
+(&lt;type 'function'&gt;, &lt;function inner at 0x7ff8b2e0c668&gt;)
+&gt;&gt;&gt;</code></pre>
+</div></div>
+<div class="paragraph"><p>用 class 來寫的彈性比較大：</p></div>
+<div class="listingblock">
+<div class="title"><code>deco.py</code></div>
+<div class="content">
+<pre><code>class decoargs():
+
+    def __init__(self, arg):
+        self.arg = arg
+
+    def __call__(self, func):
+
+        def wrapper(*args, **kwargs):
+            print '[%s] before' % self.arg
+            result = func(*args, **kwargs)
+            print '[%s] after' % self.arg
+            return result
+
+        return wrapper
+
+@decoargs('hello1')
+def calc1(a, b):
+    print '----------&gt; calc1'
+    return a + b
+
+decoargs = decoargs('hello2')
+
+@decoargs
+def calc2(a, b):
+    print '----------&gt; calc2'
+    return a + b
+
+print calc1(1, 1)
+print calc2(2, 2)</code></pre>
+</div></div>
+<div class="paragraph"><p>Python/Jython 都支援這樣的用法：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ python deco.py
+[hello1] before
+----------&gt; calc1
+[hello1] after
+2
+[hello2] before
+----------&gt; calc2
+[hello2] after
+4
+
+$ jython deco.py
+[hello1] before
+----------&gt; calc1
+[hello1] after
+2
+[hello2] before
+----------&gt; calc2
+[hello2] after
+4</code></pre>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.jython.org/jythonbook/en/1.0/DefiningFunctionsandUsingBuilt-Ins.html#function-decorators">Chapter 4: Defining Functions and Using Built-ins — Jython Book v1.0 documentation</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_延伸閱讀">延伸閱讀</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="../aop/aop.html">Aspect-Oriented Programming (AOP)</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.python.org/dev/peps/pep-0318/">PEP 318&#8201;&#8212;&#8201;Decorators for Functions and Methods</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.python.org/dev/peps/pep-3129/">PEP 3129&#8201;&#8212;&#8201;Class Decorators</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://docs.python.org/glossary.html#term-decorator">Glossary &gt; decorator</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.artima.com/weblogs/viewpost.jsp?thread=240808">Decorators I: Introduction to Python Decorators</a> (2008-10-18)
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.artima.com/weblogs/viewpost.jsp?thread=240845">Python Decorators II: Decorator Arguments</a> (2008-10-19)
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.artima.com/weblogs/viewpost.jsp?thread=241209">Python Decorators III: A Decorator-Based Build System</a> (2008-10-26)
+</p>
+</li>
+<li>
+<p>
+<a href="http://wiki.python.org/moin/PythonDecorators">PythonDecorators - PythonInfo Wiki</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://wiki.python.org/moin/PythonDecoratorLibrary">PythonDecoratorLibrary - PythonInfo Wiki</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">其他文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://simeonfranklin.com/blog/2012/jul/1/python-decorators-in-12-steps/">simeonfranklin.com - Understanding Python Decorators in 12 Easy Steps!</a> (2012-07-01)
+</p>
+</li>
+<li>
+<p>
+<a href="https://pythonconquerstheuniverse.wordpress.com/2012/04/29/python-decorators/">Python Decorators | Python Conquers The Universe</a> (2012-04-29)
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.siafoo.net/article/68">Python Decorators Don&#8217;t Have to be (that) Scary - Siafoo</a> (2010-03-17)
+</p>
+</li>
+<li>
+<p>
+<a href="http://pythonconquerstheuniverse.wordpress.com/2009/08/06/introduction-to-python-decorators-part-1/">Introduction to Python Decorators | Python Conquers The Universe</a> (2009-08-06)
+</p>
+</li>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/739654/understanding-python-decorators">Understanding Python decorators - Stack Overflow</a> (2009-04-11)
+</p>
+</li>
+<li>
+<p>
+<a href="http://ipozgaj.blogspot.com/2008/03/python-decorators-demistified.html#!/2008/03/python-decorators-demistified.html">Python decorators demystified | Daily nitpicking by ipozgaj</a> (2008-03-26)
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.ibm.com/developerworks/linux/library/l-cpdecor/index.html">Charming Python: Decorators make magic easy</a> (2006-12-29)
+</p>
+</li>
+<li>
+<p>
+<a href="http://blog.roodo.com/descriptor/archives/9206319.html">descriptor:Python Idiom: Decorator I - 樂多日誌</a> (2006-06-11)
+</p>
+</li>
+<li>
+<p>
+<a href="http://drdobbs.com/web-development/184406073">Python 2.4 Decorators | Dr Dobb&#8217;s</a> (2005-03-01)
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-11-24 16:01:03 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>

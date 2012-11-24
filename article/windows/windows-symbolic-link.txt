@@ -1,0 +1,46 @@
+= link:windows.html[Windows] / NTFS Symbolic Link
+:title: [Windows] NTFS Symbolic Link
+
+NTFS Symbolic Link 在 Windows Vista 時提出，概念上跟 Windows 2000 提出的 NTFS Junction Point 類似，可以在 NTFS 內建立一個虛擬的檔案或目錄（file/directory symlink），讓使用者或應用程式對它的存取都自動轉向（redirect）另一個檔案或目錄（target），使用上跟一般的檔案或目錄沒有不同（transparent to users）。
+
+TIP: 這跟 Windows Shortcut 很不一樣，它只是一個普通的 `.lnk` 而已，對它的存取並不會轉向連結的標的。
+
+`mklink` 是 Vista 之後才有的，所以在 XP 跟 Windows 2000 下找不到這個工具。可以改用 Sysinternals 的 `junction` 工具。`mklink` 跟 `junction` 的用法一樣：（跟 Linux 上的 `ln` 用法類似，但 'link_name' 跟 'target' 的位置對調了）
+
+--------------------------------------------------------------------------------
+mklink /J link_name target
+junction link_name target
+--------------------------------------------------------------------------------
+
+由於使用上跟一般的檔案或目錄沒有不同，所以一旦建立 link 之後，在視窗界面下完全無法識別哪些檔案或目錄是 symlink。這時候就得借助強大的 `dir`：
+
+ dir /A:L <directory>
+
+它可以將 'directory' 底下的 symbolic link 或 junction point 全部列出來。
+
+直接用 `del` 或 `rmdir` 刪除即可，不會影響到 target。
+
+== 參考資料 ==
+
+.文件
+--
+ * http://en.wikipedia.org/wiki/NTFS_symbolic_link[NTFS symbolic link - Wikipedia, the free encyclopedia]
+ * http://en.wikipedia.org/wiki/NTFS_junction_point[NTFS junction point - Wikipedia, the free encyclopedia]
+ * http://en.wikipedia.org/wiki/NTFS_reparse_point[NTFS reparse point - Wikipedia, the free encyclopedia] - symbolic link 跟 junction point 都是從 reparse point 衍生出來的，這裡詳細說明了 hard/soft link 的差異。
+ * http://www.howtogeek.com/howto/16226/complete-guide-to-symbolic-links-symlinks-on-windows-or-linux/[Complete Guide to Symbolic Links (symlinks) on Windows or Linux - How-To Geek] (2010-05-04)
+--
+
+.工具
+--
+ * http://schinagl.priv.at/nt/hardlinkshellext/hardlinkshellext.html[Link Shell Extension] (pick -> drop as / replace)
+ * http://technet.microsoft.com/en-us/sysinternals/bb896768[Sysinternals Junction]
+ * http://elsdoerfer.name/ntfslink[NTFS Link]
+--
+
+.其他文件
+--
+ * http://www.cnblogs.com/rangeon/archive/2010/08/24/1807087.html[Windows下的符號鏈接 - 潤之 - 博客園] (2010-08-24)
+ * http://superuser.com/questions/117127/using-symbolic-link-in-windows-xp[Using symbolic link in Windows XP - Super User] (2010-03-07) - junction point 不能直接刪？
+ * http://jdev.tw/blog/1242/mklink-junction-quick-folders-access[[Windows] 用mklink與junction建立資料夾連結 « 簡睿隨筆] (2009-01-11)
+--
+

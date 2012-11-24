@@ -1,0 +1,125 @@
+= link:github.html[GitHub] / Pages =
+:title: [GitHub] Pages
+
+http://pages.github.com/[官網首頁]大大的標題寫著 "The easiest way to quickly publish beautiful pages for you and your projects"，所以不只可以用來架設專案的網站，也可以做為一般link:../web/web-hosting.html[網站代管]的用途。
+
+除了用 Page Generator 套用不同針對 mobile 優化過的 Theme 產生網站之外（主要用 link:../markdown/markdown.html[Markdown] 撰寫內容），也可以手工打造網站內容，然後透過 link:github-client.html[GitHub Clients] 發佈。
+
+GitHub Pages 區分為 User、Organization 跟 Project Pages 三種。
+
+以link:github-start.html[入門 GitHub] 時所建立的 `hello-github` 為例，如果要為它建立 Project Pages，幾個簡單的步驟就可以完成：
+
+ 1. 首先取出 `hello-github` 的內容。
++
+--
+$ cd /tmp
+$ git clone https://github.com/username/hello-github.git
+$ cd hello-github
+--
++
+ 2. 分出一個名叫 `gh-pages` 的 orphan branch，然後將所有跟網站內容無關的檔案都清空。
++
+--------------------------------------------------------------------------------
+$ git checkout --orphan gh-pages
+Switched to a new branch 'gh-pages'
+$
+$ rm -rf *
+$ rm .gitignore
+$ git status
+# On branch gh-pages
+#
+# Initial commit
+#
+# Changes to be committed:
+#   (use "git rm --cached <file>..." to unstage)
+#
+#	new file:   .gitignore
+#	new file:   README
+#	new file:   greet.py
+#	new file:   hello.py
+#
+# Changes not staged for commit:
+#   (use "git add/rm <file>..." to update what will be committed)
+#   (use "git checkout -- <file>..." to discard changes in working directory)
+#
+#	deleted:    .gitignore
+#	deleted:    README
+#	deleted:    greet.py
+#	deleted:    hello.py
+#
+--------------------------------------------------------------------------------
++
+ 3. 手動建立一個 `index.html`。
++
+--------------------------------------------------------------------------------
+$ echo '<html><body><h1>Hello World!! Hello GitHub!!</h1></body></html>' > index.html
+$ git add .
+$ git commit -a -m "first pages commit"
+[gh-pages (root-commit) bee5919] first pages commit
+ 1 file changed, 1 insertion(+)
+ create mode 100644 index.html
+$
+$ git status
+# On branch gh-pages
+nothing to commit (working directory clean)
+$
+$ git push origin gh-pages
+Counting objects: 3, done.
+Delta compression using up to 2 threads.
+Compressing objects: 100% (2/2), done.
+Writing objects: 100% (3/3), 271 bytes, done.
+Total 3 (delta 0), reused 0 (delta 0)
+To https://github.com/username/hello-github.git
+ * [new branch]      gh-pages -> gh-pages
+--------------------------------------------------------------------------------
++
+ 4. 十分鐘之內，就可以從 http://username.github.com/hello-github 看到網頁了（注意不是 `https://`）。
+
+GitHub Pages 也支援自訂網域（custom domain），假設我們希望從 http://hello-github.example.com 存取到上面的網站：
+
+ 1. 在 `gh-pages` 分支增加 `CNAME` 的檔案，裡面放上 "一個" 主機名稱 `hello-github.example.com`（之後可以再修改）。
++
+--------------------------------------------------------------------------------
+$ echo "hello-github.example.com" > CNAME
+$ git add CNAME
+$ git commit -m "custom domain"
+$ git push origin gh-pages
+--------------------------------------------------------------------------------
++
+ 2. 送上 GitHub 後等待修改已經套用（Page build successful）的通知，然後再做 DNS 設定的修改。
++
+TIP: 如果在修改 DNS 之前想要先確認一下效果，可以先修改本機的 `hosts` 檔案。 
++
+ 3. 在 DNS 上增加一筆 CNAME record （`hello-github`） 指向 username.github.com 即可；指向固定 IP `204.232.175.78` 也可以，但比較不建議。
+
+== 延伸閱讀 ==
+
+ * link:github-pages-transfer.html[代管現有的靜態網站]
+ * link:../octopress/octopress.html[Octopress + GitHub Pages 的應用]
+ * link:../jeklly/jeklly.html[Jeklly] - GitHub Pages 其 Theme 機制背後的引擎
+
+== 參考資料 ==
+
+.網站
+--
+ * http://pages.github.com/[GitHub Pages]
+--
+
+.官方文件
+--
+ * http://pages.github.com/[GitHub Pages]
+ * https://help.github.com/categories/20/articles[GitHub Help > Pages]
+   ** https://help.github.com/articles/what-are-github-pages[What are GitHub Pages?]
+   ** https://help.github.com/articles/user-organization-and-project-pages[User, Organization and Project Pages]
+   ** https://help.github.com/articles/creating-project-pages-manually[Creating Project Pages manually]
+   ** https://help.github.com/articles/setting-up-a-custom-domain-with-pages[Setting up a custom domain with Pages]
+--
+
+.其他文件
+--
+ * http://stackoverflow.com/questions/12556593/determining-a-page-is-outdated-on-github-pages[javascript - Determining a page is outdated on github pages - Stack Overflow] (2012-09-23) - GitHub Pages 提供的靜態網頁有 cache 時間過長的問題？
+ * http://blog.lyhdev.com/2012/02/jekyll-github-pages.html[使用 Jekyll 與 GitHub Pages 架站] (2012-02)
+--
+
+== 雜記 ==
+

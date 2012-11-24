@@ -1,0 +1,31 @@
+= link:python.html[Python] / 量測某段程式碼執行的時間  =
+:title: 量測 Python Code 的執行時間
+
+`timeit` 模組可以量測某一段程式碼的執行時間。
+
+--------------------------------------------------------------------------------
+>>> import time, timeit
+>>> def sleep():
+...     time.sleep(0.5)
+...
+>>> timer = timeit.Timer('sleep()', 'from __main__ import sleep') <1>
+>>> timer.timeit(5) <2>
+2.502687931060791
+>>> timer.repeat(number=5) <3>
+[2.5034980773925781, 2.5028901100158691, 2.5029518604278564]
+>>>
+>>> timer.repeat(repeat=5, number=1) <4>
+[0.50077009201049805, 0.50058603286743164, 0.5005650520324707, 0.50062704086303711, 0.50058817863464355]
+--------------------------------------------------------------------------------
+<1> 建立一個 timer - `timeit.Timer([stmt='pass'[, setup='pass']])`，其中 'setup' (setup statement) 會在 'stmt' (main statement) 輪番執行之前執行 "一次"，通常是用來做 import，這個例子就是要將 main statement 裡會用到的 `sleep` 引入。
+<2> `Timer.timeit([number=1000000])` 可以執行 main statement 多次（預設是 100 萬次），然後傳回 “累計“ 的時間。
+<3> `Timer.repeat([repeat=3[, number=1000000]])` 可以連續做好幾次 `timeit()` 的測試，然後一次傳回多個量測的時間。
+<4> 也因此，如果要知道每一次 main statement 的執行時間（外加 setup statement 的時間），可以利用 `number=1` 來達成。
+
+== 參考資料 ==
+
+.文件
+--
+ * http://docs.python.org/library/timeit.html[timeit — Measure execution time of small code snippets]
+--
+

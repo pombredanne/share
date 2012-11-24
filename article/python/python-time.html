@@ -1,0 +1,165 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Python] 時間的處理</title>
+<link rel="stylesheet" href="../../asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <div id="page-source">&#187;<a href="python-time.txt">頁面原始碼</a></div>
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="python.html">Python</a> / 時間的處理</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p><code>time</code> 裡最常用的兩個 function 就是 <code>time()</code> 跟 <code>sleep()</code>。</p></div>
+<div class="paragraph"><p><code>time()</code> 會傳回從 <a href="http://en.wikipedia.org/wiki/Unix_time">Unix epoch</a> （00:00:00 UTC，也就是 1 January 1970） 開始到現在所經過的秒數。而 <code>sleep(secs)</code> 則可以讓程式暫停執行 <em>secs</em> 秒鐘：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; import time
+&gt;&gt;&gt; time.time() <img src="../../asciidoc/images/icons/callouts/1.png" alt="1" />
+1339384461.6652391
+&gt;&gt;&gt; for i in range(5): time.sleep(0.00001); print time.time() <img src="../../asciidoc/images/icons/callouts/2.png" alt="2" />
+...
+1323914988.19
+1323914988.2
+1323914988.22
+1323914988.22
+1323914988.22
+&gt;&gt;&gt; begin = time.time(); time.sleep(2.5); end = time.time()
+&gt;&gt;&gt; print end - begin
+2.50261187553 <img src="../../asciidoc/images/icons/callouts/3.png" alt="3" /></code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+<code>time.time()</code> 固定傳回浮點數，而且數值只會越來越大（non-decreasing），除非過程中系統的時間有被調整過。
+</td></tr>
+<tr><td><img src="../../asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+<em>secs</em> 傳入小數可以做更細微的控制。
+</td></tr>
+<tr><td><img src="../../asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+真正暫停的時間會有一些小誤差。
+</td></tr>
+</table></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../asciidoc/images/icons/caution.png" alt="Caution" />
+</td>
+<td class="content"><code>time</code> 模組將 epoch 視為時間的起點，無法表示 epoch 之前的時間點，最大也只能表示到 2038 年，未來將會遭遇 <a href="http://en.wikipedia.org/wiki/Year_2038_problem">Y2K38</a> 的問題，使用上要非常小心。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>雖然 <code>time</code> 也有處理日期時間的能力，但建議改用 <code>datetime</code>，裡面常用的 class 有：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>datetime.datetime</code>
+</p>
+</li>
+<li>
+<p>
+<code>datetime.date</code>
+</p>
+</li>
+<li>
+<p>
+<code>datetime.time</code>
+</p>
+</li>
+<li>
+<p>
+<code>datetime.tzinfo</code>
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>雖然 <code>datetime.today()</code> 跟 <code>datetime.now()</code> 都可以用來取得當下的 local time，但寫成 <code>datetime.now()</code> 的可讀性較高：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; from datetime import datetime
+&gt;&gt;&gt; dt = datetime.today()
+&gt;&gt;&gt; print type(dt), dt, dt.tzinfo
+&lt;type 'datetime.datetime'&gt; 2012-06-11 13:56:10.565558 None <img src="../../asciidoc/images/icons/callouts/1.png" alt="1" />
+&gt;&gt;&gt; print dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second, dt.microsecond
+2012 6 11 13 56 10 565558</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+不帶 time zone 資訊
+</td></tr>
+</table></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_延伸閱讀">延伸閱讀</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="time-time-exec.html">量測 Python Code 的執行時間</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://docs.python.org/library/time.html">time — Time access and conversions</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-11-24 15:59:57 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>

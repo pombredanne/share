@@ -1,0 +1,157 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Windows] NTFS Symbolic Link</title>
+<link rel="stylesheet" href="../../asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <div id="page-source">&#187;<a href="windows-symbolic-link.txt">頁面原始碼</a></div>
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="windows.html">Windows</a> / NTFS Symbolic Link</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>NTFS Symbolic Link 在 Windows Vista 時提出，概念上跟 Windows 2000 提出的 NTFS Junction Point 類似，可以在 NTFS 內建立一個虛擬的檔案或目錄（file/directory symlink），讓使用者或應用程式對它的存取都自動轉向（redirect）另一個檔案或目錄（target），使用上跟一般的檔案或目錄沒有不同（transparent to users）。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">這跟 Windows Shortcut 很不一樣，它只是一個普通的 <code>.lnk</code> 而已，對它的存取並不會轉向連結的標的。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p><code>mklink</code> 是 Vista 之後才有的，所以在 XP 跟 Windows 2000 下找不到這個工具。可以改用 Sysinternals 的 <code>junction</code> 工具。<code>mklink</code> 跟 <code>junction</code> 的用法一樣：（跟 Linux 上的 <code>ln</code> 用法類似，但 <em>link_name</em> 跟 <em>target</em> 的位置對調了）</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>mklink /J link_name target
+junction link_name target</code></pre>
+</div></div>
+<div class="paragraph"><p>由於使用上跟一般的檔案或目錄沒有不同，所以一旦建立 link 之後，在視窗界面下完全無法識別哪些檔案或目錄是 symlink。這時候就得借助強大的 <code>dir</code>：</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>dir /A:L &lt;directory&gt;</code></pre>
+</div></div>
+<div class="paragraph"><p>它可以將 <em>directory</em> 底下的 symbolic link 或 junction point 全部列出來。</p></div>
+<div class="paragraph"><p>直接用 <code>del</code> 或 <code>rmdir</code> 刪除即可，不會影響到 target。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://en.wikipedia.org/wiki/NTFS_symbolic_link">NTFS symbolic link - Wikipedia, the free encyclopedia</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://en.wikipedia.org/wiki/NTFS_junction_point">NTFS junction point - Wikipedia, the free encyclopedia</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://en.wikipedia.org/wiki/NTFS_reparse_point">NTFS reparse point - Wikipedia, the free encyclopedia</a> - symbolic link 跟 junction point 都是從 reparse point 衍生出來的，這裡詳細說明了 hard/soft link 的差異。
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.howtogeek.com/howto/16226/complete-guide-to-symbolic-links-symlinks-on-windows-or-linux/">Complete Guide to Symbolic Links (symlinks) on Windows or Linux - How-To Geek</a> (2010-05-04)
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">工具</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://schinagl.priv.at/nt/hardlinkshellext/hardlinkshellext.html">Link Shell Extension</a> (pick &#8594; drop as / replace)
+</p>
+</li>
+<li>
+<p>
+<a href="http://technet.microsoft.com/en-us/sysinternals/bb896768">Sysinternals Junction</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://elsdoerfer.name/ntfslink">NTFS Link</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">其他文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.cnblogs.com/rangeon/archive/2010/08/24/1807087.html">Windows下的符號鏈接 - 潤之 - 博客園</a> (2010-08-24)
+</p>
+</li>
+<li>
+<p>
+<a href="http://superuser.com/questions/117127/using-symbolic-link-in-windows-xp">Using symbolic link in Windows XP - Super User</a> (2010-03-07) - junction point 不能直接刪？
+</p>
+</li>
+<li>
+<p>
+<a href="http://jdev.tw/blog/1242/mklink-junction-quick-folders-access">[Windows</a> 用mklink與junction建立資料夾連結 « 簡睿隨筆] (2009-01-11)
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-11-24 16:00:38 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>

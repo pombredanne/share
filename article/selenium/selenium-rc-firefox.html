@@ -1,0 +1,169 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Selenium][RC] Firefox</title>
+<link rel="stylesheet" href="../../asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <div id="page-source">&#187;<a href="selenium-rc-firefox.txt">頁面原始碼</a></div>
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="selenium.html">Selenium</a> / <a href="selenium-rc.html">RC</a> / Firefox</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>由於 Firefox 有 <a href="../firefox/firefox-profile.html">profile</a> 的概念，Selenium Server 在啟動 Firefox 時會做一些特別的處理]。</p></div>
+<div class="paragraph"><p>Selenium 1/RC Server 在啟動 Firefox 時，預設會採用一個全新的 profile：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>cmd=getNewBrowserSession&amp;1=*firefox&amp;2=http://www.google.com
+11:54:47.208 INFO - ---&gt; Requesting http://localhost:4444/selenium-server/driver?cmd=getNewBrowserSession&amp;1=*firefox&amp;2=http://www.google.com
+11:54:47.338 INFO - Checking Resource aliases
+11:54:47.342 INFO - Command request: getNewBrowserSession[*firefox, http://www.google.com] on session null
+11:54:47.345 INFO - creating new remote session
+11:54:47.463 INFO - Allocated session 0bbdf4a22e344f9ab6eb84ddc146466f for http://www.google.com, launching...
+jar:file:/storage/dev/selenium-server-2.24.1/selenium-server-standalone-2.24.1.jar!/customProfileDirCUSTFFCHROME <img src="../../asciidoc/images/icons/callouts/1.png" alt="1" />
+11:54:47.606 INFO - Preparing Firefox profile...
+11:54:49.767 INFO - Launching Firefox...
+11:54:54.075 INFO - Got result: OK,0bbdf4a22e344f9ab6eb84ddc146466f on session 0bbdf4a22e344f9ab6eb84ddc146466f
+
+cmd=testComplete
+11:59:24.866 INFO - ---&gt; Requesting http://localhost:4444/selenium-server/driver?cmd=testComplete&amp;sessionId=0bbdf4a22e344f9ab6eb84ddc146466f
+11:59:24.875 INFO - Command request: testComplete[, ] on session 0bbdf4a22e344f9ab6eb84ddc146466f <img src="../../asciidoc/images/icons/callouts/2.png" alt="2" />
+11:59:24.875 INFO - Killing Firefox...
+11:59:25.051 INFO - Got result: OK on session 0bbdf4a22e344f9ab6eb84ddc146466f</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+<code>customProfileDirCUSTFFCHROME</code> 是 <code>selenium-server-standalone-&lt;version&gt;.jar</code> 裡的一個目錄。這個目錄會被複製到暫存目錄下（例如 <code>/tmp/customProfileDir0bbdf4a22e344f9ab6eb84ddc146466f</code>，目錄名稱內含 session ID），做為該 session 的 profile，所以也不是使用者平常慣用 default profile 的複本。
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">實驗發現，即便用 <code>-firefoxProfileTemplate</code> 來指定 profile，這裡還是會顯示 "launching&#8230; jar:file:&#8230;/customProfileDirCUSTFFCHROME" 的訊息，跟最後真正採用的 profile 無關。</td>
+</tr></table>
+</div>
+</td></tr>
+<tr><td><img src="../../asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+關閉瀏覽器視窗後，該 profile folder 就會遭到刪除。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>也就是說，Selenium Server 會將某個 profile 做為 template 複製一份出來，專用於某一次的測試，然後測試結束（關掉瀏覽器視窗）時就刪掉它。也就是說，profile template 本身完全不會受到測試的影響。</p></div>
+<div class="paragraph"><p>這裡的 profile template 預設是 Jar 檔裡的 <code>customProfileDirCUSTFFCHROME</code>，也可以用 <code>-firefoxProfileTemplate</code> 來指定一個事先準備好的 profile 做為範本，可以事先安裝好某些憑證或 Add-on 等。</p></div>
+<div class="paragraph"><p>在大部份的情況下，Selenium Server 處理 profile 的方式是有利於測試的，因為它可以確保每次開關瀏覽器所做的測試都是相互獨立且不會相互干擾。但在某些極少數的情況下，這麼做反而會造成測試上的困擾，尤其是測試過程中寫入的 cookie 都沒機會保留到下次重開瀏覽器時。</p></div>
+<div class="paragraph"><p>受影響最直接的例子就是 Remember Me 的功能，也就是重新打開瀏覽器後，要能夠因為上次寫入的 login cookie 而自動登入。也因此在網路上搜尋 <code>selenium profile "remember me"</code> 可以找到許多跟這個議題相關的資料。</p></div>
+<div class="paragraph"><p>聽說 Selenium 2/WebDriver 指定 profile 可以避開這個問題？</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>  -firefoxProfileTemplate &lt;dir&gt;: normally, we generate a fresh empty
+    Firefox profile every time we launch.  You can specify a directory
+    to make us copy your profile directory instead.
+  -ensureCleanSession: If the browser does not have user profiles,
+    make sure every new session has no artifacts from previous
+    sessions.  For example, enabling this option will cause all user
+    cookies to be archived before launching IE, and restored after IE
+    is closed.
+  -browserSessionReuse: stops re-initialization and spawning of the
+    browser between tests</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">官方文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://seleniumhq.org/docs/05_selenium_rc.html#specifying-the-firefox-profile">Selenium 1 (Selenium RC) &gt; Specifying the Firefox Profile — Selenium Documentation</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">其他文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/6787095/how-to-stop-selenium-from-creating-temporary-firefox-profiles-using-web-driver">How to stop Selenium from creating temporary Firefox Profiles using Web Driver? - Stack Overflow</a> (2011-07-22)
+</p>
+</li>
+<li>
+<p>
+<a href="http://code.google.com/p/selenium/issues/detail?id=1954">Issue 1954 - selenium - Allow for reuse of the temporary profile, in order to realistically test persistant browser cookies. - Browser automation framework - Google Project Hosting</a> (2011-06-29) - RC/WebDriver 預設都會採用一份複製出來的 temporary profile，因此 cookie 沒辦法跨 browser sessions。
+</p>
+</li>
+<li>
+<p>
+<a href="https://groups.google.com/forum/?fromgroups#!topic/selenium-users/iHuoa5HTzzA%5B1-25%5D">Test "Remember me" a.k.a. SSO (Single Sign On) by being able to close the web browser, and re-start the browser with the same profile. - Google Groups</a> (2011-05-14)
+</p>
+</li>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/5771840/how-do-you-reuse-cookies-between-seleniumrc-sessions">selenium - How do you reuse cookies between SeleniumRC sessions? - Stack Overflow</a> (2011-04-24)
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.deepshiftlabs.com/sel_blog/?p=1600&amp;lang=en-us#more-1600">Selenium and non standard Firefox profiles « Web applications testing and Selenium blog by Deep Shift Labs</a> (2010-11-09) - 用事先登入（並勾選 Remember Me）的 profile 來避開 CAPTCHA 動態圖形驗證。
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.qaautomation.net/?p=45">Custom Firefox profile for Selenium | QA Automation</a> (2010-04-14)
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-11-24 15:59:21 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>

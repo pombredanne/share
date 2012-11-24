@@ -1,0 +1,141 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Linux] Time Synchronization</title>
+<link rel="stylesheet" href="../../asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <div id="page-source">&#187;<a href="linux-time-synchronization.txt">頁面原始碼</a></div>
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="linux.html">Linux</a> / Time / Synchronization</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>先用 <code>ntpdate -q</code> 確認 system time 跟標準時間的落差：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code># ntpdate -q pool.ntp.org <img src="../../asciidoc/images/icons/callouts/1.png" alt="1" />
+server 114.32.8.133, stratum 3, offset 240.063914, delay 0.06873
+server 210.68.16.24, stratum 3, offset 240.054648, delay 0.10890
+server 220.133.13.3, stratum 2, offset 240.050690, delay 0.08301
+21 Nov 05:57:41 ntpdate[841]: step time server 220.133.13.3 offset 240.050690 sec <img src="../../asciidoc/images/icons/callouts/2.png" alt="2" /></code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+<code>ntpdate -q</code> 不會改動 system time。
+</td></tr>
+<tr><td><img src="../../asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+"offset &#8230; sec" 表示 system time 跟標準時間的差距，正值表示 system time 慢了，反之負值則表示 system time 快了。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>手動校時可以用 <code>date</code> + <code>hwclock</code>, 網路校時則可以用 <code>ntpdate</code> + <code>hwclock</code>。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code># yum install ntp
+# chkconfig --list ntpd       <img src="../../asciidoc/images/icons/callouts/1.png" alt="1" />
+ntpd              0:off   1:off   2:off   3:off   4:off   5:off   6:off
+# ntpdate pool.ntp.org        <img src="../../asciidoc/images/icons/callouts/2.png" alt="2" />
+21 Nov 06:09:37 ntpdate[986]: step time server 120.119.28.1 offset 240.054985 sec
+# hwclock --systohc           <img src="../../asciidoc/images/icons/callouts/3.png" alt="3" />
+#
+#
+# ntpdate pool.ntp.org
+21 Nov 05:33:34 ntpdate[32404]: the NTP socket is in use, exiting <img src="../../asciidoc/images/icons/callouts/4.png" alt="4" />
+# service ntpd stop
+Shutting down ntpd:                                        [  OK  ]
+# ntpdate pool.ntp.org
+21 Nov 05:26:12 ntpdate[32223]: step time server 59.124.196.83 offset 16.032887 sec
+# service ntpd start
+Starting ntpd:                                             [  OK  ]</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+確認 <code>ntpd</code> 預設不會啟動，因為我們並不想拿這台機器做 time server。如果需要的話，可以用 <code>chkconfig ntpd on</code> 來啟動。
+</td></tr>
+<tr><td><img src="../../asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+透過 time server 校對 system time。"offset &#8230; sec" 表示校正當下 system time 跟標準時間的差距。
+</td></tr>
+<tr><td><img src="../../asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+將校正過的 system time 寫回 hardware time。
+</td></tr>
+<tr><td><img src="../../asciidoc/images/icons/callouts/4.png" alt="4" /></td><td>
+遇到 "the NTP socket is in use"，表示 <code>ntp</code> 服務正在運作，要將它停用後才能手動網路校時。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>安排每天半夜 4 點做網路校時：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code># crontab -e
+0 4 * * * /usr/sbin/ntpdate pool.ntp.org</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://itg.chem.indiana.edu/inc/wiki/os/unix/199.html">Configuring Time Synchronization in UNIX</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.go2linux.org/how-to-set-the-date-and-time-in-linux">Setting the time of your system 1</a> (2007-08-18)
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.cyberciti.biz/faq/howto-install-ntp-to-synchronize-server-clock/">CentOS Linux install and configure NTP to synchronize the system clock</a> (2007-05-18)
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-11-24 15:59:08 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>

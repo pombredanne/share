@@ -1,0 +1,82 @@
+= link:python.html[Python] / link:python-file.html[Files] / CWD (Current Working Directory) =
+:title: [Python] 目前工作目錄（Current Working Directory）
+
+跟 current working directory (CWD) 相關的 API 有：
+
+ * `os.chdir(path)`
+ * `os.getcwd()`
+ * `os.getcwdu()`
+
+簡單做個測試：
+
+--------------------------------------------------------------------------------
+$ pwd
+/tmp/中文
+$
+$ python
+>>> import os
+>>> cwd = os.getcwd()  <1>
+>>> print type(cwd), cwd
+<type 'str'> /tmp/中文
+>>> 
+>>> cwd = os.getcwdu() <2>
+>>> print type(cwd), cwd
+<type 'unicode'> /tmp/中文
+>>>
+>>> os.chdir('..')     <3>
+>>> os.getcwd()
+'/tmp'
+>>> exit()
+$ pwd
+/tmp/中文
+--------------------------------------------------------------------------------
+<1> `getcwd()` 傳回目前的工作目錄
+<2> `getcwdu()` 跟 `getcwd()` 一樣，只是回傳 Unicode 而已。
+<3> `chdir()` 可以切換工作目錄；相對路徑的表示法是相對於 CWD，但離開 Python 之後，系統的 CWD 並沒有改變。
+
+如果有一個 Python script，我們從不同的地方執行它，會對程式一開始的 CWD 造成什麼影響？
+
+.`/tmp/script.py` (executable)
+--------------------------------------------------------------------------------
+#!/usr/bin/env python
+import os
+
+print 'CWD =', os.getcwd()
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+$ echo PWD = `pwd`; python script.py
+PWD = /tmp
+CWD = /tmp
+$
+$ cd /
+$ echo PWD = `pwd`; python tmp/script.py
+PWD = /
+CWD = /
+$
+$ cd /mnt
+$ echo PWD = `pwd`; ../tmp/script.py
+PWD = /mnt
+CWD = /mnt
+$
+$ export PATH=$PATH:/tmp
+$ echo PWD = `pwd`; script.py
+PWD = /mnt
+CWD = /mnt
+--------------------------------------------------------------------------------
+
+從上面的實驗可以發現，程式一開始的 CWD 會隨著執行的位置（`pwd`）改變，跟程式所在的位置無關。
+
+== 參考資料 ==
+
+.文件
+--
+ * http://docs.python.org/library/os.html[os — Miscellaneous operating system interfaces] (PDF)
+ * http://www.faqs.org/docs/diveintopython/regression_path.html[Dive Into Python > Finding the path]
+--
+
+.其他文件
+--
+ * http://www.webdotdev.com/nvd/content/view/867/[Current Working Directory in Python] (2007-03-07)
+--
+
