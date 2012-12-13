@@ -1,0 +1,156 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Sikuli] Windows 上的 Sikuli</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="windows.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>[Sikuli] Windows 上的 Sikuli</h1>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="install">安裝</h2>
+<div class="sectionbody">
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+確認 32-bit JRE 6 已經安裝。
+＋
+CAUTION: Sikuli 目前<a href="https://bugs.launchpad.net/sikuli/+bug/840759">還不能運作在 Java 7 下</a>，在 64-bit Windows 下也只能搭配 32-bit JRE，所以 JRE 一定得安裝 32-bit JRE 6 才行。（因此從 Task Manager 很容易可以從 <code>javaw.exe *32</code> 認出它）
+＋
+</p>
+</li>
+<li>
+<p>
+從<a href="http://sikuli.org/download.shtml#win">官網</a>下載 <code>Sikuli-X-&lt;version&gt;-win32.exe</code> 後執行。預設會裝到 <code>C:\Program Files\Sikuli X\</code> 或 <code>C:\Program Files (x86)\Sikuli X\</code> （64-bit Windows 而言）。
+</p>
+</li>
+<li>
+<p>
+開始選單裡會出現 "Sikuli IDE.exe" (<code>Sikuli-IDE.exe</code>) 跟 "Sikuli IDE" (<code>Sikuli-IDE-w.bat</code>)；在 32-bit Windows 下用 <code>Sikuli-IDE.exe</code>，在 64-bit Windows 下則要改用 <code>Sikuli-IDE-w.bat</code>，否則抓圖時螢幕不會暗下來，Sikuli 會整個回不來。
+</p>
+<div class="openblock">
+<div class="content">
+<div class="paragraph"><p>觀察 <code>Sikuli-IDE-w.bat</code> 的內容：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>@echo off
+
+PATH=%PATH%;%~d0%~p0libs
+set JAVA_EXE="javaw"
+if defined PROGRAMFILES(X86) set JAVA_EXE="%PROGRAMFILES(X86)%\Java\jre6\bin\javaw.exe" <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+start /B "Sikuli-IDE" %JAVA_EXE% -Xms64M -Xmx512M -Dfile.encoding=UTF-8 -Dpython.path="%~d0%~p0sikuli-script.jar/" -jar "%~d0%~p0sikuli-ide.jar" %*</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+表示環境內可以有 64-bit JDK/JRE 7，但如果在 64-bit 環境下，固定會跑 32-bit JRE 6。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>原來 <code>Sikuli-IDE-w.bat</code> 多做了判斷，必要時會轉向 32-bit JRE 6，這也就是為什麼官方文件會說 64-bit 不能直接跑 <code>Sikuli-IDE.exe</code> 的原因。</p></div>
+</div></div>
+</li>
+</ol></div>
+<div class="paragraph"><p>以下列出幾個常見的問題：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+VisionProxy.dll: Can&#8217;t load IA 32-bit .dll on a AMD 64-bit platform
+</p>
+<div class="openblock">
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre><code>120509 13:55:16.583:S [main] [com.android.monkeyrunner.MonkeyRunnerOptions]Cause
+d by: java.lang.UnsatisfiedLinkError: C:\Users\YuneLiu\AppData\Local\Temp\tmplib
+\VisionProxy.dll: Can't load IA 32-bit .dll on a AMD 64-bit platform</code></pre>
+</div></div>
+<div class="paragraph"><p>在 Windows 下用 64-bit JRE 跑 Sikuli 會遇到上述的錯誤，改用 32-bit JRE 即可。</p></div>
+</div></div>
+</li>
+<li>
+<p>
+VisionProxy.dll: Can&#8217;t find dependent libraries
+</p>
+<div class="openblock">
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre><code>java.lang.UnsatisfiedLinkError: java.lang.UnsatisfiedLinkError: C:\Users\YuneLiu
+\AppData\Local\Temp\tmplib\VisionProxy.dll: Can't find dependent libraries</code></pre>
+</div></div>
+<div class="paragraph"><p>這是因為沒有把 <code>%SIKULI_HOME%\libs</code> 加到 <code>%PATH%</code> 的關係。</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="https://answers.launchpad.net/sikuli/+question/166928">Question #166928 : Questions : Sikuli</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_java_lang_unsatisfiedlinkerror_can_8217_t_load_ia_32_bit_dll_on_a_amd_64_bit_platform">java.lang.UnsatisfiedLinkError: Can&#8217;t load IA 32-bit .dll on a AMD 64-bit platform</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre><code>java.lang.UnsatisfiedLinkError: java.lang.UnsatisfiedLinkError: C:\Users\&lt;username&gt;\AppData\Local\Temp\tmplib\Win32Util.dll: Can't load IA 32-bit .dll on a AMD 64-bit platform</code></pre>
+</div></div>
+<div class="paragraph"><p>也是因為在 Windows 下用 64-bit JRE 跑 Sikuli 才會遇到上述的錯誤，改用 32-bit JRE 即可。</p></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:10:37 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

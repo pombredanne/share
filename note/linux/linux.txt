@@ -1,0 +1,561 @@
+= Linux =
+
+== Auditing ==
+
+ * http://www.cyberciti.biz/tips/linux-audit-files-to-see-who-made-changes-to-a-file.html[Linux audit files to see who made changes to a file] (2007-03-19)
+
+== 資源管理：記憶體 ==
+
+ * `free` 可以查看系統記體體使用情形。
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://www.cyberciti.biz/faq/ubuntu-linux-4gb-ram-limitation-solution/[Ubuntu 4GB Ram Limitation and Solution] (2008-12-27)
+================================================================================
+
+== Locale 與 Encoding ==
+
+可以用 `locale` 來輸出當下的 locale environment：
+
+--------------------------------------------------------------------------------
+$ locale
+LANG=en_US.utf8                 <1>
+LC_CTYPE="en_US.utf8"           <2>
+LC_NUMERIC="en_US.utf8"
+LC_TIME="en_US.utf8"
+LC_COLLATE="en_US.utf8"
+LC_MONETARY="en_US.utf8"
+LC_MESSAGES="en_US.utf8"        <3>
+LC_PAPER="en_US.utf8"
+LC_NAME="en_US.utf8"
+LC_ADDRESS="en_US.utf8"
+LC_TELEPHONE="en_US.utf8"
+LC_MEASUREMENT="en_US.utf8"
+LC_IDENTIFICATION="en_US.utf8"
+LC_ALL=                         <4> 
+--------------------------------------------------------------------------------
+<1> `LANG` 做為 `LC_*` 的預設值。
+<2> `LC_CTYPE` 決定要如何解讀使用者的輸入。
+<3> `LC_MESSAGES` 會影響輸出訊息的語系。
+<4> `LC_ALL` 會覆寫其他 `LC_*` 的設定。
+
+總而言之，各種設定的優先權是 `LC_ALL` > `LC_*` > `LANG`，個別 `LC_*` 對 locale-aware program 的影響，可以參考 `man locale` 的說明。
+
+所有系統支援節 locale，可以用 `local -a` 或 `locale --all-locales` 輸出：
+
+--------------------------------------------------------------------------------
+$ locale --all-locales
+C
+en_AG
+en_AG.utf8
+en_AU.utf8
+en_BW.utf8
+en_CA.utf8
+en_DK.utf8
+en_GB.utf8
+en_HK.utf8
+en_IE.utf8
+en_IN
+en_IN.utf8
+en_NG
+en_NG.utf8
+en_NZ.utf8
+en_PH.utf8
+en_SG.utf8
+en_US.utf8
+en_ZA.utf8
+en_ZW.utf8
+POSIX
+--------------------------------------------------------------------------------
+
+CentOS 的系統預設值在 `/etc/sysconfig/i18n`，建議透過 `system-config-language`（要額外安裝 `system-config-language` 套件）來修改（直接修改該檔案好像不是很妥當，記得之前操作 Ubuntu 時，切換語系會造成家目錄底下的資料夾一起更名，例如 'Desktop' ->'桌面'、'Downloads' -> '下載' 等），這個工具
+
+ * `iconv -f from_encoding -t to_encoding` 可以用來轉 encoding，例如 `iconv -f big5 -t utf8 big5.txt`。
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://hi.baidu.com/edeed/blog/item/2e99a14440bd8884b2b7dcb1.html[locale的設定及其LANG、LC_ALL、LANGUAGE環境變量的區別_骨骨學習筆記_百度空間] (2008-10-08)
+ * http://blog.chinaunix.net/space.php?uid=7921481&do=blog&cuid=1161340[wslium - ChinaUnix博客 - IT人與你分享快樂生活] (2008-09-01)
+================================================================================
+
+== Migrate from Windows ==
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://www.linuxalt.com/[The Linux Alternative Project]
+================================================================================
+
+== 啟動設定 ==
+
+按照 `man bash` 的說法：
+
+ * `/etc/profile` - The systemwide initialization file, executed for login shells.
+ * `~/.bash_profile` - The personal initialization file, executed for login shells.
+ * `~/.bashrc` - The individual per-interactive-shell startup file.
+ 
+...
+
+ * http://stefaanlippens.net/bashrc_and_others[Bash: about .bashrc, .bash_profile, .profile, /etc/profile, etc/bash.bashrc and others | Stefaan Lippens' webface] (2005-10-03)
+
+== Logging ==
+
+ * logtail 可以用來監看多台機器上的多個 logs。
+ * `multitail`
+
+ * http://onaxer.com/blog/blog/tag/how-monitor-multiple-logs-in-linux/[How Monitor Multiple Logs In Linux | Nix World] (2010-05-21)
+ * http://www.fourmilab.ch/webtools/logtail/[logtail: watch multiple log files on multiple machines]
+
+== 日期／時間 ==
+
+Linux 開機時，會先讀取 BIOS 所記錄的時間，然後開始用自己的方式來計時。
+
+Linux 作業系統當中其實有兩個時間，一個是 BIOS 硬體時鐘（hardware clock），一個則是 Linux 自己的系統時間（system time）。當我們使用 `date --set` 來設定時間時，只是更動到 Linux 的系統時間而已，BIOS 的時間並不會受到影響，除非用 `hwclock --systohc` 將系統時間寫入 BIOS。
+
+不過 Linux 作業系統通常會在關機時，自動將系統時間寫回 BIOS，因此 `hwclock --systohc` 的動作也並非必要。
+
+=== 時區 ===
+
+時間有一個很重要的概念就是時區（time zone）。在 Linux 下，時區的定義跟各國日光節約時的規定都記錄在 `tzdata` 套件裡（Time Zone Data；許多時區檔案被安裝到 `/usr/share/zoneinfo/` 底下），這也就是為什麼 `tzdata` 更新頻率會這麼高的原因。
+
+想知道系統的時區，可以查看 `/etc/localtime` 的內容，不過各 distros 的處理方式有些許不同。以 Red Hat 系統為例，它是以複製的方式來處理這個檔案（Debian 也是），而 SuSE 則是以 hard link 的方式來處理。
+
+UTC+0 也有自己的時區檔 `/usr/share/zoneinfo/Etc/UTC`。
+
+--------------------------------------------------------------------------------
+$ cat /etc/localtime 
+TZif2UTCTZif2UTC
+UTC0
+--------------------------------------------------------------------------------
+
+要設定時區的話，可以改變 `/etc/localtime` 的指向。CentOS 則有專用的工具，但必須額外安裝 `system-config-date` 套件。
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://www.cyberciti.biz/faq/howto-linux-unix-change-setup-timezone-tz-variable/[Howto: Linux server change or setup the timezone] (2006-08-27)
+================================================================================
+
+=== 是否要將 BIOS 的時間解讀成 UTC？ ===
+
+安裝 Linux 的過程中，時間設定的部份常會被問到 “System clock uses UTC”。
+
+讓 BIOS 記錄 UTC 時間的好處是，系統會自動調整 DST（Daylight Saving Time；不需要手動依當地規定調整時間，前提當然是 `tzdata` 套件要定期更新）。不過在 multi-boot 的環境下，尤其是其中包含有 Windows 作業系統，則建議將 BIOS 的時間設為 local time，因為 Windows 沒有類似 Linux 下 “是否要將 BIOS 時間解讀成 UTC“ 的選項。
+
+對 VM 而言，每個 VM 底層的 hardware clock 都是獨立的，所以沒有 multi-boot 的問題。
+
+從 BIOS 讀出來的時間，要解讀成 UTC 或時區所在的 local time，設定方式會因系統而異。CentOS 設定在 `/etc/sysconfig/clock` 中的 `UTC`（`true`/`false`），Debian 則設定在 `/etc/default/rcS` 中的 `UTC`（`yes`/`no`）。
+
+== Mounting ==
+
+如果只是做為說明或測試之用，我們習慣暫時掛在 `/mnt`，測試沒問題之後，再視情況把設定移到 `/etc/fstab`（通常會改掛到 `/media` 下的子目錄)。
+
+ mount [options] device dir
+ mount [options] device|dir
+
+
+如果要掛載一個 Windows share，可以用下面的格式
+
+--------------------------------------------------------------------------------
+mount.cifs //10.201.16.7/Build/WFBSH/3.6/centos5_2/en/Rel /mnt/ci_build -o username=trend\\xxx
+//10.201.16.7/Build/WFBSH/3.6/centos5_2/en/Rel /mnt/ci_build cifs r,uid=1000,username=trend\ets_fs_auto,password=testing!@t2009 0 0
+--------------------------------------------------------------------------------
+
+`/etc/fstab` 的寫法可以參考 `man 5 fstab`。裡面每一行都記錄著開機時要自動完成哪些 mounts，不同欄位之間用 whitespace 隔開。
+
+== Encryption / Signing ==
+
+例如下載 CentOS 的 ISO images 後會得到下列這些檔案：
+
+--------------------------------------------------------------------------------
+.
+|-- CentOS-5.3-x86_64-bin-DVD.iso
+|-- md5sum.txt
+|-- md5sum.txt.asc
+|-- sha1sum.txt
+`-- sha1sum.txt.asc
+
+$ cat md5sum.txt.asc
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+6d4fd59688ed8644514010316d6a5698  CentOS-5.3-x86_64-bin-DVD.iso
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.2.6 (GNU/Linux)
+
+iD8DBQFJ0VYZqKRH3OhWKJcRAkhCAJ9kYlFyXIgtEjTjjxbMu5/TBoYKwwCgsYce
+8WLtfuqWpG+hzl3zcYG+1Iw=
+=ywF8
+-----END PGP SIGNATURE-----
+--------------------------------------------------------------------------------
+
+可以用 `gpg` 做檢查：
+
+--------------------------------------------------------------------------------
+$ gpg --verify md5sum.txt.asc *.iso
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+$ gpg --import RPM-GPG-KEY-CentOS-5 
+gpg: keyring `/home/jeremy/.gnupg/secring.gpg' created
+gpg: /home/jeremy/.gnupg/trustdb.gpg: trustdb created
+gpg: key E8562897: public key "CentOS-5 Key (CentOS 5 Official Signing Key) <centos-5-key@centos.org>" imported
+gpg: Total number processed: 1
+gpg:               imported: 1
+gpg: no ultimately trusted keys found
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+$ gpg --verify md5sum.txt.asc CentOS-5.3-x86_64-bin-DVD.iso
+gpg: not a detached signature
+--------------------------------------------------------------------------------
+
+.參考資料
+================================================================================
+ * http://jakarta.apache.org/site/downloads/downloads_jmeter.cgi[The Jakarta Site - JMeter Downloads]
+================================================================================
+
+== TTY ==
+
+[NOTE]
+.參考資料
+================================================================================
+ - http://www.linusakesson.net/programming/tty/index.php[The TTY demystified]
+================================================================================
+
+== GNOME ==
+
+GNOME 的組態存在一個類似 windows registry 的樹狀結構裡。可以透過 Configuration Editor (`gconf-editor`) 來做修改。
+
+常用的 shortcuts 有：
+
+ * F11: 通常可以在全螢幕／非全螢幕兩種模式間切換。
+ * Alt+F1: 開啟系統主選單（左上角的 Applications、Places、System），可以用方向鍵操作。
+ * Alt+F2: 開啟 Run Application 的對話框，跟 Windows 裡的 Win + R 作用一樣。
+ * Alt+F4: 關閉目前的視窗。
+ * Alt+F5: 視窗回復到原來的大小。
+ * Alt+F10: 將目前的視窗放到最大。
+ * Shift+F10: 開啟右鍵選單。
+ * Ctrl+Alt+Arrow: 切換 workspace。
+ * Shift+Ctrl+Alt+Arrow: 移動目前的視窗到其他 workspace。（當目前的視窗是 full screen 時尤其好用）
+
+`gconf-editor`
+
+=== GNOME Terminal (`gnome-terminal`) ===
+
+ * Terminal > Set Title... 的功能很常用，可以透過 Configuration Editor 來設定，key 的位置在：`/schemas/apps/gnome-terminal/keybindings/set_terminal_title`。
+   ** 結果 Ubuntu 上也不給給，出現 "Currently pairs and schemas can't be edited. This will be changed in a later version." 的錯誤。
+   ** 目前暫時可以用 Alt+T -> Enter 的方式快速存取到 Terminal > Set Title... 的功能。
+ * http://people.gnome.org/~bmsmith/gconf-docs/C/gnome-terminal.html[gnome-terminal]
+
+TIP: 如果要讓自己習慣 CLI 的操作的話，可以用獨立的 workspace 來全螢幕顯示，取消 menu bar 跟 scrollbar 的顯示（`gnome-terminal --hide-menubar` 可以一開始就不顯示 menu bar）。如此一來，可以讓自己習慣 CLI 的操作，必要時也可以快速切換到其他 workspaces（這比在 Ctrl+Alt+1 跟 Ctrl+Alt+7 之間切換方便）。
+
+[NOTE]
+.參考資料
+================================================================================
+ - http://www.cyberciti.biz/faq/xclip-linux-insert-files-command-output-intoclipboard/[Copy Shell Prompt Output To Linux / UNIX X Clipboard Directly]
+ - http://linuxtidbits.wordpress.com/2008/02/22/command-line-to-clipboard/[Command Line to Clipboard « Helpful Linux Tidbits]
+================================================================================
+
+== 檔案總管（Nautilus） == 
+
+.常用的快速鍵
+--
+ * Ctrl+N - 開新視窗，顯示家目錄的內容
+ * Ctrl+T - 開新頁籤，顯示目前所在目錄的內容
+ * Shift+Ctrl+N - 建立一個新目錄
+ * Ctrl+Q - 關閉桌面上所有檔案總管的視窗
+ * Ctrl+W - 關閉目前的頁籤或視窗
+ * Shift+Ctrl+O - 在新視窗開啟選取的目錄（不知道為什麼結果還是開在新頁籤？）
+ * Alt+1 ~ Alt+9 - 切換到第 N 個頁籤
+ * Backspace, Alt+Up - 回上一層目錄
+ * Alt+Left - 到瀏覽記錄的上一個目錄（Back）
+ * Alt+Right - 到到瀏覽記錄的下一個目錄（Forward）
+ * Ctrl+1 ~ Ctrl+3 - 切換圖示（Icon）、清單（List）、精簡（Compact）檢視
+ * Alt+Home - 回到家目錄
+--
+
+TIP: 直接輸入文件可以在目前的目錄下搜尋檔案（不分大小寫），上下鍵可以用來找上一個或下一個符合條件的檔案。
+
+常用的 Plug-in 有：
+
+ * `nautilus-open-terminal` - 可以在 Nautilus 裡，按右鍵選 Open in Terminal 開出 terminal。
+
+== 操作檔案 ==
+
+ - 複製多個檔案時，可以用 `cp -v` 來提示進度。但遇到單一個大檔案就沒解了。
+
+== 壓縮檔的處理 ==
+
+=== Tar ===
+
+ - `tar -tf archive.tar` - 列出壓縮檔的內容。對於 `.tar.gz` 或 `.tar.bz` 等檔案，不用額外加 `-j` 或 `-z`。
+ - `tar -xf archive.tar -C /tmp` - 將 'archive.tar' 解壓縮到 '/tmp'。
+ - `tar -xzf archive.tar.gz -C /tmp` - 將 'archive.tar.gz' 解壓縮到 '/tmp'。
+ - `tar -xjf archive.tar.bz2 -C /tmp` - 將 'archive.tar.bz2' 解壓縮到 '/tmp'。
+ - `tar -czvf archive.tar.gz pathnames` - 將 'pathnames'（包含子目錄）壓縮成 'archive.tar.gz'。
+ - `tar -cjvf archive.tar.bz2 pathnames` - 將 'pathnames'（包含子目錄）壓縮成 'archive.tar.bz2'。
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://en.wikipedia.org/wiki/Tar_(file_format)[tar (file format) - Wikipedia, the free encyclopedia]
+ * http://www.gnu.org/software/tar/[Tar - GNU Project - Free Software Foundation (FSF)]
+   ** http://www.gnu.org/software/tar/manual/[GNU tar manual]
+================================================================================
+
+=== ZIP ===
+
+ - `unzip archive.zip -d destdir` - 將 'archive.zip' 解壓縮到 'destdir'（如果 'destdir' 不存在的話，會自動建立）。
+ - `unzip -l archive.zip` - 列出 'archive.zip' 的內容。
+ - `unzip -t archive.zip` - 檢查 'archive.zip' 有沒有問題。
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://en.wikipedia.org/wiki/ZIP_(file_format)[ZIP (file format) - Wikipedia, the free encyclopedia]
+================================================================================
+
+== Networking ==
+
+ * `netstat -na | grep `
+ * DNS 設定存放在 `/etc/resolv.conf`
+ * `wget URL -O file` - 將 URL 另存成 file
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://www.xenocafe.com/tutorials/linux/redhat/bind_multiple_ip_addresses_to_single_nic/index.php[Bind Multiple IP Addresses to a Single Network Interface Card (NIC)] (2005-09-09)
+ * http://www.debian-administration.org/articles/184[How to find out which process is listening upon a port] (2005-07-13)
+================================================================================
+
+=== Routing ===
+
+單純使用 `route` 可以印出 Kernel IP routing table。
+
+--------------------------------------------------------------------------------
+$ route
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+10.1.244.0      *               255.255.252.0   U     2      0        0 wlan0
+link-local      *               255.255.0.0     U     1000   0        0 eth0
+172.16.0.0      *               255.255.0.0     U     1      0        0 eth0
+default         localhost-2.loc 0.0.0.0         UG    0      0        0 eth0
+--------------------------------------------------------------------------------
+
+透過 `route add` 可以指定目標是某 host 或 network 的封包，往特定的 network interface 及 gateway 送。
+
+ * 除非兩張網卡接到不同的網路，通常 `dev <network_interface>` 是不用加的。
+ * 其中 `-host` 的 netmask 固定是 ++255.255.255.255++。
+
+--------------------------------------------------------------------------------
+# route add -host <host_ip> [gw <gateway_ip>] [dev <network_interface>]
+# route add -net <network_ip> netmask <netmask> [gw <gateway_ip>] [dev <network_interface>]
+--------------------------------------------------------------------------------
+
+例如：
+
+--------------------------------------------------------------------------------
+# route add -net 10.45.32.0 netmask 255.255.255.0 gw 10.1.247.254 dev wlan0
+# route add -host 10.28.6.11 gw 10.1.247.254 dev wlan0
+--------------------------------------------------------------------------------
+
+== awk ==
+
+'awk' 可以用來取出特定欄位的內容，用 `-F` 來指定欄位的分隔字元。例如：
+
+--------------------------------------------------------------------------------
+$ cat /etc/passwd | head -5
+root:x:0:0:root:/root:/bin/bash
+bin:x:1:1:bin:/bin:/sbin/nologin
+daemon:x:2:2:daemon:/sbin:/sbin/nologin
+adm:x:3:4:adm:/var/adm:/sbin/nologin
+lp:x:4:7:lp:/var/spool/lpd:/sbin/nologin
+
+$ cat /etc/passwd | head -5 | awk -F ':' '{print $1, $7}'
+root /bin/bash
+bin /sbin/nologin
+daemon /sbin/nologin
+adm /sbin/nologin
+lp /sbin/nologin
+--------------------------------------------------------------------------------
+
+
+yum list installed | grep wfbsh | awk -F ' ' '{print $1}'
+wfbsh_dbal.noarch
+wfbsh_notif.noarch
+wfbsh_protobuf.noarch
+wfbsh_report.noarch
+wfbsh_saas_sd.noarch
+wfbsh_system.noarch
+wfbsh_util.noarch
+
+== FTP Server ==
+
+`vsftpd` (Very Secure FTP Daemon) 是 Ubuntu、Red Hat 等慣用的 FTP 伺服器套件。
+
+ 1. 安裝 `vsftpd`。
++
+--------------------------------------------------------------------------------
+# yum install vsftpd
+# chkconfig vsftpd on
+--------------------------------------------------------------------------------
++
+ 2. 組態 firewall。
++
+--
+.`/etc/sysconfig/iptables`
+--------------------------------------------------------------------------------
+...
+-A RH-Firewall-1-INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+-A RH-Firewall-1-INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+-A RH-Firewall-1-INPUT -m state --state NEW -m tcp -p tcp --dport 21 -j ACCEPT <1>
+-A RH-Firewall-1-INPUT -j REJECT --reject-with icmp-host-prohibited
+COMMIT
+--------------------------------------------------------------------------------
+<1> 仿 SSH 的設定，加上這一行。
+
+然後執行：
+
+ # iptables-restore /etc/sysconfig/iptables
+--
++
+ 3. 建立使用者帳號。
++
+--------------------------------------------------------------------------------
+# useradd <ftpuser> <1>
+# passwd <ftpuser>
+--------------------------------------------------------------------------------
+<1> 其中 'ftpuser' 是專供 FTP 存取的帳號。基本上，`vsftpd` 的帳號是跟 OS 整合在一起的，如果要獨立出來的話，要組態 virtual users。
+
+細部的組態可以查詢 `man vsftpd.conf`。
+
+過程中如果遇到下面的錯誤，只要把 SELinux 停用即可。
+
+--------------------------------------------------------------------------------
+500 OOPS: cannot change directory:/home/jeremy
+Login failed.
+--------------------------------------------------------------------------------
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://en.wikipedia.org/wiki/Vsftpd[vsftpd - Wikipedia, the free encyclopedia]
+ * http://www.centos.org/docs/5/html/Deployment_Guide-en-US/s1-ftp-servers.html[Red Hat Enterprise Linux 5 > Deployment Guide > 22.2. FTP Servers]
+ * https://help.ubuntu.com/11.04/serverguide/C/ftp-server.html[Ubuntu 11.04 > Ubuntu Server Guide > File Servers]
+ * http://www.cyberciti.biz/tips/rhel-fedora-centos-vsftpd-installation.html[Red Hat / CentOS VSFTPD FTP Server Configuration] (2009-05-21)
+ * http://www.cyberciti.biz/faq/rhel-centos-linux-install-ftp-server/[CentOS / Red Hat Linux Install VSFTPD FTP Server] (2008-05-12)
+ * http://www.cyberciti.biz/faq/linux-delete-user-password/[Linux: Delete user password] (2006-02-16)
+================================================================================
+
+== nohup ==
+
+ nohup COMMAND [ARG] &
+ exit
+
+忽略 HUP (hangup) signal，使得 'COMMAND' 在使用者登出之後還能繼續執行。另外 `nohup` 並不會自動將 'COMMAND' 擺到背景執行，所以必須自己在最後面加上 `&`，結果很像是將 `COMMAND` 變成一個 daemon。
+
+standard input/output/error 可以手動轉向，例如：
+
+ $ nohup COMMAND > stdout.log 2> stderr.log < stdin.txt &
+
+沒有被手動轉向的部份（也就是 terminal），`nohup` 會自動將它導掉：
+
+ * stderr -> stdout
+ * stdin -> `/dev/null`
+ * stdout -> `nohup.out`（目前所在目錄）
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://en.wikipedia.org/wiki/Nohup[nohup - Wikipedia, the free encyclopedia]
+ * http://manpages.debian.net/cgi-bin/man.cgi?query=nohup[Debian Hypertext Man Pages: nohup]
+================================================================================
+
+== 延伸閱讀 ==
+
+ * link:nautilus.html[Nautilus]
+
+== 參考資料 ==
+
+.網站
+--
+ * http://iso.linuxquestions.org/[> Download Linux - LQ ISO]
+--
+
+.書籍
+--
+ * http://www.wiley.com/WileyCDA/WileyTitle/productCd-111821854X.html[Wiley - Linux Bible] (2012-08 est.)
+ * http://www.wiley.com/WileyCDA/WileyTitle/productCd-1118106792.html[Wiley - Linux Essentials] (2012-04)
+ * http://shop.oreilly.com/product/0636920023029.do[O'Reilly - Linux Pocket Guide, 2nd Edition] (2012-03)
+ * http://www.wiley.com/WileyCDA/WileyTitle/productCd-0470929987.html[Wiley - Linux Bible 2011 Edition: Boot up to Ubuntu, Fedora, KNOPPIX, Debian, openSUSE, and 13 Other Distributions] (2011-01)
+ * http://www.wiley.com/WileyCDA/WileyTitle/productCd-0470770198.html[Wiley - Linux All-in-One For Dummies, 4th Edition] (2010-09)
+ * http://www.packtpub.com/linux-email/book[Packt - Linux Email] (2009-11)
+ * http://www.apress.com/9781430224495[Apress - Linux System Administration Recipes] (2009-10)
+ * http://shop.oreilly.com/product/9780596154493.do[O'Reilly - Linux in a Nutshell, 6th Edition] (2009-09)
+ * http://www.wiley.com/WileyCDA/WileyTitle/productCd-0470467010.html[Wiley - Linux For Dummies, 9th Edition] (2009-08)
+ * http://www.peachpit.com/store/product.aspx?isbn=0321636783[Peachpit - Unix and Linux: Visual QuickStart Guide, 4th Edition] (2009-06)
+ * http://www.apress.com/9781430219125[Apress - Pro Linux System Administration] (2009-06)
+ * http://www.apress.com/9781430216506[Apress - Mac for Linux Geeks] (2009-01)
+ * http://www.wiley.com/WileyCDA/WileyTitle/productCd-0470147733.html[Wiley - TCP/IP Architecture, Design and Implementation in Linux] (2008-12)
+ * http://www.apress.com/9781430210597[Apress - Automating Linux and Unix System Administration] (2008-12)
+ * http://www.wrox.com/WileyCDA/WroxTitle/Professional-Linux-Kernel-Architecture.productCd-0470343435.html[Wrox - Professional Linux Kernel Architecture] (2008-10)
+ * http://shop.oreilly.com/product/9780596515829.do[O'Reilly - Python for Unix and Linux System Administration] (2008-08)
+ * http://shop.oreilly.com/product/9780596529680.do[O'Reilly - Building Embedded Linux Systems, 2nd Edition] (2008-08)
+ * http://shop.oreilly.com/product/9780596101954.do[O'Reilly - X Power Tools] (2007-12)
+ * http://shop.oreilly.com/product/9780596102487.do[O'Reilly - Linux Networking Cookbook] (2007-11)
+ * http://nostarch.com/firewalls.htm[No Starch - Linux Firewalls] (2007-10)
+ * http://shop.oreilly.com/product/9781593271411.do[O'Reilly - Linux Firewalls] (2007-09)
+ * http://www.packtpub.com/linux-thin-client-networks-open-source/book[Packt - Linux Thin Client Networks Design and Deployment] (2007-08)
+ * http://shop.oreilly.com/product/9780596009526.do[O'Reilly - Linux System Administration] (2007-03)
+ * http://www.packtpub.com/pluggable-authentication-modules/book[Packt - Pluggable Authentication Modules: The Definitive Guide to PAM for Linux SysAdmins and C Developers] (2007-01)
+ * http://shop.oreilly.com/product/9780596100797.do[O'Reilly - Linux Kernel in a Nutshell] (2006-12)
+ * http://www.packtpub.com/linux-firewalls/book[Packt - Designing and Implementing Linux Firewalls and QoS using netfilter, iproute2, NAT and l7-filter] (2006-10)
+ * http://shop.oreilly.com/product/9780596008017.do[O'Reilly - Linux Annoyances for Geeks] (2006-04)
+ * http://shop.oreilly.com/product/9780596002558.do[O'Reilly - Understanding Linux Network Internals] (2005-12)
+ * http://shop.oreilly.com/product/9780596007607.do[O'Reilly - Running Linux, 5th Edition] (2005-12)
+ * http://shop.oreilly.com/product/9780596100827.do[O'Reilly - Linux Server Hacks, Volume Two] (2005-12)
+ * http://shop.oreilly.com/product/9780596005658.do[O'Reilly - Understanding the Linux Kernel, 3rd Edition] (2005-11)
+ * http://shop.oreilly.com/product/9780596100766.do[O'Reilly - Linux Multimedia Hacks] (2005-11)
+ * http://shop.oreilly.com/product/9780596101046.do[O'Reilly - Linux Desktop Pocket Guide] (2005-09)
+ * http://www.packtpub.com/linux-email-set-and-run-small-office-email-server/book[Packt - Linux Email: Set up and Run a Small Office Email Server] (2005-07)
+ * http://nostarch.com/cluster.htm[No Starch - Linux Enterprise Cluster] (2005-05)
+ * http://www.wrox.com/WileyCDA/WroxTitle/Beginning-Unix.productCd-0764579940.html[Wrox - Beginning Unix] (2005-04)
+ * http://www.apress.com/9781590594445[Apress - Hardening Linux] (2005-02)
+ * http://nostarch.com/lcbk2.htm[No Starch - Linux Cookbook, 2nd Edition] (2004-08)
+ * http://www.apress.com/9781590593226[Apress - The Definitive Guide to Linux Network Programming] (2004-08)
+ * http://nostarch.com/howlinuxworks.htm[No Starch - How Linux Works] (2004-05)
+ * http://shop.oreilly.com/product/9780596003302.do[O'Reilly - Unix Power Tools, 3rd Edition] (2002-10)
+ * http://www.apress.com/9781893115279[Apress - Tuning and Customizing a Linux System] (2002-07)
+ * http://www.apress.com/9781893115460[Apress - Linux in Small Business] (2002-01)
+ *
+ * http://www.wiley.com/WileyCDA/Section/id-WILEY2_SEARCH_RESULT.html?query=linux[Wiley: Search Results]
+ * http://www.informit.com/search/index.aspx?query=linux[Search Results | InformIT]...
+--
+
+.文件
+--
+ * http://tldp.org/[TLDP (The Linux Documentation Project)]
+   ** http://tldp.org/LDP/intro-linux/html/[Introduction to Linux]
+--
+
+////////////////////////////////////////////////////////////////////////////////
+
+ * UNIX on the other hand needed only a small piece of that special code, which is now commonly named the kernel. This kernel is the only piece of code that needs to be adapted for every specific system and forms the base of the UNIX system. The operating system and all other functions were built around this kernel and written in a higher programming language, C. This language was especially developed for creating the UNIX system.
+ * Linus 從一封 POSIX 的詢問信開始。From the start, it was Linus' goal to have a free system that was completely compliant with the original UNIX. That is why he asked for POSIX standards, POSIX still being the standard for UNIX. Linux is a full UNIX clone
+ * The idea behind Open Source software is rather simple: when programmers can read, distribute and change code, the code will mature.
+ * SAMBA, and its achievement is the reverse engineering of the Server Message Block (SMB)/Common Internet File System (CIFS) protocol used for file- and print-serving on PC-related machines, natively supported by MS Windows NT and OS/2, and Linux.
+ * Apache HTTP server project. The server runs on UNIX, Windows NT and many other operating systems. Originally known as "A PAtCHy server", based on existing code and a series of "patch files"
+ * As with UNIX, a Linux system expects to run without rebooting all the time.
+ * The Linux system is based on GNU tools (Gnu's Not UNIX), which provide a set of standard ways to handle and use the system.
+ * RPM (RedHat Package Manager，不只能用在 RedHat), dpkg (apt-get，也可以管理 RPM？)
+ * The Linux kernel (the bones of your system) is not part of the GNU project but uses the same license as GNU software. A great majority of utilities and development tools (the meat of your system), which are not Linux-specific, are taken from the GNU project. Because any usable system must contain both the kernel and at least a minimal set of utilities, some people argue that such a system should be called a GNU/Linux system. 
+ * LinuxPPC??
+ * window and desktop managers: Gnome, KDE
+ * Knoppix: an operating system that runs from your CD-ROM, you don't need to install anything. 
+ * Should I make a large partition in order to install virtual systems later on, or is this a virtual installation itself? 
+
+////////////////////////////////////////////////////////////////////////////////
+

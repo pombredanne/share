@@ -1,0 +1,657 @@
+= Android / Official / Dev Guide =
+<<TableOfContents>>
+
+== The Developer's Guide ==
+http://developer.android.com/guide/index.html @2010/01/16
+
+Welcome to the Android Dev Guide! The Dev Guide is a practical introduction to developing applications for Android. It explores the concepts behind Android, the framework for constructing an application, and the tools for developing, testing, and publishing software for the platform.
+
+__The Dev Guide holds most of the documentation for the Android platform, except for reference material on the framework API.__ For API specifications, go to the Reference tab above.
+
+As you can see in the panel on the left, the Dev Guide is divided into a handful of sections. They are:
+
+ * Android Basics - An initial orientation to Android — what it is, what it offers, and how your application fits in.
+
+ * Framework Topics - Discussions of particular parts of the Android framework and API. For an overview of the framework, begin with http://developer.android.com/guide/topics/fundamentals.html[Application Fundamentals]. Then explore other topics — from designing a user interface and setting up resources to storing data and using permissions — as needed.
+
+ * Developing - Directions for using Android's development and debugging tools, and for testing the results.
+
+ * Publishing - Instructions on how to prepare your application for deployment and how to publish it when it's ready.
+
+ * Best Practices - Recommendations on preferred techniques for writing applications that perform efficiently and work well for the user.
+
+ * Tutorials and Samples - Step-by-step tutorials and sample code demonstrating how an Android application is constructed.
+
+ * Appendix - Reference information and specifications, as well as FAQs, a glossary of terms, and other information.
+
+The first step in programming for Android is downloading the SDK (software development kit). For instructions and information about the kit, go to the SDK tab above.
+
+After you have the SDK, begin by looking over the Dev Guide. If you want to start by getting a quick look at the code, the short http://developer.android.com/guide/tutorials/hello-world.html[Hello World] tutorial walks you through a standard "Hello, World" application as it would be written for the Android platform. __The Application Fundamentals document is a good place to start for an understanding of the application framework.__
+
+For additional help, consider joining one or more of the Android discussion groups. Go to the http://developer.android.com/resources/community-groups.html[Community] pages for more information.
+
+To return to this page later, just click the "Dev Guide" tab while any Dev Guide page is loaded.
+
+== Android Basics / What is Android? ==
+http://developer.android.com/guide/basics/what-is-android.html @2010/01/16
+
+Android is a software stack for mobile devices that includes an operating system, middleware and key applications. The Android SDK provides the tools and APIs necessary to begin developing applications on the Android platform using the Java programming language.
+
+=== Features ===
+
+ * __'''Application framework enabling reuse and replacement of ''components'' (下面 Application Components 一節有更詳細的說明; 注意這裡的 Components 不單只是 UI 元件而已...)'''__
+
+ * http://en.wikipedia.org/wiki/Dalvik_virtual_machine[Dalvik] ([d&l-vik]) virtual machine optimized for mobile devices
+
+ * __Integrated browser based on the open source http://en.wikipedia.org/wiki/Webkit[WebKit] engine (按 http://en.wikipedia.org/wiki/List_of_web_browsers#WebKit-based_browsers[Wikipedia] 的說法, !WebKit 目前被用在 Android、Google Chrome、Safari 等)__
+
+ * Optimized graphics powered by a custom 2D graphics library; 3D graphics based on the http://www.opengl.org/[OpenGL] ES 1.0 specification (hardware acceleration optional)
+
+ * __SQLite for ''structured data storage''__
+
+ * Media support for common audio, video, and still image formats (MPEG4, H.264, MP3, AAC, AMR, JPG, PNG, GIF)
+
+ * GSM Telephony (hardware dependent)
+
+ * Bluetooth, EDGE, 3G, and WiFi (hardware dependent)
+
+ * Camera, GPS, compass(指南針), and accelerometer (加速計; hardware dependent)
+
+ * Rich development environment including a device emulator, tools for debugging, memory and performance profiling, and a plugin for the Eclipse IDE
+
+=== Android Architecture ===
+
+The following diagram shows the major components of the Android operating system. Each section is described in more detail below. (最底層是用 Linux Kernel)
+
+{{attachment:system-architecture.jpg}}
+
+=== Applications ===
+
+Android will ship with a set of ''core applications'' including an email client, SMS program, calendar, maps, browser, contacts, and others. __All applications are written using the Java programming language.__
+
+=== Application Framework ===
+
+By providing an open development platform, Android offers developers the ability to build extremely rich and innovative applications. Developers are free to take advantage of the device hardware, access location information, run background services, set alarms, add notifications to the status bar, and much, much more.
+
+__'''Developers have full access to the same framework APIs used by the core applications.''' The application architecture is designed to simplify the reuse of components; any application can publish its ''capabilities'' and any other application may then make use of those capabilities (subject to(受限於) security constraints enforced by the framework). This same mechanism allows components to be replaced by the user.__
+
+Underlying all applications is a set of services and systems, including:
+
+ * A rich and extensible set of `Views` that can be used to build an application, including lists, grids, text boxes, buttons, and even an ''embeddable web browser''
+
+ * __http://developer.android.com/guide/topics/providers/content-providers.html[Content Providers] that enable applications to access data from other applications (such as Contacts), or to share their own data__
+
+ * A http://developer.android.com/guide/topics/resources/resources-i18n.html[Resource Manager], providing access to non-code resources such as localized strings, graphics, and layout files
+
+ * A http://developer.android.com/reference/android/app/NotificationManager.html[Notification Manager] that enables all applications to display custom alerts in the status bar
+
+ * __An http://developer.android.com/reference/android/app/Activity.html[Activity Manager] that manages the ''lifecycle'' of applications and provides a common ''navigation backstack'' (回溯導航; 參考下面 Activities and Tasks 關於 BACK 鈕的說明)__
+
+For more details and a walkthrough of an application, see the http://developer.android.com/resources/tutorials/notepad/index.html[Notepad Tutorial].
+
+=== Libraries ===
+
+__Android includes a set of C/C++ libraries used by various components of the Android system. '''These capabilities are exposed to developers through the Android application framework.'''__ Some of the core libraries are listed below:
+
+ * System C library - a BSD-derived implementation of the standard C system library (`libc`), tuned for embedded Linux-based devices
+
+ * Media Libraries - based on http://www.packetvideo.com/[PacketVideo's OpenCORE]; the libraries support playback and recording of many popular audio and video formats, as well as static image files, including MPEG4, H.264, MP3, AAC, AMR, JPG, and PNG
+
+ * Surface Manager - manages access to the display subsystem and seamlessly composites 2D and 3D graphic layers from multiple applications
+
+ * !LibWebCore - a modern web browser engine which powers both the Android browser and an embeddable web view
+
+ * http://sgl.sourceforge.net/[SGL] - the underlying 2D graphics engine
+
+ * 3D libraries - an implementation based on OpenGL ES 1.0 APIs; the libraries use either hardware 3D acceleration (where available) or the included, highly optimized 3D software rasterizer(光柵; 將影像轉換為像素而言)
+
+ * http://www.freetype.org/[FreeType] - bitmap and vector font rendering
+
+ * SQLite - a powerful and lightweight relational database engine available to all applications
+
+=== Android Runtime ===
+
+Android includes a set of core libraries that provides most of the functionality available in the core libraries of the Java programming language.
+
+__'''Every Android application runs in its own process, with its own instance of the Dalvik virtual machine. Dalvik has been written so that a device can run multiple VMs efficiently.''' The Dalvik VM executes files in the Dalvik Executable (`.dex`) format which is optimized for minimal memory footprint. The VM is ''register-based'', and runs classes compiled by a Java language compiler that have been transformed into the `.dex` format by the included "`dx`" tool. '''(就這點來看, 它並沒有背離 Java 的精神, 這完全是為了考量在資源受限的環境下, 如何讓 Java 盡情地發揮...)'''__
+
+The Dalvik VM relies on the Linux kernel for underlying functionality such as threading and low-level memory management.
+
+按 http://ithelp.ithome.com.tw/question/10011817[什麼是Dalvik Virtual Machine?] 一文的解釋, 上面 Register-Based 指的是 - 變數皆存放於暫存器中, 虛擬機器的指令就會少一點, 速度也就會再加快一些.
+
+=== Linux Kernel ===
+
+Android relies on Linux version 2.6 for core system services such as security, memory management, process management, network stack, and driver model. __The kernel also acts as an ''abstraction layer'' between the hardware and the rest of the software stack.__
+
+== Framework Topics / Application Fundamentals ==
+http://developer.android.com/guide/topics/fundamentals.html @2010/01/30
+
+__Android applications are written in the Java programming language. The compiled Java code — along with any data and resource files required by the application — is bundled by the `aapt` tool into an ''Android package'', an archive file marked by an `.apk` suffix. This file is the vehicle(載體) for distributing the application and installing it on mobile devices; it's the file users download to their devices. '''All the code in a single `.apk` file is considered to be one application.'''__
+
+In many ways, each Android application ''lives in its own world'':
+
+ * By default, every application runs in its own Linux process. Android starts the process when any of the application's code needs to be executed, and shuts down the process when it's no longer needed and system resources are required by other applications.
+
+ * __Each process has its own Java virtual machine (VM), so application code runs in isolation from the code of all other applications.__
+
+ * __'''By default, each application is assigned a unique Linux user ID.''' Permissions are set so that the application's files are visible only that user, only to the application itself — although there are ways to export them to other applications as well.__
+
+__It's possible to arrange for two applications to share the same user ID, in which case they will be able to see each other's files. To conserve(節約) system resources, applications with the same ID can also arrange to run in the same Linux process, sharing the same VM.__ 
+
+=== Application Components ===
+
+__'''A central feature of Android is that one application can make use of elements of other applications''' (provided those applications permit it). For example, if your application needs to display a scrolling list of images and another application has developed a suitable scroller and made it available to others, you can call upon(召喚) that scroller to do the work, rather than develop your own. '''Your application doesn't incorporate the code of the other application or link to it. Rather, it simply starts up that piece of the other application when the need arises.'''__
+
+__For this to work, '''the system must be able to start an application process when any ''part'' of it is needed, and instantiate the Java objects for that part. (假設 B 用到 A 的某些部份, 當 B 執行到那個部份時, A 也會被執行起來在另一個 Process 裡供 B 使用)''' Therefore, unlike applications on most other systems, Android applications don't have a single ''entry point'' for everything in the application (no `main()` function, for example). Rather, they have essential components that the system can instantiate and run as needed.__ There are four types of components:
+
+----
+
+'''Activities'''
+
+__An ''activity'' presents a visual user interface for one ''focused endeavor''(企圖?) the user can undertake(從事).__ For example, an activity might present a list of menu items users can choose from or it might display photographs along with their captions. A text messaging application might have one activity that shows a list of contacts to send messages to, a second activity to write the message to the chosen contact, and other activities to review old messages or change settings. __'''Though they work together to form a cohesive(有粘性的) user interface, each activity is independent of the others. (拆開來, 就有機會做不同的組合...)''' Each one is implemented as a subclass of the `Activity` base class.__
+
+An application might consist of just one activity or, like the text messaging application just mentioned, it may contain several. What the activities are, and how many there are depends, of course, on the application and its design. __Typically, one of the activities is marked as the first one that should be presented to the user when the application is launched. Moving from one activity to another is accomplished by having the ''current activity'' start the next one.__
+
+__Each activity is given a ''default window'' to draw in. Typically, the window fills the screen, but it might be smaller than the screen and ''float'' on top of other windows. An activity can also make use of additional windows__ — for example, a pop-up dialog that calls for a user response in the midst of the activity, or a window that presents users with vital information when they select a particular item on-screen.
+
+__The visual content of the window is provided by a hierarchy of views — objects derived from the base `View` class. Each view controls a particular ''rectangular'' space within the window. '''Parent views contain and organize the layout of their children. Leaf views (those at the bottom of the hierarchy) draw in the rectangles they control and respond to user actions directed at that space.''' Thus, views are where the activity's interaction with the user takes place.__ For example, a view might display a small image and initiate an action when the user taps(輕叩) that image. Android has a number of ready-made views that you can use — including buttons, text fields, scroll bars, menu items, check boxes, and more.
+
+__'''從 Activity (活動) 的字面來看, 一開始很難把它跟畫面連結在一起; 從 Activity 內部的主要組成 - Views - 是跟使用者產生互動的地方, 就這點來看 "Activity" 的用法就不會覺得怪. 不過按照 http://developer.android.com/resources/tutorials/hello-world.html[Hello World] 一文中 "An activity is not required to have a user interface, but usually will" 的說法, 如果 Activity 沒有 UI 的話又算什麼? Controller? (2010-01-19)'''__
+
+__A view hierarchy is placed within an activity's window by the `Activity.setContentView()` method. The ''content view'' is the `View` object at the root of the hierarchy.__ (See the separate http://developer.android.com/guide/topics/ui/index.html[User Interface] document for more information on views and the hierarchy.)
+
+----
+
+'''Services'''
+
+__A ''service'' doesn't have a visual user interface, but rather runs in the background for an indefinite period of time.__ For example, a service might play background music as the user attends to(專心於...) other matters, or it might fetch data over the network or calculate something and provide the result to activities that need it. (跟 Activities 合作; 下面提到 Activities 可能會叫用 Services 起來提供支援) Each service extends the `Service` base class.
+
+A prime example is a media player playing songs from a play list. The player application would probably have one or more activities that allow the user to choose songs and start playing them. However, the music playback itself would not be handled by an activity because users will expect the music to keep playing even after they leave the player and begin something different. __To keep the music going, the media player activity could start a service to run in the background. The system would then keep the music playback service running even after the activity that started it leaves the screen.__
+
+__'''It's possible to connect to (bind to) an ongoing service (and start the service if it's not already running). While connected, you can communicate with the service through an interface that the service exposes.'''__ For the music service, this interface might allow users to pause, rewind, stop, and restart the playback.
+
+__'''Like activities and the other components, services run in the ''main thread'' of the application process. (這跟一開始 "run in the background" 的說法不太一致?)''' So that they won't block other components or the user interface, they often spawn another thread for time-consuming tasks (like music playback).__ See http://developer.android.com/guide/topics/fundamentals.html#procthread[Processes and Threads], later.
+
+----
+
+'''Broadcast receivers'''
+
+__A ''broadcast receiver'' is a component that does nothing but receive and react to ''broadcast announcements''.__ Many broadcasts originate in system code — for example, announcements that the timezone has changed, that the battery is low, that a picture has been taken, or that the user changed a language preference. Applications can also initiate broadcasts — for example, to let other applications know that some data has been downloaded to the device and is available for them to use.
+
+An application can have any number of broadcast receivers to respond to any announcements it considers important. All receivers extend the `BroadcastReceiver` base class.
+
+__Broadcast receivers do not display a user interface. However, they may start an activity in response to the information they receive (跟 Activities 合作), or they may use the `NotificationManager` to alert the user. Notifications can get the user's attention in various ways — flashing the backlight, vibrating the device, playing a sound, and so on. They typically place a persistent icon in the status bar, which users can open to get the message.__
+
+----
+
+'''Content providers'''
+
+__'''A ''content provider'' makes a specific set of the application's data available to other applications.''' The data can be stored in the file system, in an SQLite database, or in any other manner that makes sense. (外界不需要知道儲存的細節) The content provider extends the `ContentProvider` base class to implement a standard set of methods that enable other applications to retrieve and store data of the type it controls. However, applications do not call these methods directly. Rather they use a `ContentResolver` object and call its methods instead. A `ContentResolver` can talk to any content provider; it cooperates with the provider to manage any ''interprocess communication'' that's involved.__
+
+See the separate http://developer.android.com/guide/topics/providers/content-providers.html[Content Providers] document for more information on using content providers.
+
+----
+
+__Whenever there's a ''request'' that should be handled by a particular component, Android makes sure that the application process of the component is running, starting it if necessary, and that an appropriate instance of the component is available, creating the instance if necessary. (呼應一開始 Multiple Entry Points 的說法)__
+
+__'''到處可以看到 Android 非常重視 Applications/Components 間可以 "組合應用" 的規劃 - 有粘性但又獨立; 跳脫現有作業系統的框框, 從系統平台的層級開始支援起, 可以想見它如果成為桌面應用標準的美好.''' Activity 可以叫用其他 Activities, Activity 可以視需要叫用 Services 提供支援, Broadcast Receiver 也可以叫用 Activities 做為叫到某種事件後的回應... (Components 間如何叫用對方, 可以參考下面 Activating components: intents 一節的說明) 2010-01-17'''__
+
+==== Activating components: intents(意圖) ====
+
+__'''Content providers are ''activated'' when they're targeted by a request from a `ContentResolver`. The other three components — activities, services, and broadcast receivers — are activated by ''asynchronous'' messages called ''intents''.''' An intent is an `Intent` object that holds the content of the message. (這裡 Intents 的用途很廣, 跟事件驅動中的 Events 不太一樣...)__ For activities and services, it names the action being requested and specifies the URI of the data to act on, among other things. For example, it might convey(傳達) a request for an activity to present an image to the user or let the user edit some text. For broadcast receivers, the `Intent` object names the action being announced. For example, it might announce to interested parties that the camera button has been pressed.
+
+There are separate methods for activiating each type of component:
+
+ * __An activity is launched (or given something new to do) by passing an `Intent` object to `Context.startActivity()` or `Activity.startActivityForResult()`. The responding activity can look at the ''initial intent'' that caused it to be launched by calling its `getIntent()` method. (可以用來取得 Caller 傳進來的資料) Android calls the activity's `onNewIntent()` method to pass it any ''subsequent intents''.__
+
+ . __One activity often starts the next one. If it expects a result back from the activity it's starting, it calls `startActivityForResult()` instead of `startActivity()`.__ For example, if it starts an activity that lets the user pick a photo, it might expect to be returned the chosen photo. __The result is returned in an `Intent` object that's passed to the calling activity's `onActivityResult()` method. '''(注意 `startActivityForResult()` http://developer.android.com/reference/android/app/Activity.html#startActivityForResult(android.content.Intent,%20int)[並沒有回傳值], 呼叫端是非同步地透過 `onActivityResult()` 被通知執行結果, 這一點跟 GWT-RPC 中 Asynchrounous Interfaces 的設計很像!!)'''__
+
+ * __A service is started (or new instructions are given to an ongoing service) by passing an `Intent` object to `Context.startService()`. Android calls the service's `onStart()` method and passes it the `Intent` object.__
+
+ . __Similarly, an intent can be passed to `Context.bindService()` to establish an ongoing connection between the calling component and a target service. The service receives the `Intent` object in an `onBind()` call. (If the service is not already running, `bindService()` can optionally start it.)__ For example, an activity might establish a connection with the music playback service mentioned earlier so that it can provide the user with the means (a user interface) for controlling the playback. The activity would call `bindService()` to set up that connection, and then call methods defined by the service to affect the playback.
+
+ . A later section, http://developer.android.com/guide/topics/fundamentals.html#rpc[Remote procedure calls], has more details about binding to a service.
+
+ * __An application can initiate a broadcast by passing an `Intent` object to methods like `Context.sendBroadcast()`, `Context.sendOrderedBroadcast()`, and `Context.sendStickyBroadcast()` in any of their variations. Android delivers the intent to all interested broadcast receivers by calling their `onReceive()` methods.__
+
+For more on intent messages, see the separate article, http://developer.android.com/guide/topics/intents/intents-filters.html[Intents and Intent Filters].
+
+==== Shutting down components ====
+
+__A content provider is ''active'' only while it's responding to a request from a `ContentResolver`. And a broadcast receiver is active only while it's responding to a broadcast message. So there's no need to explicitly shut down these components.__
+
+__Activities, on the other hand, provide the user interface. They're in a ''long-running conversation'' with the user and may remain active, even when ''idle'', as long as the conversation continues. Similarly, services may also remain running for a long time.__ So Android has methods to shut down activities and services in an orderly(有系統的) way:
+
+ * An activity can be shut down by calling its `finish()` method. One activity can shut down another activity (one it started with `startActivityForResult()`) by calling `finishActivity()`.
+
+ * A service can be stopped by calling its `stopSelf()` method, or by calling `Context.stopService()`.
+
+__Components might also be shut down by the system when they are no longer being used or when Android must reclaim(收回) memory for more active components.__ A later section, http://developer.android.com/guide/topics/fundamentals.html#lcycles[Component Lifecycles], discusses this possibility and its ramifications in more detail. 
+
+==== The manifest file ====
+
+Before Android can start an application component, it must ''learn'' (知悉) that the component exists. Therefore, applications declare their components in a manifest file that's bundled into the Android package, the `.apk` file that also holds the application's code, files, and resources.
+
+The manifest is a structured XML file and is always named `AndroidManifest.xml` for all applications. __It does a number of things in addition to declaring the application's components, such as naming any libraries the application needs to be linked against (besides the default Android library; 跟 GWT 可以用 `<inherits/>` 引入其他 Modules 的做法很類似) and identifying any permissions the application expects to be granted.__
+
+But the principal task of the manifest is to inform Android about the application's components. For example, an activity might be declared as follows:
+
+ {{{
+<?xml version="1.0" encoding="utf-8"?>
+<manifest . . . >
+  <application . . . >
+    <activity android:name="com.example.project.FreneticActivity"
+              android:icon="@drawable/small_pic.png"
+              android:label="@string/freneticLabel" 
+              . . .  >
+    </activity>
+    . . .
+  </application>
+</manifest>
+ }}}
+
+The `name` attribute of the `<activity>` element names the `Activity` subclass that implements the activity. The `icon` and `label` attributes point to resource files containing an icon and label that can be displayed to users to represent the activity.
+
+The other components are declared in a similar way — `<service>` elements for services, `<receiver>` elements for broadcast receivers, and `<provider>` elements for content providers. __Activities, services, and content providers that are not declared in the manifest are not visible to the system and are consequently never run. However, broadcast receivers can either be declared in the manifest, or they can be created dynamically in code (as `BroadcastReceiver` objects) and registered with the system by calling `Context.registerReceiver()`.__
+
+For more on how to structure a manifest file for your application, see http://developer.android.com/guide/topics/manifest/manifest-intro.html[The AndroidManifest.xml File]. 
+
+==== Intent filters ====
+
+__An `Intent` object can explicitly name a target component. If it does, Android finds that component (based on the declarations in the manifest file) and activates it. But if a target is not explicitly named, Android must locate the best component to respond to the intent. It does so by comparing the `Intent` object to the ''intent filters'' of potential targets. A component's intent filters inform Android of the kinds of intents the component is able to handle.__ Like other essential information about the component, they're declared in the manifest file. Here's an extension of the previous example that adds two intent filters to the activity:
+
+ {{{
+<?xml version="1.0" encoding="utf-8"?>
+<manifest . . . >
+  <application . . . >
+    <activity android:name="com.example.project.FreneticActivity"
+              android:icon="@drawable/small_pic.png"
+              android:label="@string/freneticLabel" 
+              . . .  >
+      <intent-filter . . . >
+        <action android:name="android.intent.action.MAIN" />
+        <category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
+      <intent-filter . . . >
+        <action android:name="com.example.project.BOUNCE" />
+        <data android:mimeType="image/jpeg" />
+        <category android:name="android.intent.category.DEFAULT" />
+      </intent-filter>
+    </activity>
+    . . .
+  </application>
+</manifest>
+ }}}
+
+__The first filter in the example — the combination of the action "`android.intent.action.MAIN`" and the category "`android.intent.category.LAUNCHER`" — is a common one. '''It marks the activity as one that should be represented in the ''application launcher'', the screen listing applications users can launch on the device.''' In other words, the activity is the ''entry point'' for the application, the initial one users would see when they choose the application in the launcher. (就像 http://developer.android.com/resources/tutorials/hello-world.html[Hello World Tutorial], 它的 `AndroidManifest.xml` 也有宣告相同組合的 Intent Filter, 因此在 Application Launcher 裡有 "Hello, Android" 這支應用程式可以點選)__
+
+The second filter declares an action that the activity can perform on a particular type of data.
+
+__A component can have any number of intent filters, each one declaring a different set of ''capabilities''. If it doesn't have any filters, it can be activated only by intents that explicitly name the component as the target.__
+
+For a broadcast receiver that's created and registered in code, the intent filter is instantiated directly as an `IntentFilter` object. All other filters are set up in the manifest.
+
+For more on intent filters, see a separate document, http://developer.android.com/guide/topics/intents/intents-filters.html[Intents and Intent Filters].
+
+=== Activities and Tasks (這一段不是很好理解, 要真正試過才知道...) ===
+
+__As noted earlier, one activity can start another, '''including one defined in a different application.'''__ Suppose, for example, that you'd like to let users display a street map of some location. There's already an activity that can do that, so all your activity needs to do is put together(裝配) an `Intent` object with the required information and pass it to `startActivity()`. The map viewer will display the map. __When the user hits the BACK key, your activity will reappear on screen.__
+
+__To the user, it will seem as if the map viewer is part of the same application as your activity, even though it's defined in another application and runs in that application's process. '''Android maintains this user experience by keeping both activities in the same ''task''. Simply put, a task is what the user experiences as an "application." It's a group of related activities, arranged in a ''stack''. (這就是 http://tech.chinatimes.com/2007Cti/2007Cti-News/Inc/2007cti-news-Tech-inc/Tech-Content/0,4703,12050903+122007110700130,00.html[Google行動平台總監：Android特色 軟體可做堆疊] 一文所說的 "堆疊")''' The ''root activity'' in the stack is the one that began the task — typically, it's an activity the user selected in the application launcher. The activity at the top of the stack is one that's currently running — the one that is the focus for user actions. When one activity starts another, the new activity is pushed on(推進) the stack; it becomes the ''running activity''. The previous activity remains in the stack. When the user presses the BACK key, the current activity is popped from the stack, and the previous one resumes as the running activity.__
+
+__The stack contains objects, so if a task has more than one instance of the same `Activity` subclass open — multiple map viewers, for example — the stack has a separate entry for each instance. (為什麼要特別強調這個?) '''Activities in the stack are never rearranged, only pushed and popped.'''__
+
+__A task is a stack of activities, not a class or an element in the manifest file. So there's no way to set values for a task independently of its activities. Values for the task as a whole are set in the root activity.__ For example, the next section will talk about the "affinity of a task"; that value is read from the ''affinity set'' for the task's root activity.
+
+__'''All the activities in a task move together as a unit. The entire task (the entire activity stack) can be brought to the foreground or sent to the background.''' Suppose, for instance, that the ''current task'' has four activities in its stack — three under the current activity. The user presses the HOME key, goes to the application launcher, and selects a new application (actually, a new task). The current task goes into the background and the root activity for the new task is displayed. Then, after a short period, the user goes back to the home screen and again selects the previous application (the previous task; 一個 Application 同時間只能被執行一次[?]). That task, with all four activities in the stack, comes forward. When the user presses the BACK key, the screen does not display the activity the user just left (the root activity of the previous task). Rather, the activity on the top of the stack is removed and the previous activity in the same task is displayed.__
+
+__The behavior just described is the default behavior for activities and tasks. But there are ways to modify almost all aspects of it. (跳脫原有的模式, 會不會造成使用者操作習慣上的困擾?)__ The association of activities with tasks, and the behavior of an activity within a task, is controlled by the interaction between ''flags'' set in the `Intent` object that started the activity and attributes set in the activity's `<activity>` element in the manifest. Both ''requester'' and ''respondent'' have a say in what happens.
+
+In this regard, the principal(主要的) `Intent` flags are:
+
+ * `FLAG_ACTIVITY_NEW_TASK`
+ * `FLAG_ACTIVITY_CLEAR_TOP`
+ * `FLAG_ACTIVITY_RESET_TASK_IF_NEEDED`
+ * `FLAG_ACTIVITY_SINGLE_TOP`
+
+The principal `<activity>` attributes are:
+
+ * `taskAffinity`
+ * `launchMode`
+ * `allowTaskReparenting`
+ * `clearTaskOnLaunch`
+ * `alwaysRetainTaskState`
+ * `finishOnTaskLaunch`
+
+The following sections describe what some of these flags and attributes do, how they interact, and what considerations should govern their use.
+
+==== Affinities and new tasks ====
+
+By default, all the activities in an application have an affinity for each other — that is, there's a preference for them all to belong to the same task. However, an individual affinity can be set for each activity with the `taskAffinity` attribute of the `<activity>` element. Activities defined in different applications can share an affinity, or activities defined in the same application can be assigned different affinities. The affinity comes into play in two circumstances: When the `Intent` object that launches an activity contains the `FLAG_ACTIVITY_NEW_TASK` flag, and when an activity has its `allowTaskReparenting` attribute set to `"true"`.
+
+ * The `FLAG_ACTIVITY_NEW_TASK` flag - As described earlier, a new activity is, by default, launched into the task of the activity that called `startActivity()`. It's pushed onto the same stack as the caller. However, if the `Intent` object passed to `startActivity()` contains the `FLAG_ACTIVITY_NEW_TASK` flag, the system looks for a different task to house the new activity. Often, as the name of the flag implies, it's a new task. However, it doesn't have to be. If there's already an existing task with the same affinity as the new activity, the activity is launched into that task. If not, it begins a new task.
+
+ * The `allowTaskReparenting` attribute - If an activity has its `allowTaskReparenting` attribute set to `"true"`, it can move from the task it starts in to the task it has an affinity for when that task comes to the fore. For example, suppose that an activity that reports weather conditions in selected cities is defined as part of a travel application. It has the same affinity as other activities in the same application (the default affinity) and it allows reparenting. One of your activities starts the weather reporter, so it initially belongs to the same task as your activity. However, when the travel application next comes forward, the weather reporter will be reassigned to and displayed with that task.
+
+__If an `.apk` file contains more than one "application" from the user's point of view, you will probably want to assign different affinities to the activities associated with each of them.__
+
+==== Launch modes ====
+
+There are four different launch modes that can be assigned to an `<activity>` element's `launchMode` attribute:
+
+ * `standard` (the default mode)
+ * `singleTop`
+ * `singleTask`
+ * `singleInstance`
+
+The modes differ from each other on these four points:
+
+ * Which task will hold the activity that responds to the intent.
+
+   * For the `"standard"` and `"singleTop"` modes, it's the task that originated the intent (and called `startActivity()`) — unless the `Intent` object contains the `FLAG_ACTIVITY_NEW_TASK` flag. In that case, a different task is chosen as described in the previous section, Affinities and new tasks.
+
+   * In contrast, the `"singleTask"` and `"singleInstance"` modes mark activities that are always at the root of a task. They define a task; they're never launched into another task.
+
+ * Whether there can be multiple instances of the activity.
+
+   * A `"standard"` or `"singleTop"` activity can be instantiated many times. They can belong to multiple tasks, and a given task can have multiple instances of the same activity.__
+
+   * In contrast, `"singleTask"` and `"singleInstance"` activities are limited to just one instance. Since these activities are at the root of a task, this limitation means that there is never more than a single instance of the task on the device at one time.
+
+ * Whether the instance can have other activities in its task.
+
+   * A "singleInstance" activity stands alone as the only activity in its task. If it starts another activity, that activity will be launched into a different task regardless of its launch mode — as if FLAG_ACTIVITY_NEW_TASK was in the intent. In all other respects, the "singleInstance" mode is identical to "singleTask".
+
+   * The other three modes permit multiple activities to belong to the task. A "singleTask" activity will always be the root activity of the task, but it can start other activities that will be assigned to its task. Instances of "standard" and "singleTop" activities can appear anywhere in a stack.
+
+ * Whether a new instance of the class will be launched to handle a new intent.
+
+   * For the default "standard" mode, a new instance is created to respond to every new intent. Each instance handles just one intent. For the "singleTop" mode, an existing instance of the class is re-used to handle a new intent if it resides at the top of the activity stack of the target task. If it does not reside at the top, it is not re-used. Instead, a new instance is created for the new intent and pushed on the stack.
+
+   * For example, suppose a task's activity stack consists of root activity A with activities B, C, and D on top in that order, so the stack is A-B-C-D. An intent arrives for an activity of type D. If D has the default "standard" launch mode, a new instance of the class is launched and the stack becomes A-B-C-D-D. However, if D's launch mode is "singleTop", the existing instance is expected to handle the new intent (since it's at the top of the stack) and the stack remains A-B-C-D.
+
+   * If, on the other hand, the arriving intent is for an activity of type B, a new instance of B would be launched no matter whether B's mode is "standard" or "singleTop" (since B is not at the top of the stack), so the resulting stack would be A-B-C-D-B.
+
+   * As noted above, there's never more than one instance of a "singleTask" or "singleInstance" activity, so that instance is expected to handle all new intents. A "singleInstance" activity is always at the top of the stack (since it is the only activity in the task), so it is always in position to handle the intent. However, a "singleTask" activity may or may not have other activities above it in the stack. If it does, it is not in position to handle the intent, and the intent is dropped. (Even though the intent is dropped, its arrival would have caused the task to come to the foreground, where it would remain.)
+
+When an existing activity is asked to handle a new intent, the `Intent` object is passed to the activity in an `onNewIntent()` call. (The intent object that originally started the activity can be retrieved by calling `getIntent()`.)
+
+Note that when a new instance of an `Activity` is created to handle a new intent, the user can always press the BACK key to return to the previous state (to the previous activity). But when an existing instance of an `Activity` handles a new intent, the user cannot press the BACK key to return to what that instance was doing before the new intent arrived.
+
+For more on launch modes, see the description of the http://developer.android.com/guide/topics/manifest/activity-element.html[<activity>] element.
+
+==== Clearing the stack ====
+
+__If the user leaves a task for a long time (多久?), the system clears the task of all activities except the root activity. When the user returns to the task again, it's as the user left it, except that only the initial activity is present.__ The idea is that, after a time, users will likely have abandoned what they were doing before and are returning to the task to begin something new.
+
+That's the default. There are some activity attributes that can be used to control this behavior and modify it:
+
+ * The `alwaysRetainTaskState` attribute - If this attribute is set to "`true`" in the root activity of a task, the default behavior just described does not happen. The task retains all activities in its stack even after a long period.
+
+ * The `clearTaskOnLaunch` attribute - If this attribute is set to "`true`" in the root activity of a task, the stack is cleared down to the root activity whenever the user leaves the task and returns to it. In other words, it's the polar(極端) opposite of `alwaysRetainTaskState`. The user always returns to the task in its initial state, even after a momentary(短暫的) absence.
+ 
+ * The `finishOnTaskLaunch` attribute - This attribute is like `clearTaskOnLaunch`, but it operates on a single activity, not an entire task. And it can cause any activity to go away, including the root activity. When it's set to "`true`", the activity remains part of the task only for the current session. If the user leaves and then returns to the task, it no longer is present.
+
+There's another way to force activities to be removed from the stack. If an `Intent` object includes the `FLAG_ACTIVITY_CLEAR_TOP` flag, and the target task already has an instance of the type of activity that should handle the intent in its stack, all activities above that instance are cleared away so that it stands at the top of the stack and can respond to the intent. If the launch mode of the designated activity is "`standard`", it too will be removed from the stack, and a new instance will be launched to handle the incoming intent. That's because a new instance is always created for a new intent when the launch mode is "`standard`".
+
+`FLAG_ACTIVITY_CLEAR_TOP` is most often used in conjunction with `FLAG_ACTIVITY_NEW_TASK`. When used together, these flags are a way of locating an existing activity in another task and putting it in a position where it can respond to the intent.
+
+==== Starting tasks ====
+
+An activity is set up as the entry point for a task by giving it an intent filter with "`android.intent.action.MAIN`" as the specified action and "`android.intent.category.LAUNCHER`" as the specified category. (There's an example of this type of filter in the earlier Intent Filters section.) A filter of this kind causes an icon and label for the activity to be displayed in the application launcher, giving users a way both to launch the task and to return to it at any time after it has been launched.
+
+This second ability is important: Users must be able to leave a task and then come back to it later. For this reason, the two launch modes that mark activities as always initiating a task, "`singleTask`" and "`singleInstance`", should be used only when the activity has a `MAIN` and `LAUNCHER` filter. Imagine, for example, what could happen if the filter is missing: An intent launches a "`singleTask`" activity, initiating a new task, and the user spends some time working in that task. The user then presses the HOME key. The task is now ordered behind and obscured by the home screen. And, because it is not represented in the application launcher, the user has no way to return to it.
+
+A similar difficulty attends(伴隨) the `FLAG_ACTIVITY_NEW_TASK` flag. If this flag causes an activity to begin a new task and the user presses the HOME key to leave it, there must be some way for the user to navigate back to it again. Some entities (such as the notification manager) always start activities in an external task, never as part of their own, so they always put `FLAG_ACTIVITY_NEW_TASK` in the intents they pass to `startActivity()`. If you have an activity that can be invoked by an external entity that might use this flag, take care that the user has a independent way to get back to the task that's started.
+
+For those cases where you don't want the user to be able to return to an activity, set the `<activity>` element's `finishOnTaskLaunch` to "`true`". See Clearing the stack, earlier. 
+
+=== Processes and Threads ===
+
+:::
+
+=== Component Lifecycles ===
+
+__Application components have a lifecycle — a beginning when Android instantiates them to ''respond to intents'' through to an end when the instances are destroyed. In between, they may sometimes be ''active'' or ''inactive'',or, in the case of activities, ''visible'' to the user or ''invisible''. (會換個說法, 是因為 Components 不單只是 UI 元件而已)__ This section discusses the lifecycles of activities, services, and broadcast receivers — including the ''states'' that they can be in during their lifetimes, the methods that notify you of ''transitions between states'', and the effect(影響) of those states on the possibility that the process ''hosting'' them might be terminated and the instances destroyed.
+
+==== Activity lifecycle ====
+
+An activity has essentially three states:
+
+ * __It is ''active'' or ''running'' when it is in the foreground of the screen (at the top of the ''activity stack'' for the ''current task''). This is the activity that is the ''focus for the user's actions''.__
+
+ * __It is ''paused'' if it has lost focus but is still visible to the user. That is, another activity lies on top of it and that activity either is transparent or doesn't cover the full screen, so some of the paused activity can show through(隱約顯露).__ A paused activity is completely ''alive'' (it maintains all state and member information and remains ''attached'' to the ''window manager''), but can be killed by the system in extreme low memory situations.
+
+ * __It is ''stopped'' if it is completely obscured(遮蔽) by another activity. '''It still retains all state and member information. (進入 Stopped 之後, 並沒有被 Destroyed, 所以還有機會再活過來, 因此狀態都還保留著)'''__ However, it is no longer visible to the user so its window is hidden and it will often be killed by the system when memory is needed elsewhere.
+
+__If an activity is paused or stopped, the system can drop it from memory either by asking it to finish (calling its `finish()` method), or simply killing its process. When it is displayed again to the user, it must be completely restarted and restored to its previous state.__
+
+As an activity transitions from state to state, it is notified of the change by calls to the following protected methods:
+
+ {{{
+void onCreate(Bundle savedInstanceState)
+void onStart()
+void onRestart()
+void onResume()
+void onPause()
+void onStop()
+void onDestroy()
+ }}}
+
+__All of these methods are ''hooks'' that you can override to do appropriate work when the state changes. All activities must implement `onCreate()` to do the initial setup when the object is first instantiated. '''Many will also implement `onPause()` to commit data changes and otherwise prepare to stop interacting with the user. (進入 Paused 狀態之後, 就有可能因為其他程式需要更多的記憶體而遭到排擠, 隨時都可能被 Kill 掉)'''__
+
+ {{{{#!wiki note
+'''Calling into the superclass'''
+
+__An implementation of any activity lifecycle method should '''always first call the superclass version.'''__ For example:
+
+ {{{
+protected void onPause() {
+    super.onPause();
+    . . .
+}
+ }}}
+ }}}}
+
+Taken together, these seven methods define the entire lifecycle of an activity. There are three ''nested loops'' that you can monitor by implementing them:
+
+ * __The ''entire lifetime'' of an activity happens between the first call to `onCreate()` through to a single final call to `onDestroy()`. An activity does all its initial setup of ''"global" state'' (下面表格中 "normal static set up" 的說法更為貼切) in `onCreate()`, and releases all remaining resources in `onDestroy()`.__ For example, if it has a thread running in the background to download data from the network, it may create that thread in `onCreate()` and then stop the thread in `onDestroy()`.
+
+ * __The ''visible lifetime'' of an activity happens between a call to `onStart()` until a corresponding call to `onStop()`. During this time, the user can see the activity on-screen (雖然看得到, 但使用者不一定能夠跟它互動, 因為上面可能疊了另一個非全螢幕的 Activity), though it may not be in the foreground and interacting with the user. Between these two methods, you can '''maintain resources that are needed to show the activity to the user. (看得見才要處理東西可以放在這裡, 避免運算資源的浪費)'''__ For example, you can register a `BroadcastReceiver` in `onStart()` to monitor for changes that impact your UI, and unregister it in `onStop()` when the user can no longer see what you are displaying. __The `onStart()` and `onStop()` methods can be called multiple times, as the activity alternates(交替) between being visible and hidden to the user.__
+
+ * __The ''foreground lifetime'' of an activity happens between a call to `onResume()` until a corresponding call to `onPause()`. During this time, the activity is in front of all other activities on screen and is interacting with the user. An activity can frequently transition between the ''resumed'' and paused states — for example, '''`onPause()` is called when the device ''goes to sleep'' or when a new activity is started, `onResume()` is called when an ''activity result'' or a ''new intent'' is delivered. Therefore, the code in these two methods should be ''fairly lightweight''.'''__
+
+The following diagram illustrates these loops and the paths an activity may take between states. __The colored ovals(橢圓形) are major states the activity can be in. The square rectangles represent the ''callback'' methods you can implement to perform operations when the activity transitions between states.__
+
+attachment:activity_lifecycle.png <<BR>> State diagram for an Android activity lifecycle.
+
+上面的 State Diagram 有一些怪異的地方 - 它不是用 "可停留的狀態" 的表現, 而是拿 "進入某個狀態前會被呼叫的方法" 來表現. 上述的 Nested Loops 指的就是 Nested States:
+
+ {{{
++---------------- Created   (onCrate)
+| +---------- Started       (onStart)
+| | +---- Resumed           (onResume)
+| | |
+| | +---- Paused            (onPause)
+| +---------- Stopped       (onStop)
++------------ Destroyed     (onDestroy)
+ }}}
+
+The following table describes each of these methods in more detail and locates it within the activity's overall lifecycle:
+
+|| Method || Description || Killable? || Next ||
+|| `onCreate()` || __Called when the activity is first created. '''This is where you should do all of your ''normal static set up'' — create views, bind data to lists, and so on.''' This method is passed a `Bundle` object containing the activity's ''previous state'', if that state was captured (留存; see Saving Activity State, later).__ <<BR>> Always followed by `onStart()`. || No  || `onStart()` ||
+|| `onRestart()`  || Called after the activity has been stopped, just prior to it being started again. <<BR>> Always followed by `onStart()` || No || `onStart()` ||
+|| `onStart()` || __Called ''just before'' the activity becomes ''visible'' to the user.__ <<BR>> Followed by `onResume()` if the activity comes to the foreground, or `onStop()` if it becomes hidden. <<BR>> __對照 Coordinating activities 的說法, 當 A 叫出 B 時, A 會先被呼叫 `onPause()` 後回到 `onStart()` 的 Loop, 然後 B 也會被呼叫 `onCreate()` 後進入 `onStart()`. 從 A 的角度來看, 它即將被 B 遮蔽住, 所以下一個方法是 `onStop()`, 而 B 即將顯示出來, 所以下一個方法會是 `onResume()`.__ || No || `onResume()` or `onStop()` ||
+|| `onResume()` || __Called ''just before'' the activity starts ''interacting'' with the user.__ At this point the activity is at the top of the activity stack, with user input going to it. <<BR>> Always followed by `onPause()`. || No || `onPause()` ||
+|| `onPause()` || Called when the system is about to start ''resuming(再繼續)'' another activity. __This method is typically used to commit unsaved changes to persistent data, stop animations and other things that may be consuming CPU, and so on. '''It should do whatever it does very quickly, because the next activity will not be resumed until it returns.'''__ <<BR>> Followed either by `onResume()` if the activity returns back to the front, or by `onStop()` if it becomes invisible to the user. <<BR>> __假設 "A 叫出 B, 然後再將 B 關閉" 的操作, `A.onPause()` -> `B.onPause()` -> `B.onStop()` -> `A.onResume()` 會依序被呼叫. 因此這裡才會有 `onResume()` 跟 `onStop()` 兩種出口.__ || Yes || `onResume()` or `onStop()` ||
+|| `onStop()`|| __Called when the activity is no longer visible to the user. This may happen because it is being destroyed, or because another activity (either an existing one or a new one) has been resumed and is covering it.__ <<BR>> Followed either by `onRestart()` if the activity is coming back to interact with the user, or by `onDestroy()` if this activity is going away. || Yes || `onRestart()` or `onDestroy()` ||
+|| `onDestroy()` || __Called before the activity is destroyed. This is the final call that the activity will receive. It could be called either because the activity is finishing (someone called `finish()` on it), or because the system is temporarily destroying this instance of the activity to save(節省) space. You can distinguish between these two scenarios with the `isFinishing()` method. (判斷是否為正常結束)__ || Yes || nothing ||
+
+__Note the Killable column in the table above. '''It indicates whether or not the system can kill the process hosting the activity at any time after the method returns (方法呼叫完才會真正進入某個狀態), without executing another line of the activity's code.''' Three methods (`onPause()`, `onStop()`, and `onDestroy()`) are marked "Yes." Because `onPause()` is the first of the three, it's the only one that's guaranteed to be called before the process is killed — `onStop()` and `onDestroy()` may not be. '''Therefore, you should use `onPause()` to write any persistent data (such as user edits) to storage.'''__
+
+Methods that are marked "No" in the Killable column protect the process hosting the activity from being killed from the moment they are called. Thus an activity is in a killable state, for example, from the time `onPause()` returns to the time `onResume()` is called. It will not again be killable until `onPause()` again returns.
+
+__As noted in a later section, Processes and lifecycle, an activity that's not technically "killable" by this definition might still be killed by the system — but that would happen only in extreme and dire(極端的) circumstances when there is no other recourse. (屬於極端的例外, 可以不予考慮)__
+
+===== Saving activity state =====
+
+When the system, rather than the user, shuts down an activity to conserve(節約) memory, the user may expect to return to the activity and find it in its previous state.
+
+__To capture that state before the activity is killed, you can implement an `onSaveInstanceState()` method for the activity. Android calls this method before making the activity vulnerable(成局的) to being destroyed — that is, before `onPause()` is called. It passes the method a `Bundle` object where you can record the ''dynamic state'' of the activity as ''name-value pairs''. When the activity is again started, the `Bundle` is passed both to `onCreate()` and to a method that's called after `onStart()`, `onRestoreInstanceState()`, so that either or both of them can recreate the captured state. (分開處理 Global/Visual States; 程式只要專心記錄/提取狀態即可)__
+
+__Unlike `onPause()` and the other methods discussed earlier, `onSaveInstanceState()` and `onRestoreInstanceState()` are not lifecycle methods. They are not always called. For example, Android calls `onSaveInstanceState()` before the activity becomes vulnerable to being destroyed by the system, but does not bother calling it when the instance is actually being destroyed by a user action (such as pressing the BACK key). '''In that case, the user won't expect to return to the activity, so there's no reason to save its state.'''__
+
+__'''Because `onSaveInstanceState()` is not always called, you should use it only to record the ''transient state'' of the activity, not to store persistent data. Use `onPause()` for that purpose instead.'''__
+
+===== Coordinating activities =====
+
+__'''When one activity starts another, they both experience lifecycle transitions. One pauses and may stop, while the other starts up.''' On occasion, you may need to coordinate these activities, one with the other.__
+
+The order of lifecycle callbacks is well defined, particularly when the two activities are in the same process:
+
+ 1. The current activity's `onPause()` method is called.
+ 2. Next, the starting activity's `onCreate()`, `onStart()`, and `onResume()` methods are called in sequence.
+ 3. Then, if the starting activity is no longer visible on screen, its `onStop()` method is called.
+
+:::
+
+== Developing / On a Device ==
+http://developer.android.com/guide/developing/device.html @2010/01/31
+
+__When building mobile applications, it's vital to test them on real devices prior to releasing them to users.__ This page covers what you need to know, including the types of devices that you can use, and how to set one up for developing and debugging.
+
+=== Available Devices ===
+
+Here are some options for obtaining devices capable of testing your applications.
+
+==== Consumer devices ====
+
+It's likely that one of your local mobile carriers offers an Android-powered device. Any Android-powered device (even one bought from your mobile carrier) is a perfectly good device for running and testing your own Android applications. __You can write applications using the Android SDK and then install them directly onto the device for testing. (就像使用 Emulator 一樣)__
+
+Check with the service providers in your area to determine which Android-powered devices are available.
+
+__Be aware that consumer devices are not designed to allow ''system image updates'' by the user. If you're interested in manually updating the device with custom system images, then you'll need a developer device such as the Android Dev Phone 1. (如果只是想要開發 Android 上開發應用程式, 倒是不必用到 Dev Phone)__
+
+==== Android Dev Phone 1 ====
+
+__The Android Dev Phone 1 is a ''SIM-unlocked'' and ''hardware-unlocked'' device that is designed for advanced developers.__ The device ships with a system image that is fully compatible with Android 1.0, so you can rely on it when developing your applications. You can use any SIM in the device and can flash custom Android builds that will work with the unlocked bootloader. Unlike the bootloader on retail devices, the bootloader on the Android Dev Phone 1 does not enforce signed system images. The Android Dev Phone 1 should also appeal to developers who live in geographies(地理) where local mobile carriers do not currently offer Android-powered devices.
+
+To purchase an Android Dev Phone 1 device, you must first register as an Android developer on the Android Market site, if you haven't done so already. Once you've logged into your developer account on Android Market, you can purchase the device by following the link to "Development phones." (加入 Android Market 要 US $25) To accommodate demand, there is a limit of 1 device per developer account, for now.
+
+__The device currently costs $399 (USD) (including free shipping in the US), and is available for purchase in 18 international markets (這台手機是 HTC 製造的, 當然包括台灣),__ including the US, UK, Germany, Japan, India, Canada, France, Taiwan, Spain, Australia, Singapore, Switzerland, Netherlands, Austria, Sweden, Finland, Poland, and Hungary. We will continue to expand this program into new geographies over time. Check this page for updated information.
+
+Android Dev Phone 1 devices are not intended for non-developer end-users. Because the device can be configured with system software not provided by or supported by Google or any other company, end-users operate these devices at their own risk.
+
+Note that your Android Dev Phone 1 will not receive automated over-the-air (OTA) updates for the system image. System updates must be flashed manually. See the HTC site for a guide to http://www.htc.com/www/support/android/adp.html[Flashing your Android Dev Phone with a Factory System Image].
+
+For full device specs and more information about obtaining an Android Dev Phone 1 device, see the http://market.android.com/publish[Android Market] site.
+
+=== Setting up a Device for Development ===
+
+With an Android-powered device, you can develop and debug your Android applications just as you would on the emulator. There are just a few things to do before you can start.
+
+----
+
+1. Declare your application as "debuggable" in your Android Manifest. (如果只是單純要讓程式執行在設備上, 設定為 Debuggable 的動作並非必要)
+
+In Eclipse, you can do this from the Application tab when viewing the Manifest (on the right side, set Debuggable to `true`). Otherwise, in the `AndroidManifest.xml` file, add `android:debuggable="true"` to the `<application>` element.
+
+----
+
+2. Turn on "USB Debugging" on your device.
+
+On the device, go to the home screen, press MENU, select Applications > Development, then enable USB debugging.
+
+__2010-01-31 在 Acer Liquid 下, 正確的位置應該在 Settings > Applications > Development. 另外可以一併開啟 Stay awake (Screen will never sleep while charging) 的設定, 避免開發過程中要不斷用 Menu 解鎖的困擾.__
+
+----
+
+3. Setup your system to detect your device.
+
+ * If you're developing on Windows, you need to install a USB driver for `adb`. See the http://developer.android.com/sdk/win-usb.html[Windows USB Driver] documentation.
+
+ * If you're developing on Mac OS X, it just works. Skip this step.
+
+ * __If you're developing on Ubuntu Linux, you need to add a rules file that contains a USB configuration for each type of device you want to use for development.__ Each device manufacturer uses a different vendor ID. The example rules files below show how to add an entry for a single vendor ID (the HTC vendor ID). In order to support more devices, you will need additional lines of the same format that provide a different value for the `SYSFS{idVendor}` property. For other IDs, see the table of USB Vendor IDs, below.
+
+ 1. Log in as root and create this file: `/etc/udev/rules.d/51-android.rules`. (其中 Dapper/Gusty/Hardy 分別代表 6.06 LTS/7.10/8.04 LTS)
+
+    * For Gusty/Hardy, edit the file to read: `SUBSYSTEM=="usb", SYSFS{idVendor}=="0bb4", MODE="0666"`
+    * For Dapper, edit the file to read: `SUBSYSTEM=="usb_device", SYSFS{idVendor}=="0bb4", MODE="0666"`
+
+ 2. Now execute: `chmod a+r /etc/udev/rules.d/51-android.rules`
+
+You can verify that your device is connected by executing `adb devices` from your SDK `tools/` directory. If connected, you'll see the device name listed as a "device." (只要重新插拔 USB 連接線即可)
+
+If using Eclipse, select run or debug as usual. You will be presented with a Device Chooser dialog that lists the available emulator(s) and connected device(s). Select the device to install and run the application there.
+
+If using the Android Debug Bridge (`adb`), you can issue commands with the `-d` flag to target your connected device.
+
+==== USB Vendor IDs ====
+
+This table provides a reference to the vendor IDs needed in order to add device support on Linux. The USB Vendor ID is the value given to the `SYSFS{idVendor}` property in the rules file.
+
+|| Manufacturer || USB Vendor ID ||
+|| Acer || 0502 ||
+|| HTC || 0bb4 ||
+|| Huawei || 12d1 ||
+|| LG || 1004 ||
+|| Motorola || 22b8 ||
+|| Samsung || 04e8 ||
+|| Sony Ericsson || 0fce ||
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+== Overview ==
+
+The http://www.openhandsetalliance.com/[Open Handset Alliance], a group of more than 30 technology and mobile companies, is developing Android ''[&n-dra-id]'': the first complete, open, and free mobile platform. To help developers get started developing new applications, we're offering an ''early look'' (目前 @2007/11/21 SDK 的最新版本是 m3-rc22a, 非 final release, 下載的 .zip 檔約 57MB, 但解開後有 171MB!!) at the Android Software Development Kit.
+
+The Android platform is a software stack for mobile devices including an operating system, middleware and key applications. Developers can create applications for the platform using the Android SDK. Applications are written using the Java programming language and run on Dalvik ''[d&l-vik]'', a custom virtual machine designed for embedded use which runs on top of a Linux kernel.
+
+If you want to know how to develop applications for Android, you're in the right place. This site provides a variety of documentation that will help you learn about Android and develop mobile applications for the platform.
+
+An early look at the the Android SDK is also available. It includes sample projects with source code, development tools, an emulator, and of course all the libraries you'll need to build an Android application.
+
+== Getting Started ==
+
+=== Installing the SDK ===
+
+This page describes how to install the Android SDK and set up your development environment.
+
+==== System and Software Requirements ====
+
+To develop Android applications using the code and tools in the Android SDK, you need a suitable development computer and development environment, as described below.
+
+ * Supported Operating Systems
+   * Windows XP or Vista
+   * Mac OS X 10.4.8 or later (x86 only)
+   * Linux (tested on Linux Ubuntu Dapper Drake; 看來 Ubuntu 真的成為主流了...)
+ * Supported Development Environments
+   * Eclipse IDE
+     * Eclipse 3.2, 3.3 (Europa)
+     * Eclipse JDT Plugin (included in most Eclipse IDE packages; 其中的 JDT 指的是 Java Development Tools, 也就是 Java 開發環境)
+     * JDK 5 or JDK 6 (JRE alone is not sufficient)
+     * Not compatible with Gnu Compiler for Java (gcj)
+     * Android Development Tools plugin (optional)
+   * Other development environments or IDEs (指透過 command line 的方式來建構時)
+     * JDK 5 or JDK 6 (JRE alone is not sufficient)
+     * Not compatible with Gnu Compiler for Java (gcj)
+     * Apache Ant 1.6.5 or later for Linux and Mac, 1.7 or later for Windows
+
+Note: If JDK is already installed on your development computer, please take a moment to make sure that it meets the version requirements listed above. In particular, note that some Linux distributions may include JDK 1.4 or Gnu Compiler for Java, both of which are not supported for Android development.
+
+

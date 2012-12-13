@@ -1,0 +1,281 @@
+= Robot Framework Basics =
+
+== 測試資料的表示法 ==
+
+=== 特殊字元 ===
+
+ * 由於 `\` 用來跳脫字元，寫 regex 要特別小心。
+
+=== 時間 ===
+
+'1 minute', '2 min 3 s', '4.5'
+
+== 變數 ==
+
+ * Robot Framework Variables: `${SCALAR}` 跟 `@{LIST}`
+ * Environment Variables: `%{ENVIRONMENT}`
+
+TIP: 為了避免使用者搞不清楚何是要用 `${VAR}` 或 `%{VAR}`，儘可能事前安排將 environment variables 轉成 Robot Framework variables。
+
+== 流程控制 ==
+
+=== BuiltIn.Wait Until Keyword Succeeds ===
+
+ Wait Until Keyword Succeeds | timeout, retry_interval, name, *args
+
+這個 keyword 每隔一段時間（'retry_interval'）就會執行一次另一個 keyword（'name' 跟 '*args'；用法跟 `Run Keyword` 一樣），直到另一個 keyword 執行成功或累積時間超過 'timeout' 為止。
+
+按照http://robotframework.googlecode.com/hg/doc/libraries/BuiltIn.html#Wait%20Until%20Keyword%20Succeeds[官方文件的說法]，除了 timeout 之外，如果遇到語法有問題或發生重大的錯誤，也會提前中斷執行。
+
+________________________________________________________________________________
+Errors caused by invalid syntax, test or keyword timeouts, or fatal exceptions are not caught by this keyword.
+________________________________________________________________________________
+
+從原始碼可以推導出所謂的 "重大錯誤" 指的是 exception 帶有一個 `ROBOT_EXIT_ON_FAILURE` 的屬性。
+
+.`robot/libraries/BuiltIn.py`
+--------------------------------------------------------------------------------
+def wait_until_keyword_succeeds(self, timeout, retry_interval, name, *args):
+    ...
+    timeout = utils.timestr_to_secs(timeout)
+    retry_interval = utils.timestr_to_secs(retry_interval)
+    maxtime = time.time() + timeout
+    error = None
+    while not error:
+        try:
+            return self.run_keyword(name, *args) <1>
+        except ExecutionFailed, err:
+            if err.dont_cont: <2>
+                raise
+            if time.time() > maxtime:
+                error = unicode(err)
+            else:
+                time.sleep(retry_interval)
+    raise AssertionError("Timeout %s exceeded. The last error was: %s"
+                         % (utils.secs_to_timestr(timeout), error))
+--------------------------------------------------------------------------------
+<1> 成功時也會有回傳值。
+<2> 除了 timeout 之外，`err.dont_cont` 決定了要不要繼續 retry。
+
+.`robot/running/keywords.py`
+--------------------------------------------------------------------------------
+class Keyword(BaseKeyword):
+
+    def _run(self, handler, context):
+        try:
+            return handler.run(context, self.args[:])
+        except ExecutionFailed:
+            raise
+        except: <2>
+            self._report_failure(context)
+
+    def _report_failure(self, context):
+        failure = HandlerExecutionFailed() <3>
+        if not failure.exit_for_loop:
+            context.output.fail(failure.full_message)
+            if failure.traceback:
+                context.output.debug(failure.traceback)
+        raise failure
+--------------------------------------------------------------------------------
+<2> 其他的錯誤由 `_report_failure()` 進行包裝。
+<3> `HandlerExecutionFailed` 會對現有的錯誤做一些判斷，參考下面 `error.py` 的說明。
+
+.`robot/errors.py`
+--------------------------------------------------------------------------------
+class DataError(RobotError):
+    """Used when the provided test data is invalid.
+
+    DataErrors are not be caught by keywords that run other keywords
+    (e.g. `Run Keyword And Expect Error`). Libraries should thus use
+    this exception with care.
+    """
+
+class TimeoutError(RobotError):
+    """Used when a test or keyword timeout occurs.
+
+    This exception is handled specially so that execution of the
+    current test is always stopped immediately and it is not caught by
+    keywords executing other keywords (e.g. `Run Keyword And Expect
+    Error`). Libraries should thus NOT use this exception themselves.
+    """
+
+class ExecutionFailed(RobotError):
+    """Used for communicating failures in test execution."""
+
+    def __init__(self, message, timeout=False, syntax=False, exit=False,
+                 cont=False, exit_for_loop=False):
+        RobotError.__init__(self, utils.cut_long_message(message))
+        self.timeout = timeout
+        self.syntax = syntax
+        self.exit = exit
+        self.cont = cont
+        self.exit_for_loop = exit_for_loop
+
+    @property
+    def dont_cont(self): <1>
+        return self.timeout or self.syntax or self.exit
+
+class HandlerExecutionFailed(ExecutionFailed):
+
+    def __init__(self):
+        details = utils.ErrorDetails()
+        timeout = isinstance(details.error, TimeoutError) <2>
+        syntax = isinstance(details.error, DataError)
+        exit = bool(getattr(details.error, 'ROBOT_EXIT_ON_FAILURE', False)) <3>
+        cont = bool(getattr(details.error, 'ROBOT_CONTINUE_ON_FAILURE', False))
+        exit_for_loop = bool(getattr(details.error, 'ROBOT_EXIT_FOR_LOOP', False))
+        ExecutionFailed.__init__(self, details.message, timeout, syntax,
+                                 exit, cont, exit_for_loop)
+        self.full_message = details.message
+        self.traceback = details.traceback
+--------------------------------------------------------------------------------
+<1> 回傳 `True` 時，`Wait Until Keyword Succeeds` 就不會再繼續嘗試。
+<2> 這裡的 `TimeoutError` 跟 `DataError` 都是 Robot Framework 特有的。
+<3> 原來所謂的重大錯誤，指的是 exception 帶有一個 `ROBOT_EXIT_ON_FAILURE` 的屬性。
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://robotframework.googlecode.com/hg/doc/libraries/BuiltIn.html#Wait%20Until%20Keyword%20Succeeds[BuiltIn.Wait Until Keyword Succeeds]
+================================================================================
+
+.`examples/waitsuccess/test.txt`
+--------------------------------------------------------------------------------
+| *Setting* | *Value*
+| Library | mylib.py
+
+| *Test Case* | *Action* | *Argument*
+| Test | ${hour} | ${minute} | ${second}= | Wait Until Keyword Succeeds | 1m | 1s | Is Half Minute
+|      | Log | ${hour}:${minute}:${second} | WARN
+--------------------------------------------------------------------------------
+
+.`examples/waitsucess/mylib.py`
+--------------------------------------------------------------------------------
+from datetime import datetime
+
+def is_half_minute():
+    dt = datetime.today()
+    if dt.second != 30:
+        raise RuntimeError('not half minute')
+    return dt.hour, dt.minute, dt.second
+--------------------------------------------------------------------------------
+
+執行結果：
+
+--------------------------------------------------------------------------------
+$ pybot test.txt 
+==============================================================================
+Test                                                                          
+==============================================================================
+[ WARN ] 14:49:30                                                             
+Test                                                                  | PASS |
+--------------------------------------------------------------------------------
+
+== Test Library 與 Keyword ==
+
+除了 core framework 與 supporting tool 之外，Robot Framework 測試 SUT 的功能全部來自 keyword。而 Keyword 不是來自 test library，就是直接定義在 keyword table 裡。
+
+Test library 除了自行開發之外，也有許多現成的可以用。官方內附的稱做 standard library：
+
+ * http://code.google.com/p/robotframework/wiki/BuiltInLibrary[BuiltIn Library] (http://robotframework.googlecode.com/hg/doc/libraries/BuiltIn.html[libdoc])
+ * http://code.google.com/p/robotframework/wiki/OperatingSystemLibrary[Operating System Library] (`OperatingSystem`, http://robotframework.googlecode.com/hg/doc/libraries/OperatingSystem.html[libdoc])
+ * http://robotframework.googlecode.com/hg/doc/libraries/Telnet.html[Telnet Library] (`Telnet`, http://robotframework.googlecode.com/hg/doc/libraries/Telnet.html[libdoc])
+ * http://code.google.com/p/robotframework/wiki/CollectionsLibrary[Collections Library] (`Collections`, http://robotframework.googlecode.com/hg/doc/libraries/Collections.html[libdoc])
+ * http://code.google.com/p/robotframework/wiki/StringLibrary[String Library] (`String`, http://robotframework.googlecode.com/hg/doc/libraries/String.html[libdoc])
+ * http://code.google.com/p/robotframework/wiki/DialogsLibrary[Dialogs Library] (`Dialogs`, http://robotframework.googlecode.com/hg/doc/libraries/Dialogs.html[libdoc])
+ * http://code.google.com/p/robotframework/wiki/ScreenshotLibrary[Screenshot Library] (`Screenshot`, http://robotframework.googlecode.com/hg/doc/libraries/Screenshot.html[libdoc])
+ * http://code.google.com/p/robotframework/wiki/RemoteLibrary[Remote Library] (`Remote`)
+
+其他 third-party 開發的則稱做 external library：
+
+ * http://code.google.com/p/robotframework-seleniumlibrary/[Selenium Library] (`SeleniumLibrary`, http://robotframework-seleniumlibrary.googlecode.com/hg/doc/SeleniumLibrary.html[libdoc])
+ * http://code.google.com/p/robotframework-autoitlibrary/[AutoIt Library] (`AutoItLibrary`, http://robotframework-autoitlibrary.googlecode.com/svn/tags/robotframework-AutoItLibrary-1.1/doc/AutoItLibrary.html[libdoc])
+ * http://code.google.com/p/robotframework-swinglibrary/[Swing Library] (`SwingLibrary`, http://robotframework-swinglibrary.googlecode.com/svn/tags/swinglibrary-1.1.3/doc/SwingLibrary-1.1.3-doc.html[libdoc])
+ * http://code.google.com/p/robotframework-sshlibrary/[SSH Library] (`SSHLibrary`, http://robotframework-sshlibrary.googlecode.com/svn/tags/robotframework-sshlibrary-1.0/doc/SSHLibrary.html[libdoc])
+ * http://code.google.com/p/robotframework-dblibrary/[Database Library] (`DatabaseLibrary`, http://robotframework-dblibrary.googlecode.com/svn/tags/robotframework-dblibrary-1.0/doc/DatabaseLibrary.html[libdoc])
+ * http://code.google.com/p/robotframework-eclipselibrary/[Eclipse Library] (`EclipseLibrary`, http://robotframework-eclipselibrary.googlecode.com/svn/trunk/org.lcx.robotframework.eclipselibrary-testcases/documentation/EclipseLibrary.html[libdoc])
+
+TIP: 上面列出的 standard/external library，後面括號裡寫的是引入 test library 時要給的識別名稱與 library documentation 的連結。很明顯的差別是 external library 的名稱後面習慣跟著 `Library`，這是 standard library 所沒有的。
+
+除了 `BuiltIn` 之外，其他 test library 都必須先做 import 的動作（利用 setting table 裡的 `Library`），才能使用內含的 keyword。
+
+--------------------------------------------------------------------------------
+| *Setting* | *Value* |
+| Library | OperatingSystem |          <1>
+| Library | testlibs/LoginLibrary.py | <2>
+--------------------------------------------------------------------------------
+<1> 直接給定 library name，會自動從 library search path 找到對應的實作，例如 `OperatingSystem` 或 `com.company.TestLib`。常用在大家通用的 test library，使用者不需要知道它來自什麼地方。
+<2> 相對於 test case file 的路徑或檔名，做為這個 test case file 專屬的 test library，好處是不用額外組態 library search path。
+
+[TIP]
+================================================================================
+Library search path 對 `pybot` 而言，其實就是 module search path 或 `PYTHONPATH 的概念。
+
+假設 Robot Framework 被安裝在 `<RobotFrameworkInstallationDir>`(/usr/local/lib/python2.6/dist-packages/robotframework-2.6.1-py2.6.egg/)，從 `sys.path` 可以觀察到，`<RobotFrameworkInstallationDir>/robot/libraries/` 也在 module search path 裡。
+
+.`<RobotFrameworkInstallationDir>/robot/libraries/`
+--------------------------------------------------------------------------------
+.
+|-- __init__.py
+|-- BuiltIn.py
+|-- Collections.py
+|-- DeprecatedBuiltIn.py
+|-- DeprecatedOperatingSystem.py
+|-- Dialogs.py
+|-- Easter.py
+|-- OperatingSystem.py
+|-- Remote.py
+|-- Reserved.py
+|-- Screenshot.py
+|-- String.py
+\-- Telnet.py
+--------------------------------------------------------------------------------
+
+這也就是為什麼可以像 `Library | OperatingSystem` 這樣，直接用 module name 來引入 standard library 的關係。
+
+--------------------------------------------------------------------------------
+>>> import sys
+>>> sys.path
+['/usr/local/lib/python2.6/dist-packages/robotframework-2.6.1-py2.6.egg/robot/libraries', '', '/usr/local/lib/python2.6/dist-packages/robotframework-2.6.1-py2.6.egg', ...]
+>>> import BuiltIn
+>>> import OperatingSystem
+--------------------------------------------------------------------------------
+================================================================================
+
+Keyword 依來源不同分成三種：
+
+ * Built-in keyword - 不需要 import 就可以直接使用的 keyword，例如 `Get Time`、`Should Be Equal` 等。其實它們都定義在一個叫做 `BuiltIn` 的 test library 裡，只是不用手動 import 而已。
+ * Library keyword - 用程式語言（Python 或 Java）實作在 test library 裡的 lowest-level keyword（相對於 user keyword 的說法），要明確 import 才能使用。
+ * User/User-defined keyword - 在 keyword table 裡，用現有的 keyword 直接組出新的 higher-level keyword。
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://robotframework.googlecode.com/hg/doc/userguide/RobotFrameworkUserGuide.html#using-test-libraries[User Guide > Using test libraries]
+ * http://code.google.com/p/robotframework/wiki/TestLibraries[Test Libraries - A list of available test libraries for Robot Framework]
+================================================================================
+
+== 參考資料 ==
+
+ * http://code.google.com/p/robotframework/wiki/DocumentationIndex[Documentation Index]
+ * http://robotframework.googlecode.com/hg/doc/userguide/RobotFrameworkUserGuide.html[Robot Framework User Guide]
+
+== 學習手冊 ==
+
+ * http://code.google.com/p/robotframework/wiki/Installation[Installation]
+ * http://robotframework.googlecode.com/hg/doc/quickstart/quickstart.html[Quick Start Guide]
+ * http://robotframework.googlecode.com/hg/doc/userguide/RobotFrameworkUserGuide.html[Robot Framework User Guide]
+ * http://code.google.com/p/robotframework/wiki/HowToWriteGoodTestCases[How To Write Good Test Cases]
+ * http://code.google.com/p/robotframework/wiki/RemoteLibrary[Remote Library]
+ * http://code.google.com/p/robotframework/wiki/HowToUseC[How To Use C]
+ * http://code.google.com/p/robotframework/wiki/JavaIntegration[Java Integration]
+ * http://code.google.com/p/robotframework/wiki/MavenIntegration[Maven Integration]
+ * http://robotframework.googlecode.com/hg/tools/libdoc/doc/libdoc.html?r=2.6.3[libdoc.py]
+ * http://robotframework.googlecode.com/hg/doc/libraries/BuiltIn.html[BuiltIn]
+ * http://robotframework.googlecode.com/hg/doc/libraries/OperatingSystem.html[OperatingSystem]
+ * http://robotframework.googlecode.com/hg/doc/libraries/Telnet.html[Telnet]
+ * http://robotframework.googlecode.com/hg/doc/libraries/Collections.html[Collections]
+ * http://robotframework.googlecode.com/hg/doc/libraries/String.html[String]
+ * http://robotframework.googlecode.com/hg/doc/libraries/Dialogs.html[Dialogs]
+ * http://robotframework.googlecode.com/hg/doc/libraries/Screenshot.html[Screenshot]
+

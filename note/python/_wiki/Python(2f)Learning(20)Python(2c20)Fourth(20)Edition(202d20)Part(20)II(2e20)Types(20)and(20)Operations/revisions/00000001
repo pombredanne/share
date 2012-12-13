@@ -1,0 +1,113 @@
+= Python / Learning Python, Fourth Edition - Part II. Types and Operations =
+<<TableOfContents>>
+
+= Chapter 5. Numeric Types =
+
+:::
+
+=== Bitwise Operations ===
+
+Besides the normal numeric operations (addition, subtraction, and so on), __Python supports most of the numeric expressions available in the C language. This includes operators that treat integers as ''strings of binary bits''.__ For instance, here it is at work performing bitwise shift and Boolean operations:
+
+ {{{
+>>> x = 1 # 0001
+>>> x << 2 # Shift left 2 bits: 0100
+4
+>>> x | 2 # Bitwise OR: 0011
+3
+>>> x & 1 # Bitwise AND: 0001
+1
+ }}}
+
+In the first expression, a binary `1` (in base 2, `0001`) is shifted left two slots to create a binary `4` (`0100`). The last two operations perform a binary OR (`0001|0010 = 0011`) and a binary AND (`0001&0001 = 0001`). __Such bit-masking operations allow us to encode multiple flags and other values within a single integer.__
+
+__This is one area where the binary and hexadecimal number support in Python 2.6 and 3.0 become especially useful—they allow us to code and inspect numbers by ''bit-strings'':__
+
+ {{{
+>>> X = 0b0001 # Binary literals
+>>> X << 2 # Shift left
+4
+>>> bin(X << 2) # Binary digits string
+'0b100'
+>>> bin(X | 0b010) # Bitwise OR
+'0b11'
+>>> bin(X & 0b1) # Bitwise AND
+'0b1'
+>>> X = 0xFF # Hex literals
+>>> bin(X)
+'0b11111111'
+>>> X ^ 0b10101010 # Bitwise XOR
+85
+>>> bin(X ^ 0b10101010)
+'0b1010101'
+>>> int('1010101', 2) # String to int per base
+85
+>>> hex(85) # Hex digit string
+'0x55'
+ }}}
+
+We won’t go into much more detail on “bit-twiddling” here. __It’s supported if you need it, and it comes in handy if your Python code must deal with things like network packets or packed binary data produced by a C program. Be aware, though, that bitwise operations are often not as important in a high-level language such as Python as they are in a low-level language such as C. As a rule of thumb, if you find yourself wanting to flip bits in Python, you should think about which language you’re really coding. In general, there are often better ways to encode information in Python than bit strings.__
+
+In the upcoming Python 3.1 release, the integer `bit_length` method also allows you to query the number of bits required to represent a number’s value in binary. The same effect can often be achieved by subtracting 2 from the length of the bin string using the `len` built-in function we met in Chapter 4, though it may be less efficient:
+
+ {{{
+>>> X = 99
+>>> bin(X), X.bit_length()
+('0b1100011', 7)
+>>> bin(256), (256).bit_length()
+('0b100000000', 9)
+>>> len(bin(256)) - 2
+9
+ }}}
+
+:::
+
+=== List Iteration and Comprehensions ===
+
+More generally, lists respond to all the sequence operations we used on strings in the prior chapter, including iteration tools:
+
+ {{{
+>>> 3 in [1, 2, 3] # Membership
+True
+>>> for x in [1, 2, 3]:
+... print(x, end=' ') # Iteration
+...
+1 2 3
+ }}}
+
+We will talk more formally about `for` iteration and the `range` built-ins in Chapter 13, because they are related to statement syntax. In short, `for` loops step through items in any sequence from left to right, executing one or more statements for each item.
+
+The last items in Table 8-1, ''list comprehensions'' and `map` calls, are covered in more detail in Chapter 14 and expanded on in Chapter 20. Their basic operation is straightforward, though—as introduced in Chapter 4, __list comprehensions are a way to build a new list by applying an expression to each item in a sequence, and are close relatives to `for` loops:__
+
+ {{{
+>>> res = [c * 4 for c in 'SPAM'] # List comprehensions
+>>> res
+['SSSS', 'PPPP', 'AAAA', 'MMMM']
+ }}}
+
+This expression is functionally equivalent to a `for` loop that builds up a list of results manually, but as we’ll learn in later chapters, list comprehensions are simpler to code and faster to run today:
+
+ {{{
+>>> res = []
+>>> for c in 'SPAM': # List comprehension equivalent
+... res.append(c * 4)
+...
+>>> res
+['SSSS', 'PPPP', 'AAAA', 'MMMM']
+ }}}
+
+__As also introduced in Chapter 4, the `map` built-in function does similar work, but applies a function to items in a sequence and collects all the results in a new list:__
+
+ {{{
+>>> list(map(abs, [−1, −2, 0, 1, 2])) # map function across sequence
+[1, 2, 0, 1, 2]
+ }}}
+
+Because we’re not quite ready for the full iteration story, we’ll postpone further details for now, but watch for a similar comprehension expression for dictionaries later in this chapter.
+
+
+
+
+
+
+

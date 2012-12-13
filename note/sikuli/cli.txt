@@ -1,0 +1,64 @@
+= 從 CLI 執行 Sikuli Script =
+
+[TIP]
+.延伸閱讀
+--
+ * link:cli-exit.html[如何偵測 Sikuli Script 執行過程中有發生錯誤？]
+--
+
+過程中會用到 `sikuli-script.jar`：
+
+.`sikuli-script.jar/META-INF/MANIFEST.MF`
+--------------------------------------------------------------------------------
+Manifest-Version: 1.0
+Created-By: 1.6.0_18 (Sun Microsystems Inc.)
+Main-Class: org.sikuli.script.SikuliScript
+--------------------------------------------------------------------------------
+
+首先營造出可以叫用 Sikuli 的 Jython 環境：
+
+--------------------------------------------------------------------------------
+$ jython -J-cp $SIKULI_HOME/sikuli-script.jar -Dpython.path=$SIKULI_HOME/sikuli-script.jar/Lib <1>
+Jython 2.5.2 (Release_2_5_2:7206, Mar 2 2011, 23:12:06) 
+[OpenJDK 64-Bit Server VM (Sun Microsystems Inc.)] on java1.6.0_20
+Type "help", "copyright", "credits" or "license" for more information.
+>>> from sikuli.Sikuli import *
+[info] Sikuli vision engine loaded.
+[info] Mac OS X utilities loaded. <2>
+[info] VDictProxy loaded.
+>>> 
+--------------------------------------------------------------------------------
+<1> `-Dpython.path` 一定要加，否則會出現 `ImportError: No module named sikuli` 的錯誤。
+<2> Mac OS X 會多這一行輸出。這是否代表著 Sikuli 一定要在本機上裝過，光有 `sikuli-script.jar` 是不夠的??
+
+但 `sikuli-script.jar` 內含 Jython，也可以是這樣：
+
+--------------------------------------------------------------------------------
+$ java -cp $SIKULI_HOME/sikuli-script.jar org.python.util.jython 
+Jython 2.5.2 (Release_2_5_2:7206, Mar 2 2011, 23:12:06) 
+[OpenJDK 64-Bit Server VM (Sun Microsystems Inc.)] on java1.6.0_20
+Type "help", "copyright", "credits" or "license" for more information.
+>>> from sikuli.Sikuli import *
+[info] Sikuli vision engine loaded.
+[info] VDictProxy loaded.
+>>>
+--------------------------------------------------------------------------------
+
+要從 CLI 執行 Sikuli Script，最簡單的做法：
+
+ java -jar $SIKULI_HOME/sikuli-script.jar path-to-your-script/script.sikuli
+
+但 `java -jar` 不吃 `-cp` 或 `CLASSPATH` 的設定，如果有需要可以改用：
+
+ java -cp $SIKULI_HOME/sikuli-script.jar org.sikuli.script.SikuliScript path-to-your-script/script.sikuli
+
+或
+
+ java -cp $SIKULI_HOME/sikuli-script.jar org.python.util.jython script.sikuli/script.sikuli/script.py
+
+不過最後一個直接執行 `script.py` 的做法，必須額外加上 `from sikuli.Sikuli import *`，而且要透過 `addImagePath()` 來設定圖檔的位置，反而讓事情變得複雜，因此不建議使用。
+
+== 參考資料 ==
+
+ * http://sikuli.org/docx/faq/010-command-line.html[How to run Sikuli from Command Line — Sikuli X 1.0 documentation]
+

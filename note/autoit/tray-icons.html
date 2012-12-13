@@ -1,0 +1,155 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[AutoIt] 定位 Tray-icon</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="tray-icons.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="../autoit/autoit.html">AutoIt</a> / 定位 Tray-icon</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.autoitscript.com/forum/topic/98670-how-to-operate-a-icon-in-system-tray/">How to operate a icon in system tray? - AutoIt Forums</a> (2009-07-21)
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.autoitscript.com/forum/topic/103871-systray-udf/">_SysTray UDF - AutoIt Forums</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.autoitscript.com/forum/topic/109608-read-full-tray-icon-name-from-partial-name/">Read full Tray Icon name from partial name - AutoIt Forums</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://pgmacros.invisionzone.com/index.php?showtopic=4295">Reading Tray Icon names - Macro Express Forums</a>
+</p>
+</li>
+<li>
+<p>
+Try 是位在 Shell_TrayWnd 視窗裡的 ToolbarWindow32
+</p>
+</li>
+<li>
+<p>
+Added: ControlCommand() "SendCommandID" - used to send WM_COMMAND Control ID messages. Allows the automation of ToolBarWindow32 controls (amongst others). For example, the "Back" button of Internet Explorer. Use Au3Info to get the Command ID from the ToolBar tab.
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.autoitscript.com/autoit3/docs/functions/ControlCommand.htm">Function ControlCommand</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.autoitscript.com/forum/topic/125795-controlclick-toolbarwindow32/">ControlClick - ToolbarWindow32 - AutoIt Forums</a> (2011-02-23)
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.autoitscript.com/forum/topic/13704-systray-udf/page<em>hl</em>systray">SysTray_UDF - AutoIt Forums</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.autoitscript.com/forum/topic/115241-want-to-activate-a-program-minimised-to-system-tray/">WAnt to Activate a Program Minimised to System Tray - AutoIt Forums</a> - WinSetState(<em>WINTITLE</em>, '', @SW_RESTORE)
+</p>
+</li>
+<li>
+<p>
+<a href="http://hi.baidu.com/zhch_ao/blog/item/cdc4efecdb7aa22662d09fe3.html">Autoit系統消息詳解——GUI通知<em>一點筆記</em>百度空間</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://us.generation-nt.com/answer/left-click-toolbar-help-27007312.html">Answer : left click on toolbar</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.autoitscript.com/autoit3/docs/appendix/WinMsgCodes.htm">Windows Message Codes</a>
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>其他非 AutoIt 相關，但可以用來操件 tray icon 的工具，也應該列入考量：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://se-soft.com/en/Products/TrayMenu/">SE-TrayMenu : Free portable tray menu launcher and hotkey manager for Windows</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://download.oracle.com/javase/7/docs/api/java/awt/SystemTray.html#getSystemTray()">SystemTray (Java Platform SE 7 )</a>
+</p>
+</li>
+</ul></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>from win32com.client import Dispatch
+
+Auto = Dispatch("AutoItX3.Control")
+handle = Auto.ControlGetHandle('[CLASS:Shell_TrayWnd]', '', '[Class:ToolbarWindow32;Instance:1]')
+Auto.ControlClick('[CLASS:Shell_TrayWnd]', '', '[Class:ToolbarWindow32;Instance:1]', 'context')</code></pre>
+</div></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:08:39 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

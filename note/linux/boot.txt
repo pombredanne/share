@@ -1,0 +1,128 @@
+= Linux 開機程序 =
+
+kernel 載入完成且硬體（驅動程式）就緒後，第一個被呼叫的程式是 `/sbin/init`，這也就是為什麼 `init` 的 PID 永遠是 1 的關係。
+
+--------------------------------------------------------------------------------
+$ ps ax | grep init
+    1 ?        Ss     0:00 /sbin/init
+ 3484 pts/0    S+     0:00 grep --color=auto init
+--------------------------------------------------------------------------------
+
+相對驅動硬體的 kernel，`init` 的工作是讓軟體的執行環境就緒，包括網路、檔案系統、系統服務等。它的設定檔在 `/etc/inittab`，其中最重要的設定就是 runlevel。
+
+要查看目前所處的 runlevel 可以用 `runlevel` 這個指令：
+
+ $ runlevel
+ N 3
+
+.`/etc/inittab`
+--------------------------------------------------------------------------------
+#
+# inittab       This file describes how the INIT process should set up
+#               the system in a certain run-level.
+#
+# Author:       Miquel van Smoorenburg, <miquels@drinkel.nl.mugnet.org>
+#               Modified for RHS Linux by Marc Ewing and Donnie Barnes
+#
+
+# Default runlevel. The runlevels used by RHS are: <1>
+#   0 - halt (Do NOT set initdefault to this)
+#   1 - Single user mode
+#   2 - Multiuser, without NFS (The same as 3, if you do not have networking)
+#   3 - Full multiuser mode
+#   4 - unused
+#   5 - X11
+#   6 - reboot (Do NOT set initdefault to this)
+# 
+id:3:initdefault: <2>
+
+# System initialization.
+si::sysinit:/etc/rc.d/rc.sysinit
+
+l0:0:wait:/etc/rc.d/rc 0 <3>
+l1:1:wait:/etc/rc.d/rc 1
+l2:2:wait:/etc/rc.d/rc 2
+l3:3:wait:/etc/rc.d/rc 3
+l4:4:wait:/etc/rc.d/rc 4
+l5:5:wait:/etc/rc.d/rc 5
+l6:6:wait:/etc/rc.d/rc 6
+
+# Trap CTRL-ALT-DELETE
+ca::ctrlaltdel:/sbin/shutdown -t3 -r now
+
+# When our UPS tells us power has failed, assume we have a few minutes
+# of power left.  Schedule a shutdown for 2 minutes from now.
+# This does, of course, assume you have powerd installed and your
+# UPS connected and working correctly.  
+pf::powerfail:/sbin/shutdown -f -h +2 "Power Failure; System Shutting Down"
+
+# If power was restored before the shutdown kicked in, cancel it.
+pr:12345:powerokwait:/sbin/shutdown -c "Power Restored; Shutdown Cancelled"
+
+
+# Run gettys in standard runlevels
+1:2345:respawn:/sbin/mingetty tty1
+2:2345:respawn:/sbin/mingetty tty2
+3:2345:respawn:/sbin/mingetty tty3
+4:2345:respawn:/sbin/mingetty tty4
+5:2345:respawn:/sbin/mingetty tty5
+6:2345:respawn:/sbin/mingetty tty6
+
+# Run xdm in runlevel 5
+x:5:respawn:/etc/X11/prefdm -nodaemon
+--------------------------------------------------------------------------------
+<1> 總共有 7 個不同的 runlevel。
+<2> `id:3:initdefault:` 中間的數字，就是預設的 runlevel。 
+<3> 不同 runlevel 要執行的 script，個別放在 `/etc/rc.d/rc<runlevel>.d/` 底下。
+
+--------------------------------------------------------------------------------
+$ cd /etc/rc.d
+$ ls
+init.d  rc  rc.local  rc.sysinit  rc0.d  rc1.d  rc2.d  rc3.d  rc4.d  rc5.d  rc6.d
+$ find -name '*local' <1>
+./rc2.d/S99local
+./rc5.d/S99local
+./rc.local
+./rc3.d/S99local
+./rc4.d/S99local
+$ ls rc5.d/S99local -l
+lrwxrwxrwx 1 root root 11 Mar  5  2010 rc5.d/S99local -> ../rc.local
+$
+$ cat rc.local <2>
+#!/bin/sh
+#
+# This script will be executed *after* all the other init scripts.
+# You can put your own initialization stuff in here if you don't
+# want to do the full Sys V style init stuff.
+
+
+touch /var/lock/subsys/local
+--------------------------------------------------------------------------------
+<1> 每一個 `/etc/rc.d/rc<runlevel>.d/` 都有一個 symbolic link 指向上一層的 `/etc/rc.d/rc.local`
+<2> 從 `rc.local` 的說明看起來，如果開機完還有某些初始化的工作要完成，可以直接寫在這裡。
+
+== 查看系統開機記錄 ==
+
+ $ last reboot
+
+可以用來列出最近幾次的開機記錄，例如：
+
+--------------------------------------------------------------------------------
+$ last reboot
+reboot   system boot  2.6.35-32-generi Mon Jul  2 09:56 - 11:53  (01:57) 
+                                                                 ^^^^^^^ 這應該是運作時間
+
+wtmp begins Mon Jul  2 07:35:21 2012
+--------------------------------------------------------------------------------
+
+不知道為什麼在 Ubuntu 下只會列出最後一次開機的記錄，但在 CentOS 下就會列出過去所有的記錄？
+
+== 參考資料 ==
+
+.文件
+--
+ * http://en.wikipedia.org/wiki/Init[init - Wikipedia, the free encyclopedia]
+ * http://en.wikipedia.org/wiki/Runlevel[Runlevel - Wikipedia, the free encyclopedia]
+ * http://linux.vbird.org/linux_basic/0510osloader.php[鳥哥的 Linux 私房菜 -- 開機關機流程與 Loader]
+--
+

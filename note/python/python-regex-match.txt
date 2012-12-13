@@ -1,0 +1,58 @@
+= Python Regular Expression: Matching =
+
+`(?P<name>...)` 表示 symbolic group，之後可以用 'name' 取回匹配的字串。
+
+--------------------------------------------------------------------------------
+>>> PATTERN = r'(?P<major>\d+)(\.(?P<minor>\d+))?' <1>
+>>> match = re.match(PATTERN, '3.1')
+>>> match.groupdict(), match.group('major'), match.group('minor') <2>
+({'major': '3', 'minor': '1'}, '3', '1')
+>>> match.group(1), match.group(3) <3>
+('3', '1')
+>>> 
+>>> match = re.match(PATTERN, '3')
+>>> match.groupdict(), match.group('major'), match.group('minor') <4>
+({'major': '3', 'minor': None}, '3', None)
+>>> match.group(1), match.group(3)
+('3', None)
+--------------------------------------------------------------------------------
+<1> 'name' 可以是任何有效的 Python identifier，但在同一個 regular expression 裡不能重複。
+<2> `MatchObject.groupdict()` 傳回以 group name 為 key 值的 dict，也可以個別用 `group(name)` 取回。
+<3> Symbolic group 同時也是 numbered group，也可以用 index 取回匹配的結果。
+<4> 沒有匹配的 group，對應的值用 `None` 來表示。
+
+ * `(?=...)`
+
+都還滿實用的
+
+`|` 搭配 group：
+
+--------------------------------------------------------------------------------
+>>> import re
+>>> agent = 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.2; WOW64)'
+>>> pattern = r'(Firefox) (\d+)\.(\d+)|(MSIE) (\d+)\.(\d+)'
+>>> match = re.search(pattern, agent)
+>>> match.groups()
+(None, None, None, 'MSIE', '7', '0') <1>
+--------------------------------------------------------------------------------
+<1> 雖然是 alternation，但卻不能固定取用 group 1/2/3。
+
+--------------------------------------------------------------------------------
+>>> import re
+>>> print re.match('pid=(123|456)', 'pid=123').groups()
+('123',)
+>>> print re.match('pid=(123|456)', 'pid=456').groups()
+('456',)
+>>> print re.match('pid=(123|456)', 'pid=457').groups()
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+AttributeError: 'NoneType' object has no attribute 'groups'
+>>> 
+--------------------------------------------------------------------------------
+
+ * named group 可以提高程式碼的可讀性。
+
+== 參考資料 ==
+
+ * http://docs.python.org/library/re.html[re — Regular expression operations]
+

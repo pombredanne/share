@@ -1,0 +1,210 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>Mac OS X: 開機時自動執行背景服務 (Startup Items)</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="startup-items.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>Mac OS X: 開機時自動執行背景服務 (Startup Items)</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">如果要設定使用者登入時要執行的項目，從 System Preferences &gt; Users &amp; Groups &gt; Login Items 設定即可。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>SystemStarter 開機時會掃過 <code>/System/Library/StartupItems</code> (系統用) 與 <code>/Library/StartupItems</code> (可自訂) 底下所有的 startup item。已知 MySQL 跟 VirtualBox 都是這麼做的。</p></div>
+<div class="paragraph"><p>Startup item 用一個資料夾來表示，例如 <code>/Library/StartupItems/MyItem</code>，底下要有兩支檔案：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+跟資料夾同名的 start script，其實就是個 shell script (executable)。
+</p>
+</li>
+<li>
+<p>
+<code>StartupParameters.plist</code>
+</p>
+</li>
+</ul></div>
+<div class="listingblock">
+<div class="title"><code>/Library/StartupItems/MyItem/MyItem</code> (executable)</div>
+<div class="content">
+<pre><code>#!/bin/sh
+. /etc/rc.common <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+
+StartService() {
+  echo MyItem start &gt;&gt; /tmp/MyItemService.log <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+  ...
+}
+
+StopService() {
+  echo MyItem stop &gt;&gt; /tmp/MyItemService.log
+  ...
+}
+
+RestartService() {
+  StopService
+  StartService
+}
+
+RunService "$1"</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+主要是取得 <code>RunService</code> 的定義，但也間接載入了 <code>/etc/hostconfig</code> 裡的開關，可供 startup script 參考。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+可以用這個簡單的指令來做測試。
+</td></tr>
+</table></div>
+<div class="paragraph"><p><code>RunService</code> 其實是定義在 <code>/etc/rc.common</code> 裡：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>##
+# Generic action handler
+##
+RunService ()
+{
+    case $1 in
+      start  ) StartService   ;;
+      stop   ) StopService    ;;
+      restart) RestartService ;;
+      *      ) echo "$0: unknown argument: $1";;
+    esac
+}</code></pre>
+</div></div>
+<div class="paragraph"><p>所以之後可以透過下面的指令來測試 service：</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>/Library/StartupItems/MyItem/MyItem start|stop|restart</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="title"><code>/Library/StartupItems/MyItem/StartupParameters.plist</code></div>
+<div class="content">
+<pre><code>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE plist SYSTEM "file://localhost/System/Library/DTDs/PropertyList.dtd"&gt;
+&lt;plist version="0.9"&gt;
+&lt;dict&gt;
+    &lt;key&gt;Description&lt;/key&gt;
+    &lt;string&gt;MyItem&lt;/string&gt;
+    &lt;key&gt;Provides&lt;/key&gt;
+    &lt;array&gt;
+        &lt;string&gt;MyItem&lt;/string&gt;
+    &lt;/array&gt;
+    &lt;key&gt;Requires&lt;/key&gt;
+    &lt;array&gt;
+        &lt;string&gt;Network&lt;/string&gt;
+    &lt;/array&gt;
+    &lt;key&gt;OrderPreference&lt;/key&gt;
+    &lt;string&gt;Late&lt;/string&gt;
+&lt;/dict&gt;
+&lt;/plist&gt;</code></pre>
+</div></div>
+<div class="paragraph"><p>重開機，理當要看到 <code>/tmp/MyItemService.log</code> 有一行 "MyItem start"。</p></div>
+<div class="paragraph"><p>所有的 startup items 預設都是以 root 的身份在執行，如果有以其他使用者留份執行的需求，用 <a href="../unix-like/commands/sudo.html"><code>sudo</code></a> 會有效果，雖然網路上找不太到類似的資料。例如：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>StartService() {
+  sudo -u somebody echo MyItem start &gt;&gt; /tmp/MyItemService.log
+  ...
+}</code></pre>
+</div></div>
+<div class="paragraph"><p>由於執行 <code>sudo</code> 的身份是 root，所以過程中不會被要求輸入密碼。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://docstore.mik.ua/orelly/unix3/mac/ch02_01.htm">Startup (Mac OS X for Unix Geeks)</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://docstore.mik.ua/orelly/unix3/mac/ch02_02.htm">Adding Startup Items (Mac OS X for Unix Geeks)</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://dev.mysql.com/doc/refman/5.1/en/macosx-installation-startupitem.html">MySQL :: MySQL 5.1 Reference Manual :: 2.4.3 Installing the MySQL Startup Item</a> - MySQL 也是安裝到 <code>/Library/StartupItems</code> 底下。
+</p>
+</li>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/6752292/running-a-sudo-command-line-in-the-start-of-mac-os-x">osx - Running a sudo command line in the start of Mac OS X - Stack Overflow</a> (2011-07-19) - 提到 <code>/Library/StartupItems</code>、<code>/etc/rc.common</code> 與 <code>launchd</code>。
+</p>
+</li>
+<li>
+<p>
+<a href="http://blog4kevin.sinaapp.com/index.php/archives/406">德馨 » /etc/rc.local on Mac OS X</a> (2011-06-17) - 修改 <code>rc.common</code> 讓它呼叫 <code>rc.local</code>。
+</p>
+</li>
+<li>
+<p>
+<a href="http://macdevcenter.com/pub/a/mac/2003/10/21/startup.html">Start Me Up: Writing and Understanding OS X StartupItems - O&#8217;Reilly Media</a> (2003-10-21; PDF) - 提到 StartupItems 跟 LoginItems，但如何改變 startup item 的執行身份卻只講一半&#8230;
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:16:02 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+= link:selenium.html[Selenium] / link:selenium-rc.html[RC] / 鍵盤輸入與控制 =
+:title: [Selenium][RC] 鍵盤輸入與控制
+
+主要跟鍵盤輸入／控制相關的 API 有：
+
+ * `type(locator, value)` - 直接設定表單控制項的文字內容，不會引發 keystroke event。
+ * `type_keys(locator, value)` - 模擬使用者敲鍵盤的動作，會引發一連串的 keystroke event。
+
+`type()` 跟 `type_keys()` 兩者最大的不同在於 “會不會引發 keystroke event”，如果需要藉由這些 event 來引發某些反應，就必須採用 `type_keys()`。
+
+NOTE: 在自動化測試時，建議優先考慮 `type_keys()`，儘可能模擬使用者的行為，而且不該假設 SUT 是否會根據 event 做出某些反應。
+
+實驗發現，`type_keys()` 雖然帶有 'locator' 參數，但還是得明確呼叫 `focus()` 先取得焦點才會有作用。取得焦點時，游標預設會停在文字內容的後面，所以 `type_keys()` 輸入的文字會附加在後面，如果想要事先清掉文字內容，可以透過 `type()` 來達成：
+
+--------------------------------------------------------------------------------
+locator = 'locator-to-a-form-element'
+sel.type(locator, '')
+sel.focus(locator)
+sel.type_keys(locator, 'new text here')
+--------------------------------------------------------------------------------
+
+[TIP]
+================================================================================
+`type_keys()` 不能作用在 Firefox 12+，http://code.google.com/p/selenium/issues/detail?id=3861[Issue 3861] 提到的 `send_keys()` 也一直沒出現在官方文件（只加在 Selenium IDE），昇級到最新版的 selenium 2.26.0 也沒用。
+
+既然 `type_keys()` 只是多了 keystroke event，只好暫時用 `type()` 來頂著：
+
+--------------------------------------------------------------------------------
+locator = 'locator-to-a-form-element'
+sel.focus(locator)
+sel.type(locator, 'new text here')
+sel.fire_event(locator, 'blur')
+--------------------------------------------------------------------------------
+================================================================================
+
+除了上面兩個相對高階的 API，也支援許多低階的控制：
+
+ * `key_down(locator, keySequence)`
+ * `key_down_native(keycode)`
+ * `key_press(locator, keySequence)`
+ * `key_press_native(keycode)`
+ * `key_up(locator, keySequence)`
+ * `key_up_native(keycode)`
+ * `meta_key_down()`
+ * `meta_key_up()`
+ * `alt_key_down()`
+ * `alt_key_up()`
+ * `control_key_down()` - 多選時要搭配 Ctrl 跟 Click 做多選
+ * `control_key_up()`
+ * `focus(locator)` - 鍵盤的輸入跟 focus 很有關聯。之前送出 `\t` 無法移開焦點（`key_press_native(9)` 也沒用），只好讓另一個 element 取得焦點。最後發現 `fire_event(locator, 'blur')` 會有作用...
+
+== 參考資料 ==
+
+.文件
+--
+ * http://selenium.googlecode.com/svn/trunk/docs/api/py/selenium/selenium.selenium.html[selenium.selenium — Selenium 2.0 documentation]
+--
+
+.其他文件
+--
+ * http://code.google.com/p/selenium/issues/detail?id=3861[Issue 3861 - selenium - Selenium IDE. Command TypeKeys does not work in FF 12.0 - Browser automation framework - Google Project Hosting] (2012-05-07) - IDE 增加了 `send_keys()`。
+--
+

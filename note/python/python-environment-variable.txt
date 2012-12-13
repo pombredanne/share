@@ -1,0 +1,53 @@
+= Python: 存取環境變數 =
+
+`os.environ` 是個 mapping 物件，內含所有 environment variable 的 key-value pair（初始化的時機是在 `os` 被 import 時）。讀取、寫入、刪除特定的 environment variable 都可以透過 `os.environ` 來操作：
+
+--------------------------------------------------------------------------------
+import os
+os.environ['key']
+--------------------------------------------------------------------------------
+
+NOTE: 其實上述的操作分別對應有 `os.getenv()`、`os.putenv()` 與 `os.unsetenv()`，但這些 function 並非所有平台都支援，再加上呼叫這些 function 並不會自動更新 `os.environ` 的內容，所以官方文件建議直接對 `os.environ` 進行讀、寫、刪除的動作。
+
+至於 key 是否區分大小寫，則會依 OS 不同。參考 `os` 的http://svn.python.org/projects/python/trunk/Lib/os.py[原始碼]：
+
+--------------------------------------------------------------------------------
+if name == "riscos":
+    # On RISC OS, all env access goes through getenv and putenv
+    from riscosenviron import _Environ
+elif name in ('os2', 'nt'):  # Where Env Var Names Must Be UPPERCASE
+    # But we store them as upper case
+    class _Environ(UserDict.IterableUserDict):
+        def __init__(self, environ):
+            UserDict.UserDict.__init__(self)
+            data = self.data
+            for k, v in environ.items():
+                data[k.upper()] = v
+        def __setitem__(self, key, item):
+            putenv(key, item)
+            self.data[key.upper()] = item
+        def __getitem__(self, key):
+            return self.data[key.upper()]      <2>
+        ...
+else:  # Where Env Var Names Can Be Mixed Case <3>
+    class _Environ(UserDict.IterableUserDict):
+        def __init__(self, environ):
+            UserDict.UserDict.__init__(self)
+            self.data = environ
+        def __setitem__(self, key, item):
+            putenv(key, item)
+            self.data[key] = item
+        ...
+
+environ = _Environ(environ) <1>
+--------------------------------------------------------------------------------
+<1> `os.environ` 就是存取到 `_Environ` 物件。
+<2> Windows 下不分大寫，雖然內部都是用 `key.upper()` 轉成大寫存放。
+<3> 其他作業系統則區分大小寫。
+
+異動 environment variable 不外乎是為了跟 subprocess 溝通。`subprocess.call()` 帶出的 child process 預設會繼承 parent process 的 environment variable：
+
+== 參考資料 ==
+
+ * http://docs.python.org/library/os.html[os — Miscellaneous operating system interfaces — Python documentation]
+

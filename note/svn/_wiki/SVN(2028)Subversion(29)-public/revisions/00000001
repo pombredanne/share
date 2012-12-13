@@ -1,0 +1,91 @@
+= SVN (Subversion) =
+<<TableOfContents>>
+
+'''關聯'''
+
+ * [[Version Control]]
+
+'''網站/資源'''
+
+ * http://subversion.org/[Official Home] (http://subversion.tigris.org/[Project])
+ * http://www.yolinux.com/TUTORIALS/Subversion.html[Subversion Commands and Scripts (YoLinux.com)]
+
+'''工具/方案'''
+
+ * [[TortoiseSVN]]
+
+'''應用領域/實例'''
+
+'''書籍'''
+
+ * http://svnbook.red-bean.com/[Version Control with Subversion]
+
+'''文件/教程'''
+
+'''文章/新聞/討論'''
+
+'''關鍵字'''
+
+== 學習指引 ==
+
+== 程式碼片段 ==
+
+== Checkout 時排除某些資料夾, 或者只簽出特定資料夾 ==
+
+例如只想取出 `http://svn/basedir` 下不是以 `"_"` 做為開頭的資料夾:
+
+ {{{
+svn checkout -N http://svn/basedir
+cd basedir
+svn update `svn list | grep -v '_.*'`
+ }}}
+
+'''參考資料'''
+
+ * http://svn.haxx.se/users/archive-2005-12/0676.shtml[Subversion Users: Re: Excluding directories from svn operations]
+
+Subversion 1.5 之後支援 http://svnbook.red-bean.com/en/1.5/svn-book.html#svn.advanced.sparsedirs[Sparse Directories]
+
+== Repository Maintenance ==
+
+ * 合併多個 repository 並非難事, 問題在於 comment 裡所記載的 revision 可能在合併後會對應不上, 必須要手動更新才行 (這根本是不可能的任務). 因此應該採用 "一開始合併, 需要時再拆開" 的策略, 而非 "一開始拆開, 需要時再合併".
+ * 在 bazaar 修復的過程中發現:
+   * 無論如何, 就是取得完整的 dump, 然後再一次 load (即便 `svnadmin dump` 的過程中沒有錯誤, `svnadmin load` 過程中也可能出錯)
+   * 若 dump 的過程中發現某個 revision 有錯誤時
+     * 簽出前一個 revision 出來, 然後再用 `svn diff` 產生的差異重新套用一次, 再做 commit.
+     * 記得要修正 comment 檔案裡的時間與 author, 後續查 history 時才會連貫.
+     * 繼續用 `svndumpfilter` 截取後面的 revision 出來做串接...
+ * 切記 HEAD revision 是針對整個 repository 而來, 跟特定 branch 的 latest revision 不同 (不同的 branches, 其 HEAD revisoin 是一樣的). 它類似於 Maven 裡 SNAPSHOT 的概念, 我們並不能將 `HEAD` 用在 command line 裡. 透過 Eclipse 去做 branch/merge 時, 如果選用 HEAD revision, 背後其實就是求取整合 repository 的最後一個 revision number, 因為 `HEAD` 只不過是個 "概念上" 的版次而已.
+ * 要找出某支檔案何時被刪掉時, 可以用 `svn log -v` 取出 "目前仍存在但最接近該檔案的目錄" 的日誌, 再用 `grep` 定位出在哪個 revision 發生刪除的動作.
+
+== 常見問題 ==
+
+=== Can't convert string from native encoding to 'UTF-8 ===
+
+ {{{
+svn: Error converting entry in directory '.' to UTF-8
+svn: Can't convert string from native encoding to 'UTF-8':
+svn: ?\233?\155?\187?\232?\169?\177?\229?\156?\176?\229?\157?\128_070306.txt
+ }}}
+
+將 Locale 改成 UTF-8 即可:
+
+ {{{
+export LC_ALL=en_US.UTF-8
+ }}}
+
+又或者在 `crontab` 裡:
+
+ {{{
+LC_ALL=en_US.UTF-8
+
+# m h  dom mon dow   command
+*/1 * * * * root cd ...; /usr/bin/svn update 2>> /var/log/cronerr
+ }}}
+
+== 隨手記 ==
+
+== 修訂記錄 ==
+
+|| 版次 || 日期 || 記錄 ||
+|| 1.0 || <<Date(2009-06-19T09:30:16Z)>> || 初稿 ||

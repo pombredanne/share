@@ -1,0 +1,154 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title><a href="python.html">Python</a> / 從 Java 到 Python</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="from-java-to-python.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="python.html">Python</a> / 從 Java 到 Python</h1>
+<span id="author">:[title] 從 Java 到 Python</span><br />
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+Python 如此地 dynamic，難怪不需要 Interface；通常會將 contract 寫在 manual 或 docstring 裡。
+</p>
+</li>
+<li>
+<p>
+由於 function 支援多種參數的帶法，難怪沒有 overloading 的概念，constructor 也只有一個而已。
+</p>
+</li>
+<li>
+<p>
+覺得 Python 過度的 dynamic，反而把開發成本都帶到了 runtime
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+由於太 dynamic，所以 IDE 能幫的忙有限，很多東西要靠 developer 記在腦子裡，否則要等到執行期才能發現錯誤; 因此 docstrings 的撰寫就很重要!!
+</p>
+</li>
+<li>
+<p>
+將 unit testing 的 coverage 提高，可以將大部份的 runtime error 在 build time 先找出來。之後再借助 coverage 來反向檢查出有哪些 test cases 漏開。
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+Python 常提到的 inteface
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+比較正統的做法是，把它宣告成沒有實作的 methods，可以參考 <code>cookielib.CookiePolicy</code> 與 <code>cookielib.DefaultCookiePolicy</code> 的關係。
+</p>
+</li>
+<li>
+<p>
+如果 interface 只有一個方法，單一個 callable object 也可以做為 interface，不需要額外宣告 class。
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+呼叫 class 就是建立一個 instance 的做法很特別，參考 <code>unittest.main()</code> 的用法!!
+</p>
+</li>
+<li>
+<p>
+程式裡面儘可能不要去做強制轉型，因為只要支援特定的 interface，過程中就不會出錯，但可以要求自己傳回等定的型態。
+</p>
+</li>
+<li>
+<p>
+因為 dynamic type 的關係，Python 對於 refactoring 的支援很弱。
+</p>
+</li>
+<li>
+<p>
+Python 非常的動態，以致於它很難用 Javadoc 的方式來表達 API 的用法。
+</p>
+</li>
+<li>
+<p>
+Python 裡到處是 name 的概念 (呼應 namespace 的說法)，只是從外面看時，會成為 object 的 attributes 而已。
+</p>
+</li>
+<li>
+<p>
+Constructor 並非專指 <code>__init__()</code>，Python 習慣將用來產生 instance 的 class/factory methods 都稱做 constructor. 例如 <code>datetime.date.today()</code>，<code>datetime.date.fromtimestamp()</code> 等。
+</p>
+</li>
+<li>
+<p>
+Python 似乎很習慣將 lib 裝到 <code>site-packages</code> 底下，跟 Java 建議不要將 lib 不要裝到 <code>/lib/ext</code> 的做法顯然不同？不過這也衍生了版本衝突的問題，也之所以才會有 <a href="../virtualenv/virtualenv.html">virtualenv</a> 這類的方案出現。
+</p>
+</li>
+<li>
+<p>
+<code>PYTHONPATH</code> 不能合併，大概是因為 <code>__init__.py</code> 原因. 例如 <code>./dir1/org/foo</code> 與 <code>./dir2/org/bar</code>，該以 <code>./dir1/org/__init__.py</code> 或 <code>./dir2/org/__init__.py</code> 為主？這也使得 Python 界顯少看到 <code>org.xxx</code> 階層式的套件命名方式。
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-12 11:15:29 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

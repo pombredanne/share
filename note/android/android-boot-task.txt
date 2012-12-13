@@ -1,0 +1,46 @@
+= [Android] 如何在設備開機完馬上做些事情？ =
+
+需要在 "開機完成" 這個事件發生時被通知道，當然就得靠 Broadcast Receiver 了。
+
+開機完成後，系統會廣播 `BOOT_COMPLETED`，所以透過 Broadcast Receiver 我們可以知道這件事。
+
+--------------------------------------------------------------------------------
+<receiver android:name=".BootCompletedReceiver">
+    <intent-filter>  
+        <action android:name="android.intent.action.BOOT_COMPLETED" />  
+    </intent-filter>  
+</receiver>
+--------------------------------------------------------------------------------
+
+不過這需要使用者授予 `RECEIVE_BOOT_COMPLETED` 的權限才行：（因為會拉長開機的時間，也可能被用來啟動背景的服務）
+
+ <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+如果處理的時間比較長，就必須要交給另一個能夠在背景運算的 Service：
+
+.`BootCompletedReceiver.java`
+--------------------------------------------------------------------------------
+public class BootCompletedReceiver extends BroadcastReceiver {
+
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        Intent intent = new Intent(context, MyService.class);
+        context.startService(intent);
+    }
+
+}
+--------------------------------------------------------------------------------
+
+== 參考資料 ==
+
+.文件
+--
+ * http://developer.android.com/reference/android/content/Intent.html#ACTION_BOOT_COMPLETED[Intent > ACTION_BOOT_COMPLETED | Android Developers]
+ * http://developer.android.com/reference/android/Manifest.permission.html#RECEIVE_BOOT_COMPLETED[Manifest.permission > RECEIVE_BOOT_COMPLETED | Android Developers]
+--
+
+.其他文件
+--
+ * http://stackoverflow.com/questions/2784441/trying-to-start-a-service-on-boot-on-android[Trying to start a service on boot on Android - Stack Overflow] (2010-05-06)
+--
+

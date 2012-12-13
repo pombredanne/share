@@ -1,0 +1,209 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[monkeyrunner] <code>startActivity()</code> 參數內容要避開某些特殊的字元</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="monkeyrunner-activity-parameter.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>[monkeyrunner] <code>startActivity()</code> 參數內容要避開某些特殊的字元</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>照理說，如果要用瀏覽器叫出 Google Maps 顯示 <a href="http://en.wikipedia.org/wiki/Taipei_101">台北 101</a> 的位置，可以這麼做：</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>startActivity(action='android.intent.action.VIEW', data='http://maps.google.com/?q=25.033611,121.565000&amp;z=19')</code></pre>
+</div></div>
+<div class="paragraph"><p>不過這個動作大部份的時候會失敗（至於為什麼 "偶爾" 可以，真的讓人不解！），因為某個參數裡出現特殊的字元，就像是這裡 <code>data</code> 參數裡的 <code>&amp;</code>。原因是 monkeyrunner 最後也是將不同的參數串成一個 shell command，但某些字元在 shell 的環境下有特殊的意義，所以造成某些參數值被錯誤解讀。</p></div>
+<div class="paragraph"><p>這個問題可以在 ADB shell 裡看出端倪：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ am start -a android.intent.action.VIEW -d http://maps.google.com/?q=25.033611,121.565000&amp;z=19
+$ Starting: Intent { act=android.intent.action.VIEW dat=http://maps.google.com/?q=25.033611,121.565000 } <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+
+[1]   Done                    am start -a android.intent.action.VIEW -d http://maps.google.com/?q=25.033611,121.565000
+$
+$ am start -a android.intent.action.VIEW -d http://maps.google.com/?q=25.033611,121.565000\&amp;z=19
+Starting: Intent { act=android.intent.action.VIEW dat=http://maps.google.com/?q=25.033611,121.565000&amp;z=19 } <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+很明顯地，整個 <code>am start</code> 尾部的 <code>&amp;z=19</code> 整個被切掉了，因為 <code>&amp;</code> 被解讀為 "放到背景執行"。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+用 <code>\</code> 把 <code>&amp;</code> 字元跳脫後，<code>am</code> 就能收到完整的參數。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>由於 <code>startActivity()</code> 內部不會做 escaping（細節可以看最後一節），要解這個問題，就必須要先將參數值加工過：</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>startActivity(action='android.intent.action.VIEW', data=r'http://maps.google.com/?q=25.033611,121.565000\&amp;z=19')</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_原來_monkeyrunner_最後也是呼叫_shell_command">原來 monkeyrunner 最後也是呼叫 Shell Command</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>從 <code>MonkeyDevice.startActivity()</code> 開始追起：</p></div>
+<div class="listingblock">
+<div class="title"><a href="http://androidxref.com/source/xref/sdk/monkeyrunner/src/com/android/monkeyrunner/MonkeyDevice.java#startActivity"><code>com.android.monkeyrunner.MonkeyDevice</code></a></div>
+<div class="content">
+<pre><code>69    private IChimpDevice impl;
+...
+274    public void startActivity(PyObject[] args, String[] kws) {
+275        ArgParser ap = JythonUtils.createArgParser(args, kws);
+276        Preconditions.checkNotNull(ap);
+277
+278        String uri = ap.getString(0, null);
+279        String action = ap.getString(1, null);
+280        String data = ap.getString(2, null);
+281        String mimetype = ap.getString(3, null);
+282        Collection&lt;String&gt; categories = Collections2.transform(JythonUtils.getList(ap, 4),
+283                Functions.toStringFunction());
+284        Map&lt;String, Object&gt; extras = JythonUtils.getMap(ap, 5);
+285        String component = ap.getString(6, null);
+286        int flags = ap.getInt(7, 0);
+287
+288        impl.startActivity(uri, action, data, mimetype, categories, extras, component, flags); <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+289    }
+290</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+轉呼叫 <code>IChimpDevice.startActivity()</code>，目前只有 <code>AdbChimpDevice</code> 實作它。
+</td></tr>
+</table></div>
+<div class="listingblock">
+<div class="title"><a href="http://androidxref.com/source/xref/sdk/chimpchat/src/com/android/chimpchat/adb/AdbChimpDevice.java#startActivity"><code>com.android.chimpchat.adb.AdbChimpDevice</code></a></div>
+<div class="content">
+<pre><code>383    public void startActivity(String uri, String action, String data, String mimetype,
+384            Collection&lt;String&gt; categories, Map&lt;String, Object&gt; extras, String component,
+385            int flags) {
+386        List&lt;String&gt; intentArgs = buildIntentArgString(uri, action, data, mimetype, categories,
+387                extras, component, flags);
+388        shell(Lists.asList("am", "start", <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+389                intentArgs.toArray(ZERO_LENGTH_STRING_ARRAY)).toArray(ZERO_LENGTH_STRING_ARRAY));
+390    }
+...
+406    private List&lt;String&gt; buildIntentArgString(String uri, String action, String data, String mimetype,
+407            Collection&lt;String&gt; categories, Map&lt;String, Object&gt; extras, String component,
+408            int flags) {
+409        List&lt;String&gt; parts = Lists.newArrayList();
+410
+411        // from adb docs: <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+412        //&lt;INTENT&gt; specifications include these flags:
+413        //    [-a &lt;ACTION&gt;] [-d &lt;DATA_URI&gt;] [-t &lt;MIME_TYPE&gt;]
+414        //    [-c &lt;CATEGORY&gt; [-c &lt;CATEGORY&gt;] ...]
+415        //    [-e|--es &lt;EXTRA_KEY&gt; &lt;EXTRA_STRING_VALUE&gt; ...]
+416        //    [--esn &lt;EXTRA_KEY&gt; ...]
+417        //    [--ez &lt;EXTRA_KEY&gt; &lt;EXTRA_BOOLEAN_VALUE&gt; ...]
+418        //    [-e|--ei &lt;EXTRA_KEY&gt; &lt;EXTRA_INT_VALUE&gt; ...]
+419        //    [-n &lt;COMPONENT&gt;] [-f &lt;FLAGS&gt;]
+420        //    [&lt;URI&gt;]
+421
+422        if (!isNullOrEmpty(action)) {
+423            parts.add("-a");
+424            parts.add(action);
+425        }
+426
+427        if (!isNullOrEmpty(data)) {
+428            parts.add("-d");
+429            parts.add(data);
+430        }
+...
+479        return parts;
+480    }</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+原來 monkeyrunner 內部最後也是轉呼叫 shell command。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+問題就出在不同的參數最後會被接成一長串 <code>am start ...</code> 的指令。
+</td></tr>
+</table></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_延伸閱讀">延伸閱讀</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="monkeyrunner-activity.html">開啟 Activity</a>
+</p>
+</li>
+<li>
+<p>
+<a href="monkeyrunner-type.html">按鈕跟鍵盤的操作</a> - 也有類似的問題。
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/13193555/monkeyrunner-doesnt-handle-specifical-characters-correctly-while-constructing-s">android - monkeyrunner doesn&#8217;t handle specifical characters correctly while constructing shell commands - Stack Overflow</a> (2012-11-02)
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:17:02 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

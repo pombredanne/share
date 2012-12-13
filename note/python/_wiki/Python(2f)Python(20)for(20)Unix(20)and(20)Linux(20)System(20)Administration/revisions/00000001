@@ -1,0 +1,932 @@
+= Python for Unix and Linux System Administration =
+<<TableOfContents>>
+
+== Forward ==
+
+I was excited to preview this book on using Python for system administration. I remembered how I felt when I discovered Python after many years of programming in other languages: it was like a breath of spring air and the warmth(暖和) of the sun after a long winter indoors. Code was suddenly easy and fun to write again, and I finished programs much more quickly than before.
+
+As a system administrator, most of my own Python use is for system and network management tasks. I already knew how useful a good book focusing on system administration with Python would be. I am happy to say that this is that book. Overall, Noah and Jeremy have created an interesting, intelligent work on Python that is planted firmly(深植) in the system administration sphere(界). I found the book both very useful and enjoyable to read.
+
+The two opening(開頭的) chapters are a great introduction to Python for system administrators (and others) who are new to Python. I consider myself an intermediate Python programmer, and I learned a lot from the book. I suspect(猜想) even Python wizards(高手) will come across(遇見) a few new tricks in here. I can especially recommend the chapters on networking and managing network services, SNMP, and management of ''heterogeneous systems'' as particularly useful and well focused on nontrivial, real-world tasks that system administrators face every day.
+
+— Æleen Frisch, July 2008
+
+== Chapter 1. Introduction ==
+
+=== Why Python? ===
+
+If you are a system administrator, it is likely that you have encountered Perl, Bash, ksh, or some other scripting language. You may have even used one or more yourself. __Scripting languages are often used to do repetitive, tedious(冗長乏味的) work at a rate and with an accuracy(準確度) that far surpass(勝過) what you could accomplish without them. '''All languages are tools. They are simply a means to get work done. They have value only insofar(在...的範圍) as they help you get your job done better.'''__ We believe that Python is a valuable tool, specifically because it enables you to get your work done efficiently.
+
+So is Python better than Perl, Bash, Ruby, or any other language? It’s really difficult to put that sort of qualitative(定性的) label on a programming language, since the tool is so closely tied to the thought process(思維過程) of the programmer who is using it. __Programming is a subjective(主觀的), deeply personal activity. For the language to be excellent, it must fit the person using it.__ So we’re not going to argue that Python is better, but we will explain the reasons that we believe Python can be an excellent choice. We’ll also explain why it is a great fit for performing ''sysadmin(系統管理)'' tasks.
+
+The first reason that we think that Python is excellent is that it is easy to learn. If a language can’t help you become productive pretty quickly, the lure(吸引力) of that language is severely diminished(大大地貶低). Why would you want to spend weeks or months studying a language before you are able to write a program that does something useful? This is especially the case for sysadmins. If you are a sysadmin, your work can pile up(堆積) faster than you can unpile(拆掉) it. With Python, you can start writing useful scripts literally(不誇張地) in hours rather than in days or weeks. If you can’t learn a language quickly enough to start writing scripts with it almost immediately, you should strongly question whether you should be learning it.
+
+However, a language that is easy to learn but doesn’t allow you to do fairly complex tasks isn’t worth much either. So the second reason that we consider Python to be an excellent programming language is that, while it lets you start simply, it also allows you to perform tasks that are as complex as you can imagine. Do you need to read through a logfile line by line and pull out some pretty basic information? Python can handle that. Or do you need to parse through a logfile, extract every piece of information that it provides, compare usage from each IP address in this logfile to usage in each logfile (which are stored in a relational database, by the way) from the past three months, and then store the results to a relational database? Sure, Python can do that as well. Python is being used on some pretty complex problems, such as analysis of genomic sequences(基因序列), multithreaded web servers, and heavy duty statistical analysis. __You may never have to work on anything like that, but it’s nice to know that when you need to do complex things, the language is able to work with you.__
+
+Additionally, if you are able to perform complex operations, but the ''maintainability'' of your code suffers along the way, that isn’t a good thing. __Python doesn’t prevent code maintenance problems, but it does allow you to express complex ideas with simple language constructs. Simplicity is a huge factor in writing code that is easy to maintain later.__ Python has made it pretty simple for us to go back over our own code and work on it after we haven’t touched it in months. It has also been pretty simple for us to work on code that we haven’t seen before. So the language, that is the language’s syntax and ''common idioms(慣用語法)'', are clear and concise(扼要的) and easy to work with over long periods of time.
+
+__The next reason we consider Python to be an excellent language is its ''readability''. Python relies on whitespace to determine where code blocks begin and end. The indentation helps your eyes quickly follow the flow of a program. Python also tends to be “word-based.” By that we mean that while Python uses its share of special characters, features are often implemented as keywords or with libraries. '''The emphasis on words rather than special characters helps the reading and ''comprehension'' of code.'''__
+
+Now that we’ve outlined a few of Python’s benefits, we’ll show some comparisons of code examples in Python, Perl, and Bash. Along the way, we’ll also look at a few more of Python’s benefits. Here is a simple example, in Bash, of showing all the combinations of 1, 2 and a, b:
+
+ {{{
+#!/bin/bash
+
+for a in 1 2; do
+    for b in a b; do
+        echo "$a $b"
+    done
+done
+ }}}
+
+And here is a comparable piece of Perl:
+
+ {{{
+#!/usr/bin/perl
+
+foreach $a ('1', '2') {
+    foreach $b ('a', 'b') {
+        print "$a $b\n";
+    }
+}
+ }}}
+
+This is a pretty simple nested loop. Let’s compare these looping mechanisms with a for loop in Python:
+
+ {{{
+#!/usr/bin/env python
+
+for a in [1, 2]:
+    for b in ['a', 'b']:
+        print a, b
+ }}}
+
+Next, we’ll demonstrate using conditionals in Bash, Perl, and Python. We have a simple if/else condition check here. We’re just checking to see whether a certain file path is a directory:
+
+ {{{
+#!/bin/bash
+
+if [ -d "/tmp" ] ; then
+    echo "/tmp is a directory"
+else
+    echo "/tmp is not a directory"
+fi
+ }}}
+
+Here is the Perl equivalent of the same script:
+
+ {{{
+#!/usr/bin/perl
+
+if (-d "/tmp") {
+    print "/tmp is a directory\n";
+}
+else {
+    print "/tmp is not a directory\n";
+}
+ }}}
+
+And here is the Python equivalent of the script:
+
+ {{{
+#!/usr/bin/env python
+
+import os
+
+if os.path.isdir("/tmp"):
+    print "/tmp is a directory"
+else:
+    print "/tmp is not a directory"
+ }}}
+
+Another point in favor of(有利於) Python’s excellence is its simple support for object-oriented programming (OOP). __And, actually, the converse(相反) of that is that you don’t have to do OOP if you don’t want to. But if you do, it’s dead simple in Python. '''OOP allows you to easily and cleanly break problems apart and bundle pieces of functionality together into single “things” or “objects.”'''__ Bash doesn’t support OOP, but both Perl and Python do. Here is a module in Perl that defines a class:
+
+ {{{
+package Server;
+use strict;
+
+sub new {
+    my $class = shift;
+    my $self = {};
+    $self->{IP} = shift;
+    $self->{HOSTNAME} = shift;
+    bless($self);
+    return $self;
+}
+
+sub set_ip {
+    my $self = shift;
+    $self->{IP} = shift;
+    return $self->{IP};
+}
+
+sub set_hostname {
+    my $self = shift;
+    $self->{HOSTNAME} = shift;
+    return $self->{HOSTNAME};
+}
+
+sub ping {
+    my $self = shift;
+    my $external_ip = shift;
+    my $self_ip = $self->{IP};
+    my $self_host = $self->{HOSTNAME};
+    print "Pinging $external_ip from $self_ip ($self_host)\n";
+    return 0;
+}
+
+1;
+ }}}
+
+And here is a piece of code that uses it:
+
+ {{{
+#!/usr/bin/perl
+
+use Server;
+
+$server = Server->new('192.168.1.15', 'grumbly');
+$server->ping('192.168.1.20');
+ }}}
+
+The code that makes use of the OO module is straightforward and simple. The OO module may take a bit more mental(精神上的) parsing if you’re not familiar with OOP or with the way that Perl tackles OOP.
+
+A comparable Python class and use of the class looks something like this:
+
+ {{{
+#!/usr/bin/env python
+
+class Server(object):
+    def __init__(self, ip, hostname):
+        self.ip = ip
+        self.hostname = hostname
+    def set_ip(self, ip):
+        self.ip = ip
+    def set_hostname(self, hostname):
+        self.hostname = hostname
+    def ping(self, ip_addr):
+        print "Pinging %s from %s (%s)" % (ip_addr, self.ip, self.hostname)
+
+if __name__ == '__main__':
+    server = Server('192.168.1.20', 'bumbly')
+    server.ping('192.168.1.15')
+ }}}
+
+Both the Perl and Python examples demonstrate some of the fundamental pieces of OOP. The two examples together display the different flavors that each respective language provides while reaching toward its respective goals. They both do the same thing, but are different from one another. So, if you want to use OOP, Python supports it. And it’s quite simple and clear to incorporate it into your programming.
+
+__Another element of Python’s excellence comes not from the language itself, but from the community. '''In the Python community, there is much consensus(共識) about the way to accomplish certain tasks and the idioms that you should (and should not) use.''' While the language itself may support certain phrasings(措辭) for accomplishing something, the consensus of the community may steer(建議) you away from that phrasing.__ For example, `from module import *` at the top of a module is valid Python. However, the community frowns upon(蹙眉表示不贊成) this and recommends that you use either: `import module` or: `from module import resource`. Importing all the contents of a module into another module’s namespace can cause serious annoyance when you try to figure out how a module works, what functions it is calling, and where those functions come from. __This particular ''convention'' will help you write code that is clearer and will allow people who work on your code after you to have a more pleasant maintenance experience. Following common conventions for writing your code will put you on the path of best practices. We consider this a good thing.__
+
+__The Python Standard Library is another excellent attribute of Python. If you ever hear the phrase “batteries included” in reference to Python, it simply means that the standard library allows you to perform all sorts of tasks without having to go elsewhere for modules to help you get it done.__ For example, though it isn’t built-in to the language directly, Python includes regular expression functionality; sockets; threads; date/time functionality; XML parsers; config file parser; file and directory functionality; data persistence; unit test capabilities; and http, ftp, imap, smpt, and nntp client libraries; and much more. So once Python is installed, modules to support all of these functions will be imported by your scripts as they are needed. You have all the functionality we just listed here. It is impressive that all of this comes with Python without requiring anything else. All of this functionality will help you out immensely(非常地) as you write Python programs to do work for you.
+
+Easy access to numerous third-party packages is another real advantage of Python. In addition to the many libraries in the Python Standard Library, there are a number of libraries and utilities that are easily accessible on the internet that you can install with a single shell command. __The Python Package Index, PyPI (http://pypi.python.org), is a place where anyone who has written a Python package can upload it for others to use.__ At the time we are writing this book, there are over 3,800 packages available for download and use. Packages include http://ipython.scipy.org/[IPython], which we cover in the following chapter; https://storm.canonical.com/[Storm] (an object-relational mapper, which we cover in Chapter 12); and http://twistedmatrix.com/[Twisted], a network framework, which we cover in Chapter 5—just to name 3 of the over 3,800 packages.
+
+Once you start using PyPI, you’ll find it nearly indispensible(不可或缺) for finding and installing useful packages.
+
+__Many of the benefits that we see in Python stem from(源自於) the ''central philosophy'' of Python. When you type `import this` at a Python prompt, you will see ''The Zen of Python by Tim Peters''. Here it is:__
+
+ {{{
+In [1]: import this
+The Zen of Python, by Tim Peters
+Beautiful is better than ugly.
+Explicit is better than implicit.
+Simple is better than complex.
+Complex is better than complicated.
+Flat is better than nested.
+Sparse is better than dense.
+Readability counts.
+Special cases aren't special enough to break the rules.
+Although practicality beats purity.
+Errors should never pass silently.
+Unless explicitly silenced.
+In the face of ambiguity, refuse the temptation to guess.
+There should be one-- and preferably only one --obvious way to do it.
+Although that way may not be obvious at first unless you're Dutch.
+Now is better than never.
+Although never is often better than *right* now.
+If the implementation is hard to explain, it's a bad idea.
+If the implementation is easy to explain, it may be a good idea.
+Namespaces are one honking great idea -- let's do more of those!
+ }}}
+
+__This statement isn’t a dogmatic(教條的) imperative(規則) that is strictly enforced at all levels of development of the language, but the spirit of it seems to permeate(影響) much of what happens in and with the language.__ And we have found this spirit to be a beautiful thing. This is perhaps the essence(要素) of why we choose to use Python day after day. This philosophy resonates(共鳴) within us as what we want and expect from a language. And if this resonates with you, then Python is probably a good choice for you as well.
+
+=== Motivation ===
+
+If you just picked up this book in a bookstore or are reading an introduction online somewhere, you may be asking yourself, how hard it is going to be to learn Python and if it is even worth it. __Although Python is catching on(變得流行) like wildfire, there are many sysadmins who have been exposed to Bash and Perl only.__ If you find yourself in this category, you should take comfort(寬心) in knowing that Python is very easy to learn. __In fact, although it is a matter of opinion, '''Python is considered by many to be the easiest language to learn and teach, period(就是這麼回事)!'''__
+
+If you already know Python, or are a programming guru in another language, you will probably be able to jump right into any of the following chapters without reading this intro and immediately start being productive using our examples. We made a concerted(齊心協力的) effort to create examples that will actually help you get your job done. There are examples of ways to discover and monitor subnets automatically with SNMP, to convert to an interactive Python shell called IPython, to build data processing pipelines, to write custom ''metadata management'' tools with object-relational mappers, to perform network programming, to write command-line tools, and much more.
+
+If you are coming from a shell programming/scripting background, though, don’t worry at all. You, too, can learn Python quite easily. You need only motivation, curiosity(好奇心), and determination(決心), the same factors that led you to pick up this book and look at the introduction in the first place.
+
+We sense(意識到) there are still a few skeptics(懷疑者) out there. Maybe some of the things you have heard about programming have scared you. One common, and horribly(可怕地) false, misconception is that only some people can learn to program, and they are a mysterious(難以理解的) and elite(精英) few. The frank(坦率的) truth is that anyone can learn how to program. __A second, equally false, misconception is that earning a computer science degree(學位) is the only way a person can truly become a software engineer. But some of the most prolific(多產的) software developers do not have engineering degrees.__ There are people with philosophy, journalism(新聞工作), nutritional(營養的) science, and English degrees who are competent(足夠的) Python programmers. Having a degree in computer science is not a requirement to learn Python, although it certainly doesn’t hurt.
+
+Another funny, and false, misconception is that you must have started to program in your teenage years, or you will never learn to program. While this makes people who were lucky enough to have someone in their life that encouraged them to program at a young age feel good, it is another myth(荒誕的說法). __It is very helpful to have started learning programming at a young age, but age is not a requirement to learn Python. Learning Python is most certainly not a “young person’s game,”__ as we have heard some people say. There are countless cases of developers who learned to program in their late 20s, 30s, 40s, and onward.
+
+If you have gotten this far, we should point out that you, the reader, have an advantage many people do not. If you decided to pick up a book on Python for Unix and Linux system administration, then you most likely know something about how to execute commands from a shell. This is a tremendous(極大的) advantage to learning to become a Python programmer. Having an understanding of the way to execute commands from a terminal is all that is required for this introduction to Python. If you truly believe you will learn how to program with Python, then read the next section immediately. If you don’t believe it yet, then reread this section again, and convince(說服) yourself it really is just a matter of getting your mind to understand you do have the power to learn how to program in Python. It is really that simple; __if you make this decision, it will change your life.__
+
+=== The Basics ===
+
+This introduction to Python is going to be very different from any other one we’ve seen, as it will use an ''interactive shell'' called IPython and a regular Bash shell. You will need to open two terminal windows, one with IPython and one with Bash. In every example, we will compare what we do in Python with a Bash example. The first steps are to download the correct version of IPython for your platform and install it. (在 Ubuntu 下可以直接安裝 `ipython` 套件) You can get a copy at http://ipython.scipy.org/moin/Download. If for some reason, you can’t get IPython to install you can also just use a regular Python shell. You can also download a copy of the virtual machine that includes all of the software for the book, as we have a copy of IPython preconfigured and ready to run. You just need to type in `ipython`, and you will get a prompt.
+
+Once you have installed IPython and have an IPython shell prompt, it should look something like this:
+
+ {{{
+[ngift@Macintosh-7][H:10679][J:0]# ipython
+Python 2.5.1 (r251:54863, Jan 17 2008, 19:35:17)
+Type "copyright", "credits" or "license" for more information.
+IPython 0.8.2 -- An enhanced Interactive Python.
+? -> Introduction and overview of IPython's features.
+%quickref -> Quick reference.
+help -> Python's own help system.
+object? -> Details about 'object'. ?object also works, ?? prints more.
+In [1]:
+ }}}
+
+__An IPython shell is quite a bit like a regular Bash shell and can execute commands such as `ls`, `cd`, and `pwd`,__ but you can read the next chapter for more of a scoop(詳情) on IPython. This chapter is about learning Python, so on to the tutorial.
+
+In your Python terminal, type in the following:
+
+ {{{
+In [1]: print "I can program in Python"
+I can program in Python
+ }}}
+
+In your Bash terminal, type in the following:
+
+ {{{
+[ngift@Macintosh-7][H:10688][J:0]# echo "I can program in Bash"
+I can program in Bash
+ }}}
+
+In these two examples, there isn’t much of a difference in Python and Bash; we hope it takes some of the mystery out of Python.
+
+=== Executing Statements in Python ===
+
+If you spend a lot of your day typing commands into a terminal, then you are used to executing statements and, perhaps, redirecting the output to a file or to another Unix command. Let’s look at the way we would execute a command in Bash and then compare that to the way it works in Python. In the Bash terminal, type the following:
+
+ {{{
+[ngift@Macintosh-7][H:10701][J:0]# ls -l /tmp/
+total 0
+-rw-r--r-- 1 ngift wheel 0 Apr 7 00:26 file.txt
+ }}}
+
+In the Python terminal, type the following:
+
+ {{{
+In [2]: import subprocess
+
+In [3]: subprocess.call(["ls", "-l ", "/tmp/"])
+total 0
+-rw-r--r-- 1 ngift wheel 0 Apr 7 00:26 file.txt
+Out[3]: 0
+ }}}
+
+The Bash example shouldn’t need any explanation as it is a simple `ls` command, but if you have never seen Python code before, the Python example probably looks a bit strange. You might be thinking, “What the heck(究竟) is this `import subprocess` thing?” __One of the powerful features of Python is its ability to import modules or other files that contain code and reuse them in a new program. If you are familiar with “sourcing” a file in Bash, then you will recognize some similarities.__ In this particular situation, all that is important to know is that you import the `subprocess` and use it in the syntax that is shown. We will get into the particulars of how `subprocess` and `import` work later, but for now, ignore why it works and copy the code:
+
+ {{{
+subprocess.call(["some_command", "some_argument", "another_argument_or_path"])
+ }}}
+
+You can run any shell command in Python just as it would be run with Bash. Given this bit of information, you can now create a Python version of `ls`. Just open up your favorite text editor in another terminal tab or window and place this in a file named `pyls.py`, and make it executable by using `chmod +x pyls.py`. See Example 1-1.
+
+Example 1-1. Python wrapper for `ls` command
+
+ {{{
+#!/usr/bin/env python
+#Python wrapper for the ls command
+
+import subprocess
+
+subprocess.call(["ls", "-l"])
+ }}}
+
+Now if you run this script, you will get the exact same output that you would get if you ran `ls -ls` from the command line:
+
+ {{{
+[ngift@Macintosh-7][H:10746][J:0]# ./pyls.py
+total 8
+-rwxr-xr-x 1 ngift staff 115 Apr 7 12:57 pyls.py
+ }}}
+
+While this may seem silly, (and it is silly actually), it gives you a good idea of a common use of Python in systems programming. Often, you use Python to “wrap” other scripts or Unix commands. Given this new bit of information, you could happily start writing some basic scripts if you just put one command after another in a file and ran it. Let’s take a look at something pretty simple that does just that. To follow along from home, either cut and paste the code in Example 1-2, or run the scripts `pysysinfo.py` and `bashsysinfo.sh` located in the source code that is included with this chapter. See Examples 1-2 and 1-3.
+
+Example 1-2. System information script—Python: `pysysinfo.py`
+
+ {{{
+#!/usr/bin/env python
+#A System Information Gathering Script
+
+import subprocess
+
+#Command 1
+uname = "uname"
+uname_arg = "-a"
+print "Gathering system information with %s command:\n" % uname
+subprocess.call([uname, uname_arg])
+
+#Command 2
+diskspace = "df"
+diskspace_arg = "-h"
+print "Gathering diskspace information %s command:\n" % diskspace
+subprocess.call([diskspace, diskspace_arg])
+ }}}
+
+Example 1-3. System information script—Bash
+
+ {{{
+#!/usr/bin/env bash
+#A System Information Gathering Script
+
+#Command 1
+UNAME="uname -a"
+printf “Gathering system information with the $UNAME command: \n\n"
+$UNAME
+
+#Command 2
+DISKSPACE="df -h"
+printf "Gathering diskspace information with the $DISKSPACE command: \n\n"
+$DISKSPACE
+ }}}
+
+If we look at both of the scripts, we see that they look a lot a like. And if we run them, we see that the output of each is identical. __One quick note though: splitting the command from the argument is completely optional using `subprocess.call`. You can also use this syntax:__
+
+ {{{
+subprocess.call("df -h", shell = True)
+ }}}
+
+So far so good, but we still haven’t explained `import` and `subprocess` completely. In the Python version of the script, we imported the `subprocess` module because it already contained the code to make system calls in Python.
+
+__As we mentioned earlier, importing a module like `subprocess` is just importing a file that contains code you can use. You can create your own module or file and reuse code you have written in the same way you import `subprocess`. '''Importing is not magic at all, it is just a file with some code in it.'''__ One of the nice things about the IPython shell that you have open is its ability to inspect inside modules and files, and see the attributes that are available inside them. In Unix terms, this is a lot like running the `ls` command inside of `/usr/bin`. If you happen to be on a new system such as Ubuntu or Solaris, and you are used to Red Hat, you might do an `ls` of `/usr/bin` to see if tools such as `wget`, `curl`, or `lynx` are available. If you want to use a tool you find inside `/usr/bin`, you would simply type `/usr/bin/wget`, for example.
+
+Modules such as `subprocess` are very similar. With IPython you can use tab complete to look at the tools that are available inside a module. Let’s walk through `subprocess` using tab complete to look at the attributes available inside of it. Remember, a module is just a file with some code in it. Here is what a tab complete looks like with the `subprocess` module in IPython: (@2009/03/28 確認 Python 的 Interactive Mode 並不支援自動完成的功能, 或許這就是 IPython 名字裡有個 "interactive" 的關係吧, 用起來真有點像是一個 editor...)
+
+ {{{
+In [12]: subprocess. <-- 在 "." 之後按 Tab
+subprocess.CalledProcessError  subprocess.__hash__            subprocess.call
+subprocess.MAXFD               subprocess.__init__            subprocess.check_call
+subprocess.PIPE                subprocess.__name__            subprocess.errno
+subprocess.Popen               subprocess.__new__             subprocess.fcntl
+subprocess.STDOUT              subprocess.__reduce__          subprocess.list2cmdline
+subprocess.__all__             subprocess.__reduce_ex__       subprocess.mswindows
+subprocess.__builtins__        subprocess.__repr__            subprocess.os
+subprocess.__class__           subprocess.__setattr__         subprocess.pickle
+subprocess.__delattr__         subprocess.__str__             subprocess.select
+subprocess.__dict__            subprocess._active             subprocess.sys
+subprocess.__doc__             subprocess._cleanup            subprocess.traceback
+subprocess.__file__            subprocess._demo_posix         subprocess.types
+subprocess.__getattribute__    subprocess._demo_windows
+ }}}
+
+To replicate this same behavior, you simply need to type:
+
+ {{{
+import subprocess
+ }}}
+
+and then type:
+
+ {{{
+subprocess.
+ }}}
+
+and press Tab to get a tab completion of the attributes available. In the third column of our example, notice that you see `subprocess.call`. Now, to see more information about how to use `subprocess.call`, type:
+
+ {{{
+In [13]: subprocess.call?
+
+Type:		function
+Base Class:	<type 'function'>
+String Form:	<function call at 0xb78af1ec>
+Namespace:	Interactive
+File:		/usr/lib/python2.5/subprocess.py
+Definition:	subprocess.call(*popenargs, **kwargs)
+Docstring:
+    Run command with arguments.  Wait for command to complete, then
+    return the returncode attribute.
+    
+    The arguments are the same as for the Popen constructor.  Example:
+    
+    retcode = call(["ls", "-l"])
+ }}}
+
+Think of the special question mark syntax as a ''manpage query''. If you want to know how a tool works in Unix, simply type:
+
+ {{{
+man name_of_tool
+ }}}
+
+It is the same with an attribute located inside a module such as `subprocess.call`. In IPython, when you type a question mark after the attribute you want to find information about, the documentation that has been included with the attribute will print out. If you do this on most attributes in the standard library, you should find some helpful information to properly use them. Keep in mind that you can also refer to the Python Standard Library documentation as well.
+
+__When we look at this documentation, “Docstring” is the official term, we see an example of the way to use `subprocess.call` and a description of what it does.__
+
+'''Summary'''
+
+You now have enough information to call yourself a Python programmer. You know how to write a simple Python script, how to translate simple scripts from Bash and call them with Python, and, finally, how to find documentation about new modules and attributes. In the next section, you’ll see how to better organize these flat sequences of commands into functions.
+
+=== Using Functions in Python ===
+
+In the previous section we went through executing statements one after another, which is pretty useful, because it means we were able to automate something that we would normally have to do manually. The next step to automating our code execution is to create functions. If you are not already familiar with writing functions in Bash or another language, then one way to think about functions is as ''miniscripts''. __A function allows you to create blocks of statements that get called in groups that live inside of the function.__ This is quite a bit like the Bash script we wrote in which there were two commands enclosed in a script. One of the differences between a Bash script and a function is that you can include many function scripts. Ultimately, you can have multiple functions that group statements together in a script, and then that group of statements can be called to run a miniprogram at the proper time in your script.
+
+At this point, we need to talk about the topic of whitespace. In Python, a uniform level of indentation must be maintained in nesting code. In another language, like Bash, when you define a function you put brackets around the code inside of a function. With Python, you must indent the code inside of the bracket. __This can trip up(絆倒) newcomers to the language, at first, but after a while it will grow on you(加深對...的影響), and you will realize that this encourages readable code.__ If you have trouble getting any of these examples to work interactively, make sure you refer to the actual source code to see the proper indentation level. The most common practice is to set a tab to indent exactly four spaces.
+
+Let’s take a look at how this works in Python and Bash. If you still have the IPython shell open, you don’t need to create a Python script file, although you can if you like. Just type the following into the interactive IPython prompt:
+
+ {{{
+In [1]: def pyfunc():
+   ...:     print "Hello function"
+   ...:
+   ...:
+
+In [2]: pyfunc
+Out[2]: <function pyfunc at 0x2d5070>
+
+In [3]: pyfunc()
+Hello function
+
+In [4]: for i in range(5):
+   ...:     pyfunc()
+   ...:
+   ...:
+Hello function
+Hello function
+Hello function
+Hello function
+Hello function
+ }}}
+
+In this example, you can see that putting a `print` statement in a function allows you not only to call the function later but also to call it as many times as we want. In line [4], we use a programming idiom, or technique, that executes the function five times. If you haven’t seen that technique before, understand that it calls the function five times.
+
+We can do the same thing in a live Bash shell as well. Here is one way:
+
+ {{{
+bash-3.2$ function shfunc()
+> {
+>     printf "Hello function\n"
+> }
+bash-3.2$ for ((i = 0; i < 5; i++))
+> do
+>     shfunc
+> done
+Hello function
+Hello function
+Hello function
+Hello function
+Hello function
+ }}}
+
+In the Bash example, we created a simple function `shfunc`, and then called it five times, just like we did with the Python function earlier. One thing to notice is that the Bash example requires more “baggage(行李)” to do the same thing that Python does. Notice the difference between the Bash `for` loop and the Python `for` loop. If this is your first exposure to a function in Bash or Python, you should make some other functions in your IPython window before you continue.
+
+Functions are not magic, and writing multiple functions interactively is a great way to take away the mystery if this is your first experience with them. Here are a couple of examples of simple functions:
+
+ {{{
+In [1]: def print_many():
+   ...:     print "Hello function"
+   ...:     print "Hi again function"
+   ...:     print "Sick of me yet"
+   ...:
+   ...:
+
+In [2]: print_many()
+Hello function
+Hi again function
+Sick of me yet
+
+In [3]: def addition():
+   ...:     sum = 1+1
+   ...:     print "1 + 1 = %s" % sum
+   ...:
+   ...:
+
+In [4]: addition()
+1 + 1 = 2
+ }}}
+
+Now we have a few silly examples under our belt(掌握), in addition to the silly examples that you tried out on your own as well, right? So we can go back to the script we wrote that prints system information and convert those statements into functions. See Example 1-4.
+
+Example 1-4. Converted Python system info script: `pysysinfo_func.py`
+
+ {{{
+#!/usr/bin/env python
+#A System Information Gathering Script
+
+import subprocess
+
+#Command 1
+def uname_func():
+    uname = "uname"
+    uname_arg = "-a"
+    print "Gathering system information with %s command:\n" % uname
+    subprocess.call([uname, uname_arg])
+
+#Command 2
+def disk_func():
+    diskspace = "df"
+    diskspace_arg = "-h"
+    print "Gathering diskspace information %s command:\n" % diskspace
+    subprocess.call([diskspace, diskspace_arg])
+
+#Main function that call other functions
+def main():
+    uname_func()
+    disk_func()
+
+main()
+ }}}
+
+Given our experiments with functions, this converted example of our previous script that we simply placed these statements inside functions and then used the ''main function'' to call them all at once. If you are not familiar with this style, you might not have known that it is common to create several functions inside a script and then call them all with one main function. One of many reasons for this is that if you decide to reuse this script for another program, you can either call the functions independently or together with the ''main method''. (相對於 main function 的定義, 呼叫時稱做 main method) The key is that you decide after the module is imported.
+
+When there is no control flow, or main function, then all of the code gets executed immediately when it is imported. __This may be OK for a one-off(一次性的) script, but if you plan to create reusable tools, and you should, then it is a good practice to create functions that encapsulate specific actions, and then have a main function that executes the whole program.__
+
+For comparison’s sake, let’s convert our previous Bash system information script to use functions as well. See Example 1-5.
+
+Example 1-5. Converted Bash system info script: `bashsysinfo_func.sh`
+
+ {{{
+#!/usr/bin/env bash
+#A System Information Gathering Script
+
+#Command 1
+function uname_func ()
+{
+    UNAME="uname -a"
+    printf "Gathering system information with the $UNAME command: \n\n"
+    $UNAME
+}
+
+#Command 2
+function disk_func ()
+{
+    DISKSPACE="df -h"
+    printf "Gathering diskspace information with the $DISKSPACE command: \n\n"
+    $DISKSPACE
+}
+
+function main ()
+{
+    uname_func
+    disk_func
+}
+
+main
+ }}}
+
+Looking at our Bash example, you can see it has quite a bit in common with its Python cousin(兄弟; 對等之物). We created two functions and then called those two functions by calling the main function. If this is your first experience with functions, then we would highly recommend that you comment out the main method by placing a pound sign in front of both the Bash and the Python scripts and running them again. You should get absolutely nothing when you run both scripts, because the program should execute, but won’t call the two functions inside.
+
+At this point, you are now a programmer capable of writing simple functions in both Bash and Python. Programmers learn by doing, though, so at this point we highly recommend that you change the system calls in these two Bash and Python programs and make them your own. Give yourself some bonus points if you add several new functions to the script and call them from a main function.
+
+=== Reusing Code with the Import Statement ===
+
+One problem with learning something new is that, if it is abstract, like calculus(微積分), for example, it is hard to justify caring about it. When was the last time you used the math you learned in high school at the grocery store(雜貨店)? In our previous examples, we showed you how to create functions as an alternative to executing shell commands one after another in a script. We also told you that a module is really just a script, or some lines of code in a file. __It isn’t anything tricky, but it does need to be arranged in a particular way so that it can be reused in another future program.__ Here is the point where we show you why you should care. Let’s import the previous system information scripts in both Bash and Python and execute.
+
+Open the IPython and Bash windows if you closed them so that we can demonstrate very quickly why functions are important for code reuse. One of the first scripts we created in Python was a sequence of commands in a file named `pysysinfo.py` (Example 1-2). __In Python because a file is a module and vice versa, we can import this script file into IPython. Keep in mind that you never need to specify the `.py` portion of the file you are importing.__ In fact if you do this, the import will not work. Here is what it looks like when we do that on Noah’s Macbook Pro laptop:
+
+ {{{
+In [1]: import pysysinfo
+Gathering system information with uname command:
+
+Darwin Macintosh-8.local 9.2.2 Darwin Kernel Version 9.2.2: /
+  Tue Mar 4 21:17:34 PST 2008; root:xnu-1228.4.31~1/RELEASE_I386 i386
+Gathering diskspace information df command:
+
+Filesystem      Size   Used  Avail Capacity Mounted on
+/dev/disk0s2    93Gi   88Gi  4.2Gi 96%      /
+devfs           110Ki  110Ki 0Bi   100%     /dev
+fdesc           1.0Ki  1.0Ki 0Bi   100%     /dev
+map -hosts      0Bi    0Bi   0Bi   100%     /net
+map auto_home   0Bi    0Bi   0Bi   100%     /home
+/dev/disk1s2    298Gi  105Gi 193Gi 36%      /Volumes/Backup
+/dev/disk2s3    466Gi  240Gi 225Gi 52%      /Volumes/EditingDrive
+ }}}
+
+Wow, that is pretty cool, right? If you import a file full of Python code it seems to runs great. But, actually, there are a few problems with this. If you plan to run Python code, it should always be executed from the command line as a part of a script or program you write. Using import is to help with this “reusing code” idea we keep throwing around. Here is the punch line(關鍵處): what if you only wanted to print the output of the diskspace portion of the script? The answer is you can’t. __That is why you use functions. They allow you to control when and how parts of your program run so that they don’t all run at once, as they do in this example.__ Don’t just take our word for it, though. If you import the example of a script that puts these commands into functions, you’ll see what we mean.
+
+Here is the output from the IPython terminal:
+
+ {{{
+In [3]: import pysysinfo_func
+Gathering system information with uname command:
+
+Darwin Macintosh-8.local 9.2.2 Darwin Kernel Version 9.2.2: /
+  Tue Mar 4 21:17:34 PST 2008; root:xnu-1228.4.31~1/RELEASE_I386 i386
+Gathering diskspace information df command:
+
+Filesystem      Size   Used  Avail Capacity Mounted on
+/dev/disk0s2    93Gi   88Gi  4.2Gi 96%      /
+devfs           110Ki  110Ki 0Bi   100%     /dev
+fdesc           1.0Ki  1.0Ki 0Bi   100%     /dev
+map -hosts      0Bi    0Bi   0Bi   100%     /net
+map auto_home   0Bi    0Bi   0Bi   100%     /home
+/dev/disk1s2    298Gi  105Gi 193Gi 36%      /Volumes/Backup
+/dev/disk2s3    466Gi  240Gi 225Gi 52%      /Volumes/EditingDrive
+ }}}
+
+Now we get the exact same output that we get from script that doesn’t contain functions. If you are puzzled(困惑的), this is a good sign. To see the reason we get the same exact output, we just need to look at the source code. If you are following along at home, open up another terminal tab or window and look at the script `pysysinfo_func.py`:
+
+ {{{
+#Main function that call other functions
+def main():
+    uname_func()
+    disk_func()
+
+main()
+ }}}
+
+The problem is that `main` function we created at the end of the last chapter is coming back to bite us. __On one hand we want to be able to run our script on the command line to get the output, but on the other hand when we import it we don’t want all of the output all at once. Fortunately, the need to use a module as both a script that gets executed from the command line and as a reusable module is very common in Python.__ The solution is to change the way the main method gets called by replacing the last part of the script to look like this:
+
+ {{{
+#Main function that call other functions
+def main():
+    uname_func()
+    disk_func()
+
+if __name__ == "__main__":
+    main()
+ }}}
+
+__This is an “idiom,” a technique that is commonly used to solve a problem. Any code that you indent underneath this statement gets run only when it is executed from the command line.__ To see this, either replace this in your copy of the script or import the fixed version of the script `pysysinfo_func_2.py`.
+
+Now, if we go back to our IPython interpreter and import this new script, we should see this:
+
+ {{{
+In [1]: import pysysinfo_func_2
+ }}}
+
+This time, the `main` method is not called, because of the fix we made. So, to return to our original point about reusable code, we have three functions that we can use in other programs or use to interact with the IPython shell. Remember earlier we said how it would be nice to call only the function that prints the disk usage without having to call the function that calls the other commands, too. First, though, we need to review an IPython trick that we showed you before. Remember that you can use Tab to complete a module, and it will show you all of the attributes that are available to use. Here’s what that looks like:
+
+ {{{
+In [2]: pysysinfo_func_2.
+pysysinfo_func_2.__builtins__     pysysinfo_func_2.disk_func
+pysysinfo_func_2.__class__        pysysinfo_func_2.main
+pysysinfo_func_2.__delattr__      pysysinfo_func_2.py
+pysysinfo_func_2.__dict__         pysysinfo_func_2.pyc
+pysysinfo_func_2.__doc__          pysysinfo_func_2.subprocess
+pysysinfo_func_2.__file__         pysysinfo_func_2.uname_func
+pysysinfo_func_2.__getattribute__ 
+pysysinfo_func_2.__hash__
+ }}}
+
+In this example, we can ignore anything with double underscores, because these are special methods that are beyond the scope of this introduction. __Because IPython is also a regular shell, it picks up the filename and the byte-compiled Python file with the `.pyc` extension.__ Once we filter past all of those names, we can see that there is a `pysysinfo_func_2.disk_func`. Let’s go ahead and call that function:
+
+ {{{
+In [2]: pysysinfo_func_2.disk_func()
+Gathering diskspace information df command:
+
+Filesystem      Size   Used  Avail Capacity Mounted on
+/dev/disk0s2    93Gi   88Gi  4.2Gi 96%      /
+devfs           110Ki  110Ki 0Bi   100%     /dev
+fdesc           1.0Ki  1.0Ki 0Bi   100%     /dev
+map -hosts      0Bi    0Bi   0Bi   100%     /net
+map auto_home   0Bi    0Bi   0Bi   100%     /home
+/dev/disk1s2    298Gi  105Gi 193Gi 36%      /Volumes/Backup
+/dev/disk2s3    466Gi  240Gi 225Gi 52%      /Volumes/EditingDrive
+ }}}
+
+You might have realized by now that functions are always “called” or run by attaching the “( )” after the name. In this case, we ran just that one function inside of a file that contained three functions: the function we just called `disk_func`, the `uname_func`, and finally the `main` function. Aha! We finally have our code reuse. We were able to import something we wrote earlier and interactively run just the part of it we needed. Of course, we can also run the other two functions we wrote separately. Let’s take a look at that:
+
+ {{{
+In [3]: pysysinfo_func_2.uname_func()
+Gathering system information with uname command:
+
+Darwin Macintosh-8.local 9.2.2 Darwin Kernel Version 9.2.2: /
+  Tue Mar 4 21:17:34 PST 2008; root:xnu-1228.4.31~1/RELEASE_I386 i386
+
+In [4]: pysysinfo_func_2.main()
+Gathering diskspace information df command:
+
+Filesystem      Size   Used  Avail Capacity Mounted on
+/dev/disk0s2    93Gi   88Gi  4.2Gi 96%      /
+devfs           110Ki  110Ki 0Bi   100%     /dev
+fdesc           1.0Ki  1.0Ki 0Bi   100%     /dev
+map -hosts      0Bi    0Bi   0Bi   100%     /net
+map auto_home   0Bi    0Bi   0Bi   100%     /home
+/dev/disk1s2    298Gi  105Gi 193Gi 36%      /Volumes/Backup
+/dev/disk2s3    466Gi  240Gi 225Gi 52%      /Volumes/EditingDrive
+ }}}
+
+If you look carefully, you’ll see that we ran both of the other functions. Remember, the `main` function runs everything at once.
+
+Often, the point of writing a reusable module is so that you can take some of the code and use it over and over again in a new script. So practice that by writing another script that uses one of the functions. See Example 1-6.
+
+Example 1-6. Reusing code with import: `new_pysysinfo.py`
+
+ {{{
+#Very short script that reuses pysysinfo_func_2 code
+from pysysinfo_func_2 import disk_func
+import subprocess
+
+def tmp_space():
+    tmp_usage = "du"
+    tmp_arg = "-h"
+    path = "/tmp"
+    print "Space used in /tmp directory"
+    subprocess.call([tmp_usage, tmp_arg, path])
+
+def main():
+    disk_func()
+    tmp_space()
+
+if __name__ == "__main__":
+    main()
+ }}}
+
+In this example, not only do we reuse the code we wrote earlier, but we use a special Python syntax that allows us to import the exact function we need. What’s fun about reusing code is that it is possible to make a completely different program just by importing the function from our previous program. Notice that in the main method we mix the function from the other module we created, `disk_func()`, and the new one we just created in this file.
+
+In this section, we learned the power of code reuse and how simple it really is. In a nutshell, you put a function or two in a file and then, if you also want it to run as script, place that special `if__name__ == "__main__":` syntax. Later you can either import those functions into IPython or simply reuse them in another script. With the information you have just learned, you are truly dangerous. You could write some pretty sophisticated Python modules and reuse them over and over again to create new tools.
+
+== Chapter 2. IPython ==
+
+:::
+
+== Chapter 3. Text ==
+
+Nearly every system administrator has to deal with text whether it is in the form of logfiles, application data, XML, HTML, configuration files, or the output of some command. __Often, utilities like `grep` and `awk` are all you need, but sometimes a tool that is more expressive and elegant is needed to tackle complex problems.__ When you need to create files with data extracted from other files, redirecting text from the output of a process (again, `grep` and `awk` come to mind) to a file is often good enough. But there are also times when a tool that is more easily extensible is better-suited for the job.
+
+As we explained in the “Introduction,” our experience has shown that that Python qualifies as more elegant, expressive, and extensible than Perl, Bash, or other languages we have used for programming. For more discussion of why we value Python more highly than Perl or Bash (and you could make application to `sed` and `awk`), see Chapter 1. Python’s standard library, language features, and built-in types are powerful tools for reading text files, manipulating text, and extracting information from text files. __Python and its standard library contain a wealth of flexibility and functionality for text processing using the string type, the file type, and the regular expression module. A recent addition to the standard library, ElementTree, is immensely(非常地) helpful when you need to work with XML.__ In this chapter, we will show you how to effectively use the standard library and built-in components that help with processing text.
+
+=== Python Built-ins and Modules ===
+
+==== str ====
+
+A string is simply a sequence of characters. If you ever need to deal with textual data, you’ll almost certainly need to work with it as a string object or a series of string objects. The string type, `str`, is a powerful, flexible means for manipulating string data. This section shows you how to create strings and what you can do with them once they’ve been created.
+
+===== Creating strings =====
+
+The most common way to create a string is to surround the text with quotation marks:
+
+ {{{
+In [1]: string1 = 'This is a string'
+
+In [2]: string2 = "This is another string"
+
+In [3]: string3 = '''This is still another string'''
+
+In [4]: string4 = """And one more string"""
+
+In [5]: type(string1), type(string2), type(string3), type(string4)
+Out[5]: (<type 'str'>, <type 'str'>, <type 'str'>, <type 'str'>)
+ }}}
+
+__Single, double, and triple quotation marks accomplish the same thing: they all create an object of type `str`. Single and double quotation marks are identical in the creation of strings; you can use them interchangeably. This is different from the way quotation marks work in Unix shells, in which the marks cannot be used interchangeably.__ For example:
+
+ {{{
+jmjones@dink:~$ FOO=sometext
+jmjones@dink:~$ echo "Here is $FOO"
+Here is sometext
+jmjones@dink:~$ echo 'Here is $FOO'
+Here is $FOO
+ }}}
+
+Perl also uses between single and double quotes in string creation. Here’s a comparable example in a Perl script:
+
+ {{{
+#!/usr/bin/perl
+
+$FOO = "some_text";
+print "-- $FOO --\n";
+print '-- $FOO --\n';
+ }}}
+
+And here is the output from this simple Perl script:
+
+ {{{
+jmjones@dinkgutsy:code$ ./quotes.pl
+-- some_text --
+-- $FOO --\njmjones@dinkgutsy:code$
+ }}}
+
+__'''This is a distinction that Python does not make. Python leaves the distinction to the programmer.''' For example, if you needed to embed double quotation marks within the string and did not want to have to escape them (with a backslash). Conversely, if you needed to embed single quotes within the string and did not want to have to escape them, you would use double quotes.__ See Example 3-1.
+
+Example 3-1. Python single/double quote comparison
+
+ {{{
+In [1]: s = "This is a string with 'quotes' in it"
+
+In [2]: s
+Out[2]: "This is a string with 'quotes' in it"
+
+In [3]: s = 'This is a string with \'quotes\' in it'
+
+In [4]: s
+Out[4]: "This is a string with 'quotes' in it"
+
+In [5]: s = 'This is a string with "quotes" in it'
+
+In [6]: s
+Out[6]: 'This is a string with "quotes" in it'
+
+In [7]: s = "This is a string with \"quotes\" in it"
+
+In [8]: s
+Out[8]: 'This is a string with "quotes" in it'
+ }}}
+
+Notice in lines 2 and 4 that embedding an escaped quote of the same type as the enclosing quote coerces(強制) the enclosing quotation mark to the opposite quotation mark type. (Actually, it’s just coercing the representation of the string to show the “right” quotation mark types.)
+
+There are times when you might want a string to span multiple lines. __Sometimes embedding `\n` in the string where you want line breaks solves the problem for you, but this can get unwieldy(難處理的). Another, often cleaner alternative is to use triples quotes, which allow you to create multiline strings.__ Example 3-2 is an example of trying to use single quotes for multiline strings and succeeding with triple quotes.
+
+Example 3-2. Triple quotes
+
+ {{{
+In [6]: s = 'this is
+------------------------------------------------------------
+   File "<ipython console>", line 1
+     s = 'this is
+                ^
+
+SyntaxError: EOL while scanning single-quoted string
+
+In [7]: s = '''this is a
+...: multiline string'''
+
+In [8]: s
+Out[8]: 'this is a\nmultiline string'
+ }}}
+
+And just to complicate matters, there is another way to denote(表示) strings in Python called “raw” strings. You create a raw string by placing the letter `r` immediately before the quotation mark when you are creating a string. __Basically, the effect of creating a raw string as opposed to a non-raw (would that be cooked?) string is that Python does not interpret ''escape sequences'' in raw strings, whereas it does interpret escape sequences in regular strings.__ Python follows a set of rules similar to those used by Standard C regarding escape sequences. For example, in regular strings, `\t` is interpreted as a tab character, `\n` as a newline, and `\r` as a line feed. Table 3-1 shows escape sequences in Python.
+
+Table 3-1. Python escape sequences
+
+|| Sequence || Interpreted as ||
+|| `\newline` || Ignored ||
+|| `\\` || Backslash ||
+|| `\'` || Single quote ||
+|| `\"` || Double quote ||
+|| `\a` || ASCII Bell ||
+|| `\b` || ASCII backspace ||
+|| `\f` || ASCII form feed ||
+|| `\n` || ASCII line feed ||
+|| `\N{name}` || Named character in Unicode database (Unicode strings only) ||
+|| `\r` || ASCII carriage return ||
+|| `\t` || ASCII horizontal tab ||
+|| `\uxxxx` || Character with 16-bit hex value xxxx (Unicode only) ||
+|| `\Uxxxxxxxx` || Character with 32-bit hex value xxxx (Unicode only) ||
+|| `\v` || ASCII vertical tab ||
+|| `\ooo` || Character with octal value `oo` ||
+|| `\xhh` || Character with hex value `hh` ||
+
+Escape sequences and raw strings are useful to remember, particularly when you are dealing with regular expressions, which we will get to later in this chapter. Example 3-3 shows escape sequences used with raw strings.
+
+Example 3-3. Escape sequences and raw strings
+
+ {{{
+In [1]: s = '\t'
+
+In [2]: s
+Out[2]: '\t'
+
+In [3]: print s
+
+In [4]: s = r'\t'
+
+In [5]: s
+Out[5]: '\\t'
+
+In [6]: print s
+\t
+
+In [7]: s = '''\t'''
+
+In [8]: s
+Out[8]: '\t'
+
+In [9]: print s
+
+In [10]: s = r'''\t'''
+
+In [11]: s
+Out[11]: '\\t'
+
+In [12]: print s
+\t
+
+In [13]: s = r'\''
+
+In [14]: s
+Out[14]: "\\'"
+
+In [15]: print s
+\'
+ }}}
+
+When escape sequences are interpreted, `\t` is a tab character. When escape sequences are not interpreted, `\t` is simply a string that contains the two characters `\` and `t`. Strings created with any of the quote characters, whether double or single, laid out individually or three in a row, allow `\t` to be interpreted as a tab character. Any of those same strings prefixed with an `r` allow `\t` to be interpreted as the two characters `\` and `t`.
+
+Another bit of fun from this example is the distinction between `__repr__` and `__str__`. __When you type a variable name at an IPython prompt and hit enter, its `__repr__` representation is displayed. When we type `print` followed by a variable name and then hit enter, its `__str__` representation is printed out. The `print` function interprets the escape sequences in the string and displays them appropriately.__ For more discussion on `__repr__` and `__str__` , see “Basic Concepts” in Chapter 2.
+
+:::
+
+=== Python Built-ins and Modules ===
+
+== Resource ==
+
+=== Reference ===
+
+=== Attachments ===
+
+|| Filename || Description ||
+||  ||  ||
+
+=== Links ===
+
+=== Search ===
+
+== Scratch ==

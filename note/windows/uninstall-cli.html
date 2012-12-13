@@ -1,0 +1,142 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>從 Command-Line 將應用程式解除安裝</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="uninstall-cli.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>從 Command-Line 將應用程式解除安裝</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">
+<div class="title">延伸閱讀</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="uninstall-string.html">取得某個應用程式的 Uninstall String</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>藉由 <a href="../wmic/wmic.html">WMIC</a> 可以避開 GUI，直接從 command-line 反安裝應用程式。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>C:\&gt; wmic <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+wmic:root\cli&gt; product get name <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+Name
+7-Zip 9.20 (x64 edition)
+LibreOffice 3.4
+Windows Live Messenger
+...
+
+wmic:root\cli&gt; product where name="7-Zip 9.20 (x64 edition)" call uninstall <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+Execute (\\&lt;host_name&gt;\ROOT\CIMV2:Win32_Product.IdentifyingNumber="{23170F69-40C1-2702-0920-000001000000}",Name="7-Zip 9.20 (x64 edition)",Version="9.20.00.0")-&gt;Uninstall() (Y/N/?)? y
+Method execution successful.
+Out Parameters:
+instance of __PARAMETERS
+{
+        ReturnValue = 1603; <img src="../../_asciidoc/images/icons/callouts/4.png" alt="4" />
+};
+
+wmic:root\cli&gt;
+wmic:root\cli&gt; quit <img src="../../_asciidoc/images/icons/callouts/5.png" alt="5" /></code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+執行 <code>wmic</code> 就可以進入 WMI command-line 互動介面。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+<code>product get name</code> 可以取回所有已安裝應用程式的清單。這會花一點時間，但不知道為什麼某些控制台裡看得到的項目卻沒有出現在這裡？
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+<code>product where name="..." call uninstall</code> 可以將某個應用程式解除安裝，但要手動回答 Y 才行。如果要自動 "Say YES" 的話，可以在最後面加上 <code>/nointeractive</code>。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/4.png" alt="4" /></td><td>
+順利的話，<code>ReturnValue</code> 的值會是零。這裡的錯誤 1603 是因為被 <a href="uac.html">UAC</a> 阻擋的關係。
+<div class="paragraph"><p>實驗發現，就算把 UAC 調整成 "Never notify"，還是會得到 1603 的錯誤，除非執行 WMIC 的 console 就已經是用 Run as administrator 帶出來的。</p></div>
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/5.png" alt="5" /></td><td>
+<code>quit</code> 或 <code>exit</code> 可以離開 WMIC。
+</td></tr>
+</table></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.experts-exchange.com/Programming/Languages/Scripting/WMI/A_4105-Software-Uninstallation-using-WMIC-command-line.html">Software Uninstallation using WMIC command line: WMI, WMIC, MSIEXEC, Software Uninstall</a> (2010-11-10) - 從 uninstall string 到 WMIC。
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.tech-recipes.com/rx/2947/windows_uninstall_application_command_line/">Windows: Uninstall an Application from the Command Line | a Tech-Recipes Tutorial</a> (2009)
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:09:27 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

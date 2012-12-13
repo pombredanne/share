@@ -1,0 +1,126 @@
+= VMware / Official / Knowledge Base =
+<<TableOfContents>>
+
+== Locking SpeedStep, PowerNow, or Cool'n'Quiet on the Host to a Constant Speed ==
+http://kb.vmware.com/kb/708 @2010/04/18
+
+'''Details'''
+
+How can I lock the processor speed on my laptop computer, which has a power management feature like !SpeedStep, !PowerNow, or Cool'n'Quiet?
+
+'''Solution'''
+
+__With certain VMware products, time and processor speed in a virtual machine are affected by the power management features, because they change the speed at which the computer's processor runs. That can cause inaccuracies in clocks and timers in the virtual machine and can also cause inaccurate readings of rated processor speed.__
+
+__To work around these problems, you may need to set the processor so it runs at a constant speed.__
+
+With Workstation 4.0 and GSX Server 2.5.1 and later versions, you may be able to correct the clock timing without forcing the processor to run at a constant speed; see article http://kb.vmware.com/kb/1227[1227] (for Windows hosts) or article http://kb.vmware.com/kb/1591[1591] (for Linux hosts).
+
+On Windows hosts: Take the following steps before you start your VMware software. The following example uses !SpeedStep as an example, but the process for !PowerNow or Cool'n'Quiet is similar.
+
+ 1. On your Windows host system, in the Control Panel, double-click the Power Options icon. On Windows Server 2003 hosts (VMware GSX Server or Workstation) or Windows XP hosts (VMware Workstation only), you may need to click Classic View first.
+
+ 2. Click the Intel !SpeedStep technology tab.
+
+ 3. Under Plugged in, select Maximum Performance.
+
+ 4. Under Running on batteries, select Maximum Performance.
+
+ 5. Click OK to close the !SpeedStep dialog box.
+
+ 6. Reboot the host computer. This step ensures that your VMware software correctly detects the changed speed setting.
+
+__When you are not running your VMware software, you may want to restore these settings to their previous values to extend battery life.__
+
+Note: If there is no !SpeedStep tab in the Power Options control panel, you may be able to add one by installing the proper driver. Go to the Web site of your computer's manufacturer and search for "Intel !SpeedStep driver," "Intel !SpeedStep applet" or "Intel !SpeedStep application." If this software is available, install it on your host operating system. __If no driver software is available for your host computer, you may find comparable configuration options in the computer's BIOS settings.__ See the steps for Linux hosts below for general guidelines on changing these settings.
+
+On Linux hosts: Set the appropriate options in the computer's BIOS. The details vary from one computer to another. The process is similar to that described in the following steps for !SpeedStep:
+
+ 1. Shut down and reboot your host computer.
+ 2. While your host is rebooting, press the appropriate key to enter its BIOS setup screen.
+ 3. Navigate to the !SpeedStep settings.
+ 4. Under Intel !SpeedStep Technology, select Enabled.
+ 5. __Under Power Mode for AC, select Maximum Performance.__
+ 6. __Under Power Mode for Battery, select Maximum Performance.__
+ 7. Save the BIOS settings and exit.
+
+Also disable any known daemons that alter the CPU speed. Such daemons vary among different Linux operating systems. The most common ones are `cpuspeed` and `cpufreqd`. (可以用 `ps aux | grep cpu` 來查; 2008-05-06 實驗發現, 從 BIOS 關掉這些功能後, 有些 daemon 就會自動不見...)
+
+For more information about !SpeedStep, see Intel's Web site:
+
+ * http://support.intel.com/support/processors/mobile/pentium4/tti002.htm (Pentium 4)
+ * http:// support.intel.com/support/processors/mobile/pentiumiii/ss.htm (Pentium III)
+
+For more information about PowerNow or Cool'n'Quiet, see the AMD Web site at [[http://www.amd.com]].
+
+== The clock in your virtual machine may run too fast or too slow ==
+http://kb.vmware.com/kb/1227
+
+ {{{
+VMware Workstation has measured your CPU speed to be 723 MHZ. but Windows reports that it is 1729 MHZ. This may mean that your computer has a power-saving feature that varies the processor speed. As a result, the clock in your virtual machine may run too fast or too slow.
+
+For a workground. please refer to the VMware knowledge base article at:
+http://www.vmware.com/info?id=97
+ }}}
+
+This solution applies to Windows hosts running: (@2008/05/06 實驗確認, 這個問題也存在於 linux hosts 上)
+
+ * Workstation 4.0 and higher
+ * GSX Server 2.5.1 and higher
+ * VMware Server 1.x
+
+This problem occurs on some host computers that use Intel !SpeedStep or other similar power-saving technologies that vary the processor speed. (確實這個問題只有在某些機器上才會出現; 以下所提的方法, 關鍵在於 `host.cpukHz` 的設定是否與硬體條件一致, 不過最根本的辦法應該是直接取消 SpeedStep 的功能?)
+
+To work around this problem, specify the correct ''maximum'' CPU speed in your global configuration file:
+
+ 1. Find the speed of your host's CPU. For example, in Windows XP, right click My Computer, then choose Properties. This path may be different, depending on the version of Windows you use. (看錯誤訊息的提示比較精確; 按http://support.microsoft.com/kb/316965[這裡]的說法, 也可以參考 Start > All Programs > System Tools > System Information > Processor, The System Information tool always reports the maximum speed of the processor.)
+
+ 2. Look for `config.ini` in one of the following locations:
+  * `C:\Documents and Settings\All Users\Application Data\VMware\VMware Workstation\config.ini`
+  * `C:\Documents and Settings\All Users\Application Data\VMware\VMware GSX Server\config.ini`
+  * `C:\Documents and Settings\All Users\Application Data\VMware\VMware Server\config.ini`
+  * `C:\ProgramData\VMware\VMware Workstation` or `C:\Program Files\VMware\VMware Workstation` (on a Windows Vista host running Workstation 6.0)
+
+ Note: If the file does not exist, create it as a plain text file in the appropriate location as described above, then edit it as follows. For more detail, see "Creating and Editing `config.ini` on Windows Hosts" at http://kb.vmware.com/kb/1754.
+
+ 3. Edit `config.ini`, adding the lines described below. <<BR>><<BR>>
+
+ The example presented here assumes that the host computer has a maximum speed of 1700MHz. The first line is the most important one. It should be your host computer's maximum speed in KHz—that is, its speed in MHz times 1000, or its speed in GHz times 1000000.
+
+ {{{
+host.cpukHz = "1700000"
+host.noTSC = "TRUE"
+ptsc.noTSC = "TRUE"
+ }}}
+
+ The second and third lines enable a mechanism that tries to keep the guest clock accurate even when the time stamp counter (TSC) is slow.
+
+ 4. __In addition, check the VMware Tools control panel in the guest operating system. On the Options tab, ensure that Time synchronization between the virtual machine and the host operating system is selected.__
+ 
+== Host Power Management Causes Problems with Guest Timekeeping on Linux Hosts ==
+http://kb.vmware.com/kb/1591 @2010/04/18
+
+'''Details'''
+
+I have a Linux host with power management features that vary the processor speed. When the host processor speed changes, the guest clock runs too quickly or too slowly. Can I correct this?
+
+'''Solution'''
+
+This article applies to VMware Workstation 4.0 and higher, VMware GSX Server 2.5.1 and higher, and VMware Server 1.x running on Linux hosts.
+
+For these products on Windows hosts, see [[http://kb.vmware.com/kb/1227]]. For earlier versions of these products, see [[http://kb.vmware.com/kb/708]] and [[http://kb.vmware.com/kb/916]].
+
+__This problem occurs because current VMware for Linux products do not have complete support for host power management features (such as Intel !SpeedStep, or AMD !PowerNow or Cool'n'Quiet) that vary the processor speed. This article gives one workaround that prevents guest clocks from running quickly and another that periodically corrects the time when guest clocks run slowly. '''Alternatively, for more accurate time, you can lock the host processor to a constant speed;''' see knowledge base articles 708 and 916 at the links above.__
+
+To prevent guest clocks from running too quickly, specify the correct maximum host CPU speed in your global configuration file, `/etc/vmware/config`. If this file exists, edit it with a text editor, adding the lines described below. The file may not exist. If it does not exist, create it as a plain text file.
+
+The example presented here assumes that the host computer has a maximum speed of 1700MHz. The first line is the most important one. It should be your host computer's maximum speed in kHz -- that is, its speed in MHz times 1000, or its speed in GHz times 1000000. Add the following lines to your global configuration file:
+
+ {{{
+host.cpukHz = 1700000
+host.noTSC = TRUE
+ptsc.noTSC = TRUE
+ }}}
+
+__To periodically correct the time (once per minute) when a guest clock runs slowly, VMware Tools must be installed in the guest. On the Options tab of VMware Tools in the guest, verify that Time synchronization between the virtual machine and the host operating system is selected. (時間太快要設定 maximum speed, 太慢則要用 vmware tools 的 time syncrhonization 功能來調節; 看來直接將 Power Management Features 關掉比較乾脆)__
+

@@ -1,0 +1,265 @@
+= SIKULI Internals =
+
+.`sikuli/Sikuli.py`
+--------------------------------------------------------------------------------
+_si = SikuliScript()
+
+def addImagePath(path):
+   ImageLocator.addImagePath(path)
+
+def getImagePath():
+   return ImageLocator.getImagePath()
+
+def removeImagePath(path):
+   ImageLocator.removeImagePath(path)
+
+def setBundlePath(path):
+   if path[-1:] == java.io.File.separator:
+      path = path[:-1]
+   Settings.BundlePath = path
+
+def switchApp(app):
+   return _si.switchApp(app)
+
+def openApp(app):
+   return _si.openApp(app)
+
+def closeApp(app):
+   return _si.closeApp(app)
+
+##
+# Runs the given string command.
+# @param msg The given string command.
+# @return Returns the output from the executed command.
+def run(cmd):
+    return _si.run(cmd)
+
+############### SECRET FUNCTIONS ################
+
+def getSikuliScript():
+   return _si
+
+def initSikuli():
+   dict = globals()
+   dict['SCREEN'] = Screen()
+   dict['SCREEN']._exposeAllMethods(__name__) <1>
+   #print "Sikuli is initialized. ", id(dict['SCREEN'])
+
+
+initSikuli()
+--------------------------------------------------------------------------------
+<1> `from sikuli.Sikuli import *` 就是從這裡來的。
+
+
+.`org/sikuli/script/Region.java`
+--------------------------------------------------------------------------------
+public class Region {
+
+   private IRobot _robot; // 必要的五項資訊
+   private IScreen _scr;
+   public int x, y, w, h;
+
+   Region(Rectangle r, IScreen parentScreen) { <1>
+      init(r.x, r.y, r.width, r.height, parentScreen);
+   }
+
+   protected Region(){} <2>
+
+   protected void init(int x_, int y_, int w_, int h_, IScreen parentScreen) { <3>
+      x = x_;
+      y = y_;
+      w = w_;
+      h = h_;
+      if(parentScreen != null)
+         _scr = parentScreen;
+      else
+         _scr = initScreen();
+      _robot = _scr.getRobot();
+   }
+
+   public <PSRML> int click(PSRML target, int modifiers) 
+                                                throws  FindFailed{
+      Location loc = getLocationFromPSRML(target);
+      int ret = _click(loc, InputEvent.BUTTON1_MASK, modifiers, false);
+      
+      SikuliActionManager.getInstance().clickTarget(this, target, _lastScreenImage, _lastMatch);      
+      return ret;
+   }
+
+   public <PSRML> Location getLocationFromPSRML(PSRML target) <4>
+                                             throws  FindFailed {
+      if(target instanceof Pattern || target instanceof String){
+         Match m = find(target); <5>
+         if(m!=null)
+            return m.getTarget();
+         return null;
+      }
+      if(target instanceof Match) return ((Match)target).getTarget();
+      if(target instanceof Region) return ((Region)target).getCenter();
+      if(target instanceof Location) return (Location)target;
+      return null;
+   }
+
+   public Region below(){     return below(999999);   }
+   public Region below(int range){
+      Rectangle bounds = getScreen().getBounds();
+      Rectangle rect = new Rectangle(x,y+h,w,range);
+      rect = rect.intersection(bounds);
+      return Region.create(rect); <6>
+   }
+
+   public <PSC> Match find(final PSC target) throws FindFailed{
+      if(_autoWaitTimeout > 0){
+         return wait(target, _autoWaitTimeout);
+      }
+      while (true){
+         try{
+            _lastMatch = doFind(target);
+         }catch (Exception e){
+            throw new FindFailed(e.getMessage());
+         }
+         
+         if (_lastMatch != null){
+            return _lastMatch;
+         }       
+         
+         if (!handleFindFailed(target))
+            return null;
+      }
+   }
+
+   public <PSC> Match wait(PSC target, double timeout) throws FindFailed{
+      
+      while (true){         
+         try {
+            Debug.log(2, "waiting for " + target + " to appear");
+            RepeatableFind rf = new RepeatableFind(target);
+            rf.repeat(timeout);
+            _lastMatch = rf.getMatch();
+            
+         } catch (Exception e) {
+            throw new FindFailed(e.getMessage());
+         }  
+         
+         if (_lastMatch != null){
+            Debug.log(2, "" + target + " has appeared.");
+            break;
+         }
+
+         Debug.log(2, "" + target + " has not appeared.");
+         
+         if (!handleFindFailed(target))
+            return null;
+      }
+      
+      return _lastMatch;
+   }
+
+   class RepeatableFind extends Repeatable{
+      
+      Object _target;
+      Match _match = null;
+      public <PSC> RepeatableFind(PSC target){
+         _target = target;
+      }
+      
+      public Match getMatch() {
+         return _match;
+      }
+
+      @Override
+      public void run() throws IOException{
+         _match = doFind(_target); // 最後又回到 doFind 了
+      }
+
+       @Override
+      boolean ifSuccessful() {
+         return _match != null;
+      }
+
+   }   
+
+   <PSC> Match doFind(PSC ptn) throws IOException{ // 可惜 doFind 是 no modifier
+      ScreenImage simg = getScreen().capture(x, y, w, h);
+      _lastScreenImage = simg;
+      Finder f = new Finder(simg, this);
+      f.find(ptn);
+      if(f.hasNext()){
+         return f.next();
+      }
+      return null;
+   }
+
+--------------------------------------------------------------------------------
+<1> 別的套件存取不到。
+<2> 什麼事都沒做，之後 `region.getScreen()` 會取不到東西。
+<3> 還好還有 `init()` 可以把自訂的 `IScreen` 傳進去。
+<4> 原來 PSRML 指的就是 Pattern、String、Region、Match、Location。
+<5> 所以才說 `click()` 內含 `wait()` 的動作。
+<6> `Region.java` 裡有很多 `Region.create` 的呼叫。
+
+.`org/sikuli/script/Match.java`
+--------------------------------------------------------------------------------
+public class Match extends Region implements Comparable { <1>
+   double score;
+   String _text = null;
+
+   private Location _target = null;
+--------------------------------------------------------------------------------
+<1> 讓人意外的是，`Match` 也是個 `Region`。
+
+.`org/sikuli/script/Finder.java`
+--------------------------------------------------------------------------------
+public class Finder implements Iterator<Match>{
+   private Region _region = null;
+   private Pattern _pattern = null;
+
+   public Match next(){
+      Match ret = null;
+      if(hasNext()){
+         FindResult fr = _results.get(_cur_result_i++);
+         IScreen parentScreen = null;
+         if(_region != null)
+            parentScreen = _region.getScreen();
+         ret = new Match(fr, parentScreen); <1>
+         if(_region != null){
+            ret = _region.toGlobalCoord(ret);
+         }
+         if(_pattern != null){
+            Location offset = _pattern.getTargetOffset();
+            ret.setTargetOffset(offset);
+         }
+      }
+      return ret;
+   }
+--------------------------------------------------------------------------------
+<1> 這裡會是個問題。
+
+== 參考資料 ==
+
+.網站
+--
+ * https://github.com/sikuli/sikuli/tree/X1.0-rc3[sikuli/sikuli · GitHub] (X1.0 rc3)
+   ** https://github.com/sikuli/sikuli/blob/X1.0-rc3/sikuli-script/src/main/java/org/sikuli/script/Screen.java[Screen.java]
+   ** https://github.com/sikuli/sikuli/blob/X1.0-rc3/sikuli-script/src/main/java/org/sikuli/script/Region.java[Region.java]
+   ** https://github.com/sikuli/sikuli/blob/X1.0-rc3/sikuli-script/src/main/java/org/sikuli/script/Match.java[Match.java]
+   ** https://github.com/sikuli/sikuli/blob/X1.0-rc3/sikuli-script/src/main/java/org/sikuli/script/Finder.java[Finder.java]
+ * https://launchpad.net/sikuli[Sikuli in Launchpad]
+ * https://bugs.launchpad.net/sikuli[Bugs : Sikuli]
+--
+
+.參考文件
+--
+ * http://sikuli.org/doc/java-x/[org.sikuli.script (Javadoc of Sikuli Script)]
+--
+
+.官方文件
+--
+ * http://sikuli.org/docx/contributing.html[How to get involved — Sikuli X 1.0 documentation]
+--
+
+== 學習筆記 ==
+
+ * 如果 Sikuli 內部是用 object factory 或 IoC 來實作的話，改寫支援 Android 就不會這麼困難跟 dirty 了。
+ * 如果要自訂其他 screen，可以仿 `org.sikuli.script.Screen`，繼承自 `Region` 並實作 `IScreen`。
+

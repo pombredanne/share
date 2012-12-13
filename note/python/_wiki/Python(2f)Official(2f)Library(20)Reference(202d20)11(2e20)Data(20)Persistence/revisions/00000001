@@ -1,0 +1,483 @@
+= Python / Official / Library Reference - 11. Data Persistence =
+http://docs.python.org/library/persistence.html
+<<TableOfContents>>
+
+== 11.1. pickle — Python object serialization ==
+http://docs.python.org/library/pickle.html @2010/08/24
+
+__The `pickle` module implements a fundamental, but powerful algorithm for serializing and de-serializing a Python object structure. “Pickling” is the process whereby a Python ''object hierarchy'' is converted into a ''byte stream'', and “unpickling” is the inverse operation, whereby a byte stream is converted back into an object hierarchy.__ Pickling (and unpickling) is alternatively known as “serialization”, “marshalling,” or “flattening”, however, to avoid confusion, the terms used here are “pickling” and “unpickling”.
+
+This documentation describes both the `pickle` module and the `cPickle` module.
+
+=== 11.1.1. Relationship to other Python modules ===
+
+:::
+
+__Python has a more primitive serialization module called `marshal`, but in general `pickle` should always be the preferred way to serialize Python objects. `marshal` exists primarily to support Python’s `.pyc` files.__
+
+:::
+
+Warning: The `pickle` module is not intended to be secure against erroneous or maliciously constructed data. Never unpickle data received from an untrusted or unauthenticated source. (為什麼會有這類的風險?)
+
+__Note that serialization is a more primitive notion than ''persistence''; although `pickle` reads and writes file objects,__ it does not handle the issue of naming persistent objects, nor the (even more complicated) issue of concurrent access to persistent objects. The `pickle` module can transform a complex object into a byte stream and it can transform the byte stream into an object with the same internal structure. Perhaps the most obvious thing to do with these byte streams is to write them onto a file, but it is also conceivable to send them across a network or store them in a database. __The module `shelve` provides a simple interface to pickle and unpickle objects on DBM-style database files.__
+
+=== 11.1.2. Data stream format ===
+
+:::
+
+=== 11.1.3. Usage ===
+
+__To serialize an object hierarchy, you first create a ''pickler'', then you call the pickler’s `dump()` method. To de-serialize a data stream, you first create an ''unpickler'', then you call the unpickler’s `load()` method.__ The `pickle` module provides the following constant:
+
+'''`pickle.HIGHEST_PROTOCOL`'''
+
+The highest protocol version available. This value can be passed as a `protocol` value.
+
+New in version 2.3.
+
+__Note: Be sure to always open pickle files created with protocols >= 1 in ''binary mode''. For the old ASCII-based pickle protocol 0 you can use either text mode or binary mode as long as you stay consistent.__ <<BR>> A pickle file written with protocol 0 in binary mode will contain lone linefeeds as line terminators and therefore will look “funny” when viewed in Notepad or other editors which do not support this format.
+
+The `pickle` module provides the following functions to make the pickling process more convenient:
+
+'''`pickle.dump(obj, file[, protocol])`'''
+
+__Write a ''pickled representation'' of `obj` to the open file object `file`. This is equivalent to `Pickler(file, protocol).dump(obj)`.__
+
+If the `protocol` parameter is omitted, protocol `0` is used. If `protocol` is specified as a negative value or `HIGHEST_PROTOCOL`, the highest protocol version will be used.
+
+Changed in version 2.3: Introduced the `protocol` parameter.
+
+__`file` must have a `write()` method that accepts a single string argument. '''It can thus be a file object opened for writing, a `StringIO` object, or any other custom object that meets this interface.'''__
+
+'''`pickle.load(file)`'''
+
+__Read a string from the open file object file and interpret it as a pickle data stream, reconstructing and returning the original object hierarchy. This is equivalent to `Unpickler(file).load()`.__
+
+`file` must have two methods, a `read()` method that takes an integer argument, and a `readline()` method that requires no arguments. Both methods should return a string. Thus file can be a file object opened for reading, a `StringIO` object, or any other custom object that meets this interface.
+
+__This function automatically determines whether the data stream was written in binary mode or not.__
+
+'''`pickle.dumps(obj[, protocol])`'''
+
+Return the pickled representation of the object as a string, instead of writing it to a file.
+
+If the `protocol` parameter is omitted, protocol `0` is used. If `protocol` is specified as a negative value or `HIGHEST_PROTOCOL`, the highest protocol version will be used.
+
+Changed in version 2.3: The `protocol` parameter was added.
+
+'''`pickle.loads(string)`'''
+
+Read a pickled object hierarchy from a string. Characters in the string past the pickled object’s representation are ignored.[?]
+
+:::
+
+== 11.13. sqlite3 — DB-API 2.0 interface for SQLite databases ==
+http://docs.python.org/library/sqlite3.html @2010/09/08
+
+New in version 2.5.
+
+SQLite is a C library that provides a lightweight disk-based database that doesn’t require a separate server process and allows accessing the database using a nonstandard variant of the SQL query language. __Some applications can use SQLite for ''internal data storage''. It’s also possible to prototype an application using SQLite and then port the code to a larger database such as PostgreSQL or Oracle.__
+
+`sqlite3` was written by Gerhard Häring and provides a SQL interface compliant with the DB-API 2.0 specification described by PEP 249.
+
+To use the module, you must first create a `Connection` object that represents the database. Here the data will be stored in the `/tmp/example` file:
+
+ {{{
+conn = sqlite3.connect('/tmp/example')
+ }}}
+
+__You can also supply the special name `:memory:` to create a database in RAM.__
+
+Once you have a `Connection`, you can create a `Cursor` object and call its `execute()` method to perform SQL commands:
+
+ {{{
+c = conn.cursor()
+
+# Create table
+c.execute('''create table stocks
+(date text, trans text, symbol text,
+ qty real, price real)''')
+
+# Insert a row of data
+c.execute("""insert into stocks
+          values ('2006-01-05','BUY','RHAT',100,35.14)""")
+
+# Save (commit) the changes
+conn.commit()
+
+# We can also close the cursor if we are done with it
+c.close()
+ }}}
+
+Usually your SQL operations will need to use values from Python variables. __You shouldn’t assemble your query using Python’s string operations because doing so is insecure; '''it makes your program vulnerable to an SQL injection attack.'''__
+
+__Instead, use the DB-API’s ''parameter substitution''. Put `?` as a placeholder wherever you want to use a value, and then provide a tuple of values as the second argument to the cursor’s `execute()` method.__ (Other database modules may use a different placeholder, such as `%s` or `:1`.) For example:
+
+ {{{
+# Never do this -- insecure!
+symbol = 'IBM'
+c.execute("... where symbol = '%s'" % symbol)
+
+# Do this instead
+t = (symbol,)
+c.execute('select * from stocks where symbol=?', t)
+
+# Larger example
+for t in [('2006-03-28', 'BUY', 'IBM', 1000, 45.00),
+          ('2006-04-05', 'BUY', 'MSOFT', 1000, 72.00),
+          ('2006-04-06', 'SELL', 'IBM', 500, 53.00),
+         ]:
+    c.execute('insert into stocks values (?,?,?,?,?)', t)
+ }}}
+
+__To retrieve data after executing a `SELECT` statement, you can either treat the cursor as an iterator, call the cursor’s `fetchone()` method to retrieve a single matching row, or call `fetchall()` to get a list of the matching rows.__
+
+This example uses the iterator form:
+
+ {{{
+>>> c = conn.cursor()
+>>> c.execute('select * from stocks order by price')
+>>> for row in c:
+...    print row
+...
+(u'2006-01-05', u'BUY', u'RHAT', 100, 35.14)
+(u'2006-03-28', u'BUY', u'IBM', 1000, 45.0)
+(u'2006-04-06', u'SELL', u'IBM', 500, 53.0)
+(u'2006-04-05', u'BUY', u'MSOFT', 1000, 72.0)
+>>>
+ }}}
+
+See also
+
+ * http://code.google.com/p/pysqlite/ - The `pysqlite` web page – __`sqlite3` is developed externally under the name “pysqlite”.__
+
+ * http://www.sqlite.org - The SQLite web page; the documentation describes the syntax and the available data types for the supported SQL dialect.
+
+ * PEP 249 - Database API Specification 2.0. PEP written by Marc-André Lemburg.
+
+=== 11.13.1. Module functions and constants ===
+
+:::
+
+'''`sqlite3.connect(database[, timeout, isolation_level, detect_types, factory])`'''
+
+Opens a connection to the SQLite database file database. You can use `":memory:"` to open a database connection to a database that resides in RAM instead of on disk.
+
+__When a database is accessed by multiple connections, and one of the processes modifies the database, the SQLite database is locked until that transaction is committed. The `timeout` parameter specifies how long the connection should wait for the lock to go away until raising an exception. The default for the `timeout` parameter is 5.0 (five seconds).__
+
+For the `isolation_level` parameter, please see the `Connection.isolation_level` property of `Connection` objects.
+
+__SQLite natively supports only the types `TEXT`, `INTEGER`, `FLOAT`, `BLOB` and `NULL`. If you want to use other types you must add support for them yourself. The `detect_types` parameter and the using ''custom converters'' registered with the module-level `register_converter()` function allow you to easily do that.[...]__
+
+`detect_types` defaults to `0` (i. e. off, no type detection), you can set it to any combination of `PARSE_DECLTYPES` and `PARSE_COLNAMES` to turn type detection on.
+
+__By default, the `sqlite3` module uses its `Connection` class for the `connect` call. You can, however, subclass the `Connection` class and make `connect()` use your class instead by providing your class for the `factory` parameter.__
+
+Consult the section SQLite and Python types of this manual for details.
+
+__The `sqlite3` module internally uses a ''statement cache'' to avoid SQL parsing overhead. If you want to explicitly set the number of statements that are cached for the connection, you can set the `cached_statements` parameter. The currently implemented default is to cache `100` statements.__
+
+:::
+
+=== 11.13.2. Connection Objects ===
+
+'''class `sqlite3.Connection`'''
+
+A SQLite database connection has the following attributes and methods:
+
+'''`Connection.isolation_level`'''
+
+__Get or set the current ''isolation level''. `None` for ''autocommit'' mode or one of “`DEFERRED`”, “`IMMEDIATE`” or “`EXCLUSIVE`”.[...]__ See section Controlling Transactions for a more detailed explanation.
+
+'''`Connection.cursor([cursorClass])`'''
+
+The `cursor` method accepts a single optional parameter `cursorClass`. If supplied, this must be a custom cursor class that extends `sqlite3.Cursor`.
+
+'''`Connection.commit()`'''
+
+This method commits the current transaction. __If you don’t call this method, anything you did since the last call to `commit()` is not visible from from other database connections.__ If you wonder why you don’t see the data you’ve written to the database, please check you didn’t forget to call this method.
+
+'''`Connection.rollback()`'''
+
+__This method rolls back any changes to the database since the last call to `commit()`.__
+
+'''`Connection.close()`'''
+
+This closes the database connection. __Note that this does not automatically call `commit()`. If you just close your database connection without calling `commit()` first, your changes will be lost!__
+
+'''`Connection.execute(sql[, parameters])`'''
+
+__This is a ''nonstandard shortcut'' that creates an intermediate cursor object by calling the `cursor` method, then calls the cursor’s `execute` method with the `parameters` given.__
+
+:::
+
+=== 11.13.3. Cursor Objects ===
+
+A `Cursor` instance has the following attributes and methods:
+
+A SQLite database cursor has the following attributes and methods:
+
+'''`Cursor.execute(sql[, parameters])`'''
+
+Executes an SQL statement. The SQL statement may be ''parametrized'' (i. e. placeholders instead of SQL literals). __The `sqlite3` module supports two kinds of placeholders: question marks (qmark style) and named placeholders (named style).__
+
+This example shows how to use parameters with ''qmark style'':
+
+ {{{
+import sqlite3
+
+con = sqlite3.connect("mydb")
+
+cur = con.cursor()
+
+who = "Yeltsin"
+age = 72
+
+cur.execute("select name_last, age from people where name_last=? and age=?", (who, age))
+print cur.fetchone()
+ }}}
+
+This example shows how to use the named style:
+
+ {{{
+import sqlite3
+
+con = sqlite3.connect("mydb")
+
+cur = con.cursor()
+
+who = "Yeltsin"
+age = 72
+
+cur.execute("select name_last, age from people where name_last=:who and age=:age",
+    {"who": who, "age": age})
+print cur.fetchone()
+ }}}
+
+__`execute()` will only execute a single SQL statement. If you try to execute more than one statement with it, it will raise a Warning. Use `executescript()` if you want to execute multiple SQL statements with one call.__
+
+:::
+
+'''`Cursor.fetchone()`'''
+
+__Fetches the next row of a query result set, returning a single sequence, or `None` when no more data is available.__
+
+'''`Cursor.fetchmany([size=cursor.arraysize])`'''
+
+__Fetches the next set of rows of a query result, returning a list. An empty list is returned when no more rows are available.__
+
+The number of rows to fetch per call is specified by the `size` parameter. __If it is not given, the cursor’s `arraysize` determines the number of rows to be fetched. The method should try to fetch as many rows as indicated by the `size` parameter. If this is not possible due to the specified number of rows not being available, fewer rows may be returned.__
+
+__Note there are performance considerations involved with the `size` parameter. For optimal performance, it is usually best to use the `arraysize` attribute. If the `size` parameter is used, then it is best for it to retain the same value from one `fetchmany()` call to the next.__
+
+'''`Cursor.fetchall()`'''
+
+__Fetches all (remaining) rows of a query result, returning a list. Note that the cursor’s `arraysize` attribute can affect the performance of this operation. An empty list is returned when no rows are available.__
+
+'''`Cursor.rowcount`'''
+
+__Although the `Cursor` class of the `sqlite3` module implements this attribute, the database engine’s own support for the determination of “rows affected”/”rows selected” is quirky.__
+
+For `DELETE` statements, SQLite reports `rowcount` as `0` if you make a `DELETE FROM table` without any condition.
+
+For `executemany()` statements, the number of modifications are summed up into `rowcount`.
+
+__As required by the Python DB API Spec, the `rowcount` attribute “is `-1` in case no `executeXX()` has been performed on the cursor or the `rowcount` of the last operation is not determinable by the interface”.__
+
+__This includes `SELECT` statements because we cannot determine the number of rows a query produced until all rows were fetched.__
+
+'''`Cursor.lastrowid`'''
+
+__This read-only attribute provides the `rowid` of the last modified row. It is only set if you issued a `INSERT` statement using the `execute()` method. For operations other than `INSERT` or when `executemany()` is called, `lastrowid` is set to `None`.__
+
+'''`Cursor.description`'''
+
+This read-only attribute provides the column names of the last query. To remain compatible with the Python DB API, it returns a 7-tuple for each column where the last six items of each tuple are `None`.
+
+It is set for `SELECT` statements without any matching rows as well.
+
+=== 11.13.4. Row Objects ===
+
+'''class `sqlite3.Row`'''
+
+__A `Row` instance serves as a highly optimized `row_factory` for `Connection` objects. It tries to ''mimic a tuple'' in most of its features.__
+
+__It supports mapping access by column name and index, iteration, representation, equality testing and `len()`.__
+
+If two `Row` objects have exactly the same columns and their members are equal, they compare equal.
+
+Changed in version 2.6: Added iteration and equality (hashability).
+
+'''`keys()`'''
+
+__This method returns a tuple of column names.__ Immediately after a query, it is the first member of each tuple in `Cursor.description`.
+
+New in version 2.6.
+
+Let’s assume we initialize a table as in the example given above:
+
+ {{{
+conn = sqlite3.connect(":memory:")
+c = conn.cursor()
+c.execute('''create table stocks
+(date text, trans text, symbol text,
+ qty real, price real)''')
+c.execute("""insert into stocks
+          values ('2006-01-05','BUY','RHAT',100,35.14)""")
+conn.commit()
+c.close()
+ }}}
+
+Now we plug `Row` in:
+
+ {{{
+>>> conn.row_factory = sqlite3.Row
+>>> c = conn.cursor()
+>>> c.execute('select * from stocks')
+<sqlite3.Cursor object at 0x7f4e7dd8fa80>
+>>> r = c.fetchone()
+>>> type(r)
+<type 'sqlite3.Row'>
+>>> r
+(u'2006-01-05', u'BUY', u'RHAT', 100.0, 35.14)
+>>> len(r)
+5
+>>> r[2]
+u'RHAT'
+>>> r.keys()
+['date', 'trans', 'symbol', 'qty', 'price']
+>>> r['qty']
+100.0
+>>> for member in r: print member
+...
+2006-01-05
+BUY
+RHAT
+100.0
+35.14
+ }}}
+
+=== 11.13.5. SQLite and Python types ===
+
+==== 11.13.5.1. Introduction ====
+
+SQLite natively supports the following types: `NULL`, `INTEGER`, `REAL`, `TEXT`, `BLOB`.
+
+The following Python types can thus be sent to SQLite without any problem:
+
+|| Python type || SQLite type ||
+|| `None` || `NULL` ||
+|| `int` || `INTEGER` ||
+|| `long` || `INTEGER` ||
+|| `float` || `REAL` ||
+|| `str` (UTF8-encoded) || `TEXT` ||
+|| `unicode` || `TEXT` ||
+|| `buffer` || `BLOB` ||
+
+This is how SQLite types are converted to Python types by default:
+
+|| SQLite type || Python type ||
+|| `NULL` || `None` ||
+|| `INTEGER` || `int` or `long`, depending on size ||
+|| `REAL` || `float` ||
+|| `TEXT` || depends on `text_factory`, `unicode` by default ||
+|| `BLOB` || `buffer` ||
+
+__The ''type system'' of the `sqlite3` module is extensible in two ways: you can store additional Python types in a SQLite database via ''object adaptation'', and you can let the `sqlite3` module convert SQLite types to different Python types via converters.__
+
+=== 11.13.6. Controlling Transactions ===
+
+__By default, the `sqlite3` module opens transactions implicitly before a Data Modification Language (DML) statement (i.e. `INSERT`/`UPDATE`/`DELETE`/`REPLACE`), and commits transactions implicitly before a non-DML, non-query statement (i. e. anything other than `SELECT` or the aforementioned).__
+
+So if you are within a transaction and issue a command like `CREATE TABLE` ..., `VACUUM`, `PRAGMA`, the `sqlite3` module will commit implicitly before executing that command. __There are two reasons for doing that. The first is that some of these commands don’t work within transactions. The other reason is that `sqlite3` needs to keep track of the transaction state (if a transaction is active or not).__
+
+__You can control which kind of `BEGIN` statements `sqlite3` implicitly executes (or none at all) via the `isolation_level` parameter to the `connect()` call, or via the `isolation_level` property of connections.___
+
+__If you want ''autocommit mode'', then set `isolation_level` to `None`.__
+
+Otherwise leave it at its default, which will result in a plain “BEGIN” statement, or set it to one of SQLite’s supported isolation levels: “DEFERRED”, “IMMEDIATE” or “EXCLUSIVE”.
+
+=== 11.13.7. Using sqlite3 efficiently ===
+
+==== 11.13.7.1. Using shortcut methods ====
+
+Using the nonstandard `execute()`, `executemany()` and `executescript()` methods of the `Connection` object, __your code can be written more concisely because you don’t have to create the (often superfluous) `Cursor` objects explicitly. Instead, the `Cursor` objects are created implicitly and these shortcut methods return the `cursor` objects.__ This way, you can execute a `SELECT` statement and iterate over it directly using only a single call on the `Connection` object.
+
+ {{{
+import sqlite3
+
+persons = [
+    ("Hugo", "Boss"),
+    ("Calvin", "Klein")
+    ]
+
+con = sqlite3.connect(":memory:")
+
+# Create the table
+con.execute("create table person(firstname, lastname)")
+
+# Fill the table
+con.executemany("insert into person(firstname, lastname) values (?, ?)", persons)
+
+# Print the table contents
+for row in con.execute("select firstname, lastname from person"):
+    print row
+
+# Using a dummy WHERE clause to not let SQLite take the shortcut table deletes.
+print "I just deleted", con.execute("delete from person where 1=1").rowcount, "rows"
+ }}}
+
+==== 11.13.7.2. Accessing columns by name instead of by index ====
+
+One useful feature of the `sqlite3` module is the built-in `sqlite3.Row` class designed to be used as a ''row factory''.
+
+__Rows wrapped with this class can be accessed both by index (like tuples) and ''case-insensitively'' by name:__
+
+ {{{
+import sqlite3
+
+con = sqlite3.connect("mydb")
+con.row_factory = sqlite3.Row
+
+cur = con.cursor()
+cur.execute("select name_last, age from people")
+for row in cur:
+    assert row[0] == row["name_last"]
+    assert row["name_last"] == row["nAmE_lAsT"]
+    assert row[1] == row["age"]
+    assert row[1] == row["AgE"]
+ }}}
+
+==== 11.13.7.3. Using the connection as a context manager ====
+
+New in version 2.6.
+
+__`Connection` objects can be used as context managers that automatically commit or rollback transactions. In the event of an exception, the transaction is rolled back; otherwise, the transaction is committed:__
+
+ {{{
+import sqlite3
+
+con = sqlite3.connect(":memory:")
+con.execute("create table person (id integer primary key, firstname varchar unique)")
+
+# Successful, con.commit() is called automatically afterwards
+with con:
+    con.execute("insert into person(firstname) values (?)", ("Joe",))
+
+# con.rollback() is called after the with block finishes with an exception, the
+# exception is still raised and must be catched
+try:
+    with con:
+        con.execute("insert into person(firstname) values (?)", ("Joe",))
+except sqlite3.IntegrityError:
+    print "couldn't add Joe twice"
+ }}}
+
+=== 11.13.8. Common issues ===
+
+==== 11.13.8.1. Multithreading ====
+
+Older SQLite versions had issues with sharing connections between threads. That’s why the Python module disallows sharing connections and cursors between threads. If you still try to do so, you will get an exception at runtime.
+
+The only exception is calling the `interrupt()` method, which only makes sense to call from a different thread.
+

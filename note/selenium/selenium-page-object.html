@@ -1,0 +1,241 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Selenium] Page Object Pattern</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="selenium-page-object.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="selenium.html">Selenium</a> / Page Object Pattern</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>Page Object Pattern 用多個相互關聯的 Page Object 來塑模（model） Web Application 不同的頁面。它最重要精神就是，對外只提供較高層次的操作，也就是偏重 "要做什麼" 的意圖（intent），而將畫面上 "要怎麼做" 的操作細節隱藏起來。</p></div>
+<div class="paragraph"><p>例如 "用帳號 xxx 跟密碼 ooo 登入" 之於 "在帳號欄位輸入 xxx，密碼欄位輸入 ooo，然後按 [登入]" 的差別。這麼做可以得到一些好處：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+只要意圖不變，之後畫面如果有調整（包括 layout 的調整，甚至是操作流程有變動），只要修改一個地方即可－也就是相關 Page Object 的內部實作。
+</p>
+</li>
+<li>
+<p>
+鼓勵設計 test case 把焦點放在 "要做什麼" 而非 "要怎麼做"，所以 test script 的可讀性會相對提高。
+</p>
+</li>
+<li>
+<p>
+跟同一個頁面相關的操作都集中在同一個 Page Object 裡，方便後續維護，搭配 <a href="selenium-ui-mapping.html">UI Mapping</a> 使用效果更佳。
+</p>
+</li>
+<li>
+<p>
+把 testing tool 的使用全部包裝在 keyword 裡，如果 tool 本身有改版或者要更換時，也不會影響到 test script。更多的情況是，可以把複雜的 UI 操作包裝起來，混用多種不同的工具來達成特定的目的，在測試上是很常見的。
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>當然，實作上也有一些要留意的地方：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+不要在 Page Object 內做檢查（assertion），除了在 constructor 裡檢查目前是否在特定的頁面。
+</p>
+</li>
+<li>
+<p>
+<code>should_be_on_this_page()</code> 是固定的成員。如果有 Ajax request 的話，則要另外提供 <code>wait_for_idle()</code>，而且 <code>should_be_on_this_page()</code> 最後一定要呼叫 <code>wait_for_idle()</code>。（確認在某個頁面之後，才有辦法依不同頁面的特性，檢查是否所有 Ajax request 都回來了）
+</p>
+</li>
+<li>
+<p>
+操作結束後，通常會傳回自己或另一個 Page Object，方便做 chained call。（當然 <code>should_be_on_this_page()</code> 跟 <code>wait_for_idle()</code> 也不例外）
+</p>
+</li>
+<li>
+<p>
+合併 UI Mapping 的概念使用，可以將各頁面不同的 locators 封裝起來。
+</p>
+</li>
+<li>
+<p>
+如果相同的操作在不同的條件下會有不同的結果，也就是導向不同的頁面，就應該獨立成兩個操作。例如 <code>login()</code> 跟 <code>login_invalid()</code>。因此頁面之間的關係可以從 Page Object 一些操作的回傳值推導出來。
+</p>
+</li>
+<li>
+<p>
+由於是高層次的操作，所以方法就要避免 <code>click</code>、<code>select</code>、<code>check</code>、<code>button</code>、<code>field</code> 等暗示畫面表現方式的字眼
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+例如 <code>click save button</code> 用 <code>save</code> 來表示即可
+</p>
+</li>
+<li>
+<p>
+例如 <code>click and type in the xxx field</code> 可以寫成 <code>input xxx</code>。
+</p>
+</li>
+<li>
+<p>
+如果 click 會在不同狀態間切換，<code>expand/collapse xxx</code> 會比單純的 <code>click xxx</code> 來得好，可以把許多複雜的判斷 hide 起來。
+</p>
+</li>
+<li>
+<p>
+<code>Search Keyword</code> 會比 <code>Click Search Box</code> + <code>Input Keyword</code> + <code>Click Search Button</code> 來得好。
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+如果一個動作跨及多個頁面，沒有問題，但應該要擺在動作開始的頁面
+</p>
+</li>
+<li>
+<p>
+如果要做一件事，在晝面上有兩個管道(例如按取消按鈕或右上方叉叉直接關閉)，基本上使用者不太需要關心畫面上是怎麼操作的，如果真有需要，可以提出非必要的參數，做為一個 hint。
+</p>
+</li>
+<li>
+<p>
+如果有切換視窗的動作，<code>click xxx</code> 就要選定新的視窗，<code>close xxx</code> 就要選回主視窗。
+</p>
+</li>
+<li>
+<p>
+一開始不要提供太細微的操作, 否則測試的意圖就很難被看出來。操作如果太 high-level，L10N 就沒機會安插拍圖的動作，例如 <code>login(username, password)</code> 如果拆成 <code>input_username_and_password()</code> 跟 <code>login()</code>，L10N 就有機會拍下輸入完帳密後的畫面。
+</p>
+</li>
+<li>
+<p>
+除了高層次的 "操作" 之外，剩下的都是一些用來取得畫面上不同部位 "狀態" 的方法。（粗／細？）
+</p>
+</li>
+<li>
+<p>
+考量到 L10N，例如 <code>get_selected_tab()</code> 跟 <code>get_selected_tab_text()</code>，前者的回傳值不會因語言改變，但後者會。
+</p>
+</li>
+</ul></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">相同的概念，也可以套用在一般的 <a href="../gui/test/automation.html">GUI Automation</a> 上，要稱做 Screen Object Pattern 嗎？固定用來操作現在取得焦點的視窗。</td>
+</tr></table>
+</div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">Page Object Pattern 不只要把 locator 隱藏起來，而是要提供 high-level 的 intent，否則 UI operation detail 還是外漏，沒有什麼意義。所以 POP 上的方法絕不會是 click_xxx 這種一看就是 UI 的方法&#8230; 否則 click_xxx 跟 hover_xxx 不就要分開包裝&#8230; 沒完沒了（但會有一大堆 get_xxx，傳回字串就好，因為轉型可能會有錯，比對也不方便）。但一個 method 的操作不會超過一個畫面？ 不過越 high-level 會衍生一個問題，就是 L10N 沒機會插入做 take snapshot 的動作，要怎麼平衡？還是要拍圖再拆？</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>我不覺得 page object 可以用來包裝 component&#8230; 至少 method 的名稱要把 context 帶進來。</p></div>
+<div class="paragraph"><p>[TBD] 整理 <code>Page Object Pattern.mm</code>&#8230;</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://code.google.com/p/selenium/wiki/PageObjects">PageObjects</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://seleniumhq.org/docs/06_test_design_considerations.html#page-object-design-pattern">Test Design Considerations &gt; Page Object Design Pattern — Selenium Documentation</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">其他文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://sharetest.codeplex.com/">ShareTest</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://watirmelon.com/2012/06/22/rspec-page-objects-and-user-flows/">Rspec, page objects and user flows | WatirMelon</a> (2012-06-22)
+</p>
+</li>
+<li>
+<p>
+<a href="http://gojko.net/2010/04/13/how-to-implement-ui-testing-without-shooting-yourself-in-the-foot-2/">How to implement UI testing without shooting yourself in the foot</a> (2010-04-13)
+</p>
+</li>
+<li>
+<p>
+<a href="http://pragprog.com/magazines/2010-08/page-objects-in-python">The Pragmatic Bookshelf | PragPub August 2010 | Page Objects in Python</a> (2010-08)
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-07 11:31:20 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+= link:bash.html[Bash] / 取得 Script 自身的完整路徑 =
+:title: 取得 Script 自身的完整路徑
+
+ echo $(dirname $(readlink -f $0))
+
+`readlink` 的做法在 Linux 上確實可行，但在 Mac 上卻行不通。
+
+.`/tmp/script.sh`
+--------------------------------------------------------------------------------
+#!/bin/sh
+
+CWD=`pwd`
+if [ $CWD -ne / ]; then
+  CWD=$CWD/
+fi
+
+SCRIPT_DIR=`dirname $0`
+if [ $SCRIPT_DIR -eq . ]; then
+  SCRIPT_DIR=
+
+echo $CWD$SCRIPT_DIR
+--------------------------------------------------------------------------------
+
+== 參考資料 ==
+
+ * http://stackoverflow.com/questions/284662/how-do-you-normalize-a-file-path-in-bash[linux - how do you normalize a file path in bash? - Stack Overflow] - 提到 `realpath` 跟 `readlink`，不過 `realpath` 並不是每個 distribution 都有，例如在 Mac OS X 10.7 就沒有。
+

@@ -1,0 +1,88 @@
+= link:python.html[Python] / Exception Handling =
+:title: [Python] Exception Handling
+
+--------------------------------------------------------------------------------
+>>> try:
+...     raise RuntimeError('123')
+... except BaseException as e:
+...     e.args
+... 
+('123',)
+--------------------------------------------------------------------------------
+
+
+`Exception` 預設會將建立傳入的參數
+
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+
+ * `RuntimeError`
+ * `NotImplementedError`
+ * `TypeError`
+ * `ValueError` - 相較於 `TypeError`，它指的是型態對了，但內容有誤。
+ * `Exception` - non-system-exiting exceptions 都繼承自它，包括其他自訂的 exception。
+ * `IndexError` 或 `KeyError`
+
+.`examples/stacktrace.py`
+--------------------------------------------------------------------------------
+import sys, traceback
+
+def fun1():
+  fun2()
+
+def fun2():
+  fun3()
+
+def fun3():
+  raise Exception('ERROR' + '(fun3)')
+
+try:
+  fun1()
+except:
+  if len(sys.argv) == 2 and sys.argv[1] == 'print_tb':
+    exc_info = sys.exc_info()
+    traceback.print_tb(exc_info[2]) # print traceback.format_exc()
+  else: raise
+--------------------------------------------------------------------------------
+
+.`python stacktrace.py`
+--------------------------------------------------------------------------------
+Traceback (most recent call last):
+  File "stacktrace.py", line 13, in <module>
+    fun1() <-- re-raise 的起點還是 fun()
+  File "stacktrace.py", line 4, in fun1
+    fun2()
+  File "stacktrace.py", line 7, in fun2
+    fun3()
+  File "stacktrace.py", line 10, in fun3
+    raise Exception('ERROR' + '(fun3)')
+Exception: ERROR(fun3) <-- 多了這一行
+--------------------------------------------------------------------------------
+
+.`python stacktrace.py print_tb`
+--------------------------------------------------------------------------------
+  File "stacktrace.py", line 13, in <module>
+    fun1()
+  File "stacktrace.py", line 4, in fun1
+    fun2()
+  File "stacktrace.py", line 7, in fun2
+    fun3()
+  File "stacktrace.py", line 10, in fun3
+    raise Exception('ERROR' + '(fun3)')
+--------------------------------------------------------------------------------
+
+== 延伸閱讀 ==
+
+ * link:python-exception-customize.html[自訂 Exception]
+
+== 參考資料 ==
+
+.文件
+--
+ * http://docs.python.org/tutorial/errors.html[Errors and Exceptions]
+ * http://docs.python.org/library/exceptions.html[Built-in Exceptions]
+ * http://www.python.org/dev/peps/pep-0352/[PEP 352 -- Required Superclass for Exceptions]
+ * http://www.itmaybeahack.com/book/python-2.6/html/p02/p02c07_exceptions.html#exception-attributes[Exceptions > Exception Attributes — Building Skills in Python]
+--
+

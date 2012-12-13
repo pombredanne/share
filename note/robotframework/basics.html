@@ -1,0 +1,583 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>Robot Framework Basics</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="basics.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>Robot Framework Basics</h1>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_測試資料的表示法">測試資料的表示法</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_特殊字元">特殊字元</h3>
+<div class="ulist"><ul>
+<li>
+<p>
+由於 <code>\</code> 用來跳脫字元，寫 regex 要特別小心。
+</p>
+</li>
+</ul></div>
+</div>
+<div class="sect2">
+<h3 id="_時間">時間</h3>
+<div class="paragraph"><p><em>1 minute</em>, <em>2 min 3 s</em>, <em>4.5</em></p></div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_變數">變數</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+Robot Framework Variables: <code>${SCALAR}</code> 跟 <code>@{LIST}</code>
+</p>
+</li>
+<li>
+<p>
+Environment Variables: <code>%{ENVIRONMENT}</code>
+</p>
+</li>
+</ul></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">為了避免使用者搞不清楚何是要用 <code>${VAR}</code> 或 <code>%{VAR}</code>，儘可能事前安排將 environment variables 轉成 Robot Framework variables。</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_流程控制">流程控制</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_builtin_wait_until_keyword_succeeds">BuiltIn.Wait Until Keyword Succeeds</h3>
+<div class="literalblock">
+<div class="content">
+<pre><code>Wait Until Keyword Succeeds | timeout, retry_interval, name, *args</code></pre>
+</div></div>
+<div class="paragraph"><p>這個 keyword 每隔一段時間（<em>retry_interval</em>）就會執行一次另一個 keyword（<em>name</em> 跟 <em>*args</em>；用法跟 <code>Run Keyword</code> 一樣），直到另一個 keyword 執行成功或累積時間超過 <em>timeout</em> 為止。</p></div>
+<div class="paragraph"><p>按照<a href="http://robotframework.googlecode.com/hg/doc/libraries/BuiltIn.html#Wait%20Until%20Keyword%20Succeeds">官方文件的說法</a>，除了 timeout 之外，如果遇到語法有問題或發生重大的錯誤，也會提前中斷執行。</p></div>
+<div class="quoteblock">
+<div class="content">
+<div class="paragraph"><p>Errors caused by invalid syntax, test or keyword timeouts, or fatal exceptions are not caught by this keyword.</p></div>
+</div>
+<div class="attribution">
+</div></div>
+<div class="paragraph"><p>從原始碼可以推導出所謂的 "重大錯誤" 指的是 exception 帶有一個 <code>ROBOT_EXIT_ON_FAILURE</code> 的屬性。</p></div>
+<div class="listingblock">
+<div class="title"><code>robot/libraries/BuiltIn.py</code></div>
+<div class="content">
+<pre><code>def wait_until_keyword_succeeds(self, timeout, retry_interval, name, *args):
+    ...
+    timeout = utils.timestr_to_secs(timeout)
+    retry_interval = utils.timestr_to_secs(retry_interval)
+    maxtime = time.time() + timeout
+    error = None
+    while not error:
+        try:
+            return self.run_keyword(name, *args) <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+        except ExecutionFailed, err:
+            if err.dont_cont: <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+                raise
+            if time.time() &gt; maxtime:
+                error = unicode(err)
+            else:
+                time.sleep(retry_interval)
+    raise AssertionError("Timeout %s exceeded. The last error was: %s"
+                         % (utils.secs_to_timestr(timeout), error))</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+成功時也會有回傳值。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+除了 timeout 之外，<code>err.dont_cont</code> 決定了要不要繼續 retry。
+</td></tr>
+</table></div>
+<div class="listingblock">
+<div class="title"><code>robot/running/keywords.py</code></div>
+<div class="content">
+<pre><code>class Keyword(BaseKeyword):
+
+    def _run(self, handler, context):
+        try:
+            return handler.run(context, self.args[:])
+        except ExecutionFailed:
+            raise
+        except: <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+            self._report_failure(context)
+
+    def _report_failure(self, context):
+        failure = HandlerExecutionFailed() <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+        if not failure.exit_for_loop:
+            context.output.fail(failure.full_message)
+            if failure.traceback:
+                context.output.debug(failure.traceback)
+        raise failure</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+其他的錯誤由 <code>_report_failure()</code> 進行包裝。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+<code>HandlerExecutionFailed</code> 會對現有的錯誤做一些判斷，參考下面 <code>error.py</code> 的說明。
+</td></tr>
+</table></div>
+<div class="listingblock">
+<div class="title"><code>robot/errors.py</code></div>
+<div class="content">
+<pre><code>class DataError(RobotError):
+    """Used when the provided test data is invalid.
+
+    DataErrors are not be caught by keywords that run other keywords
+    (e.g. `Run Keyword And Expect Error`). Libraries should thus use
+    this exception with care.
+    """
+
+class TimeoutError(RobotError):
+    """Used when a test or keyword timeout occurs.
+
+    This exception is handled specially so that execution of the
+    current test is always stopped immediately and it is not caught by
+    keywords executing other keywords (e.g. `Run Keyword And Expect
+    Error`). Libraries should thus NOT use this exception themselves.
+    """
+
+class ExecutionFailed(RobotError):
+    """Used for communicating failures in test execution."""
+
+    def __init__(self, message, timeout=False, syntax=False, exit=False,
+                 cont=False, exit_for_loop=False):
+        RobotError.__init__(self, utils.cut_long_message(message))
+        self.timeout = timeout
+        self.syntax = syntax
+        self.exit = exit
+        self.cont = cont
+        self.exit_for_loop = exit_for_loop
+
+    @property
+    def dont_cont(self): <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+        return self.timeout or self.syntax or self.exit
+
+class HandlerExecutionFailed(ExecutionFailed):
+
+    def __init__(self):
+        details = utils.ErrorDetails()
+        timeout = isinstance(details.error, TimeoutError) <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+        syntax = isinstance(details.error, DataError)
+        exit = bool(getattr(details.error, 'ROBOT_EXIT_ON_FAILURE', False)) <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+        cont = bool(getattr(details.error, 'ROBOT_CONTINUE_ON_FAILURE', False))
+        exit_for_loop = bool(getattr(details.error, 'ROBOT_EXIT_FOR_LOOP', False))
+        ExecutionFailed.__init__(self, details.message, timeout, syntax,
+                                 exit, cont, exit_for_loop)
+        self.full_message = details.message
+        self.traceback = details.traceback</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+回傳 <code>True</code> 時，<code>Wait Until Keyword Succeeds</code> 就不會再繼續嘗試。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+這裡的 <code>TimeoutError</code> 跟 <code>DataError</code> 都是 Robot Framework 特有的。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+原來所謂的重大錯誤，指的是 exception 帶有一個 <code>ROBOT_EXIT_ON_FAILURE</code> 的屬性。
+</td></tr>
+</table></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://robotframework.googlecode.com/hg/doc/libraries/BuiltIn.html#Wait%20Until%20Keyword%20Succeeds">BuiltIn.Wait Until Keyword Succeeds</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+<div class="listingblock">
+<div class="title"><code>examples/waitsuccess/test.txt</code></div>
+<div class="content">
+<pre><code>| *Setting* | *Value*
+| Library | mylib.py
+
+| *Test Case* | *Action* | *Argument*
+| Test | ${hour} | ${minute} | ${second}= | Wait Until Keyword Succeeds | 1m | 1s | Is Half Minute
+|      | Log | ${hour}:${minute}:${second} | WARN</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="title"><code>examples/waitsucess/mylib.py</code></div>
+<div class="content">
+<pre><code>from datetime import datetime
+
+def is_half_minute():
+    dt = datetime.today()
+    if dt.second != 30:
+        raise RuntimeError('not half minute')
+    return dt.hour, dt.minute, dt.second</code></pre>
+</div></div>
+<div class="paragraph"><p>執行結果：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ pybot test.txt
+==============================================================================
+Test
+==============================================================================
+[ WARN ] 14:49:30
+Test                                                                  | PASS |</code></pre>
+</div></div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_test_library_與_keyword">Test Library 與 Keyword</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>除了 core framework 與 supporting tool 之外，Robot Framework 測試 SUT 的功能全部來自 keyword。而 Keyword 不是來自 test library，就是直接定義在 keyword table 裡。</p></div>
+<div class="paragraph"><p>Test library 除了自行開發之外，也有許多現成的可以用。官方內附的稱做 standard library：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://code.google.com/p/robotframework/wiki/BuiltInLibrary">BuiltIn Library</a> (<a href="http://robotframework.googlecode.com/hg/doc/libraries/BuiltIn.html">libdoc</a>)
+</p>
+</li>
+<li>
+<p>
+<a href="http://code.google.com/p/robotframework/wiki/OperatingSystemLibrary">Operating System Library</a> (<code>OperatingSystem</code>, <a href="http://robotframework.googlecode.com/hg/doc/libraries/OperatingSystem.html">libdoc</a>)
+</p>
+</li>
+<li>
+<p>
+<a href="http://robotframework.googlecode.com/hg/doc/libraries/Telnet.html">Telnet Library</a> (<code>Telnet</code>, <a href="http://robotframework.googlecode.com/hg/doc/libraries/Telnet.html">libdoc</a>)
+</p>
+</li>
+<li>
+<p>
+<a href="http://code.google.com/p/robotframework/wiki/CollectionsLibrary">Collections Library</a> (<code>Collections</code>, <a href="http://robotframework.googlecode.com/hg/doc/libraries/Collections.html">libdoc</a>)
+</p>
+</li>
+<li>
+<p>
+<a href="http://code.google.com/p/robotframework/wiki/StringLibrary">String Library</a> (<code>String</code>, <a href="http://robotframework.googlecode.com/hg/doc/libraries/String.html">libdoc</a>)
+</p>
+</li>
+<li>
+<p>
+<a href="http://code.google.com/p/robotframework/wiki/DialogsLibrary">Dialogs Library</a> (<code>Dialogs</code>, <a href="http://robotframework.googlecode.com/hg/doc/libraries/Dialogs.html">libdoc</a>)
+</p>
+</li>
+<li>
+<p>
+<a href="http://code.google.com/p/robotframework/wiki/ScreenshotLibrary">Screenshot Library</a> (<code>Screenshot</code>, <a href="http://robotframework.googlecode.com/hg/doc/libraries/Screenshot.html">libdoc</a>)
+</p>
+</li>
+<li>
+<p>
+<a href="http://code.google.com/p/robotframework/wiki/RemoteLibrary">Remote Library</a> (<code>Remote</code>)
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>其他 third-party 開發的則稱做 external library：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://code.google.com/p/robotframework-seleniumlibrary/">Selenium Library</a> (<code>SeleniumLibrary</code>, <a href="http://robotframework-seleniumlibrary.googlecode.com/hg/doc/SeleniumLibrary.html">libdoc</a>)
+</p>
+</li>
+<li>
+<p>
+<a href="http://code.google.com/p/robotframework-autoitlibrary/">AutoIt Library</a> (<code>AutoItLibrary</code>, <a href="http://robotframework-autoitlibrary.googlecode.com/svn/tags/robotframework-AutoItLibrary-1.1/doc/AutoItLibrary.html">libdoc</a>)
+</p>
+</li>
+<li>
+<p>
+<a href="http://code.google.com/p/robotframework-swinglibrary/">Swing Library</a> (<code>SwingLibrary</code>, <a href="http://robotframework-swinglibrary.googlecode.com/svn/tags/swinglibrary-1.1.3/doc/SwingLibrary-1.1.3-doc.html">libdoc</a>)
+</p>
+</li>
+<li>
+<p>
+<a href="http://code.google.com/p/robotframework-sshlibrary/">SSH Library</a> (<code>SSHLibrary</code>, <a href="http://robotframework-sshlibrary.googlecode.com/svn/tags/robotframework-sshlibrary-1.0/doc/SSHLibrary.html">libdoc</a>)
+</p>
+</li>
+<li>
+<p>
+<a href="http://code.google.com/p/robotframework-dblibrary/">Database Library</a> (<code>DatabaseLibrary</code>, <a href="http://robotframework-dblibrary.googlecode.com/svn/tags/robotframework-dblibrary-1.0/doc/DatabaseLibrary.html">libdoc</a>)
+</p>
+</li>
+<li>
+<p>
+<a href="http://code.google.com/p/robotframework-eclipselibrary/">Eclipse Library</a> (<code>EclipseLibrary</code>, <a href="http://robotframework-eclipselibrary.googlecode.com/svn/trunk/org.lcx.robotframework.eclipselibrary-testcases/documentation/EclipseLibrary.html">libdoc</a>)
+</p>
+</li>
+</ul></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">上面列出的 standard/external library，後面括號裡寫的是引入 test library 時要給的識別名稱與 library documentation 的連結。很明顯的差別是 external library 的名稱後面習慣跟著 <code>Library</code>，這是 standard library 所沒有的。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>除了 <code>BuiltIn</code> 之外，其他 test library 都必須先做 import 的動作（利用 setting table 裡的 <code>Library</code>），才能使用內含的 keyword。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>| *Setting* | *Value* |
+| Library | OperatingSystem |          <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+| Library | testlibs/LoginLibrary.py | <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+直接給定 library name，會自動從 library search path 找到對應的實作，例如 <code>OperatingSystem</code> 或 <code>com.company.TestLib</code>。常用在大家通用的 test library，使用者不需要知道它來自什麼地方。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+相對於 test case file 的路徑或檔名，做為這個 test case file 專屬的 test library，好處是不用額外組態 library search path。
+</td></tr>
+</table></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">
+<div class="paragraph"><p>Library search path 對 <code>pybot</code> 而言，其實就是 module search path 或 `PYTHONPATH 的概念。</p></div>
+<div class="paragraph"><p>假設 Robot Framework 被安裝在 <code>&lt;RobotFrameworkInstallationDir&gt;</code>(/usr/local/lib/python2.6/dist-packages/robotframework-2.6.1-py2.6.egg/)，從 <code>sys.path</code> 可以觀察到，<code>&lt;RobotFrameworkInstallationDir&gt;/robot/libraries/</code> 也在 module search path 裡。</p></div>
+<div class="listingblock">
+<div class="title"><code>&lt;RobotFrameworkInstallationDir&gt;/robot/libraries/</code></div>
+<div class="content">
+<pre><code>.
+|-- __init__.py
+|-- BuiltIn.py
+|-- Collections.py
+|-- DeprecatedBuiltIn.py
+|-- DeprecatedOperatingSystem.py
+|-- Dialogs.py
+|-- Easter.py
+|-- OperatingSystem.py
+|-- Remote.py
+|-- Reserved.py
+|-- Screenshot.py
+|-- String.py
+\-- Telnet.py</code></pre>
+</div></div>
+<div class="paragraph"><p>這也就是為什麼可以像 <code>Library | OperatingSystem</code> 這樣，直接用 module name 來引入 standard library 的關係。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; import sys
+&gt;&gt;&gt; sys.path
+['/usr/local/lib/python2.6/dist-packages/robotframework-2.6.1-py2.6.egg/robot/libraries', '', '/usr/local/lib/python2.6/dist-packages/robotframework-2.6.1-py2.6.egg', ...]
+&gt;&gt;&gt; import BuiltIn
+&gt;&gt;&gt; import OperatingSystem</code></pre>
+</div></div>
+</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>Keyword 依來源不同分成三種：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+Built-in keyword - 不需要 import 就可以直接使用的 keyword，例如 <code>Get Time</code>、<code>Should Be Equal</code> 等。其實它們都定義在一個叫做 <code>BuiltIn</code> 的 test library 裡，只是不用手動 import 而已。
+</p>
+</li>
+<li>
+<p>
+Library keyword - 用程式語言（Python 或 Java）實作在 test library 裡的 lowest-level keyword（相對於 user keyword 的說法），要明確 import 才能使用。
+</p>
+</li>
+<li>
+<p>
+User/User-defined keyword - 在 keyword table 裡，用現有的 keyword 直接組出新的 higher-level keyword。
+</p>
+</li>
+</ul></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://robotframework.googlecode.com/hg/doc/userguide/RobotFrameworkUserGuide.html#using-test-libraries">User Guide &gt; Using test libraries</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://code.google.com/p/robotframework/wiki/TestLibraries">Test Libraries - A list of available test libraries for Robot Framework</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://code.google.com/p/robotframework/wiki/DocumentationIndex">Documentation Index</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://robotframework.googlecode.com/hg/doc/userguide/RobotFrameworkUserGuide.html">Robot Framework User Guide</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_學習手冊">學習手冊</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://code.google.com/p/robotframework/wiki/Installation">Installation</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://robotframework.googlecode.com/hg/doc/quickstart/quickstart.html">Quick Start Guide</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://robotframework.googlecode.com/hg/doc/userguide/RobotFrameworkUserGuide.html">Robot Framework User Guide</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://code.google.com/p/robotframework/wiki/HowToWriteGoodTestCases">How To Write Good Test Cases</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://code.google.com/p/robotframework/wiki/RemoteLibrary">Remote Library</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://code.google.com/p/robotframework/wiki/HowToUseC">How To Use C</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://code.google.com/p/robotframework/wiki/JavaIntegration">Java Integration</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://code.google.com/p/robotframework/wiki/MavenIntegration">Maven Integration</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://robotframework.googlecode.com/hg/tools/libdoc/doc/libdoc.html?r=2.6.3">libdoc.py</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://robotframework.googlecode.com/hg/doc/libraries/BuiltIn.html">BuiltIn</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://robotframework.googlecode.com/hg/doc/libraries/OperatingSystem.html">OperatingSystem</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://robotframework.googlecode.com/hg/doc/libraries/Telnet.html">Telnet</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://robotframework.googlecode.com/hg/doc/libraries/Collections.html">Collections</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://robotframework.googlecode.com/hg/doc/libraries/String.html">String</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://robotframework.googlecode.com/hg/doc/libraries/Dialogs.html">Dialogs</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://robotframework.googlecode.com/hg/doc/libraries/Screenshot.html">Screenshot</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:12:06 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

@@ -1,0 +1,252 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Python] ConfigParser</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="python-configparser.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="python.html">Python</a> / <a href="python-ini.html">INI</a> / ConfigParser</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>Python Standard Library 內含 <code>ConfigParser</code> 模組可以用來讀寫 INI 檔。（很少看到 module name 會用駱駝文，所以 Python 3 被更名成 <code>configparser</code>）</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">整個 Python 都習慣用 INI 檔來做組態 (例如 <code>logging</code> 內部就是用 <code>ConfigParser</code> 來讀取 INI 格式的 configuration files), 也難怪這個 module 的名稱裡完全沒提到 INI。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>從<a href="http://docs.python.org/library/configparser.html">官方文件</a>開頭幾段文字的說明，可以發現 <code>ConfigParser</code> 在 <a href="../ini/ini-format.html">INI 基本的格式</a>上，增加了許多彈性的做法，例如：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>#</code> 也可以用來表示註解，甚至 <code>;</code> 也可以接在 section header 或 option value 的後面，達到 inline comment 的效果。
+</p>
+</li>
+<li>
+<p>
+支援插值（interpolation）代換 format string。
+</p>
+</li>
+<li>
+<p>
+支援 global section 的概念，也就是 option 可以不屬於任何一個 section（出現在第一個 section header 之前），用來做為 option 的預設值。
+</p>
+</li>
+<li>
+<p>
+option value 有多行時，遵循 <a href="http://tools.ietf.org/html/rfc822.html">RFC 822</a> 3.1.1 節 LONG HEADER FIELDS 的做法。
+</p>
+</li>
+</ul></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content"><code>ConfigParser</code> 習慣將 property 習慣被稱做 option。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>如果不需要這些多出來的彈性，<code>ConfigConfig.RawConfigParser</code> 的做法最 “單純”。以讀取 Windows 底下的 <code>system.ini</code> 來做說明：</p></div>
+<div class="listingblock">
+<div class="title"><code>system.ini</code></div>
+<div class="content">
+<pre><code>; for 16-bit app support <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+
+[drivers] <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+wave=mmdrv.dll <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+timer=timer.drv
+
+[mci]
+[driver32]
+[386Enh]
+woafont=dosapp.fon
+EGA80WOA.FON=EGA80WOA.FON
+EGA40WOA.FON=EGA40WOA.FON
+CGA80WOA.FON=CGA80WOA.FON
+CGA40WOA.FON=CGA40WOA.FON</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; from ConfigParser import RawConfigParser
+&gt;&gt;&gt; cfg = RawConfigParser()
+&gt;&gt;&gt; with open('system.ini', 'rb') as fp:
+...     cfg.readfp(fp, 'system.ini') <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+...
+&gt;&gt;&gt;
+&gt;&gt;&gt; cfg.sections() <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+['drivers', 'driver32', 'mci', '386Enh']
+&gt;&gt;&gt; cfg.has_section('386Enh'), cfg.has_section('386enh')
+(True, False)
+&gt;&gt;&gt; cfg.options('386Enh') <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+['ega80woa.fon', 'ega40woa.fon', 'cga80woa.fon', 'cga40woa.fon', 'woafont']
+&gt;&gt;&gt; cfg.get('386Enh', 'EGA80WOA.FON')
+'EGA80WOA.FON'
+&gt;&gt;&gt; cfg.items('drivers') <img src="../../_asciidoc/images/icons/callouts/4.png" alt="4" />
+[('timer', 'timer.drv'), ('wave', 'mmdrv.dll')]</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+<code>readfp(fp[, filename])</code> 可以將 INI 檔 <em>fp</em> 讀進來。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+<code>sections()</code> 可以取得 section 的清單，但順序不保證跟 INI 裡出現的順序相同，而且 section name 大小寫有別。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+<code>options(section)</code> 可以取得某 <em>section</em> 下的 option name 清單。
+<div class="paragraph"><p>注意 option name 都被轉成小寫，那是因為過程中所有的 option name 都會先經過 <code>ConfigParser.optionxform(option)</code> 處理過，預設的實作會將 option name 轉成小寫（在這之前，option name 兩側的空白已經被去掉）。也就是說，內部是以小寫來儲存 option name，另外像 <code>has_option(section, option)</code>、<code>get(section, option)</code> 或 <code>set(section, option)</code> 傳入的 option，也會先經過 <code>optionxform()</code> 處理再儲存或比對，結果就是 “option name 不分大小寫”。</p></div>
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/4.png" alt="4" /></td><td>
+也可以用 <code>items(section)</code> 一次取回 name-value pairs。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>接著示範改寫 <code>system.ini</code> 的方法：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; cfg = RawConfigParser()
+&gt;&gt;&gt; cfg.optionxform = str <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+&gt;&gt;&gt; with open('system.ini', 'rb') as fp:
+...     cfg.readfp(fp, 'system.ini')
+...
+&gt;&gt;&gt; cfg.options('386Enh')
+['EGA80WOA.FON', 'EGA40WOA.FON', 'CGA80WOA.FON', 'CGA40WOA.FON', 'woafont']
+&gt;&gt;&gt; cfg.add_section('general') <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+&gt;&gt;&gt; cfg.add_section('General')
+&gt;&gt;&gt; cfg.sections()
+['mci', 'drivers', '386Enh', 'general', 'General', 'driver32']
+&gt;&gt;&gt; cfg.remove_section('General')
+True
+&gt;&gt;&gt; cfg.sections()
+['mci', 'drivers', '386Enh', 'general', 'driver32']
+&gt;&gt;&gt;
+&gt;&gt;&gt; cfg.set('general', 'Option1', 'Value1') <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+&gt;&gt;&gt; cfg.set('general', 'Option2', 'Value2')
+&gt;&gt;&gt; cfg.remove_option('general', 'option2') <img src="../../_asciidoc/images/icons/callouts/4.png" alt="4" />
+False
+&gt;&gt;&gt; cfg.options('general')
+['Option2', 'Option1']
+&gt;&gt;&gt;
+&gt;&gt;&gt; import shutil, os
+&gt;&gt;&gt; shutil.copy('system.ini', 'system.ini.bak') <img src="../../_asciidoc/images/icons/callouts/5.png" alt="5" />
+&gt;&gt;&gt; with open('system.ini', 'wb') as fp:
+...     cfg.write(fp) <img src="../../_asciidoc/images/icons/callouts/6.png" alt="6" />
+...
+&gt;&gt;&gt; with open('system.ini', 'rb') as fp:
+...     print fp.read()
+...
+[mci]
+
+[drivers]
+timer = timer.drv
+wave = mmdrv.dll
+
+[386Enh]
+EGA80WOA.FON = EGA80WOA.FON <img src="../../_asciidoc/images/icons/callouts/7.png" alt="7" />
+EGA40WOA.FON = EGA40WOA.FON
+woafont = dosapp.fon
+CGA80WOA.FON = CGA80WOA.FON
+CGA40WOA.FON = CGA40WOA.FON
+
+[general]
+Option2 = Value2
+Option1 = Value1
+
+[driver32]
+
+
+&gt;&gt;&gt; shutil.copy('system.ini.bak', 'system.ini')
+&gt;&gt;&gt; os.remove('system.ini.bak')</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+將 <code>ConfigParser.optionxform</code> 會將 option name 轉成小寫的實作換掉，才不會改寫後 option name 全變了樣。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+<code>add_section(section)</code> 跟 <code>remove_section(section)</code> 可以分別用來新增或刪除 section。<code>remove_section()</code> 回傳的佈林值，表示要刪除的 section 是否存在，就結果來看就是 “有沒有刪到東西“。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+<code>set(section, option, value)</code> 可以用來新增或修改 option。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/4.png" alt="4" /></td><td>
+<code>remove_option(section, option)</code> 可以刪除 option，回傳的佈林值表示要刪除的 option 是否存在（如果 section 不存在，會直接丟出 <code>NoSectionError</code>），就結果來看就是 “有沒有刪到東西“。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/5.png" alt="5" /></td><td>
+備份檔案內容，最後才能回復檔案內容（檔案本身的屬性不會受到影響）。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/6.png" alt="6" /></td><td>
+<code>write(fp)</code> 可以將修改後的組態寫回檔案。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/7.png" alt="7" /></td><td>
+很顯然地，雖然 section/option name 的大小寫都沒有受到影影，但 section 跟 option 的順序全變了。
+</td></tr>
+</table></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://docs.python.org/library/configparser.html">ConfigParser — Configuration file parser</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:14:37 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

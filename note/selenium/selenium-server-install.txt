@@ -1,0 +1,95 @@
+= link:selenium.html[Selenium] / link:selenium-server.html[Server] / 安裝 =
+:title: 安裝 Selenium Server
+
+ 1. 確認裝有 JRE 1.5+。
+ 2. 從http://seleniumhq.org/download/[官網]下載 `selenium-server-standalone-<version>.jar`。
+ 3. 執行下面的指令就可以啟動 Selenium Server：
++
+ java -jar selenium-server-standalone-<version>.jar
+
+TIP: 啟動時建議加上 `-log <logfile> -browserSideLog`，可以將 server/browser 兩端較細的 DEBUG-level log 輸出到 'logfile'。更多參數的用法可以參考 `-help` 的輸出。
+
+用 link:selenium-server-interactive-mode.html[Interactive Mode] 測試一下能否正常開啟網頁：
+
+--------------------------------------------------------------------------------
+$ java -jar selenium-server-standalone-<version>.jar -interactive
+cmd=getNewBrowserSession&1=<browser>&2=http://www.google.com <1>
+cmd=open&1=http://www.google.com <2>
+--------------------------------------------------------------------------------
+<1> 這時候只帶出 Selenium Remote Control 視窗。其中 `<browser>` 可以是 `*firefox`、`*safari` 等。
+<2> 這個指令才會真正帶出 SUT 的視窗。
+
+TIP: 如果 SUT 視窗沒有帶出來，可以按 Selenium Remote Control 視窗裡的 "Show Log" 鈕查看問題，多半是是因為瀏覽器阻擋彈跳視窗的設定被打開了。之前在 Mac OS X Lion 下的 Safari 5 遇到這個問題，只要取消 Safari > Block Pop-Up Windows 的勾選即可。
+
+== Mac OS X Leopard 10.5 ==
+
+啟動伺服器時出現 UnsupportedClassVersionError: Bad version number in .class file，但查看 `java -version` 的結果是 1.5.0_16-b06-284。
+
+--------------------------------------------------------------------------------
+$ java -jar selenium-server-standalone-2.23.1.jar 
+Exception in thread "main" java.lang.UnsupportedClassVersionError: Bad version number in .class file
+	at java.lang.ClassLoader.defineClass1(Native Method)
+	at java.lang.ClassLoader.defineClass(ClassLoader.java:675)
+	at java.security.SecureClassLoader.defineClass(SecureClassLoader.java:124)
+	at java.net.URLClassLoader.defineClass(URLClassLoader.java:260)
+	at java.net.URLClassLoader.access$100(URLClassLoader.java:56)
+	at java.net.URLClassLoader$1.run(URLClassLoader.java:195)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at java.net.URLClassLoader.findClass(URLClassLoader.java:188)
+	at java.lang.ClassLoader.loadClass(ClassLoader.java:316)
+	at sun.misc.Launcher$AppClassLoader.loadClass(Launcher.java:280)
+	at java.lang.ClassLoader.loadClass(ClassLoader.java:251)
+	at java.lang.ClassLoader.loadClassInternal(ClassLoader.java:374)
+--------------------------------------------------------------------------------
+
+進 Utilities > Java > Java Preferences，將預設的 Java 調整成 Java SE 6.0 即可。
+
+緊接著又遇到 sessionID doesn't exist; perhaps this session was already stopped?
+
+--------------------------------------------------------------------------------
+cmd=getNewBrowserSession&1=*safari&2=http://www.google.com
+17:27:21.302 INFO - ---> Requesting http://localhost:4444/selenium-server/driver?cmd=getNewBrowserSession&1=*safari&2=http://www.google.com
+17:27:21.360 INFO - Checking Resource aliases
+17:27:21.362 INFO - Command request: getNewBrowserSession[*safari, http://www.google.com] on session null
+17:27:21.366 INFO - creating new remote session
+17:27:21.385 INFO - Allocated session 794cc8b57a8641ea84b276780c20a121 for http://www.google.com, launching...
+jar:file:/auto/svn/tools/selenium-server-standalone-2.23.1.jar!/core
+17:27:21.511 INFO - Launching Safari to visit 'file:/tmp/customProfileDir794cc8b57a8641ea84b276780c20a121/core/RemoteRunner.html?sessionId=794cc8b57a8641ea84b276780c20a121&multiWindow=true&baseUrl=http%3A%2F%2Fwww.google.com&debugMode=false&driverUrl=http://localhost:4444/selenium-server/driver/' via '/tmp/customProfileDir794cc8b57a8641ea84b276780c20a121/redirect_to_go_to_selenium.htm'...
+cmd=open&1=/
+17:27:33.553 INFO - ---> Requesting http://localhost:4444/selenium-server/driver?cmd=open&1=/&sessionId=
+17:27:33.565 INFO - Command request: open[/, ] on session 
+17:27:33.567 ERROR - Exception running 'open 'command on session 
+java.lang.RuntimeException: sessionId  doesn't exist; perhaps this session was already stopped?
+	at org.openqa.selenium.server.FrameGroupCommandQueueSet.getQueueSet(FrameGroupCommandQueueSet.java:225)
+	at org.openqa.selenium.server.commands.SeleniumCoreCommand.execute(SeleniumCoreCommand.java:55)
+	at org.openqa.selenium.server.SeleniumDriverResourceHandler.doCommand(SeleniumDriverResourceHandler.java:613)
+	at org.openqa.selenium.server.SeleniumDriverResourceHandler.handleCommandRequest(SeleniumDriverResourceHandler.java:407)
+	at org.openqa.selenium.server.SeleniumDriverResourceHandler.handle(SeleniumDriverResourceHandler.java:151)
+	at org.openqa.jetty.http.HttpContext.handle(HttpContext.java:1526)
+	at org.openqa.jetty.http.HttpContext.handle(HttpContext.java:1479)
+	at org.openqa.jetty.http.HttpServer.service(HttpServer.java:914)
+	at org.openqa.jetty.http.HttpConnection.service(HttpConnection.java:820)
+	at org.openqa.jetty.http.HttpConnection.handleNext(HttpConnection.java:986)
+	at org.openqa.jetty.http.HttpConnection.handle(HttpConnection.java:837)
+	at org.openqa.jetty.http.SocketListener.handleConnection(SocketListener.java:243)
+	at org.openqa.jetty.util.ThreadedServer.handle(ThreadedServer.java:357)
+	at org.openqa.jetty.util.ThreadPool$PoolThread.run(ThreadPool.java:534)
+17:27:33.568 INFO - Got result: ERROR Server Exception: sessionId  doesn't exist; perhaps this session was already stopped? on session 
+--------------------------------------------------------------------------------
+
+ * http://old.nabble.com/Problem,-Selenium-RC--sessionId--doesn't-exist--perhaps-this-session-was-already-stopped--td17633858.html[Old Nabble - Selenium - Users - Problem, Selenium RC -sessionId doesn't exist; perhaps this session was already stopped?] (2008-06-04) - 少了一開始 `cmd=getNewBrowserSession` 的動作？但做了也一樣...
+
+== 參考資料 ==
+
+.網站
+--
+ * http://seleniumhq.org/download/[Downloads]
+--
+
+.文件
+--
+ * http://selenium.googlecode.com/svn/trunk/java/CHANGELOG[CHANGELOG]
+ * http://seleniumhq.org/docs/05_selenium_rc.html#installation[Selenium 1 (Selenium RC) > Installation — Selenium Documentation]
+ * http://seleniumhq.org/docs/05_selenium_rc.html#selenium-server-logging[Selenium 1 (Selenium RC) > Selenium Server Logging — Selenium Documentation]
+--
+

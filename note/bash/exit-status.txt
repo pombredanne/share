@@ -1,0 +1,44 @@
+= link:bash.html[Bash] / Exit Status =
+:title: [Bash] Exit Status
+
+`exit` command 會中斷目前的 script，然後回傳一個值給 parent process，這個值就是所謂的 exit status（有時也稱做 return status 或 exit code）。習慣上，exit status 為零時表示執行成功，非零值時表示過程中有發生問題。
+
+--------------------------------------------------------------------------------
+$ date
+Sat Aug  6 17:31:46 CST 2011
+$ echo $? <1>
+0
+$ ls file_not_exist
+ls: cannot access file_not_exist: No such file or directory
+$ echo $?
+2 <2>
+$ echo $? <3>
+0 <1>
+--------------------------------------------------------------------------------
+<1> 可以用 `$?` 來取得最後一個 command 的 exit status。
+<2> 上一個 command (`ls`) 執行失敗，所以得到非零值。
+<3> 上一個 command (`echo`) 執行成功，所以得到零。要注意 `$?` 的內容隨時會被覆蓋掉，視情況要另外用變數保存起來。
+
+ exit [nnn]
+
+其中 'nnn' 可以用來指定 exist status（'nnn' 的值必須介於 0 ~ 255 之間）。如果沒有給定 'nnn' 的話，則採用最後一個被執行的 command 的 exit status（不要誤以為，沒有給 'nnn' 就是回傳 0）。所以下面兩種寫法是一樣的：
+
+ exit
+ exit $?
+
+非零值的 exit status 也稱做 error code，不同的狀況可能由不同的值來表示。其實 error code 的使用有一些慣例，例如：
+
+ * 1 - 一般的錯誤（改掉 `exit -1` 的壞習慣！）。由於 `1` 代表的狀況有很多種，對 debug 沒有太大的幫助。
+ * 126 - 權限不足，或是要執行的 command 不是一個 excutable。
+ * 127 - 要執行的 command 不存在。
+ * 130 - Script 因 Ctrl+C 被中斷。
+ * ...
+
+把這些具有特殊意義的 error code 拿來表示程式特有的錯誤的話，可能會誤導使用者。如果要自訂 error code，安全範圍會是落在 3 ~ 125 之間。
+
+== 參考資料 ==
+
+ * http://tldp.org/LDP/abs/html/exit-status.html[Advanced Bash-Scripting Guide > Exit and Exit Status]
+ * http://tldp.org/LDP/abs/html/exitcodes.html[Advanced Bash-Scripting Guide > Exit Codes With Special Meanings]
+ * http://www.davidpashley.com/articles/writing-robust-shell-scripts.html[Writing Robust Bash Shell Scripts]
+

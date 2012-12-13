@@ -1,0 +1,227 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Robot Framework] Variable Files</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="variable-files.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="index.html">Robot Framework</a> / Variable Files</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>Variable file 用 Python 程式來定義變數，變數值可以是動態運算出來的，也可以是任意型態，彈性比 <a href="variable-tables.html">variable table</a> 大上許多。</p></div>
+<div class="listingblock">
+<div class="title"><code>v1/res/variables.py</code></div>
+<div class="content">
+<pre><code>name = 'Robot Framework'
+version = '2.7.5'
+_major, _minor, _revision = [int(ver) for ver in version.split('.')]
+version_dict = {'major': _major, 'minor': _minor, 'revision': _revision}</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="title"><code>v1/test.txt</code></div>
+<div class="content">
+<pre><code>| *Setting* | *Value*
+| Variables | %{RESOURCE_DIR}/variables.py
+
+| *Test Case* | *Action* | *Argument*
+| Test | Log | ${name} | WARN
+|      | Log | ${version} | WARN
+|      | Should Be Equal | ${2} | ${version_dict['major']}
+|      | Log | ${_major} | WARN</code></pre>
+</div></div>
+<div class="paragraph"><p>執行結果：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ pybot test.txt
+==============================================================================
+Test
+==============================================================================
+[ WARN ] Robot Framework
+[ WARN ] 2.7.5
+Test                                                                  | FAIL |
+Non-existing variable '${_major}'. <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+底線（<code>_</code>）開頭的 attribute 不會被視為變數。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>可以發現，global/module attribute 直接成為 test data 裡的變數。另外 RIDE 的自動完成也沒問題：</p></div>
+<div class="imageblock">
+<div class="content">
+<img src="variable-files/ride_completion.png" alt="variable-files/ride_completion.png" />
+</div>
+</div>
+<div class="paragraph"><p>用 Python 程式來定義變數的好處是，可以在 test data 與 keyword 的內部實作之間共用一份變數的定義：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; import variables
+&gt;&gt;&gt; variables.name
+'Robot Framework'
+&gt;&gt;&gt; variables.version
+'2.7.5'
+&gt;&gt;&gt; variables.version_dict
+{'major': 2, 'minor': 7, 'revision': 5}</code></pre>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">這一點也有助於在 Robot Framework 裡實現 <a href="../selenium/selenium-ui-mapping.html">UI Mapping</a>。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>在 Robot Framework 裡同時引入多個 variable file 時，可能發生變數命名重複的問題。可以利用 <code>get_variables()</code> 在 Robot Framework 跟 module 做為一個仲介－自動為變數名稱加上前綴，借以避開 Robot Framework 裡可能發生的命名衝突，但又不影響從 Python 程式直接存取這些變數的用法。</p></div>
+<div class="paragraph"><p>如果 module 有定義 <code>get_variables()</code>，Robot Framework 就會改從 <code>get_variables()</code> 取得變數 name/value 清單，也因此有機會從中動一些手腳。</p></div>
+<div class="listingblock">
+<div class="title"><code>v2/res/variables.py</code></div>
+<div class="content">
+<pre><code>import sys, varutils
+
+name = 'Robot Framework'
+version = '2.7.5'
+_major, _minor, _revision = [int(ver) for ver in version.split('.')]
+version_dict = {'major': _major, 'minor': _minor, 'revision': _revision}
+
+get_variables = varutils.get_variables(sys.modules[__name__]) <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+把 <code>get_variables()</code> 的邏輯抽出，方便維護多個 variable file，只要提供 current module 即可。
+</td></tr>
+</table></div>
+<div class="listingblock">
+<div class="title"><code>v2/res/varutils.py</code></div>
+<div class="content">
+<pre><code>import types
+
+def get_variables(module, prefix=None): <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+    def get_variables(prefix=prefix):
+        variables = {}
+        for name, value in module.__dict__.iteritems(): <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+            if name.startswith('_') or isinstance(value, (types.ModuleType, types.FunctionType)): continue
+            if prefix is not None: name = prefix + '_' + name
+            variables[name] = value
+
+        return variables
+    return get_variables</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+利用 inner function 的技巧，讓 <code>get_variables()</code> 的邏輯可以被重複使用，而且使用時還可以自訂前綴。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+從該 module 的 global symbol table 取得變數清單，再去掉多餘的部份。
+</td></tr>
+</table></div>
+<div class="listingblock">
+<div class="title"><code>v2/test.txt</code></div>
+<div class="content">
+<pre><code>| *Setting* | *Value* |
+| Variables | %{RESOURCE_DIR}/variables.py | tool <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+
+| *Test Case* | *Action* | *Argument*
+| Test | Log | ${tool_name} | WARN
+|      | Log | ${tool_version} | WARN
+|      | Should Be Equal | ${2} | ${tool_version_dict['major']}</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+自訂前綴 <code>tool</code>，所以變數名稱前面都會冠上 <code>tool_</code>。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>執行結果：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ pybot test.txt
+==============================================================================
+Test
+==============================================================================
+[ WARN ] Robot Framework
+[ WARN ] 2.7.5
+Test                                                                  | PASS |</code></pre>
+</div></div>
+<div class="paragraph"><p>經過這個調整，variable file 支援前綴的功能，從 keyword 內部實作共用這些變數的部份則不受影響：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; import variables
+&gt;&gt;&gt; variables.version_dict
+{'major': 2, 'minor': 7, 'revision': 5}
+&gt;&gt;&gt;
+&gt;&gt;&gt; variables.get_variables()
+{'version_dict': {'major': 2, 'minor': 7, 'revision': 5}, 'ver': '5', 'name': 'Robot Framework', 'version': '2.7.5'}</code></pre>
+</div></div>
+<div class="paragraph"><p>不知道 <code>ver</code> 這個變數是哪來的？</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://robotframework.googlecode.com/hg/doc/userguide/RobotFrameworkUserGuide.html#variable-files">Robot Framework User Guide &gt; Variable files</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:12:01 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

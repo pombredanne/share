@@ -1,0 +1,50 @@
+= [Android][Automation] 叫出畫面上方的 Notifications =
+
+用 link:android-logcat.html[logcat] 觀察 locat 的輸出，發現無論是從畫面上方將 notifications 下拉出來，或是回到 home 再透過選單將它叫出來，過程中 activity manager 都沒有任何反應，所以無法透過 activity manager 直接把它叫出來。
+
+還好 home screen 的選單裡固定提供有 Notifications 的選項，看來這是目前唯一可行的方式了。
+
+不過若單純是要檢查 notifications 的內容，`dumpsys` 應該可以幫上一些忙：
+
+--------------------------------------------------------------------------------
+$ dumpsys notification
+Current Notification Manager state:
+  Notification List:
+    NotificationRecord{40dfd130 pkg=android id=1040385 tag=null}
+      icon=0x1080295 / android:drawable/stat_sys_adb
+      contentIntent=PendingIntent{40e43678: PendingIntentRecord{40d35178 android startActivity}}
+      deleteIntent=null
+      tickerText=USB debugging connected
+      contentView=android.widget.RemoteViews@40dc20f8
+      defaults=0x0
+      flags=0x2
+      sound=null
+      vibrate=null
+      ledARGB=0x0 ledOnMS=0 ledOffMS=0
+    NotificationRecord{40cf1490 pkg=com.htc.android.psclient id=7f020013 tag=null}
+      icon=0x7f020013 / com.htc.android.psclient:drawable/usb_to_pc_notify
+      contentIntent=PendingIntent{40d04500: PendingIntentRecord{40d3b730 com.htc.android.psclient startActivity}}
+      deleteIntent=null
+      tickerText=Charge only
+      contentView=android.widget.RemoteViews@40b474a8
+      defaults=0x0
+      flags=0x2
+      sound=null
+      vibrate=null
+      ledARGB=0x0 ledOnMS=0 ledOffMS=0
+  
+  mSoundNotification=null
+  mSound=com.android.server.NotificationPlayer@40919ec0
+  mVibrateNotification=null
+  mDisabledNotifications=0x0
+  mSystemReady=true
+--------------------------------------------------------------------------------
+
+要判斷現在 Notification Bar 是否被拉下來，`dumpsys window` 提供了一些線索：
+
+--------------------------------------------------------------------------------
+  mCurrentFocus=Window{409aef68 StatusBarExpanded paused=false}
+  mLastFocus=Window{409aef68 StatusBarExpanded paused=false}
+  mFocusedApp=AppWindowToken{410081c8 token=HistoryRecord{41007ec8 com.android.settings/.framework.activity.HtcSettings}}
+--------------------------------------------------------------------------------
+

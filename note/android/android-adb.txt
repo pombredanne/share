@@ -1,0 +1,92 @@
+= [Android] ADB (Android Debug Bridge) =
+
+ADB 可以用來跟 emulator/device 溝通，由三個部份組成：
+
+ * Client - 執行在開發機器上，可以下達 adb command。
+ * Server - 執行在開發機器的背景，做為 client 與 daemon 溝通的橋樑。
+ * Daemon - 執行在 emulator/device 的背景，用以執行 server 轉發過來的 adb command。
+
+[NOTE]
+================================================================================
+這裡 ADB command 的說法並不精確，可以細分為：
+
+ * device command
+ * remote shell command
+ * emulator console command
+
+--------------------------------------------------------------------------------
+$ adb
+Android Debug Bridge version 1.0.29
+
+...
+device commands:
+  adb push <local> <remote>    - copy file/dir to device
+  adb pull <remote> [<local>]  - copy file/dir from device
+  adb sync [ <directory> ]     - copy host->device only if changed
+                                 (-l means list but don't copy)
+                                 (see 'adb help all')
+  adb shell                    - run remote shell interactively
+  adb shell <command>          - run remote shell command
+  adb emu <command>            - run emulator console command
+--------------------------------------------------------------------------------
+================================================================================
+
+除了 `adb` (`$ANDROID_SDK/platform-tools/adb`) 這個 link:android-adb-cli.html[CLI]，其他開發工具（例如 ADT、DDMS 等）也會在內部建立 ADB client。
+
+ADB server 固定在 TCP 5037 服務多個 ADB clients。可以用下面的指令來啟動或停止：
+
+ * `adb start-server`
++
+--------------------------------------------------------------------------------
+$ adb start-server
+* daemon not running. starting it now on port 5037 *
+* daemon started successfully *
+--------------------------------------------------------------------------------
+ * `adb kill-server`
+
+TIP: 沒有指令可以檢查 ADB server 目前是否已啟動，可以用 `netstat -na | grep 5037` 來做檢查。
+
+ADB server 啟動後，會掃描 5555 到 5585 所有的單數 port，一旦發現有 adb daemon 時就會納入管理。因此 ADB server 同時管理所有 emulator/device 的連線，這也就是為什麼多個 ADB clients 可以透過單一個 ADB server 控制不同的 emulator/device。
+
+`adb devices` 可以列出目前連接到 ADB server 的 emulator/device 有哪些：
+
+--------------------------------------------------------------------------------
+$ adb devices
+* daemon not running. starting it now on port 5037 * <1>
+* daemon started successfully *
+List of devices attached 
+emulator-5554	device <2>
+HT142TJ06210	device
+
+$ netstat -na | grep 555
+tcp        0      0 127.0.0.1:5554          0.0.0.0:*               LISTEN     
+tcp        0      0 127.0.0.1:5555          0.0.0.0:*               LISTEN 
+--------------------------------------------------------------------------------
+<1> 除了用上面的方法明確啟動 ADB server 之外，ADB client 被建立時，會先檢查 ADB server 在不在，如果找不到的話，也會自動將 ADB server 執行起來。
+<2> 這裡的 'emulator-5554' 或 'HT142TJ06210' 被稱做 link:android-adb-serialno.html['serial number']，用來識別不同的 emulator/device。
++
+--
+以 'emulator-5554' 為例，'5554' 指的就是該 emulator instance 的 console port。
+
+至於 'device' 是指該 emulator/device 的 connection state，可能的值有：
+
+ * `offline` - 沒有連接到 ADB server。
+ * `device` - 有連接到 ADB server。要注意這個時候 emulator/device 可能還沒開完機來到待解鎖的畫面；拿 emulator 來試就知道了，AVD 啟動的過程中，`adv devices` 的狀態呈現 `device` 時，`adb shell` 已經可以作用，但手機畫面還在開機中。
+--
+
+== 延伸閱讀 ==
+
+ * link:android-adb-serialno.html[Serial Number]
+
+== 參考資料 ==
+
+.文件
+--
+ * http://developer.android.com/tools/help/adb.html[Android Debug Bridge | Android Developers]
+--
+
+.其他文件
+--
+ * http://hi.baidu.com/dhqway/blog/item/6a34661bce2696148618bfc8.html[adb 通信協議_Demonhunter's world_百度空間] (2010-07-05)
+--
+

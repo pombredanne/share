@@ -1,0 +1,159 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>用 AsciiDoc 撰寫中文文件要注意的地方</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="asciidoc-chinese.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="asciidoc.html">AsciiDoc</a> / 撰寫中文文件要注意的地方</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>Constrained quotes 必須用在 word boundaries 才行，不過這對中文字行不通（每個字都會形成一個 word，沒有英文 letters 的概念）。例如：</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>按'下一步'繼續
+在命令提示字元輸入 `ping`：</code></pre>
+</div></div>
+<div class="paragraph"><p>其中 <code>'下一步'</code> 跟 <code>`ping`</code> 分別都無法正常被解譯成斜體字跟等寬字。問題出在 <code>asciidoc.py</code> 跟 <code>asciidoc.conf</code> 裡 regular expressions 的 Unicode flag。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; import re
+&gt;&gt;&gt; re.search(r"'(?P&lt;content&gt;\S|\S.*?\S)'(?=\W|$)", u"按'下一步'繼續")
+&lt;_sre.SRE_Match object at 0x7f0cd0afac60&gt;
+&gt;&gt;&gt; re.search(r"'(?P&lt;content&gt;\S|\S.*?\S)'(?=\W|$)", u"按'下一步'。")
+&lt;_sre.SRE_Match object at 0x7f0cd0a96378&gt;
+&gt;&gt;&gt; re.search(r"'(?P&lt;content&gt;\S|\S.*?\S)'(?=\W|$)", u"按'下一步'繼續", re.U)
+&gt;&gt;&gt; re.search(r"'(?P&lt;content&gt;\S|\S.*?\S)'(?=\W|$)", u"按'下一步'。", re.U)
+&lt;_sre.SRE_Match object at 0x7f0cd0afac60&gt;
+&gt;&gt;&gt; re.search(r"'(?P&lt;content&gt;\S|\S.*?\S)'(?=\b)", u"按'下一步'繼續", re.U)
+&lt;_sre.SRE_Match object at 0x7f0cd0a96378&gt;
+&gt;&gt;&gt; re.search(r"'(?P&lt;content&gt;\S|\S.*?\S)'(?=\b)", u"按'下一步'。", re.U) <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+為什麼反而 <code>。</code> 不會形成 word boundary？
+</td></tr>
+</table></div>
+<div class="listingblock">
+<div class="title"><code>asciidoc.py</code></div>
+<div class="content">
+<pre><code>505             # The text within constrained quotes must be bounded by white space.
+506             # Non-word (\W) characters are allowed at boundaries to accomodate
+507             # enveloping quotes and punctuation e.g. a='x', ('x'), 'x', ['x'].
+508             reo = re.compile(r'(?msu)(^|[^\w;:}])(\[(?P&lt;attrlist&gt;[^[\]]+?)\])?' \
+509                 + r'(?:' + re.escape(lq) + r')' \
+510                 + r'(?P&lt;content&gt;\S|\S.*?\S)(?:'+re.escape(rq)+r')(?=\W|$)')</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="title"><code>asciidoc.conf</code></div>
+<div class="content">
+<pre><code>253 # Inline literal.
+254 ifndef::no-inline-literal[]
+255 (?su)(?&lt;![`\w])([\\]?`(?P&lt;passtext&gt;[^`\s]|[^`\s].*?\S)`)(?![`\w])=literal[specialcharacters]
+256 endif::no-inline-literal[]</code></pre>
+</div></div>
+<div class="paragraph"><p>實驗發現，只要將 Unicode flag 拿掉，就可以正常識別中文的 word boundaries。可能的話，把所有 <code>(?...)</code> 裡面的 <code>u</code> 拿掉，或許問題就都解決了？</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; re.match(r'\w', u'你')
+&gt;&gt;&gt; re.match(r'\W', u'你')
+&lt;_sre.SRE_Match object at 0x7f8c61897718&gt;
+&gt;&gt;&gt; re.match(r'\w', u'。')
+&gt;&gt;&gt; re.match(r'\W', u'。')
+&lt;_sre.SRE_Match object at 0x7f8c618976b0&gt;
+&gt;&gt;&gt; re.match(r'\w', u'你', re.U)
+&lt;_sre.SRE_Match object at 0x7f8c61897718&gt;
+&gt;&gt;&gt; re.match(r'\W', u'你', re.U)
+&gt;&gt;&gt; re.match(r'\w', u'。', re.U)
+&gt;&gt;&gt; re.match(r'\W', u'。', re.U)
+&lt;_sre.SRE_Match object at 0x7f8c618976b0&gt;</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; import re
+&gt;&gt;&gt; re.match(r'123\b', u'123。')
+&lt;_sre.SRE_Match object at 0x7fc1c7508718&gt;
+&gt;&gt;&gt; re.match(r'123\b', u'123你')
+&lt;_sre.SRE_Match object at 0x7fc1c7508780&gt;
+&gt;&gt;&gt; re.match(r'123\b', u'123你', re.U)
+&gt;&gt;&gt; re.match(r'123\b', u'123。', re.U)
+&lt;_sre.SRE_Match object at 0x7fc1c7508718&gt;</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="https://groups.google.com/group/asciidoc/browse_thread/thread/f7bf7cb23d6253d3">Non-English (Chinese/Japanese) period and comma to be treated as punctuation characters - asciidoc | Google 網上論壇</a> (2010-01-27)
+</p>
+</li>
+<li>
+<p>
+<a href="http://tinylee.blogspot.tw/2007/08/asciidoc.html">拒绝懒惰的家: AsciiDoc中文标题-出现问题原因</a> (2007-08-25) - two line titles 不適用於中文標題
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:12:23 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

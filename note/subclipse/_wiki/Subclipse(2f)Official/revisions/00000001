@@ -1,0 +1,174 @@
+= Subclipse / Official =
+<<TableOfContents>>
+
+== Home ==
+http://subclipse.tigris.org/ @2009/10/05
+
+Subclipse is an Eclipse ''Team Provider'' plug-in (難怪會被歸屬在 Team 節點之下) providing support for Subversion within the Eclipse IDE. The software is released under the Eclipse Public License (EPL) 1.0 open source license.
+
+=== News ===
+
+'''!CollabNet Merge Client now included!'''
+
+As part of the development of the merge tracking feature in Subversion 1.5, http://www.open.collab.net/[CollabNet], the corporate sponsors of the Subversion project, developed a powerful http://desktop-eclipse.open.collab.net/servlets/ProjectProcess?pageID=MEuUjb[graphical merge client] feature on top of Subclipse. This has been available since the release of Subversion 1.5 as part of the http://desktop-eclipse.open.collab.net/[CollabNet Desktop - Eclipse Edition], an open-source and EPL licensed desktop for accessing !CollabNet !TeamForge from Eclipse.
+
+__!CollabNet has now made this merge client available to Subclipse users as part of the installation of Subclipse 1.6.x from the Subclipse update site.__ Users who want the full functionality of the !CollabNet Desktop can still install the desktop, but those just looking for an excellent Subversion merge client now have an easier way to install this client into Eclipse.
+
+'''Subversion 1.6.0 Support'''
+
+Subclipse 1.6.x releases are now available and includes support for Subversion 1.6.0 features including tree conflicts.
+
+'''Revision Graphs!'''
+
+Subclipse 1.4.x release now includes an optional revision graph feature! http://subclipse.tigris.org/graph.html[Click here to read more].
+
+{{attachment:options.png}} <<BR>> Revision graph
+
+View all project http://subclipse.tigris.org/servlets/ProjectNewsList[announcements] including http://subclipse.tigris.org/servlets/WebFeed?artifact=news&version=rss_2.0[RSS feed].
+
+=== Other Projects ===
+
+In addition to Subclipse, there are two other projects hosted on this site:
+
+ * __http://subclipse.tigris.org/svnClientAdapter.html[svnClientAdapter] is a high-level Java API for Subversion and is used by Subclipse.__ !svnClientAdapter is licensed under the terms of the Apache Software License 2.0
+
+ * __http://subclipse.tigris.org/svnant.html[svnAnt] is an Ant task that uses !svnClientAdapter and provides access to Subversion from Ant scripts.__ svnAnt is licensed under the terms of the Apache Software License 1.1
+
+== Frequently Asked Questions ==
+http://subclipse.tigris.org/wiki/PluginFAQ @2009/10/05
+
+This page will attempt to answer some questions about Subclipse
+
+=== General questions ===
+
+:::
+
+==== What is an adapter? What is JavaHL? ====
+
+__'''Unlike CVS, which does not have an ''official API'', Subversion was designed from the start to be an API. Subversion is written (in C) as a set of libraries.''' Subversion then provides a default UI, in the form of a command line interface, that uses these libraries. Subversion also provides ''language bindings'' for various programing languages so that these same libraries can be used in your language of choice. '''JavaHL is the name of the Java language binding provided by the Subversion project.''' JavaHL is an official part of the Subversion project, not the Subclipse project.__
+
+__http://subclipse.tigris.org/svnClientAdapter.html[svnClientAdapter] is a Java project that was developed for Subclipse. It provides an even higher level of abstraction to the Subversion libraries. It also allows for different ways of accessing Subversion functionality. '''Historically, the two options were to use the JavaHL library or the Subversion command line. Eventually, a third option was added and that is to use the http://svnkit.com/[SVNKit] library which is a 100% Pure Java implementation of the protocols used by Subversion.''' This option has the advantage of not requiring any native libraries installed on the client. Of course, since SVNKit does not utilize the Subversion libraries it does not have the guaranteed compatibility that you can expect from JavaHL or the command line adapters. (畢竟不是官方直接提出的方案) That being said, '''SVNKit is tested against the same test suite that tests the Subversion command line, and passes those tests.'''__
+
+==== Which adapter should I use? ====
+
+__If the JavaHL library is available on your system, or easily attainable(可實現的), then it is probably the best choice. That being said, SVNKit is a great option.__
+
+==== Which adapter am I using? ====
+
+You can see which adapter you are using in your Eclipse preferences. Go to Team > SVN. In the latest versions of Subclipse the client adapter is a drop-down. The drop-down shows any adapters you have installed. __If the adapter loads properly, the version is shown, otherwise it reports "Not available".__
+
+__'''If you have chosen the JavaHL adapter and it is not available, Subclipse will fall back to using SVNKit if it is installed and available. (從 Subclipse 上安裝的 "Subversion JavaHL Native Library Adapter" 只是一個接口而已, JavaHL 還是要另外安裝才行)'''__
+
+==== I have chosen SVNKit, but it looks like JavaHL is still being used. ====
+
+__If your preferences show that you are using SVNKit, then that is what is being used. '''SVNKit provides a pure Java implementation of the JavaHL Java interface and that is how Subclipse uses it. (也就是說 SVNKit 也實作了 JavaHL 介面, 只是 SVNKit 採用純 Java 的方式而已)''' So the JavaHL Java namespace still shows up in things like errors/exceptions because that namespace is part of the interface.__
+
+:::
+
+==== How do I get the JavaHL library for my operating system? ====
+
+There is a dedicated Wiki page with detailed http://subclipse.tigris.org/wiki/JavaHL[JavaHL Information].
+
+==== How do I build JavaHL from source? ====
+
+JavaHL is part of the Subversion project. So to begin, you probably want to download the latest source tarball. See: [[http://subversion.tigris.org/getting.html]]. You should refer to the Subversion instructions for detailed information, but on a *nix system the general procedure is this:
+
+ {{{
+./configure --your-other-flags=here --enable-javahl --with-jdk=$JAVA_HOME
+make
+make javahl
+sudo make install install-javahl
+ }}}
+
+The main part to check before running the above command is "`--your-other-flags`". Here is a personal example from an OSX system:
+
+ {{{
+./configure \
+    --prefix=/opt/svn-1.5 \
+    --enable-maintainer-mode \
+    --enable-javahl \
+    --disable-mod-activation \
+    --with-swig=/opt/local/bin/swig \
+    --with-apr=/opt/local/bin/apr-1-config \
+    --with-apr-util=/opt/local/bin/apu-1-config \
+    --with-apxs=/opt/local/apache2/bin/apxs \
+    --with-neon=/opt/local \
+    --with-serf=/opt/local \
+    --with-berkeley-db=/opt/local \
+    --with-junit=/opt/local/share/java/junit.jar
+ }}}
+
+==== I think I have a valid JavaHL library installed, but Subclipse says it is "Not available". What should I do? ====
+
+A wiki page has been created with detailed http://subclipse.tigris.org/wiki/JavaHL[JavaHL Information].
+
+== JavaHL Information ==
+http://subclipse.tigris.org/wiki/JavaHL @2009/10/05
+
+This page will attempt to answer some questions about the Subversion JavaHL library and its role in Subclipse.
+
+=== Get the right version! ===
+
+Before explaining what JavaHL is, it is important that you know what version you need for the version of Subclipse you are using. __JavaHL is part of Subversion, so it's version matches that of the Subversion command line client you have installed. Each Subclipse version typically only supports a single Subversion client version (due to API differences).__ Make sure you get the right version of JavaHL for your Subclipse version.
+
+Current Versions
+
+|| Subclipse Version || SVN/JavaHL Version ||
+|| 1.6.x || 1.6.x ||
+|| 1.4.x || 1.5.x ||
+|| 1.2.x || 1.4.x ||
+|| 1.0.x || 1.4.x ||
+
+__'''Ubuntu 9.04 內建的 `libsvn-java` 套件版本是 1.5.4 (跟 `subversion` 套件的版本一樣), 因此只能搭配 Subclipse 1.4.x 的版本運作.'''__
+
+:::
+
+=== How do I get JavaHL? ===
+
+:::
+
+==== Linux ====
+
+This is the most complicated because there are so many distributions.
+
+!CollabNet provides a client RPM for Red Hat that includes JavaHL ([[http://www.collab.net/downloads/subversion/redhat.html]]). __In my experience, this RPM works on other Linux distributions. On RPM-based distributions like CentOS or Suse, it should just be a matter of installing the RPM. '''On Debian-based systems, I was able to use the alien package to install the RPM. (Ubuntu 9.04 下有個 `libsvn-java` 套件可以安裝, 不過版本是 JavaHL 1.5.4, 較 Subclipse 1.6.x 要求的 JavaHL 1.6.x 還要舊)'''__
+
+Of course many Linux distributions do a good job of providing up to date Subversion packages, and most of these now provide JavaHL as well. Typically, the JavaHL library is in a separate package that is dependent on the main Subversion package.
+
+__'''Once you have the library installed, you still have to tell Java (when used for Eclipse) where to find the library.''' The JVM on Linux does not look in a lot of the standard locations to find the libraries. This could obviously change in the future. For example, Debian uses a standard location of `/usr/lib/jni` for libraries to be used from Java. (因此在 Ubuntu 下安裝的 `libsvn-java` 套件, 相關的檔案 `libsvnjavahl-xxx.so` 就會出現在這裡) However, the Sun JVM does not currently look in this location.__ The easiest way to tell Java where to find the JavaHL library is to specify the following when starting the JVM:
+
+ {{{
+-Djava.library.path=/usr/lib/jni
+ }}}
+
+!CollabNet Subversion installs into `/opt/CollabNet_Subversion`. So if you are using that package, you need this:
+
+ {{{
+-Djava.library.path=/opt/CollabNet_Subversion/lib
+ }}}
+
+The name of the library is `libsvnjavahl-1.so`. The path you specify should contain this file.
+
+Eclipse provides its own mechanism for providing this setting. Eclipse comes with a file named `eclipse.ini`. This file is looked at when the Eclipse launcher starts the JVM and appends settings to the JVM when launching it. Specifically, you should see a line that says "`-vmargs`". __Add a newline after this line and insert the above line to pass the setting the JVM needs. Each argument needs to be on its own line, so be sure to add a new line and then put the entire string above on its own line.__ Here is an example of this file from Eclipse 3.4:
+
+ {{{
+-showsplash
+org.eclipse.platform
+-framework
+plugins/org.eclipse.osgi_3.4.0.v20080605-1900.jar
+-vmargs
+-Djava.library.path=/opt/CollabNet_Subversion/lib
+-Dosgi.requiredJavaVersion=1.5
+-Xms40m
+-Xmx512m
+-XX:MaxPermSize=256m
+ }}}
+
+===== Troubleshooting =====
+
+You can tell if JavaHL has loaded by looking at the Eclipse preferences under Team > SVN. __If the library loaded correctly you will see the version of the library, otherwise it will show "Not available". '''If a version of the library that is too old to use is found, then we do not load the library and it will show as "Not available".'''__
+
+A common problem that Linux users have run into is that they edit the `eclipse.ini` file to point to the path where the library is loaded but it still does not work. Something to check if this happens to you is whether the settings in the INI file are being used. A lot of users customize the launcher they create to run Eclipse and they include some command line options for starting Eclipse. When you do this, it appears that the Eclipse launcher does not use any of the settings in the INI file. The easiest way to see this is happening is to do Help > About in Eclipse and then choose Configuration Settings. __If you look through the settings you should eventually be able to see the command line settings used for the JVM. If you do not see the `java.library.path` line then it was not used.__
+
+:::
+

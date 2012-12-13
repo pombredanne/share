@@ -1,0 +1,45 @@
+= 從 Command-Line 將應用程式解除安裝 =
+
+[TIP]
+.延伸閱讀
+================================================================================
+ * link:uninstall-string.html[取得某個應用程式的 Uninstall String]
+================================================================================
+
+藉由 link:../wmic/wmic.html[WMIC] 可以避開 GUI，直接從 command-line 反安裝應用程式。
+
+--------------------------------------------------------------------------------
+C:\> wmic <1>
+wmic:root\cli> product get name <2>
+Name
+7-Zip 9.20 (x64 edition)
+LibreOffice 3.4
+Windows Live Messenger
+...
+
+wmic:root\cli> product where name="7-Zip 9.20 (x64 edition)" call uninstall <3>
+Execute (\\<host_name>\ROOT\CIMV2:Win32_Product.IdentifyingNumber="{23170F69-40C1-2702-0920-000001000000}",Name="7-Zip 9.20 (x64 edition)",Version="9.20.00.0")->Uninstall() (Y/N/?)? y
+Method execution successful.
+Out Parameters:
+instance of __PARAMETERS
+{
+        ReturnValue = 1603; <4>
+};
+
+wmic:root\cli> 
+wmic:root\cli> quit <5>
+--------------------------------------------------------------------------------
+<1> 執行 `wmic` 就可以進入 WMI command-line 互動介面。
+<2> `product get name` 可以取回所有已安裝應用程式的清單。這會花一點時間，但不知道為什麼某些控制台裡看得到的項目卻沒有出現在這裡？
+<3> `product where name="..." call uninstall` 可以將某個應用程式解除安裝，但要手動回答 Y 才行。如果要自動 "Say YES" 的話，可以在最後面加上 `/nointeractive`。
+<4> 順利的話，`ReturnValue` 的值會是零。這裡的錯誤 1603 是因為被 link:uac.html[UAC] 阻擋的關係。
++
+實驗發現，就算把 UAC 調整成 "Never notify"，還是會得到 1603 的錯誤，除非執行 WMIC 的 console 就已經是用 Run as administrator 帶出來的。
++
+<5> `quit` 或 `exit` 可以離開 WMIC。
+
+== 參考資料 ==
+
+ * http://www.experts-exchange.com/Programming/Languages/Scripting/WMI/A_4105-Software-Uninstallation-using-WMIC-command-line.html[Software Uninstallation using WMIC command line: WMI, WMIC, MSIEXEC, Software Uninstall] (2010-11-10) - 從 uninstall string 到 WMIC。
+ * http://www.tech-recipes.com/rx/2947/windows_uninstall_application_command_line/[Windows: Uninstall an Application from the Command Line | a Tech-Recipes Tutorial] (2009)
+

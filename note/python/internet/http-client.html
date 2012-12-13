@@ -1,0 +1,205 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Python] HTTP Client</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="http-client.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="../python.html">Python</a> / <a href="internet.html">Internet</a> / HTTP Client</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>Python Standard Library 裡跟 HTTP client 相關的 module 有：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>httplib</code>
+</p>
+</li>
+<li>
+<p>
+<code>urllib</code>
+</p>
+</li>
+<li>
+<p>
+<code>urllib2</code>
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>其中 <code>httplib</code> 通常是透過 <code>urllib</code> 或 <code>urllib2</code> 間接使用。至於 <code>urllib</code> 跟 <code>urllib2</code> 兩者的關係則很微妙：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+兩者有重疊的部份 (例如 <code>urlopen()</code>), 但有些是 <code>urllib</code> 才有的 (例如 <a href="url-encode-decode.html"><code>urlencode()</code></a>)。
+</p>
+</li>
+<li>
+<p>
+<code>urllib</code> 在 Python 3 被拆成 <code>urllib.request</code>、<code>urllib.parse</code> 跟 <code>urllib.error</code>，而 <code>urllib2</code> 則被拆成 <code>urllib.request</code> 跟 <code>urllib.error</code>。顯然 <code>urllib</code> 跟 <code>urllib2</code> 在 Python 3 合併了。
+</p>
+</li>
+</ul></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">基本上，<code>urllib2</code> 可以視為 <code>urllib</code> 的進階版，由於 <code>urllib</code> 的功能相對受限（不支援自訂 header 跟 <a href="cookies.html">cookie</a> 等），建議直接採用 <code>urllib2</code>。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>先從 <code>urllib2.urlopen()</code> 開始談起：</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>urllib2.urlopen(url[, data][, timeout])</code></pre>
+</div></div>
+<div class="paragraph"><p>其中 <em>url</em> 可以是字面表示的 URL 或是 <code>urllib2.Request</code>（通常是為了自訂 header）。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content"><code>urllib.urlopen()</code> 也可以處理 HTTPS，但它不會檢查 server certificate 的有效性，也就是不會像真的 browser 遇到 certificate error 的問題。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>而 <em>data</em> 是具 <code>application/x-www-form-urlencoded</code> 格式的資料（可以<a href="url-encode-decode.html">用 <code>urllib.urlencode()</code> 編碼</a>），做為 message body 一起送出去。預設 HTTP request 是採 GET method，但如果有提供 <em>data</em> 的話，則改採 POST method。</p></div>
+<div class="paragraph"><p>如果 HTTP request 順利完成，會傳回一個 <a href="../python-file.html">file-like</a>，只是多了 <code>geturl()</code> 跟 <code>info()</code> 兩個方法而已。但如果過程中有發生錯誤，則會丟出 <code>urllib2.URLError</code>。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; import urllib2
+&gt;&gt;&gt; resp = urllib2.urlopen('http://www.google.com')
+&gt;&gt;&gt; resp.geturl() <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+'http://www.google.com.tw/'
+&gt;&gt;&gt; resp.read()[:100] <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+'&lt;!doctype html&gt;&lt;html itemscope="itemscope" itemtype="http://schema.org/WebPage"&gt;&lt;head&gt;&lt;meta itemprop'
+&gt;&gt;&gt;
+&gt;&gt;&gt; resp = urllib2.urlopen('http://xxx.google.com')
+Traceback (most recent call last):
+  ...
+  File "/usr/lib/python2.6/urllib2.py", line 1145, in do_open
+    raise URLError(err)
+urllib2.URLError: &lt;urlopen error [Errno -2] Name or service not known&gt; <img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+&gt;&gt;&gt;
+&gt;&gt;&gt; try:
+...     resp = urllib2.urlopen('http://www.google.com/xxx')
+... except urllib2.URLError as e:
+...     print 'HTTP status code = %s (%s)' % (e.code, type(e))
+...
+HTTP status code = 404 (&lt;class 'urllib2.HTTPError'&gt;) <img src="../../../_asciidoc/images/icons/callouts/4.png" alt="4" />
+&gt;&gt;&gt;</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+如果過程中有發生 redirection 的話，可以用 <code>geturl()</code> 來取得最終的 URL。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+跟 file-like object 一樣用 <code>read()</code> 讀取全部的內容。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+還沒跟 HTTP service 接上之前的錯誤都是 <code>urllib2.URLError</code>。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/4.png" alt="4" /></td><td>
+如果跟 HTTP service 已經接上才發生的錯誤，則會丟出 <code>urllib2.HTTPError</code>（也是 <code>URLError</code> 的子類別）。從 <code>code</code> 屬性可以取得 HTTP status code。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>如果需要自訂 header 的話，就必須藉助 <code>urllib.Request</code>：</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>class urllib2.Request(url[, data][, headers][, origin_req_host][, unverifiable])</code></pre>
+</div></div>
+<div class="paragraph"><p>&#8230;</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_延伸閱讀">延伸閱讀</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="cookies.html">交換 Cookies</a>
+</p>
+</li>
+<li>
+<p>
+<a href="url-parsing.html">拆解 URL</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://docs.python.org/library/urllib.html">urllib — Open arbitrary resources by URL — The Python Standard Library</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://docs.python.org/library/urllib2.html">urllib2 — extensible library for opening URLs — The Python Standard Library</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://docs.python.org/library/httplib.html">httplib — HTTP protocol client — The Python Standard Library</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-11 12:17:15 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

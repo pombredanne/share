@@ -1,0 +1,1058 @@
+= Python / Learning Python, Fourth Edition - Part VII. Exceptions and Tools =
+<<TableOfContents>>
+
+= Chapter 32. Exception Basics =
+
+__This part of the book deals with exceptions, which are events that can modify the flow of control through a program. In Python, exceptions are triggered automatically on errors, and they can be triggered and intercepted by your code.__ They are processed by four statements we’ll study in this part, the first of which has two variations (listed separately here) and the last of which was an ''optional extension'' until Python 2.6 and 3.0:
+
+ * `try/except` - Catch and recover from exceptions raised by Python, or by you.
+ * `try/finally` - Perform ''cleanup actions'', whether exceptions occur or not.
+ * `raise` - Trigger an exception manually in your code.
+ * `assert` - Conditionally trigger an exception in your code.
+ * `with/as` - Implement ''context managers'' in Python 2.6 and 3.0 (optional in 2.5).
+
+This topic was saved until nearly the end of the book because you need to know about classes to code exceptions of your own. With a few exceptions (pun intended), though, you’ll find that exception handling is simple in Python because it’s integrated into the language itself as another high-level tool.
+
+== Why Use Exceptions? ==
+
+In a nutshell, exceptions let us jump out of arbitrarily large chunks of a program. Consider the hypothetical pizza-making robot we discussed earlier in the book. Suppose we took the idea seriously and actually built such a machine. To make a pizza, our culinary automaton would need to execute a plan, which we would implement as a Python program: it would take an order, prepare the dough, add toppings, bake the pie, and so on.
+
+Now, suppose that something goes very wrong during the “bake the pie” step. Perhaps the oven is broken, or perhaps our robot miscalculates its reach and spontaneously combusts. Clearly, we want to be able to jump to code that handles such states quickly. As we have no hope of finishing the pizza task in such unusual cases, we might as well abandon the entire plan.
+
+__That’s exactly what exceptions let you do: you can jump to an ''exception handler'' in a single step, abandoning all function calls begun since the exception handler was entered. Code in the exception handler can then respond to the raised exception as appropriate__ (by calling the fire department, for instance!).
+
+One way to think of an exception is as a sort of structured “super go to.” __An exception handler (`try` statement) leaves a marker and executes some code. Somewhere further ahead in the program, an exception is raised that makes Python jump back to that marker, abandoning any active functions that were called after the marker was left. This protocol provides a coherent way to respond to unusual events. '''Moreover, because Python jumps to the handler statement immediately, your code is simpler—there is usually no need to check status codes after every call to a function that could possibly fail.'''__
+
+=== Exception Roles ===
+
+In Python programs, exceptions are typically used for a variety of purposes. Here are some of their most common roles:
+
+ * Error handling - Python raises exceptions whenever it detects errors in programs at runtime. You can catch and respond to the errors in your code, or ignore the exceptions that are raised. __If an error is ignored, Python’s default exception-handling behavior kicks in: it stops the program and prints an error message. If you don’t want this default behavior, code a `try` statement to catch and recover from the exception—Python will jump to your `try` handler when the error is detected, and your program will resume execution after the `try`.__
+
+ * Event notification - __Exceptions can also be used to signal valid conditions without you having to pass result flags around a program or test them explicitly. '''(不要回傳特殊值來表示異常的狀況)'''__ For instance, a search routine might raise an exception on failure, rather than returning an integer result code (and hoping that the code will never be a valid result).
+
+ * Special-case handling[?] - Sometimes a condition may occur so rarely that it’s hard to justify convoluting your code to handle it. You can often eliminate special-case code by handling unusual cases in exception handlers in higher levels of your program.
+
+ * Termination actions - __As you’ll see, the `try/finally` statement allows you to guarantee that required ''closing-time operations'' will be performed, regardless of the presence or absence of exceptions in your programs.__
+
+ * Unusual control flows - __Finally, because exceptions are a sort of high-level “go to,” you can use them as the basis for implementing exotic control flows.__ For instance, although the language does not explicitly support ''backtracking''[?], it can be implemented in Python by using exceptions and a bit of support logic to unwind assignments. There is no “go to” statement in Python (thankfully!), but exceptions can sometimes serve similar roles. <<BR>> True backtracking is an advanced topic that is not part of the Python language, so I won’t say much more about it here (even the generator functions and expressions we met in Chapter 20 are not true backtracking— they simply respond to `next(G)` requests). Roughly, backtracking undoes all computations before it jumps; Python exceptions do not (i.e., variables assigned between the time a `try` statement is entered and the time an exception is raised are not reset to their prior values). __See a book on artificial intelligence or the Prolog or Icon programming languages if you’re curious.__
+
+We’ll see such typical use cases in action later in this part of the book. For now, let’s get started with a look at Python’s exception-processing tools.
+
+== Exceptions: The Short Story ==
+
+Compared to some other core language topics we’ve met in this book, exceptions are a fairly lightweight tool in Python. Because they are so simple, let’s jump right into some code.
+
+=== Default Exception Handler ===
+
+Suppose we write the following function:
+
+ {{{
+>>> def fetcher(obj, index):
+...     return obj[index]
+...
+ }}}
+
+There’s not much to this function—it simply indexes an object on a passed-in index. In normal operation, it returns the result of a legal index:
+
+ {{{
+>>> x = 'spam'
+>>> fetcher(x, 3) # Like x[3]
+'m'
+ }}}
+
+However, if we ask this function to index off the end of the string, an exception will be triggered when the function tries to run `obj[index]`. Python detects out-of-bounds indexing for sequences and reports it by raising (triggering) the built-in `IndexError` exception:
+
+ {{{
+>>> fetcher(x, 4) # Default handler - shell interface
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "<stdin>", line 2, in fetcher
+IndexError: string index out of range
+ }}}
+
+__'''Because our code does not explicitly catch this exception, it filters back up to the ''top level of the program'' (有往上 Propagate 的概念) and invokes the ''default exception handler'', which simply prints the standard error message.''' By this point in the book, you’ve probably seen your share of standard error messages. They include the exception that was raised, along with a ''stack trace''—a list of all the lines and functions that were active when the exception occurred.__
+
+The error message text here was printed by Python 3.0; it can vary slightly per release, and even per interactive shell. __When coding interactively in the basic shell interface, the filename is just “<stdin>,” meaning the standard input stream. When working in the IDLE GUI’s interactive shell, the filename is “<pyshell>”, and source lines are displayed, too.__ Either way, file line numbers are not very meaningful when there is no file (we’ll see more interesting error messages later in this part of the book):
+
+ {{{
+>>> fetcher(x, 4) # Default handler - IDLE GUI interface
+Traceback (most recent call last):
+  File "<pyshell#6>", line 1, in <module>
+    fetcher(x, 4)
+  File "<pyshell#3>", line 2, in fetcher
+    return obj[index]
+IndexError: string index out of range
+ }}}
+
+__In a more realistic program launched outside the interactive prompt, after printing an error message the default handler at the top also terminates the program immediately.__ That course of action makes sense for simple scripts; errors often should be fatal, and the best you can do when they occur is inspect the standard error message.
+
+=== Catching Exceptions ===
+
+Sometimes, this isn’t what you want, though. Server programs, for instance, typically need to remain active even after internal errors. If you don’t want the default exception behavior, wrap the call in a `try` statement to catch exceptions yourself:
+
+ {{{
+>>> try:
+...     fetcher(x, 4)
+... except IndexError: # Catch and recover
+...     print('got exception')
+...
+got exception
+>>>
+ }}}
+
+__Now, Python jumps to your handler (the block under the `except` clause that names the exception raised) automatically when an exception is triggered while the `try` block is running.__ When working interactively like this, after the `except` clause runs, we wind up back at the Python prompt. In a more realistic program, `try` statements not only catch exceptions, but also recover from them:
+
+ {{{
+>>> def catcher():
+...     try:
+...         fetcher(x, 4)
+...     except IndexError:
+...         print('got exception')
+...     print('continuing')
+...
+>>> catcher()
+got exception
+continuing
+>>>
+ }}}
+
+This time, after the exception is caught and handled, the program resumes execution after the entire `try` statement that caught it—which is why we get the “continuing” message here. We don’t see the standard error message, and the program continues on its way normally.
+
+=== Raising Exceptions ===
+
+So far, we’ve been letting Python raise exceptions for us by making mistakes (on purpose this time!), but our scripts can raise exceptions too—that is, exceptions can be raised by Python or by your program, and can be caught or not. __To trigger an exception manually, simply run a `raise` statement.__ User-triggered exceptions are caught the same way as those Python raises. The following may not be the most useful Python code ever penned, but it makes the point:
+
+ {{{
+>>> try:
+...     raise IndexError # Trigger exception manually
+... except IndexError:
+...     print('got exception')
+...
+got exception
+ }}}
+
+__As usual, if they’re not caught, user-triggered exceptions are ''propagated'' up to the toplevel default exception handler and terminate the program with a standard error message:__
+
+ {{{
+>>> raise IndexError
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+IndexError
+ }}}
+
+As we’ll see in the next chapter, __the `assert` statement can be used to trigger exceptions, too—it’s a conditional `raise`, used mostly for debugging purposes during development:__
+
+ {{{
+>>> assert False, 'Nobody expects the Spanish Inquisition!'
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+AssertionError: Nobody expects the Spanish Inquisition!
+ }}}
+
+=== User-Defined Exceptions ===
+
+The `raise` statement introduced in the prior section raises a built-in exception defined in Python’s built-in scope. As you’ll learn later in this part of the book, you can also define new exceptions of your own that are specific to your programs. __User-defined exceptions are coded with classes, which inherit from a built-in exception class: usually the class named `Exception`. Class-based exceptions allow scripts to build ''exception categories'', inherit behavior, and have attached state information:__
+
+ {{{
+>>> class Bad(Exception): # User-defined exception
+...     pass
+...
+>>> def doomed():
+...     raise Bad() # Raise an instance
+...
+>>> try:
+...     doomed()
+... except Bad: # Catch class name
+...     print('got Bad')
+...
+got Bad
+>>>
+ }}}
+
+=== Termination Actions ===
+
+Finally, `try` statements can say “finally”—that is, they may include `finally` blocks. __These look like except handlers for exceptions, but the `try/finally` combination specifies termination actions that always execute “on the way out,” regardless of whether an exception occurs in the `try` block:__
+
+ {{{
+>>> try:
+...     fetcher(x, 3)
+... finally: # Termination actions
+...     print('after fetch')
+...
+'m'
+after fetch
+>>>
+ }}}
+
+Here, if the `try` block finishes without an exception, the `finally` block will run, and the program will resume after the entire `try`. In this case, this statement seems a bit silly—we might as well have simply typed the `print` right after a call to the function, and skipped the `try` altogether:
+
+ {{{
+fetcher(x, 3)
+print('after fetch')
+ }}}
+
+There is a problem with coding this way, though: if the function call raises an exception, the `print` will never be reached. The `try/finally` combination avoids this pitfall—when an exception does occur in a `try` block, `finally` blocks are executed while the program is being unwound:
+
+ {{{
+>>> def after():
+...     try:
+...         fetcher(x, 4)
+...     finally:
+...         print('after fetch')
+... print('after try?')
+...
+>>> after()
+after fetch
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "<stdin>", line 3, in after
+  File "<stdin>", line 2, in fetcher
+IndexError: string index out of range
+>>>
+ }}}
+
+Here, we don’t get the “after try?” message because control does not resume after the `try/finally` block when an exception occurs. __Instead, Python jumps back to run the `finally` action, and then propagates the exception up to a ''prior handler'' (in this case, to the default handler at the top).__ If we change the call inside this function so as not to trigger an exception, the `finally` code still runs, but the program continues after the `try`:
+
+ {{{
+>>> def after():
+...     try:
+...         fetcher(x, 3)
+...     finally:
+...         print('after fetch')
+... print('after try?')
+...
+>>> after()
+after fetch
+after try?
+>>>
+ }}}
+
+__In practice, `try/except` combinations are useful for catching and recovering from exceptions, and `try/finally` combinations come in handy to guarantee that termination actions will fire regardless of any exceptions that may occur in the `try` block’s code. (Python 2.5 之後才能將 `try/except` 與 `try/finally` 合起來用)__ For instance, you might use `try/except` to catch errors raised by code that you import from a third-party library, and `try/finally` to ensure that calls to close files or terminate server connections are always run. We’ll see some such practical examples later in this part of the book.
+
+__Although they serve conceptually distinct purposes, as of Python 2.5, we can now mix `except` and `finally` clauses in the same `try` statement__—the `finally` is run on the way out regardless of whether an exception was raised, and regardless of whether the exception was caught by an `except` clause.
+
+As we’ll learn in the next chapter, Python 2.6 and 3.0 provide an alternative to `try/finally` when using some types of objects. __The `with/as` statement runs an object’s context management logic to guarantee that termination actions occur:__
+
+ {{{
+>>> with open('lumberjack.txt', 'w') as file: # Always close file on exit
+...     file.write('The larch!\n')
+ }}}
+
+Although this option requires fewer lines of code, it’s only applicable when processing certain object types, so `try/finally` is a more general termination structure. On the other hand, `with/as` may also run startup actions and supports user-defined context management code.
+
+=== Why You Will Care: Error Checks ===
+
+One way to see how exceptions are useful is to compare coding styles in Python and languages without exceptions. For instance, if you want to write robust programs in the C language, you generally have to test return values or status codes after every operation that could possibly go astray, and propagate the results of the tests as your programs run:
+
+ {{{
+doStuff()
+{ # C program
+    if (doFirstThing() == ERROR) # Detect errors everywhere
+        return ERROR; # even if not handled here
+    if (doNextThing() == ERROR)
+        return ERROR;
+    ...
+    return doLastThing();
+}
+
+main()
+{
+    if (doStuff() == ERROR)
+        badEnding();
+    else
+        goodEnding();
+}
+ }}}
+
+In fact, realistic C programs often have as much code devoted to error detection as to doing actual work. But in Python, you don’t have to be so methodical (and neurotic!). You can instead wrap arbitrarily vast pieces of a program in exception handlers and simply write the parts that do the actual work, assuming all is well:
+
+ {{{
+def doStuff(): # Python code
+    doFirstThing() # We don't care about exceptions here,
+    doNextThing() # so we don't need to detect them
+    ...
+    doLastThing()
+
+if __name__ == '__main__':
+    try:
+        doStuff() # This is where we care about results,
+    except: # so it's the only place we must check
+        badEnding()
+    else:
+        goodEnding()
+ }}}
+
+__Because control jumps immediately to a handler when an exception occurs, there’s no need to instrument all your code to guard for errors. Moreover, because Python detects errors automatically, your code usually doesn’t need to check for errors in the first place. '''The upshot is that exceptions let you largely ignore the unusual cases and avoid error-checking code.'''__
+
+== Chapter Summary ==
+
+And that is the majority of the exception story; exceptions really are a simple tool.
+
+To summarize, Python exceptions are a high-level control flow device. They may be raised by Python, or by your own programs. In both cases, they may be ignored (to trigger the default error message), or caught by `try` statements (to be processed by your code). The `try` statement comes in two logical formats that, as of Python 2.5, can be combined—one that handles exceptions, and one that executes finalization code regardless of whether exceptions occur or not. Python’s `raise` and `assert` statements trigger exceptions on demand (both built-ins and new exceptions we define with classes); the `with/as` statement is an alternative way to ensure that termination actions are carried out for objects that support it.
+
+In the rest of this part of the book, we’ll fill in some of the details about the statements involved, examine the other sorts of clauses that can appear under a `try`, and discuss class-based exception objects. The next chapter begins our tour by taking a closer look at the statements we introduced here. Before you turn the page, though, here are a few quiz questions to review.
+
+= Chapter 33. Exception Coding Details =
+
+In the prior chapter we took a quick look at exception-related statements in action. Here, we’re going to dig a bit deeper—this chapter provides a more formal introduction to exception processing syntax in Python. Specifically, we’ll explore the details behind the `try`, `raise`, `assert`, and `with` statements. As we’ll see, although these statements are mostly straightforward, they offer powerful tools for dealing with exceptions in Python code.
+
+One procedural note up front: The exception story has changed in major ways in recent years. __As of Python 2.5, the `finally` clause can appear in the same `try` statement as `except` and `else` clauses (previously, they could not be combined). Also, as of Python 3.0 and 2.6, the new `with` context manager statement has become official,__ and user-defined exceptions must now be coded as class instances, which should inherit from a built-in exception superclass. Moreover, 3.0 sports slightly modified syntax for the `raise` statement and `except` clauses. I will focus on the state of exceptions in Python 2.6 and 3.0 in this edition, but because you are still very likely to see the original techniques in code for some time to come, along the way I’ll point out how things have evolved in this domain.
+
+== The try/except/else Statement ==
+
+Now that we’ve seen the basics, it’s time for the details. In the following discussion, I’ll first present `try/except/else` and `try/finally` as separate statements, because in versions of Python prior to 2.5 they serve distinct roles and cannot be combined. As mentioned in the preceding note, in Python 2.5 and later `except` and `finally` can be mixed in a single `try` statement; I’ll explain the implications of this change after we’ve explored the two original forms in isolation.
+
+The `try` is a compound statement; its most complete form is sketched below. __It starts with a `try` header line, followed by a block of (usually) indented statements, then one or more `except` clauses that identify exceptions to be caught, and an optional `else` clause at the end.__ The words `try`, `except`, and `else` are associated by indenting them to the same level (i.e., lining them up vertically). For reference, here’s the general format in Python 3.0:
+
+ {{{
+try:
+    <statements> # Run this main action first
+except <name1>:
+    <statements> # Run if name1 is raised during try block
+except (name2, name3):
+    <statements> # Run if any of these exceptions occur
+except <name4> as <data>:
+    <statements> # Run if name4 is raised, and get instance raised
+except:
+    <statements> # Run for all (other) exceptions raised
+else:
+    <statements> # Run if no exception was raised during try block
+ }}}
+
+In this statement, the block under the `try` header represents the ''main action'' of the statement—the code you’re trying to run. __The `except` clauses define handlers for exceptions raised during the `try` block, and the `else` clause (if coded) provides a handler to be run if ''no exceptions occur''. (不要誤解釋成 "沒有任何 except 套用得上時", 這時候要用 `except:`)__ The `<data>` entry here has to do with a feature of `raise` statements and exception classes, which we will discuss later in this chapter.
+
+Here’s how `try` statements work. When a `try` statement is entered, __Python marks the ''current program context'' so it can return to it if an exception occurs.__ The statements nested under the `try` header are run first. What happens next depends on whether exceptions are raised while the `try` block’s statements are running:
+
+ * If an exception does occur while the `try` block’s statements are running, Python jumps back to the `try` and runs the statements under the first `except` clause that matches the raised exception. __Control resumes below the entire `try` statement after the `except` block runs (unless the `except` block raises another exception).__
+
+ * __If an exception happens in the `try` block and no `except` clause matches, the exception is propagated up to the last matching `try` statement that was entered in the program or, if it’s the first such statement, to the ''top level of the process'' (in which case Python kills the program and prints a default error message).__
+
+ * If no exception occurs while the statements under the `try` header run, Python runs the statements under the `else` line (if present), and control then resumes below the entire `try` statement.
+
+In other words, `except` clauses catch any exceptions that happen while the `try` block is running, and the `else` clause runs only if no exceptions happen while the `try` block runs.
+
+`except` clauses are ''focused'' exception handlers—they catch exceptions that occur only within the statements in the associated `try` block. However, as the `try` block’s statements can call functions coded elsewhere in a program, the source of an exception may be outside the `try` statement itself. I’ll have more to say about this when we explore `try` nesting in Chapter 35.
+
+=== try Statement Clauses ===
+
+When you write a `try` statement, a variety of clauses can appear after the `try` header. Table 33-1 summarizes all the possible forms—you must use at least one. We’ve already met some of these: as you know, `except` clauses catch exceptions, `finally` clauses run on the way out, and `else` clauses run if no exceptions are encountered.
+
+__Syntactically, there may be any number of `except` clauses, but you can code `else` only if there is at least one `except`, and there can be only one `else` and one `finally`.__ Through Python 2.4, the `finally` clause must appear alone (without `else` or `except`); the `try/finally` is really a different statement. As of Python 2.5, however, a `finally` can appear in the same statement as `except` and `else` (more on the ordering rules later in this chapter when we meet the unified `try` statement).
+
+Table 33-1. `try` statement clause forms
+
+|| Clause form || Interpretation ||
+|| `except:` || Catch all (or all other) exception types. ||
+|| `except name:` || Catch a specific exception only. ||
+|| `except name as value:` || __Catch the listed exception and its instance.__ ||
+|| `except (name1, name2):` || Catch any of the listed exceptions. ||
+|| `except (name1, name2) as value:` || Catch any listed exception and its instance. ||
+|| `else:` || Run if no exceptions are raised. ||
+|| `finally:` || Always perform this block. ||
+
+We’ll explore the entries with the extra `as value` part when we meet the `raise` statement. They provide access to the objects that are raised as exceptions.
+
+The first and fourth entries in Table 33-1 are new here:
+
+ * __`except` clauses that list no exception name (`except:`) catch all exceptions not previously listed in the `try` statement.__
+ * `except` clauses that list a set of exceptions in parentheses (`except (e1, e2, e3):`) catch any of the listed exceptions.
+
+__Because Python looks for a match within a given `try` by inspecting the `except` clauses ''from top to bottom'', the parenthesized version has the same effect as listing each exception in its own `except` clause, but you have to code the statement body only once.__ Here’s an example of multiple `except` clauses at work, which demonstrates just how specific your handlers can be:
+
+ {{{
+try:
+    action()
+except NameError:
+    ...
+except IndexError:
+    ...
+except KeyError:
+    ...
+except (AttributeError, TypeError, SyntaxError):
+    ...
+else:
+    ...
+ }}}
+
+In this example, if an exception is raised while the call to the `action` function is running, Python returns to the `try` and searches for the first `except` that names the exception raised. __It inspects the `except` clauses from top to bottom and left to right, and runs the statements under the first one that matches. If none match, the exception is propagated past this `try`. Note that the `else` runs only when no exception occurs in action—it does not run when an exception without a matching except is raised.__
+
+If you really want a general “catch-all” clause, an empty `except` does the trick:
+
+ {{{
+try:
+    action()
+except NameError:
+    ... # Handle NameError
+except IndexError:
+    ... # Handle IndexError
+except:
+    ... # Handle all other exceptions
+else:
+    ... # Handle the no-exception case
+ }}}
+
+__The empty `except` clause is a sort of wildcard feature—because it catches everything,__ it allows your handlers to be as general or specific as you like. In some scenarios, this form may be more convenient than listing all possible exceptions in a `try`. For example, the following catches everything without listing anything:
+
+ {{{
+try:
+    action()
+except:
+    ... # Catch all possible exceptions
+ }}}
+
+__Empty `except`s also raise some design issues, though. Although convenient, they may catch unexpected system exceptions unrelated to your code, and they may inadvertently intercept exceptions meant for another handler. For example, even ''system exit'' calls in Python trigger exceptions, and you usually want these to pass. That said, this structure may also catch genuine ''programming mistakes'' for you which you probably want to see an error message.__ We’ll revisit this as a gotcha at the end of this part of the book. For now, I’ll just say “use with care.”
+
+__Python 3.0 introduced an alternative that solves one of these problems—catching an exception named `Exception` has almost the same effect as an empty `except`, but ignores exceptions related to system exits:__
+
+ {{{
+try:
+    action()
+except Exception:
+    ... # Catch all possible exceptions, except exits
+ }}}
+
+This has most of the same convenience of the empty `except`, but also most of the same dangers. We’ll explore how this form works its voodoo in the next chapter, when we study exception classes.
+
+Version skew note: __Python 3.0 requires the `except E as V:` handler clause form listed in Table 33-1 and used in this book, rather than the older `except E, V:` form. The latter form is still available (but not recommended) in Python 2.6: if used, it’s converted to the former. The change was made to eliminate errors that occur when confusing the older form with two alternate exceptions, properly coded in 2.6 as `except (E1, E2):`.__ Because 3.0 supports the `as` form only, commas in a handler clause are always taken to mean a tuple, regardless of whether parentheses are used or not, and the values are interpreted as alternative exceptions to be caught. This change also modifies the scoping rules: with the new `as` syntax, the variable `V` is deleted at the end of the `except` block.
+
+=== The try else Clause ===
+
+The purpose of the `else` clause is not always immediately obvious to Python newcomers. __Without it, though, there is no way to tell (without setting and checking Boolean flags) whether the flow of control has proceeded past a `try` statement because no exception was raised, or because an exception occurred and was handled:__
+
+ {{{
+try:
+    ...run code...
+except IndexError:
+    ...handle exception...
+# Did we get here because the try failed or not?
+ }}}
+
+Much like the way `else` clauses in loops make the exit cause more apparent, the `else` clause provides syntax in a `try` that makes what has happened obvious and unambiguous:
+
+ {{{
+try:
+    ...run code...
+except IndexError:
+    ...handle exception...
+else:
+    ...no exception occurred...
+ }}}
+
+__You can almost emulate an `else` clause by moving its code into the `try` block:__
+
+ {{{
+try:
+    ...run code...
+    ...no exception occurred...
+except IndexError:
+    ...handle exception...
+ }}}
+
+__'''This can lead to incorrect exception classifications,''' though. If the “no exception occurred” action triggers an `IndexError`, it will register as a failure of the `try` block and erroneously trigger the exception handler below the `try` (subtle, but true!). By using an explicit `else` clause instead, you make the logic more obvious and guarantee that except handlers will run only for real failures in the code you’re wrapping in a `try`, not for failures in the `else` case’s action.__
+
+=== Example: Default Behavior ===
+
+Because the control flow through a program is easier to capture in Python than in English, let’s run some examples that further illustrate exception basics. I’ve mentioned that exceptions not caught by `try` statements percolate up to the top level of the Python process and run Python’s default exception-handling logic (i.e., Python terminates the running program and prints a standard error message). Let’s look at an example. Running the following module file, `bad.py`, generates a divide-by-zero exception:
+
+ {{{
+def gobad(x, y):
+    return x / y
+def gosouth(x):
+    print(gobad(x, 0))
+gosouth(1)
+ }}}
+
+Because the program ignores the exception it triggers, Python kills the program and prints a message:
+
+ {{{
+% python bad.py
+Traceback (most recent call last):
+  File "bad.py", line 7, in <module>
+    gosouth(1)
+  File "bad.py", line 5, in gosouth
+    print(gobad(x, 0))
+  File "bad.py", line 2, in gobad
+    return x / y
+ZeroDivisionError: int division or modulo by zero
+ }}}
+
+I ran this in a shell window with Python 3.0. The message consists of a stack trace (“Traceback”) and the name of and details about the exception that was raised. __The stack trace lists all lines active when the exception occurred, '''from oldest to newest. (所以除錯時要由下往上找起, 跟 Java 剛好相反)'''__ Note that because we’re not working at the interactive prompt, in this case the file and line number information is more useful. For example, here we can see that the bad divide happens at the last entry in the trace—line 2 of the file `bad.py`, a `return` statement.
+
+As mentioned in the prior chapter, the text of error messages and stack traces tends to vary slightly over time and shells. Don’t be alarmed if your error messages don’t exactly match mine. When I ran this example in Python 3.0’s IDLE GUI, for instance, its error message text showed filenames with full absolute directory paths.
+
+Because Python detects and reports all errors at runtime by raising exceptions, exceptions are intimately bound up with the ideas of error handling and debugging in general.
+
+If you’ve worked through this book’s examples, you’ve undoubtedly seen an exception or two along the way—even typos usually generate a `SyntaxError` or other exception when a file is imported or executed (that’s when the compiler is run). By default, you get a useful error display like the one just shown, which helps you track down the problem.
+
+Often, this standard error message is all you need to resolve problems in your code. For more heavy-duty debugging jobs, you can catch exceptions with `try` statements, or use one of the debugging tools that I introduced in Chapter 3 and will summarize again in Chapter 35 (such as the `pdb` standard library module).
+
+=== Example: Catching Built-in Exceptions ===
+
+Python’s default exception handling is often exactly what you want—especially for code in a top-level script file, an error generally should terminate your program immediately. For many programs, there is no need to be more specific about errors in your code.
+
+Sometimes, though, you’ll want to catch errors and recover from them instead. If you don’t want your program terminated when Python raises an exception, simply catch it by wrapping the program logic in a `try`. This is an important capability for programs such as network servers, which must keep running persistently. For example, the following code catches and recovers from the `TypeError` Python raises immediately when you try to concatenate a list and a string (the `+` operator expects the same sequence type on both sides):
+
+ {{{
+def kaboom(x, y):
+    print(x + y) # Trigger TypeError
+try:
+    kaboom([0,1,2], "spam")
+except TypeError: # Catch and recover here
+    print('Hello world!')
+print('resuming here') # Continue here if exception or not
+ }}}
+
+When the exception occurs in the function `kaboom`, control jumps to the `try` statement’s `except` clause, which prints a message. Since an exception is “dead” after it’s been caught like this, the program continues executing below the `try` rather than being terminated by Python. In effect, the code processes and clears the error, and your script recovers:
+
+ {{{
+% python kaboom.py
+Hello world!
+resuming here
+ }}}
+
+Notice that once you’ve caught an error, control resumes at the place where you caught it (i.e., after the `try`); there is no direct way to go back to the place where the exception occurred (here, in the function `kaboom`). __In a sense, this makes exceptions more like simple jumps than function calls—there is no way to return to the code that triggered the error.__
+
+== The try/finally Statement==
+
+The other flavor of the `try` statement is a specialization that has to do with ''finalization actions''. If a `finally` clause is included in a `try`, Python will always run its block of statements “on the way out” of the `try` statement, whether an exception occurred while the `try` block was running or not. Its general form is:
+
+ {{{
+try:
+    <statements> # Run this action first
+finally:
+    <statements> # Always run this code on the way out
+ }}}
+
+With this variant, Python begins by running the statement block associated with the `try` header line. What happens next depends on whether an exception occurs during the `try` block:
+
+ * If no exception occurs while the `try` block is running, Python jumps back to run the `finally` block and then continues execution past below the `try` statement.
+
+ * If an exception does occur during the `try` block’s run, Python still comes back and runs the `finally` block, but it then propagates the exception up to a higher `try` or the top-level default handler; the program does not resume execution below the `try` statement. __That is, the `finally` block is run even if an exception is raised, but unlike an `except`, the `finally` does not terminate the exception—it continues being raised after the `finally` block runs.__
+
+The `try/finally` form is useful when you want to be completely sure that an action will happen after some code runs, regardless of the exception behavior of the program. In practice, it allows you to specify cleanup actions that always must occur, such as file closes and server disconnects.
+
+Note that the `finally` clause cannot be used in the same `try` statement as except and else in Python 2.4 and earlier, so the `try/finally` is best thought of as a distinct statement form if you are using an older release. __In Python 2.5, and later, however, `finally` can appear in the same statement as `except` and `else`, so today there is really a single `try` statement with many optional clauses (more about this shortly). Whichever version you use, though, the `finally` clause still serves the same purpose—to specify “cleanup” actions that must always be run, regardless of any exceptions.__
+
+As we’ll also see later in this chapter, __in Python 2.6 and 3.0, the new `with` statement and its context managers provide an object-based way to do similar work for ''exit actions''. Unlike `finally`, this new statement also supports ''entry actions''[?], but it is limited in scope to objects that implement the ''context manager protocol''.__
+
+=== Example: Coding Termination Actions with try/finally ===
+
+We saw some simple `try/finally` examples in the prior chapter. Here’s a more realistic example that illustrates a typical role for this statement:
+
+ {{{
+class MyError(Exception): pass
+
+def stuff(file):
+    raise MyError()
+
+file = open('data', 'w') # Open an output file
+try:
+    stuff(file) # Raises exception
+finally:
+    file.close() # Always close file to flush output buffers
+print('not reached') # Continue here only if no exception
+ }}}
+
+In this code, we’ve wrapped a call to a file-processing function in a `try` with a `finally` clause to make sure that the file is always closed, and thus finalized, whether the function triggers an exception or not. __This way, later code can be sure that the file’s output buffer’s content has been flushed from memory to disk.__ A similar code structure can guarantee that server connections are closed, and so on.
+
+__As we learned in Chapter 9, file objects are automatically closed on ''garbage collection''; this is especially useful for temporary files that we don’t assign to variables. However, it’s not always easy to predict when garbage collection will occur, especially in larger programs. The `try` statement makes file closes more explicit and predictable and pertains to a specific block of code. It ensures that the file will be closed on block exit, regardless of whether an exception occurs or not.__
+
+This particular example’s function isn’t all that useful (it just raises an exception), but wrapping calls in `try/finally` statements is a good way to ensure that your closing-time (i.e., termination) activities always run. Again, Python always runs the code in your `finally` blocks, regardless of whether an exception happens in the `try` block. __Unless Python crashes completely, of course. It does a good job of avoiding this, though, by checking all possible errors as a program runs. When a program does crash hard, it is usually due to a bug in linked-in C extension code, outside of Python’s scope.__
+
+When the function here raises its exception, the control flow jumps back and runs the `finally` block to close the file. The exception is then propagated on to either another `try` or the default top-level handler, which prints the standard error message and shuts down the program; the statement after this `try` is never reached. If the function here did not raise an exception, the program would still execute the `finally` block to close the file, but it would then continue below the entire `try` statement.
+
+Notice that the user-defined exception here is again defined with a class—as we’ll see in the next chapter, __exceptions today must all be class instances in both 2.6 and 3.0.__
+
+== Unified try/except/finally ==
+
+__In all versions of Python prior to Release 2.5 (for its first 15 years of life, more or less; 忍太久了!!), the `try` statement came in two flavors and was really two separate statements__—we could either use a `finally` to ensure that cleanup code was always run, or write `except` blocks to catch and recover from specific exceptions and optionally specify an `else` clause to be run if no exceptions occurred.
+
+That is, the `finally` clause could not be mixed with `except` and `else`. This was partly because of implementation issues, and partly because the meaning of mixing the two seemed obscure—catching and recovering from exceptions seemed a disjoint concept from performing cleanup actions.
+
+In Python 2.5 and later, though (including 2.6 and 3.0, the versions used in this book), the two statements have merged. Today, we can mix `finally`, `except`, and `else` clauses in the same statement. That is, we can now write a statement of this form:
+
+ {{{
+try: # Merged form
+    main-action
+except Exception1:
+    handler1
+except Exception2:
+    handler2
+...
+else:
+    else-block
+finally:
+    finally-block
+ }}}
+
+The code in this statement’s main-action block is executed first, as usual. If that code raises an exception, all the `except` blocks are tested, one after another, looking for a match to the exception raised. If the exception raised is `Exception1`, the `handler1` block is executed; if it’s `Exception2`, `handler2` is run, and so on. If no exception is raised, the `else`-block is executed.
+
+No matter what’s happened previously, the `finally`-block is executed once the main action block is complete and any raised exceptions have been handled. __In fact, the code in the `finally`-block will be run even if there is an error in an exception handler or the `else`-block and a new exception is raised.__
+
+__As always, the `finally` clause does not end the exception—if an exception is active when the `finally`-block is executed, it continues to be propagated after the `finally`-block runs, and control jumps somewhere else in the program (to another `try`, or to the default top-level handler). If no exception is active when the `finally` is run, control resumes after the entire `try` statement.__
+
+The net effect is that the `finally` is always run, regardless of whether:
+
+ * An exception occurred in the main action and was handled.
+ * An exception occurred in the main action and was not handled.
+ * No exceptions occurred in the main action.
+ * A new exception was triggered in one of the handlers.
+
+Again, the `finally` serves to specify cleanup actions that must always occur on the way out of the `try`, regardless of what exceptions have been raised or handled.
+
+=== Unified try Statement Syntax ===
+
+__When combined like this, the `try` statement must have either an `except` or a `finally`, and the order of its parts must be like this:__
+
+ {{{
+try -> except -> else -> finally
+ }}}
+
+__where the `else` and `finally` are optional, and there may be zero or more `except`, but there must be at least one `except` if an `else` appears. Really, the `try` statement consists of two parts: `except`s with an optional `else`, and/or the `finally`.__
+
+In fact, it’s more accurate to describe the merged statement’s syntactic form this way (square brackets mean optional and star means zero-or-more here):
+
+ {{{
+try: # Format 1
+    statements
+except [type [as value]]: # [type [, value]] in Python 2
+    statements
+[except [type [as value]]:
+    statements]*
+[else:
+    statements]
+[finally:
+    statements]
+
+try: # Format 2
+    statements
+finally:
+    statements
+ }}}
+
+Because of these rules, the `else` can appear only if there is at least one `except`, and it’s always possible to mix `except` and `finally`, regardless of whether an `else` appears or not. It’s also possible to mix `finally` and `else`, but only if an `except` appears too (though the `except` can omit an exception name to catch everything and run a `raise` statement, described later, to ''reraise'' the current exception). If you violate any of these ordering rules, Python will raise a syntax error exception before your code runs.
+
+=== Combining finally and except by Nesting ===
+
+__Prior to Python 2.5, it is actually possible to combine `finally` and `except` clauses in a `try` by syntactically nesting a `try/except` in the `try` block of a `try/finally` statement (好麻煩...)__ (we’ll explore this technique more fully in Chapter 35). In fact, the following has the same effect as the new merged form shown at the start of this section:
+
+ {{{
+try: # Nested equivalent to merged form
+    try:
+        main-action
+    except Exception1:
+        handler1
+    except Exception2:
+        handler2
+      ...
+    else:
+        no-error
+finally:
+    cleanup
+ }}}
+
+Again, the `finally` block is always run on the way out, regardless of what happened in the main action and regardless of any exception handlers run in the nested `try` (trace through the four cases listed previously to see how this works the same). Since an `else` always requires an `except`, this nested form even sports the same mixing constraints of the unified statement form outlined in the preceding section.
+
+However, this nested equivalent is more obscure and requires more code than the new merged form (one four-character line, at least). __Mixing `finally` into the same statement makes your code easier to write and read, so this is the generally preferred technique today.__
+
+=== Unified try Example ===
+
+Here’s a demonstration of the merged `try` statement form at work. The following file, `mergedexc.py`, codes four common scenarios, with `print` statements that describe the meaning of each:
+
+ {{{
+sep = '-' * 32 + '\n'
+print(sep + 'EXCEPTION RAISED AND CAUGHT')
+try:
+    x = 'spam'[99]
+except IndexError:
+    print('except run')
+finally:
+    print('finally run')
+print('after run')
+
+print(sep + 'NO EXCEPTION RAISED')
+try:
+    x = 'spam'[3]
+except IndexError:
+    print('except run')
+finally:
+    print('finally run')
+print('after run')
+
+print(sep + 'NO EXCEPTION RAISED, WITH ELSE')
+try:
+    x = 'spam'[3]
+except IndexError:
+    print('except run')
+else:
+    print('else run')
+finally:
+    print('finally run')
+print('after run')
+
+print(sep + 'EXCEPTION RAISED BUT NOT CAUGHT')
+try:
+    x = 1 / 0
+except IndexError:
+    print('except run')
+finally:
+    print('finally run')
+print('after run')
+ }}}
+
+When this code is run, the following output is produced in Python 3.0 (actually, its behavior and output are the same in 2.6, because the `print` calls each print a single item). Trace through the code to see how exception handling produces the output of each of the four tests here:
+
+ {{{
+c:\misc> C:\Python30\python mergedexc.py
+--------------------------------
+EXCEPTION RAISED AND CAUGHT
+except run
+finally run
+after run
+--------------------------------
+NO EXCEPTION RAISED
+finally run
+after run
+--------------------------------
+NO EXCEPTION RAISED, WITH ELSE
+else run
+finally run
+after run
+--------------------------------
+EXCEPTION RAISED BUT NOT CAUGHT
+finally run
+Traceback (most recent call last):
+  File "mergedexc.py", line 36, in <module>
+    x = 1 / 0
+ZeroDivisionError: int division or modulo by zero
+ }}}
+
+This example uses built-in operations in the main action to trigger exceptions (or not), and it relies on the fact that Python always checks for errors as code is running. The next section shows how to raise exceptions manually instead.
+
+== The raise Statement ==
+
+__To trigger exceptions explicitly, you can code `raise` statements. Their general form is simple—a `raise` statement consists of the word `raise`, optionally followed by the class to be raised or an instance of it:__
+
+ {{{
+raise <instance> # Raise instance of class
+raise <class> # Make and raise instance of class <-- 如果有參數要傳進 Constructor 要怎麼做[?]
+raise # Reraise the most recent exception <-- Cool!!
+ }}}
+
+As mentioned earlier, exceptions are always instances of classes in Python 2.6 and 3.0. Hence, the first `raise` form here is the most common—we provide an instance directly, either created before the `raise` or within the `raise` statement itself. __If we pass a class instead, Python calls the class with no constructor arguments, to create an instance to be raised; this form is equivalent to adding parentheses after the class reference. '''The last form reraises the most recently raised exception; it’s commonly used in exception handlers to propagate exceptions that have been caught.'''__
+
+To make this clearer, let’s look at some examples. With built-in exceptions, the following two forms are equivalent—both raise an instance of the exception class named, but the first creates the instance implicitly:
+
+ {{{
+raise IndexError # Class (instance created)
+raise IndexError() # Instance (created in statement)
+ }}}
+
+We can also create the instance ahead of time—because the `raise` statement accepts any kind of object reference, the following two examples raise `IndexError` just like the prior two:
+
+ {{{
+exc = IndexError() # Create instance ahead of time
+raise exc
+
+excs = [IndexError, TypeError]
+raise excs[0]
+ }}}
+
+When an exception is raised, Python sends the raised instance along with the exception. __If a `try` includes an `except name as X:` clause, the variable `X` will be assigned the instance provided in the `raise`:__
+
+ {{{
+try:
+    ...
+except IndexError as X: # X assigned the raised instance object
+    ...
+ }}}
+
+__The `as` is optional in a `try` handler (if it’s omitted, the instance is simply not assigned to a name), but including it allows the handler to access both data in the instance and methods in the exception class.__
+
+This model works the same for user-defined exceptions we code with classes—the following, for example, passes to the exception class constructor arguments that become available in the handler through the assigned instance:
+
+ {{{
+class MyExc(Exception): pass
+...
+raise MyExc('spam') # Exception class with constructor args
+...
+try:
+    ...
+except MyExc as X: # Instance attributes available in handler
+    print(X.args)
+ }}}
+
+Because this encroaches on the next chapter’s topic, though, I’ll defer further details until then.
+
+Regardless of how you name them, exceptions are always identified by instance objects, and at most one is active at any given time. __Once caught by an `except` clause anywhere in the program, an exception ''dies'' (i.e., won’t propagate to another `try`), unless it’s reraised by another `raise` statement or error.__
+
+=== Propagating Exceptions with raise ===
+
+__A `raise` statement that does not include an exception name or extra data value simply reraises the ''current exception''. This form is typically used if you need to catch and handle an exception but don’t want the exception to die in your code:__
+
+ {{{
+>>> try:
+...     raise IndexError('spam') # Exceptions remember arguments
+... except IndexError:
+...     print('propagating')
+...     raise # Reraise most recent exception
+...
+propagating
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+IndexError: spam
+ }}}
+
+Running a `raise` this way reraises the exception and propagates it to a higher handler (or the default handler at the top, which stops the program with a standard error message). Notice how the argument we passed to the exception class shows up in the error messages; you’ll learn why this happens in the next chapter.
+
+=== Python 3.0 Exception Chaining: raise from ===
+
+Python 3.0 (but not 2.6) also allows `raise` statements to have an optional `from` clause:
+
+ {{{
+raise exception from otherexception
+ }}}
+
+__When the `from` is used, the second expression specifies another exception class or instance to attach to the raised exception’s `__cause__` attribute. (同 Java 中 Chained Exceptions 的概念)__ If the raised exception is not caught, Python prints both exceptions as part of the standard error message:
+
+ {{{
+>>> try:
+...     1 / 0
+... except Exception as E:
+...     raise TypeError('Bad!') from E
+...
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+ZeroDivisionError: int division or modulo by zero
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<stdin>", line 4, in <module>
+TypeError: Bad!
+ }}}
+
+__'''When an exception is raised inside an exception handler, a similar procedure is followed implicitly: the previous exception is attached to the new exception’s `__context__` attribute and is again displayed in the standard error message if the exception goes uncaught.''' (為什麼不直接放入 `__cause__` 就好? 語意上不同[?])__ This is an advanced and still somewhat obscure extension, so see Python’s manuals for more details.
+
+Version skew note: Python 3.0 no longer supports the `raise Exc, Args` form that is still available in Python 2.6. In 3.0, use the `raise Exc(Args)` instance-creation call form described in this book instead. The equivalent comma form in 2.6 is legacy syntax provided for compatibility with the now ''defunct string-based exceptions model'', and it’s deprecated in 3.0. If used, it is converted to the 3.0 call form. As in earlier releases, a `raise Exc` form is also allowed—it is converted to `raise Exc()` in both versions, calling the class constructor with no arguments.
+
+== The assert Statement ==
+
+As a somewhat special case for debugging purposes, Python includes the `assert` statement. __It is mostly just syntactic shorthand for a common `raise` usage pattern, and an `assert` can be thought of as a ''conditional'' `raise` statement.__ A statement of the form:
+
+ {{{
+assert <test>, <data> # The <data> part is optional
+ }}}
+
+works like the following code:
+
+ {{{
+if __debug__:
+    if not <test>:
+        raise AssertionError(<data>)
+ }}}
+
+In other words, if the test evaluates to false, Python raises an exception: __the data item (if it’s provided) is used as the exception’s constructor argument. Like all exceptions, the `AssertionError` exception will kill your program if it’s not caught with a `try`, in which case the data item shows up as part of the error message.__
+
+__As an added feature, '''`assert` statements may be removed from a compiled program’s byte code if the `-O` Python command-line flag is used, thereby optimizing the program.''' `AssertionError` is a built-in exception, and the `__debug__` flag is a built-in name that is automatically set to `True` unless the `-O` flag is used. Use a command line like `python -O main.py` to run in optimized mode and disable asserts.__
+
+=== Example: Trapping Constraints (but Not Errors!) ===
+
+__Assertions are typically used to verify program conditions during development. When displayed, their error message text automatically includes source code line information and the value listed in the `assert` statement.__ Consider the file asserter.py:
+
+ {{{
+def f(x):
+    assert x < 0, 'x must be negative'
+    return x ** 2
+
+% python
+>>> import asserter
+>>> asserter.f(1)
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "asserter.py", line 2, in f
+    assert x < 0, 'x must be negative'
+AssertionError: x must be negative
+ }}}
+
+__It’s important to keep in mind that `assert` is mostly intended for trapping ''user-defined constraints'', not for catching genuine programming errors. Because Python traps programming errors itself, there is usually no need to code asserts to catch things like out-of-bounds indexes, type mismatches, and zero divides: ("不能傳入零" 本身不就是個 User-Defined Constraint 嗎? 不是應該儘早將錯誤反應出來[?])__
+
+ {{{
+def reciprocal(x):
+    assert x != 0 # A useless assert!
+    return 1 / x # Python checks for zero automatically
+ }}}
+
+Such `assert`s are generally superfluous—because Python raises exceptions on errors automatically, you might as well let it do the job for you. For another example of common `assert` usage, see the abstract superclass example in Chapter 28; there, we used `assert` to make calls to undefined methods fail with a message.
+
+In most cases, at least. As suggested earlier in the book, if a function has to perform long-running or unrecoverable actions before it reaches the place where an exception will be triggered, you still might want to ''test for errors''. Even in this case, though, be careful not to make your tests overly specific or restrictive, or you will limit your code’s utility.[?]
+
+== with/as Context Managers ==
+
+__Python 2.6 and 3.0 introduced a new exception-related statement—the `with`, and its optional `as` clause. This statement is designed to work with ''context manager objects'', which support a new ''method-based protocol''.__ This feature is also available as an option in 2.5, enabled with an `import` of this form:
+
+ {{{
+from __future__ import with_statement
+ }}}
+
+__In short, the `with/as` statement is designed to be an alternative to a common `try/finally` usage idiom; like that statement, it is intended for specifying termination-time or “cleanup” activities that must run regardless of whether an exception occurs in a processing step. Unlike `try/finally`, though, the `with` statement supports a richer object-based protocol for specifying both ''entry'' and ''exit'' actions around a block of code.__
+
+Python enhances some built-in tools with context managers, such as files that automatically close themselves and thread locks that automatically lock and unlock, but programmers can code context managers of their own with classes, too.
+
+=== Basic Usage ===
+
+The basic format of the `with` statement looks like this:
+
+ {{{
+with expression [as variable]:
+    with-block
+ }}}
+
+__The `expression` here is assumed to return an object that supports the context management protocol (more on this protocol in a moment). This object may also return a value (由 `__enter__` 傳回) that will be assigned to the name `variable` if the optional `as` clause is present.__
+
+Note that the `variable` is not necessarily assigned the result of the `expression`; the ''result'' of the `expression` is the object that supports the context protocol, and the `variable` may be assigned something else intended to be used inside the statement. __The object returned by the `expression` may then run ''startup code'' before the `with`-block is started, as well as ''termination code'' after the block is done, regardless of whether the block raised an exception or not.__
+
+__Some built-in Python objects have been augmented to support the context management protocol, and so can be used with the `with` statement. For example, file objects (covered in Chapter 9) have a context manager that automatically closes the file after the `with` block regardless of whether an exception is raised:__
+
+ {{{
+with open(r'C:\misc\data') as myfile:
+    for line in myfile:
+        print(line)
+        ...more code here...
+ }}}
+
+Here, the call to `open` returns a simple file object that is assigned to the name `myfile`. We can use `myfile` with the usual file tools—in this case, the file iterator reads line by line in the `for` loop.
+
+However, this object also supports the context management protocol used by the `with` statement. After this `with` statement has run, the context management machinery guarantees that the file object referenced by `myfile` is automatically closed, even if the `for` loop raised an exception while processing the file.
+
+Although file objects are automatically closed on garbage collection, it’s not always straightforward to know when that will occur. __The `with` statement in this role is an alternative that allows us to be sure that the close will occur after execution of a specific block of code.__ As we saw earlier, we can achieve a similar effect with the more general and explicit `try/finally` statement, but it requires four lines of administrative code instead of one in this case:
+
+ {{{
+myfile = open(r'C:\misc\data')
+try:
+    for line in myfile:
+        print(line)
+        ...more code here...
+finally:
+    myfile.close()
+ }}}
+
+We won’t cover Python’s multithreading modules in this book (for more on that topic, see follow-up application-level texts such as Programming Python), but the lock and condition synchronization objects they define may also be used with the `with` statement, because they support the context management protocol:
+
+ {{{
+lock = threading.Lock()
+with lock:
+    # critical section of code
+    ...access shared resources...
+ }}}
+
+Here, the context management machinery guarantees that the lock is automatically acquired before the block is executed and released once the block is complete, regardless of exception outcomes.
+
+As introduced in Chapter 5, the `decimal` module also uses context managers to simplify saving and restoring the current decimal context, which specifies the precision and rounding characteristics for calculations:
+
+ {{{
+with decimal.localcontext() as ctx:
+    ctx.prec = 2
+    x = decimal.Decimal('1.00') / decimal.Decimal('3.00')
+ }}}
+
+After this statement runs, the current thread’s context manager state is automatically restored to what it was before the statement began. To do the same with a `try/finally`, we would need to save the context before and restore it manually.
+
+=== The Context Management Protocol ===
+
+Although some built-in types come with context managers, we can also write new ones of our own. __To implement context managers, classes use special methods that fall into the operator overloading category to tap into the `with` statement.__ The interface expected of objects used in `with` statements is somewhat complex, and most programmers only need to know how to use existing context managers. For tool builders who might want to write new application-specific context managers, though, let’s take a quick look at what’s involved.
+
+Here’s how the `with` statement actually works:
+
+ 1. __The expression is evaluated, resulting in an object known as a ''context manager'' that must have `__enter__` and `__exit__` methods.__
+
+ 2. __The context manager’s `__enter__` method is called. The value it returns is assigned to the variable in the `as` clause if present, or simply discarded otherwise.__
+
+ 3. The code in the nested `with` block is executed.
+
+ 4. __If the `with` block raises an exception, the `__exit__(type, value, traceback)` method is called with the exception details.__ Note that these are the same values returned by `sys.exc_info`[?], described in the Python manuals and later in this part of the book. If this method returns a false value, the exception is reraised; otherwise, the exception is terminated. The exception should normally be reraised so that it is propagated outside the `with` statement.
+
+ 5. __If the with block does not raise an exception, the `__exit__` method is still called, but its `type`, `value`, and `traceback` arguments are all passed in as `None`.__
+
+Let’s look at a quick demo of the protocol in action. The following defines a context manager object that traces the entry and exit of the `with` block in any `with` statement it is used for:
+
+ {{{
+class TraceBlock:
+    def message(self, arg):
+        print('running', arg)
+    def __enter__(self):
+        print('starting with block')
+        return self
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        if exc_type is None:
+            print('exited normally\n')
+        else:
+            print('raise an exception!', exc_type)
+            return False # Propagate
+
+with TraceBlock() as action:
+    action.message('test 1')
+    print('reached')
+
+with TraceBlock() as action:
+    action.message('test 2')
+    raise TypeError
+    print('not reached')
+ }}}
+
+__Notice that this class’s `__exit__` method returns `False` to propagate the exception; deleting the `return` statement would have the same effect, '''as the default `None` return value of functions is `False` by definition.'''__ Also notice that the `__enter__` method returns `self` as the object to assign to the `as` variable; in other use cases, this might return a completely different object instead.
+
+When run, the context manager traces the entry and exit of the `with` statement block with its `__enter__` and `__exit__` methods. Here’s the script in action being run under Python 3.0 (it runs in 2.6, too, but prints some extra tuple parentheses):
+
+ {{{
+% python withas.py
+starting with block
+running test 1
+reached
+exited normally
+
+starting with block
+running test 2
+raise an exception! <class 'TypeError'>
+Traceback (most recent call last):
+  File "withas.py", line 20, in <module>
+    raise TypeError
+TypeError
+ }}}
+
+Context managers are somewhat advanced devices for tool builders, so we’ll skip additional details here (see Python’s standard manuals for the full story—for example, there’s a new `contextlib` standard module that provides additional tools for coding context managers). For simpler purposes, the `try/finally` statement provides sufficient support for termination-time activities.
+
+In the upcoming Python 3.1 release, the `with` statement may also specify multiple (sometimes referred to as “nested”) context managers with new comma syntax. In the following, for example, both files’ exit actions are automatically run when the statement block exits, regardless of exception outcomes:
+
+ {{{
+with open('data') as fin, open('res', 'w') as fout:
+    for line in fin:
+        if 'some key' in line:
+            fout.write(line)
+ }}}
+
+__Any number of context manager items may be listed, and multiple items work the same as nested `with` statements. (真的很方便!!)__ In general, the 3.1 (and later) code:
+
+ {{{
+with A() as a, B() as b:
+    ...statements...
+ }}}
+
+is equivalent to the following, which works in 3.1, 3.0, and 2.6:
+
+ {{{
+with A() as a:
+    with B() as b:
+        ...statements...
+ }}}
+
+See Python 3.1 release notes for additional details.
+
+== Chapter Summary ==
+
+In this chapter, we took a more detailed look at exception processing by exploring the statements related to exceptions in Python: `try` to catch them, `raise` to trigger them, `assert` to raise them conditionally, and `with` to wrap code blocks in context managers that specify entry and exit actions.
+
+So far, exceptions probably seem like a fairly lightweight tool, and in fact, they are; the only substantially complex thing about them is how they are identified. The next chapter continues our exploration by describing how to implement exception objects of your own; as you’ll see, classes allow you to code new exceptions specific to your programs. Before we move ahead, though, let’s work though the following short quiz on the basics covered here.
+
+

@@ -1,0 +1,195 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>Android Emulator</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="emulator.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>Android Emulator</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>每個 AVD 啟動之後，emulator 固定會 LISTEN 兩個 port，埠號範圍落在 5554 到 5585 之間：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ netstat -na | grep 555
+tcp        0      0 127.0.0.1:5554          0.0.0.0:*               LISTEN <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+tcp        0      0 127.0.0.1:5555          0.0.0.0:*               LISTEN
+tcp        0      0 127.0.0.1:5556          0.0.0.0:*               LISTEN
+tcp        0      0 127.0.0.1:5557          0.0.0.0:*               LISTEN
+
+$ adb devices
+* daemon not running. starting it now on port 5037 * <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+* daemon started successfully *
+List of devices attached
+emulator-5554   device
+emulator-5556   device</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+單數 port 用於 <a href="console.html">console connection</a>，雙數 port 則用於 <a href="../android-adb.html">adb connection</a>。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+由此可知，啟動 AVD 並不會自動帶出 ADB server。
+</td></tr>
+</table></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">官方 <a href="http://developer.android.com/guide/developing/tools/adb.html">ADB</a> 文件提到 "It locates emulator/device instances by scanning odd-numbered ports in the range 5555 to 5585"，但實驗發現只有 emulator 才會有 port listening 的行為，顯然這裡 "emulator/device" 指的就是 emulator instance 而已？</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_疑難排解">疑難排解</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_webview_javascript_amp_vm_aborting">WebView/JavaScript &amp; VM aborting</h3>
+<div class="listingblock">
+<div class="content">
+<pre><code>06-06 13:43:31.738: W/dalvikvm(821): JNI WARNING: jarray 0x4058f490 points to non-array object (Ljava/lang/String;)
+06-06 13:43:31.738: I/dalvikvm(821): "WebViewCoreThread" prio=5 tid=9 NATIVE
+06-06 13:43:31.738: I/dalvikvm(821):   | group="main" sCount=0 dsCount=0 obj=0x4059df48 self=0x2d08f8
+06-06 13:43:31.748: I/dalvikvm(821):   | sysTid=829 nice=0 sched=0/0 cgrp=default handle=2951728
+06-06 13:43:31.748: I/dalvikvm(821):   | schedstat=( 9159487961 7693488694 700 )
+06-06 13:43:31.748: I/dalvikvm(821):   at android.webkit.LoadListener.nativeFinished(Native Method)
+06-06 13:43:31.748: I/dalvikvm(821):   at android.webkit.LoadListener.nativeFinished(Native Method)
+06-06 13:43:31.748: I/dalvikvm(821):   at android.webkit.LoadListener.tearDown(LoadListener.java:1200)
+06-06 13:43:31.748: I/dalvikvm(821):   at android.webkit.LoadListener.handleEndData(LoadListener.java:721)
+06-06 13:43:31.768: I/dalvikvm(821):   at android.webkit.LoadListener.handleMessage(LoadListener.java:219)
+06-06 13:43:31.768: I/dalvikvm(821):   at android.os.Handler.dispatchMessage(Handler.java:99)
+06-06 13:43:31.778: I/dalvikvm(821):   at android.os.Looper.loop(Looper.java:130)
+06-06 13:43:31.778: I/dalvikvm(821):   at android.webkit.WebViewCore$WebCoreThread.run(WebViewCore.java:629)
+06-06 13:43:31.788: I/dalvikvm(821):   at java.lang.Thread.run(Thread.java:1019)
+06-06 13:43:31.788: E/dalvikvm(821): VM aborting</code></pre>
+</div></div>
+<div class="paragraph"><p>這個問題只會出現在 emulator 上。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://code.google.com/p/android/issues/detail?id=12987">Issue 12987 - android - Javascript to Java Bridge Throws Exception on Android 2.3 - Android - An Open Handset Alliance Project - Google Project Hosting</a> (2010-12-06) - 有人很氣這個問題到 2012-05 都還沒解掉，有可能是這個問題並不會發生在 real device 上的關係。最後 Elvin Lok 有提出另一種寫法可以避開這個問題。
+</p>
+</li>
+<li>
+<p>
+<a href="https://groups.google.com/group/android-developers/browse_thread/thread/992ca132e15745ec/da8da866d107e8b3?pli=1">2.3: WebView&#8217;s JavaScriptInterface throwing exception 100% of time - Android Developers | Google Groups</a> (2010-12-08)
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_unfortunately_the_process_android_process_media_has_stopped">Unfortunately, the process android.process.media has stopped</h3>
+<div class="paragraph"><p>下按 <code>.apk</code> 準備安裝時出現這個錯誤，目前出現在 Android 4.0/4.0.3 Emulator 上。</p></div>
+<div class="paragraph"><p>這個問題好像不只出現在 emulator 上。</p></div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://developer.android.com/tools/help/emulator.html">Android Emulator | Android Developers</a> - 只是列出 <code>emulator</code> 這個工具的 options 而已。
+</p>
+</li>
+<li>
+<p>
+<a href="http://developer.android.com/tools/devices/emulator.html">Using the Android Emulator | Android Developers</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/2417427/changing-the-android-emulator-locale-automatically/2418724#2418724">Changing the Android emulator locale automatically - Stack Overflow</a> (2010-03-10) - 用 <code>-prop</code> 在 emulator 啟動時將 locale 改掉。
+</p>
+</li>
+<li>
+<p>
+<a href="http://android-developers.blogspot.tw/2012/04/faster-emulator-with-better-hardware.html">Android Developers Blog: A Faster Emulator with Better Hardware Support</a> (2012-04-09)
+</p>
+</li>
+<li>
+<p>
+<a href="http://developer.android.com/guide/developing/devices/index.html">Managing Virtual Devices | Android Developers</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.17inda.com/html/4/article-1286.html">Android模擬器，不用買手機也能玩遊戲 - IN學習 - 17INDA-硬底子達人網</a> (2012-03-29)
+</p>
+</li>
+<li>
+<p>
+<a href="http://dev.blogs.nuxeo.com/2011/10/speeding-up-the-android-emulator.html">How to speed up the Android Emulator by up to 400% - Nuxeo Developers Blog at Nuxeo Developers Blog</a> (2010-10-10)
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-07 22:46:41 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

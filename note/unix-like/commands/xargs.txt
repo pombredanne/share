@@ -1,0 +1,83 @@
+= link:../unix-like.html[Unix-like] / link:commands.html[Commands] / `xargs` =
+:title: [Unix-like][Commands] xargs
+
+[quote,'http://en.wikipedia.org/wiki/Xargs[xargs - Wikipedia&#44; the free encyclopedia]']
+________________________________________________________________________________
+`xargs` is a command on Unix and most Unix-like operating systems used to build and execute command lines from standard input. Commands like `grep` and `awk` can accept the standard input as a parameter, or argument by using a pipe. However others like `cp` and `echo` disregard the standard input stream and rely solely on the arguments found after the command. Additionally, under the Linux kernel before version 2.6.23, arbitrarily long lists of parameters could not be passed to a command, so `xargs` breaks the list of arguments into sublists small enough to be acceptable.
+________________________________________________________________________________
+
+`xargs` - build and execute command lines from standard input
+
+--------------------------------------------------------------------------------
+xargs  [-0prtx]  [-E  eof-str] [-e[eof-str]] [--eof[=eof-str]] [--null]
+       [-d delimiter] [--delimiter delimiter]  [-I  replace-str]  [-i[replace-
+       str]]    [--replace[=replace-str]]   [-l[max-lines]]   [-L   max-lines]
+       [--max-lines[=max-lines]] [-n max-args] [--max-args=max-args] [-s  max-
+       chars]  [--max-chars=max-chars]  [-P max-procs] [--max-procs=max-procs]
+       [--interactive]      [--verbose]      [--exit]      [--no-run-if-empty]
+       [--arg-file=file]   [--show-limits]   [--version]   [--help]   [command
+       [initial-arguments]]
+--------------------------------------------------------------------------------
+
+將來自 standard input 拆解成 input items，然後執行重新組出的新 command lines。常用的 option 有：
+
+ * `-0, --null` - 用 NULL (`0x00`) 來拆解 input items。
+ * `-I replace-str` - 預設 `xargs` 會將 input items 串接在 initial arguments 之後。透過這個 option，則會將 initial arguments 裡出現 'replace-str' 的地方都代換成 input item。
+ * `-L max-lines` - 組出來的 command line 最多只包含 'max-lines' 個 input items，這跟 `--max-args` 有什麼不同？
+ * `-n max-args, --max-args=max-args` - 組出來的 command line 最多只包含 'max-args' 個 input items。
+ * `-p, --interactive` - 每次要執行 `xargs` 組出來的 command line 前，詢問要不要執行，可以用來觀察 `xargs` 組出來的 command line 為何。
+ * `-r, --no-run-if-empty` - 沒有 input items 時，不要執行 command line（預設至少會執行一次）。
+ * `-P max-procs, --max-procs=max-procs` - 用多個 process 同時執行 'max-procs' 個 command lines，預設只有一個 process 依序執行多個 command lines。
+ * `-t, --verbose` - 每一個組出來的 command line 要執行前，先將它印到 STDOUT。
+
+先用 link:echo.html[`echo`] 來提供 input items，觀察 `xargs` 的反應：
+
+--------------------------------------------------------------------------------
+$ echo -ne 'item1 "item 2"\nitem3' | xargs --interactive --max-args=2 echo input: <1>
+echo input: item1 item 2 ?...
+echo input: item3 ?...
+$
+$ echo -ne 'item1 item 2\nitem3' | xargs --interactive --max-args=2 echo input:   <2>
+echo input: item1 item ?...
+echo input: 2 item3 ?...
+echo input: ?... <3>
+$
+$ echo -ne 'item1 item 2\nitem3' | xargs --interactive --max-args=2 --no-run-if-empty echo input: <3>
+echo input: item1 item ?...
+echo input: 2 item3 ?...
+$
+$ echo -en 'item1\x00item 2\x00item3' | xargs --null --interactive --max-args=2 echo input: <4>
+echo input: item1 item 2 ?...
+echo input: item3 ?...
+$
+$ $ echo -en 'World\nLinux\nBash' | xargs --interactive --max-args=2 -I {} echo Hello, {}! <5>
+echo Hello, World! ?...
+echo Hello, Linux! ?...
+echo Hello, Bash! ?...
+--------------------------------------------------------------------------------
+<1> 預設 `xargs` 用 whitespace 跟 link:../../text/text-newline.html[newline] 做為 input items 的分隔字元。
++
+--
+其中 `echo input:` 就是所謂的 initial arguments，後面會串上一或多個 input items。這裡用 `--max-args=2` 來限定一次最多接兩個 input items，`--interactive` 可以用來觀察組合出來的 command lines。
+--
++
+<2> 注意 `"item 2"` 兩側的雙引號不能省，否則會被視為兩個 input items。
+<3> 不知道為什麼最後會對一個空白？加上 `--no-run-if-empty` 就沒有這種狀況了。
+<4> `--null` 表示用 NULL 來拆解 input items，當然 input 也要搭配用 NULL (`0x00`) 字元來做分隔才行。這樣就不用擔心 input item 本身包含 whitespace 或 newline 了。
+<5> 利用 `-I replace-str` 將 input item 代換進 initial arguments 的中間。注意這個時候 `--max-args=2` 失去作用了。
+
+實務上，通常用 `xargs -0` 搭配 link:find.html[`find -print0`]、link:../../grep/grep.html[`grep -Z`]、link:locate.html[`locate -0`]，對符合條件的檔案做進一步地處理。例如：
+
+ find -name '*.txt' -print0 | xargs -0 sed 's/typo/type/g'
+
+利用 `find` 找出符合條件的檔案之後，用 link:../../sed/sed.html[`sed`] 將裡頭的 `typo` 都置換成 `type`。
+
+== 延伸閱讀 ==
+
+ * link:../find-replace-files.html[批次搜尋取代多個檔案的內容]
+
+== 參考資料 ==
+
+ * http://en.wikipedia.org/wiki/Xargs[xargs - Wikipedia, the free encyclopedia]
+ * http://manpages.debian.net/cgi-bin/man.cgi?query=xargs[xargs - Debian Hypertext Man Pages]
+

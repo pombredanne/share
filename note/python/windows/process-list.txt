@@ -1,0 +1,47 @@
+= link:../python.html[Python] / link:windows.html[Windows] / 取得 Process 清單 =
+:title: [Python][Windows] 取得 Process 清單
+
+要取得 process 清單，常見的方法有：
+
+ * 透過 Performance Data Helpe (PDH)。
+   ** PyWin32 提供有 `win32pdh` 模組用來存取 PDH。
+   ** 雖然可行，但遶經 performance 間接取得 process 清單做法有點怪，而且 PDH 的 API 用起來並不直覺。
+   ** 雖然 `win32process.EnumProcesses()` 可以用來取得所有的 process ID，但卻沒有其他的方法可以取得 process ID 對應的名稱。
+ * 透過 Windows Management Instrumentation (WMI)。
+   ** Python WMI 模組用 PyWin32 重新包裝過 WMI API，方便 Python 直接透過 WMI 取得各類系統資訊。
+ * 呼叫外部程式 `tasklist.exe`
+   ** 這是最輕量的方式（但得自己 parsing 輸出），但好像不是所有版本的 Windows 都提供有這支程式？
+ * 利用 `psutil` 可以跨平台取得 process 的資料。
+   ** 跟 Java http://support.hyperic.com/display/SIGAR/Home[SIGAR] 專案很像。
+   ** 提供的 installer 不是很完整；Python 64-bit 只提供 Python 2.7 的版本，但 OS X 卻又只提供 Python 2.6 的版本。
+
+另外要砍 process 的話，常見的方法有：
+
+ * 直接呼叫外部程式 `taskkill /IM %s /F /T`。其中 `/F` 跟 `/T` 分別表示 forcefully 跟 tree kill。
+ * `psutil` 也支援 kill process 的功能。
+
+== 參考資料 ==
+
+.工具
+--
+ * http://code.google.com/p/psutil/[psutil - A cross-platform system and process utilities module for Python]
+ * http://timgolden.me.uk/python/wmi/[Python WMI module]
+   ** http://pypi.python.org/pypi/WMI/[WMI (PyPI)]
+   ** http://tgolden.sc.sabren.com/python/wmi/tutorial.html[wmi Tutorial]
+   ** http://timgolden.me.uk/python/wmi/cookbook.html[wmi Cookbook]
+ * http://python.net/crew/mhammond/win32/[Python for Windows Extensions (PyWin32)]
+--
+
+.文件
+--
+ * http://www.blog.pythonlibrary.org/2010/10/03/how-to-find-and-list-all-running-processes-with-python/[How to Find and List All Running Processes with Python « The Mouse Vs. The Python] (2010-10-03) - 比較不同的方案之後，`psutil` 勝出。
+ * http://code.activestate.com/recipes/303339-getting-process-information-on-windows/[getting process information on windows « Python recipes « ActiveState Code] (2004-09-03) - 利用s PyWin32 與 PDH。
+ * http://www.rgagnon.com/javadetails/java-0593.html[List currently running processes (Windows) - Real's Java How-to] - 呼叫 `tasklist.exe` 外部程式。
+--
+
+.討論
+--
+ * http://stackoverflow.com/questions/1632234/python-list-running-processes-64bit-windows[Python, List running processes 64Bit Windows - Stack Overflow] (2009-10-27)
+ * http://stackoverflow.com/questions/54686/how-to-get-a-list-of-current-open-windows-process-with-java[How to get a list of current open windows/process with Java? - Stack Overflow] (2008-09-10)
+--
+

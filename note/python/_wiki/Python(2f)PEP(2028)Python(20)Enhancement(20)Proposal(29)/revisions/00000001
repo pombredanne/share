@@ -1,0 +1,167 @@
+= Python / PEP (Python Enhancement Proposal) =
+<<TableOfContents>>
+
+= PEP 249 -- Python Database API Specification v2.0 =
+http://www.python.org/dev/peps/pep-0249/ @2010/12/22
+
+== Introduction ==
+
+__This API has been defined to encourage similarity between the Python modules that are used to access databases. By doing this, we hope to achieve a consistency leading to more easily understood modules, code that is generally more portable across databases, and a broader reach of database connectivity from Python.__ The interface specification consists of several sections:
+
+ * Module Interface
+ * Connection Objects
+ * Cursor Objects
+ * Type Objects and Constructors
+ * Implementation Hints for Module Authors
+ * Optional DB API Extensions
+ * Optional Error Handling Extensions
+ * Optional Two-Phase Commit Extensions
+ * Frequently Asked Questions
+ * Major Changes from Version 1.0 to Version 2.0
+ * Open Issues
+ * Footnotes
+ * Acknowledgments
+
+Comments and questions about this specification may be directed to the SIG for Database Interfacing with Python (db-sig@python.org).
+
+For more information on database interfacing with Python and available packages see the Database Topic Guide at http://www.python.org/topics/database/.
+
+This document describes the Python Database API Specification 2.0 and a set of common ''optional extensions''. The previous version 1.0 version is still available as reference, in PEP 248. Package writers are encouraged to use this version of the specification as basis for new interfaces.
+
+== Module Interface ==
+
+__Access to the database is made available through connection objects.__ The module must provide the following constructor for these:
+
+'''`connect(parameters...)`'''
+
+__Constructor for creating a connection to the database. Returns a `Connection` Object. It takes a number of parameters which are ''database dependent''.__
+
+ __As a guideline the connection constructor parameters should be implemented as keyword parameters for more intuitive use and follow this order of parameters:__
+
+ * `dsn` - Data source name as string
+ * `user` - User name as string (optional)
+ * `password` - Password as string (optional)
+ * `host` - Hostname (optional)
+ * `database` - Database name (optional)
+
+ E.g. a connect could look like this:
+
+ `connect(dsn='myhost:MYDB',user='guido',password='234$')`
+
+These ''module globals'' must be defined:
+
+'''`apilevel`'''
+
+__String constant stating the supported DB API level. Currently only the strings `'1.0'` and `'2.0'` are allowed.__
+
+If not given, a DB-API 1.0 level interface should be assumed.
+            
+'''`threadsafety`'''
+
+__Integer constant stating the level of thread safety the interface supports.__ Possible values are:
+
+ * 0 - Threads may not share the module.
+ * 1 - Threads may share the module, but not connections.
+ * 2 - Threads may share the module and connections.
+ * 3 - Threads may share the module, connections and cursors.
+
+__Sharing in the above context means that two threads may use a resource without wrapping it using a ''mutex semaphore'' to implement ''resource locking''.__ Note that you cannot always make external resources thread safe by managing access using a mutex: the resource may rely on global variables or other external sources that are beyond your control.
+
+'''`paramstyle`'''
+          
+__String constant stating the type of ''parameter marker'' formatting expected by the interface.__ Possible values are:
+
+ * `'qmark'` - Question mark style, e.g. `'...WHERE name=?'`
+ * `'numeric'` -Numeric, positional style, e.g. `'...WHERE name=:1'`
+ * `'named'` - Named style, e.g. `'...WHERE name=:name'`
+ * `'format'` - ANSI C printf format codes, e.g. `'...WHERE name=%s'`
+ * `'pyformat'` - Python extended format codes, e.g. `'...WHERE name=%(name)s'`
+
+ __Module implementors should prefer `'numeric'`, `'named'` or `'pyformat'` over the other formats because these offer more clarity and flexibility.__
+
+The module should make all error information available through these exceptions or subclasses thereof:
+
+:::
+
+== Connection Objects ==
+
+`Connection` Objects should respond to the following methods:
+
+'''`.close()`'''
+
+__Close the connection now (rather than whenever `__del__` is called). The connection will be unusable from this point forward; an `Error` (or subclass) exception will be raised if any operation is attempted with the connection. The same applies to all cursor objects trying to use the connection. Note that closing a connection without committing the changes first will cause an ''implicit rollback'' to be performed.__
+
+'''`.commit()`'''
+
+__Commit any ''pending transaction'' to the database. Note that if the database supports an ''auto-commit'' feature, this must be initially off. An interface method may be provided to turn it back on.__
+
+__Database modules that do not support transactions should implement this method with void functionality.__
+
+'''`.rollback()`'''
+
+__This method is optional since not all databases provide transaction support.__
+
+__In case a database does provide transactions this method causes the database to roll back to the start of any pending transaction. Closing a connection without committing the changes first will cause an implicit rollback to be performed.__
+
+ __If the database does not support the functionality required by the method, the interface should throw an exception in case the method is used.__
+
+ __The preferred approach is to not implement the method and thus have Python generate an `AttributeError` in case the method is requested. This allows the programmer to check for database capabilities using the standard `hasattr()` function.__
+
+ __For some ''dynamically configured interfaces'' it may not be appropriate to require dynamically making the method available. These interfaces should then raise a `NotSupportedError` to indicate the non-ability to perform the roll back when the method is invoked.__
+
+'''`.cursor()`'''
+
+__Return a new `Cursor` Object using the connection. If the database does not provide a ''direct cursor concept'', the module will have to emulate cursors using other means to the extent needed by this specification.__
+
+ __A database interface may choose to support ''named cursors'' by allowing a string argument to the method. This feature is not part of the specification, since it complicates semantics of the `.fetch*()` methods.__
+
+== Cursor Objects ==
+
+__These objects represent a database cursor, which is used to manage the ''context of a fetch operation''. Cursors created from the same connection are not isolated, i.e., any changes done to the database by a cursor are immediately visible by the other cursors. Cursors created from different connections can or can not be isolated, depending on how the transaction support is implemented__ (see also the connection's `.rollback()` and `.commit()` methods).
+
+`Cursor` Objects should respond to the following methods and attributes:
+
+:::
+
+'''`.close()`'''
+
+__Close the cursor now (rather than whenever `__del__` is called). The cursor will be unusable from this point forward; an `Error` (or subclass) exception will be raised if any operation is attempted with the cursor.__
+
+'''`.execute(operation[,parameters])`'''
+
+__Prepare and execute a database operation (query or command). Parameters may be provided as ''sequence or mapping'' and will be ''bound to'' variables in the `operation`. Variables are specified in a database-specific notation (see the module's `paramstyle` attribute for details).__
+
+ __The module will use the `__getitem__` method of the `parameters` object to map either positions (integers) or names (strings) to parameter values. This allows for both sequences and mappings to be used as input.__
+
+ __The term "bound" refers to the process of binding an input value to a database ''execution buffer''. In practical terms, this means that the input value is directly used as a value in the operation. The client should not be required to "escape" the value so that it can be used -- the value should be equal to the actual database value.__
+
+__A reference to the `operation` will be retained by the cursor. If the same `operation` object is passed in again, then the cursor can optimize its behavior. This is most effective for algorithms where the same operation is used, but different parameters are bound to it (many times).__
+
+For maximum efficiency when reusing an operation, it is best to use the `.setinputsizes()` method to specify the parameter types and sizes ahead of time. It is legal for a parameter to not match the predefined information; the implementation should compensate, possibly with a loss of efficiency.[?]
+
+__The `parameters` may also be specified as list of tuples to e.g. insert multiple rows in a single operation, but this kind of usage is deprecated: `.executemany()` should be used instead.__
+
+__Return values are not defined.__
+
+'''`.executemany(operation,seq_of_parameters)`'''
+          
+__Prepare a database operation (query or command) and then execute it against all parameter sequences or mappings found in the sequence `seq_of_parameters`.__
+
+__Modules are free to implement this method using multiple calls to the `.execute()` method or by using ''array operations'' to have the database process the sequence as a whole in one call.__
+
+__Use of this method for an operation which produces one or more ''result sets'' constitutes undefined behavior, and the implementation is permitted (but not required) to raise an exception when it detects that a result set has been created by an invocation of the operation.__
+
+__The same comments as for `.execute()` also apply accordingly to this method.__
+
+__Return values are not defined.__
+
+'''`.fetchone()`'''
+          
+__Fetch the next row of a query result set, returning a single sequence, or `None` when no more data is available.__
+
+ __Note that the interface may implement row fetching using arrays and other optimizations. It is not guaranteed that a call to this method will only move the associated cursor forward by one row.__
+
+__An `Error` (or subclass) exception is raised if the previous call to `.execute*()` did not produce any result set or no call was issued yet.__
+
+:::
+

@@ -1,0 +1,355 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[AutoIt] 定位控制項</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="locate-controls.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="autoit.html">AutoIt</a> / 定位控制項</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+timeout 的預設值是多少？好像沒給 timeout 值時會一直等，所以還是養成習慣給一下 timeout 的秒數。
+</p>
+</li>
+<li>
+<p>
+Windows can be referenced by title, text on the window, size, position, class and even internal Win32 API handles.（後面這些都是透過 window/control descript 來達成的）
+</p>
+</li>
+<li>
+<p>
+視窗可以用 title 定位到。
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+title 重複時，可以再加上 text，如果再不行，就得靠 window description 或 window handle 了。
+</p>
+</li>
+<li>
+<p>
+許多 window function (<code>WinXXX()</code>) 都提供有 title 跟 text 的參數，title 是必要的，但 text 通常是可有可無的。
+</p>
+</li>
+<li>
+<p>
+通常 title 跟 text 同時傳入空字串時（空字串表示 match all，跟 visible window text 無關），可以定位到 currently active window。但從 title 傳入 <code>[ACTIVE]</code> 的做法比較好。
+</p>
+</li>
+<li>
+<p>
+Button text like &amp;Yes, &amp;No, &amp;Next (the &amp; indicates an underlined letter)
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+window function 的 title 可以傳入 title, window description 或 window handle (HWND)
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+case sensitive，建議從 Window Info Tool 複製貼上。
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.autoitscript.com/autoit3/docs/functions/AutoItSetOption.htm#WinTitleMatchMode">WinTitleMatchModes</a> 可以設定 title matching 的原則。
+</p>
+</li>
+<li>
+<p>
+知道 AutoIt 預設的行為（default mode）還滿重要的。為什麼 Window Titles and Text (Advanced) 的 Mode 1 (default) 卻說 Matches partial titles from the start. 而非 Window Titles and Text (Basic) 所說的 You must match the case and punctuation exactly。
+</p>
+</li>
+<li>
+<p>
+title 的比對由 Window (Title) Matching Mode 來決定
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+AutoItSetOption/WinTitleMatchMode 設定
+</p>
+</li>
+<li>
+<p>
+Mode 1 (default) - Matches partial titles from the start. - 實驗結果確實是這樣；雖然是從頭開始比對，但比對時還是區分大小寫。
+</p>
+</li>
+<li>
+<p>
+Mode 2 - Matches any substring in the title.
+</p>
+</li>
+<li>
+<p>
+Mode 3 - Exact title match.
+</p>
+</li>
+<li>
+<p>
+Mode 4 (Advance Mode)，透過 Advanced Window Descriptions 來比對（title 的比對更有彈性，甚至可以用 regex）
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+title 可以傳入 window descriptions（一或多個 properties），跟現在採用哪個 window matching mode 無關
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+[PROPERTY1:Value1; PROPERTY2:Value2]，要表示單一個 <em>;</em> 時，可以用 <em>;;</em> 來表示
+</p>
+</li>
+<li>
+<p>
+TITLE - Window title
+</p>
+</li>
+<li>
+<p>
+CLASS - The internal window classname
+</p>
+</li>
+<li>
+<p>
+REGEXPTITLE - Window title using a regular expression (if the regular expression is wrong @error will be set to 2)
+</p>
+</li>
+<li>
+<p>
+REGEXPCLASS - Window classname using a regular expression (if the regular expression is wrong @error will be set to 2)
+</p>
+</li>
+<li>
+<p>
+LAST - Last window used in a previous AutoIt command
+</p>
+</li>
+<li>
+<p>
+ACTIVE - Currently active window
+</p>
+</li>
+<li>
+<p>
+X \ Y \ W \ H - The position and size of a window
+</p>
+</li>
+<li>
+<p>
+INSTANCE - The 1-based instance when all given properties match （多個符合條件時，用在 Wait 時，可以用來等待下一個符合條件的 window 出現）
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+title 也可以傳入 window handle (HWND)
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+每個 window 被建立時都會給一個 window handle，可以用來識別特定 window。因此當 title 傳入 handle 時，text 參數就會被忽略掉。
+</p>
+</li>
+<li>
+<p>
+WinGetHandle, WinList 都會傳回 handle。
+</p>
+</li>
+</ul></div>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+text 會被視為 substring 來做比對（區分大小寫）跟 title 不一樣，跟當下的 window (title) matching mode 無關。
+</p>
+</li>
+<li>
+<p>
+Hidden window can be matched by "title" only if "text" is empty (""). ??
+</p>
+</li>
+<li>
+<p>
+定位某個 window 裡的 control，因為 control function 的前兩個參數固定是 title 跟 text，如果不想填 text 時，還是得傳入空字串才行。
+</p>
+</li>
+<li>
+<p>
+control function (<code>ControlXXX()</code>) 的 controlID 可以傳入 control ID, ClassnameNN, text, control description 或 control handle (HWND)
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.autoitscript.com/autoit3/docs/intro/controls.htm">這裡</a>提到 "work directly with <em>certain types</em> of Window Controls"，<a href="http://www.autoitscript.com/autoit3/docs/history.htm">這裡</a>又提到 ToolBarWindow32 的支援&#8230; Added: ControlCommand() "SendCommandID" - used to send WM_COMMAND Control ID messages. Allows the automation of ToolBarWindow32 controls (amongst others). For example, the "Back" button of Internet Explorer. Use Au3Info to get the Command ID from the ToolBar tab.
+</p>
+</li>
+<li>
+<p>
+In fact Notepad is just one big "Edit" control!
+</p>
+</li>
+<li>
+<p>
+AutoIt only works with standard Microsoft controls - some applications write their own custom controls which may look like a standard MS control but may resist automation. Experiment!
+</p>
+</li>
+<li>
+<p>
+HWND, The handle changes each time the control is created.
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+control description
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+ID - The internal control ID. The Control ID is the internal numeric identifier that windows gives to each control. It is generally the best method of identifying controls.（每次執行都一樣？）
+</p>
+</li>
+<li>
+<p>
+TEXT - The text on a control, for example "&amp;Next" on a button
+</p>
+</li>
+<li>
+<p>
+CLASS - The internal control classname such as "Edit" or "Button"
+</p>
+</li>
+<li>
+<p>
+CLASSNN - The ClassnameNN value as used in previous versions of AutoIt, such as "Edit1"。其中 NN 指的是 class NAME 跟 iNstance 嗎？ <a href="http://www.autohotkey.com/forum/topic5851.html">class NN</a>
+</p>
+</li>
+<li>
+<p>
+NAME - The internal .NET Framework WinForms name (if available；怎麼會跟 NAME 扯上關係？)
+</p>
+</li>
+<li>
+<p>
+REGEXPCLASS - Control classname using a regular expression
+</p>
+</li>
+<li>
+<p>
+X \ Y \ W \ H - The position and size of a control.
+</p>
+</li>
+<li>
+<p>
+INSTANCE - The 1-based instance when all given properties match.
+</p>
+</li>
+</ul></div>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.autoitscript.com/autoit3/docs/intro/au3spy.htm">AutoIt Window Info Tool</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.autoitscript.com/autoit3/docs/intro/windowsbasic.htm">Window Titles and Text (Basic)</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.autoitscript.com/autoit3/docs/intro/windowsadvanced.htm">Window Titles and Text (Advanced)</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.autoitscript.com/autoit3/docs/intro/controls.htm">Controls</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.autoitscript.com/autoit3/docs/functions.htm">Functions</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.autoitscript.com/autoit3/docs/appendix/SendKeys.htm">Send Key list</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:10:22 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

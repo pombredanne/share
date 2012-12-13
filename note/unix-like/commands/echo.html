@@ -1,0 +1,148 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Unix-like][Commands] `echo`</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="echo.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="../unix-like.html">Unix-like</a> / <a href="commands.html">Commands</a> / <code>echo</code></h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p><code>echo</code> - display a line of text</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>echo [SHORT-OPTION]... [STRING]...
+echo LONG-OPTION</code></pre>
+</div></div>
+<div class="paragraph"><p>再簡單不過的 <code>echo</code>，使用上還是有要注意的地方，尤其是它預設會在輸出的後面補上一個<a href="../../text/text-newline.html">換行字元（newline）</a>，而且預設跳脫字元（backslash escapes）是沒有作用的。</p></div>
+<div class="paragraph"><p>常用的 options 有：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>-n</code> - 不要在後面補上一個 newline。
+</p>
+</li>
+<li>
+<p>
+<code>-e</code> - 對 backslash escapes 進行解讀，例如 <code>\t</code>、<code>\n</code>、\xHH` 等（例如 <code>\x00</code> 表示 NULL 字元），這個時候可以用 <code>\\</code> 來表示一個反斜線。
+</p>
+</li>
+</ul></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ echo line &gt; echo.txt
+$ wc -c echo.txt
+5 echo.txt <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+$ hexdump -c echo.txt
+0000000   l   i   n   e  \n <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+0000005
+$
+$ echo -n line &gt; echo.txt   <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+$ wc -c echo.txt
+4 echo.txt
+$ hexdump -c echo.txt
+0000000   l   i   n   e
+0000004</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+為什麼 <code>line</code> 寫到檔案後會變成 5 bytes？
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+原來 <code>echo</code> 預設會在輸出的後面補上一個 newline，加上 <code>-n</code> 就不會有這種狀況了。
+</td></tr>
+</table></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ echo 'line1\nline2' &gt; echo.txt
+$ hexdump -c echo.txt
+0000000   l   i   n   e   1   \   n   l   i   n   e   2  \n <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+000000d
+$ cat echo.txt
+line1\nline2
+$
+$ echo -e 'line1\nline2' &gt; echo.txt
+$ cat echo.txt
+line1
+line2
+$ hexdump -c echo.txt
+0000000   l   i   n   e   1  \n   l   i   n   e   2  \n     <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+000000c</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+<code>echo</code> 預設不會對 backslash escapes 進行解讀，所以 <code>\n</code> 在檔案裡還是 <code>\</code> 跟 <code>n</code> 兩個字元。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+透過 <code>-e</code> 可以要求 <code>echo</code> 對 backslash escapes 進行解讀，所以這一次 <code>\n</code> 在檔案裡真的是個換行字元。
+</td></tr>
+</table></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://manpages.debian.net/cgi-bin/man.cgi?query=echo">echo - Debian Hypertext Man Pages</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:14:59 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

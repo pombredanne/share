@@ -1,0 +1,78 @@
+= Siklui: 在特定的區域內找尋操作的目標 =
+
+用 String 來定位最方便，但可能會有 L10N 的問題，但如果不是用來走流程的話，就不用擔心這一段。
+
+== 先決定有效的區域 ==
+
+Region
+
+ * http://www.docjar.org/docs/api/java/awt/Rectangle.html[java.awt: public class: Rectangle]
+
+== 用文字比對 ==
+
+ * 比較的效果實在讓人很難捉摸：
+   ** 有些小的字反而比對得到
+   ** 整串字比對不到，但比對其中一個字串就可以。
+   ** 有 focus 時藍色的底比對不到，但將 focus 移開變灰就可以比對得到。
+
+== 尋找或等待目標出現 ==
+
+首先要透過 visual object (標的物) 定位出要操作的區域。
+
+ * `find(PS)`
+ * `findAll(PS)` - 傳回的東西有順序嗎？
+ * `wait(PS[, seconds])`
+ * `waitVanish(PS[, seconds])`
+ * `exists(PS[, seconds])` - 內部也是 wait 的概念，但 'seconds' 傳入零時，可以即時判斷當下某個 visual object 在不在。
+
+ * PS 指的 visual object，可以是 `Pattern`、圖檔的路徑、或是要找的文字 (pattern or string)，有找到表示兩者的相似度高於某個值（預設是 70%），`Pattern` 可以個別要求最底的相似度。
+ * 找不到時會丟出 `FindFailed`，很多時候這個錯誤是因為圖形大小不符所造成，一直調 similarity 也沒有用。
+ * 找到的結果習慣從 reg.getLastMatch() 取出，例如 `if exists(圖): click(圖)` 的寫法會很沒有效率，建議改成 `if exists(圖): click(getLastMatch())`
+ * wait 的概念其實是 "每秒檢查幾次" 的概念，由 `Settings.WaitScanRate` 來控制，預設是每秒檢查 3 次。這對於截圖相對耗時某些應用，例如從高解析的手機或平板截圖大概要 3 秒左右。要注意這個時間要跟 region 裡的 `_autoWaitTimeout` 大，否則頂多就檢查一次，沒有太大的意義。
++
+--------------------------------------------------------------------------------
+ public class Settings {
+   public static float WaitScanRate = 3f; // frames per second
+--------------------------------------------------------------------------------
++
+ * 發現 similarity 調成 1.0 成反而比對不到，這時候調成 0.99 就可以了。很多時候會一直找不到問題，明明抓的區域沒問題，裡面也沒有特定的圖樣，但就是被判定為 match （而且差很大），但切記預設的 minimum similarity 是 0.7。
+ * 圖形如果是文字內容，可以先考慮用 string 來定位，反正都有 L10N 的問題，比較不容易受到系統字型改變的影響。
+
+--------------------------------------------------------------------------------
+abstract class Repeatable{
+
+   abstract void run() throws Exception;
+   abstract boolean ifSuccessful();
+   
+   // return TRUE if successful before timeout
+   // return FALSE if otherwise
+   // throws Exception if any unexpected error occurs
+   boolean repeat(double timeout) throws Exception{
+
+      int MaxTimePerScan = (int)(1000.0/Settings.WaitScanRate); <1>
+      long begin_t = (new Date()).getTime();
+      do{
+         long before_find = (new Date()).getTime();
+         
+         run();
+         if (ifSuccessful())
+            return true;
+
+         long after_find = (new Date()).getTime();
+         if(after_find-before_find<MaxTimePerScan) <2>
+            _robot.delay((int)(MaxTimePerScan-(after_find-before_find)));
+         else
+            _robot.delay(10);
+      }while( begin_t + timeout*1000 > (new Date()).getTime() );
+
+      return false;
+   }
+}
+--------------------------------------------------------------------------------
+<1> 理論上，平均拍一次畫面所花的時間。
+<2> 如果實際上拍畫面比理論值還快，就要放慢速度，休息一下。
+
+== 參考資料 ==
+
+ * http://sikuli.org/docx/globals.html#mintargetsize[Global Functions and Features > MinTargetSize — Sikuli X 1.0 documentation]
+

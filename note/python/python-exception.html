@@ -1,0 +1,204 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Python] Exception Handling</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="python-exception.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="python.html">Python</a> / Exception Handling</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; try:
+...     raise RuntimeError('123')
+... except BaseException as e:
+...     e.args
+...
+('123',)</code></pre>
+</div></div>
+<div class="paragraph"><p><code>Exception</code> 預設會將建立傳入的參數</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code></code></pre>
+</div></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>RuntimeError</code>
+</p>
+</li>
+<li>
+<p>
+<code>NotImplementedError</code>
+</p>
+</li>
+<li>
+<p>
+<code>TypeError</code>
+</p>
+</li>
+<li>
+<p>
+<code>ValueError</code> - 相較於 <code>TypeError</code>，它指的是型態對了，但內容有誤。
+</p>
+</li>
+<li>
+<p>
+<code>Exception</code> - non-system-exiting exceptions 都繼承自它，包括其他自訂的 exception。
+</p>
+</li>
+<li>
+<p>
+<code>IndexError</code> 或 <code>KeyError</code>
+</p>
+</li>
+</ul></div>
+<div class="listingblock">
+<div class="title"><code>examples/stacktrace.py</code></div>
+<div class="content">
+<pre><code>import sys, traceback
+
+def fun1():
+  fun2()
+
+def fun2():
+  fun3()
+
+def fun3():
+  raise Exception('ERROR' + '(fun3)')
+
+try:
+  fun1()
+except:
+  if len(sys.argv) == 2 and sys.argv[1] == 'print_tb':
+    exc_info = sys.exc_info()
+    traceback.print_tb(exc_info[2]) # print traceback.format_exc()
+  else: raise</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="title"><code>python stacktrace.py</code></div>
+<div class="content">
+<pre><code>Traceback (most recent call last):
+  File "stacktrace.py", line 13, in &lt;module&gt;
+    fun1() &lt;-- re-raise 的起點還是 fun()
+  File "stacktrace.py", line 4, in fun1
+    fun2()
+  File "stacktrace.py", line 7, in fun2
+    fun3()
+  File "stacktrace.py", line 10, in fun3
+    raise Exception('ERROR' + '(fun3)')
+Exception: ERROR(fun3) &lt;-- 多了這一行</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="title"><code>python stacktrace.py print_tb</code></div>
+<div class="content">
+<pre><code>  File "stacktrace.py", line 13, in &lt;module&gt;
+    fun1()
+  File "stacktrace.py", line 4, in fun1
+    fun2()
+  File "stacktrace.py", line 7, in fun2
+    fun3()
+  File "stacktrace.py", line 10, in fun3
+    raise Exception('ERROR' + '(fun3)')</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_延伸閱讀">延伸閱讀</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="python-exception-customize.html">自訂 Exception</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://docs.python.org/tutorial/errors.html">Errors and Exceptions</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://docs.python.org/library/exceptions.html">Built-in Exceptions</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.python.org/dev/peps/pep-0352/">PEP 352&#8201;&#8212;&#8201;Required Superclass for Exceptions</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.itmaybeahack.com/book/python-2.6/html/p02/p02c07_exceptions.html#exception-attributes">Exceptions &gt; Exception Attributes — Building Skills in Python</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:14:45 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

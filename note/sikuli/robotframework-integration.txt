@@ -1,0 +1,109 @@
+= SIKULI and Robot Framework Integration =
+
+NOTE: 如果要做成像 simplesikuli，倒不如包裝成 Remote Keyword... 否則來回叫起 Sikuli 的成本還滿高的。
+
+如果不用 Jython 的話，SIKULI 該怎麼跟 Robot Framework 整合比較好？如果一個 `.sikuli` 可以帶參數進去、傳結果回來就太好了...
+
+https://answers.launchpad.net/sikuli/+questions?field.search_text=robot+framework&field.sort=RELEVANCY&field.sort-empty-marker=1&field.actions.search=Search&field.language=en&field.language=zh_TW&field.language-empty-marker=1&field.status=OPEN&field.status=NEEDSINFO&field.status=ANSWERED&field.status=SOLVED&field.status-empty-marker=1[Questions for Sikuli] 有少數人在談 Robot Framework 跟 SIKULI 的整合，不過終將回歸到 http://blog.mykhailo.com/2011/02/how-to-sikuli-and-robot-framework.html[Mike's cognition] 所提出的方式...
+
+.`script.sikuli/script.py`
+--------------------------------------------------------------------------------
+import sys
+from sikuli.Sikuli import *
+from kwutils import sikulikw
+sikulikw = sikulikw(sys.modules[__name__]) <1>
+
+@sikulikw
+def click_apple():
+    click("1334552258304.png")
+
+@sikulikw
+def hover_spotlight():
+    hover("1334712441444.png")
+
+if __name__ == '__main__':
+    click_apple()
+    hover_spotlight()
+--------------------------------------------------------------------------------
+<1> 
+
+.`kwutils.py`
+--------------------------------------------------------------------------------
+...
+
+class sikulikw():
+
+    def __init__(self, module):
+        self.module = module
+
+    def __call__(self, func):
+
+        def wrapper(*args, **kwargs):
+            if not hasattr(self.module, '__file__'): return func(*args, **kwargs)
+
+            #_logger.warn(os.path.dirname(self.module.__file__))
+            from sikuli.Sikuli import addImagePath, removeImagePath
+            imgdir = os.path.dirname(self.module.__file__)
+            try:
+                addImagePath(imgdir) <1>
+                result = func(*args, **kwargs)
+            finally:
+                removeImagePath(imgdir)
+            return result
+
+        return wrapper
+--------------------------------------------------------------------------------
+<1> 實驗發現，改變 CWD 沒有作用，還是得透過 `addImagePath` 跟 `removeImagePath` 來調整 image search path 才行
+
+.`mybot.sh`
+--------------------------------------------------------------------------------
+#!/bin/sh
+
+source `dirname $0`/auto_env.sh
+LIB_DIR=$AUTO_DIR/svn/lib
+
+export JYTHONPATH=$LIB_DIR:$RESOURCE_DIR/lib:$LIB_DIR/robotframework.jar/Lib:$LIB_DIR/sikuli-script.jar/Lib
+export CLASSPATH=$LIB_DIR/jython.jar:$LIB_DIR/robotframework.jar:$LIB_DIR/sikuli-script.jar
+java org.robotframework.RobotFramework $*
+--------------------------------------------------------------------------------
+
+.`auto_env.sh`
+--------------------------------------------------------------------------------
+#!/bin/sh
+
+AUTO_DIR=/auto
+
+export SCRIPT_DIR=$AUTO_DIR/svn/bin
+export TEST_DIR=$AUTO_DIR/svn/test
+export RESOURCE_DIR=$AUTO_DIR/svn/res
+--------------------------------------------------------------------------------
+
+== 參考資料 ==
+
+.工具
+--
+ * http://code.google.com/p/simplesikuli/[simplesikuli - Simple wrapper library for Sikuli for Robot Framework and command line interface to Sikuli] - 已經有人把 generic keyword library 寫出來了。
+ * http://code.google.com/p/rguils/[rguils - robust GUI automation library for Sikuli - Google Project Hosting]
+--
+
+.文件
+--
+ * http://blog.mykhailo.com/2011/02/how-to-sikuli-and-robot-framework.html[Mike's cognition: How-To: Sikuli and Robot Framework Integration] (2011-02-07) - 完整介紹如何將 Sikuli Script 裡的 method 直接變成 Robot Framework 可以引用的 keyword。
+ * http://ccaloha.cc/blog/2012/01/05/how-to-using-sikuli-and-robotframework-in-linux-platform/[HOW-TO: Using Sikuli and RobotFramework in Linux Platform - AlohaCC] (2012-01-05)
+ * http://www.51testing.com/?uid-49689-action-viewspace-itemid-247881[Sikuli+RobotFramework集成 - Quality Trackers] (2011-10-27)
+ * https://answers.launchpad.net/sikuli/+faq/1110[Building Large-scale Testing framework Using Sikuli] (2010-05-16)
+ * http://groups.google.com/group/robotframework-users/browse_thread/thread/d92ce2ec8b530d42?pli=1[Sikuli integration into robotframework - robotframework-users | Google Groups] (2010-12-24)
+--
+
+== 學習筆記 ==
+
+ * 2011/12/14 前幾天 Joshua 提到他認為將 Sikuli API 提出成為 Robot Framework keyword 的做法，會完全利用不到 Sikuli IDE 的優勢，除非 IDE 的功能可以整合到 RIDE 裡面去。
+   ** 但如果不這麼做，Robot Framework 第一層口語化的描述就得要遷就 Python function name？
+   ** 想到第一層口語化，多少都會有參數要提出成為參數，再轉入 Python function，所以這樣的整合方式很 okay，回頭看將 Sikuli/Robot Framework 直接對應的做法有點太 over 了？
+ * 如果想用 RemoteLibrary 來整合 Sikuli，在實務上可能會遇到一些困難：
+   ** 首先遇到的問題就是，到底要不要發展出 generic keywords？好處是 Sikuli 可以跟其他 library 的 keyword 混用，但缺點是 Sikuli IDE 就沒有太大的用處了。-> 但還是可以用來做為 keyword 背後的實作。
+   ** 如果不用 generic keywords，就是走上把 Sikuli scripts 直接拿來當做 keyword library 一途；拆出多個對應不同 step 的 function，而每個 function 都是一個 keyword，一直無法說服自己，這樣做到底有什麼意義，這些 function 又不能被共用？如果這些 function 是連續被呼叫的，倒不如以外部程式的方式來整合 Sikuli... 但如果不是連續被呼叫，其他 library 的 keyword 就有機會介入完成同一個測試。
+   ** 但 Sikuli scripts 為數眾多，每個 script 都得帶出一個 remote server 才行；remote server 很多是一個問題，但更大的問題是，誰來啟動這些 remote servers？有沒有可能讓所有的 Sikuli scripts 共用一個 remote server 呢？這將會是一個很大的突破... 改寫一個 SikuliScript 直接引入 Sikuli scripts 的 `.py`? 例如 `| Library | SikuliScript | ${CURDIR}/xxx.py | WITH NAME | ` (不同於 `| Library | SikuliLibrary` 用在 generic keyword，如果值得發展的話？)
+   ** 官方文件提到可以用 OperatingSystem 或 SSHLibrary 來啟動 remote server，然後再用 `Import Library` 動態引入 remote library。而且 remote server 也提供有 `Stop Remote Server` 來停止服務（因為 `robotremoteserver.py` 固定會將 `stop_remote_server()` 加到 remote library 的 keyword 清單裡）。不過這種用法不適合從 SCTM 觸發的用法。
+   ** `| Library | xxx.py` 時，可以判斷 runtime 是 CPython 或 Jython。如果是 CPython 時，透過 decorator 轉呼叫 remote server 去執行真正的實作？
+

@@ -1,0 +1,145 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>AndroidViewClient</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="android-view-client.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>AndroidViewClient</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>在實體裝置上測試 AndroidViewClient，發現它也需要搭配 device 裡的 <a href="android-viewserver.html">Viewer Server</a> 才能運作，所以結果還是失敗了：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ export ANDROID_VIEW_CLIENT_HOME=&lt;path-to-androidviewclient&gt;
+$ ./examples/settings.py
+120722 13:14:43.191:S [MainThread] [com.android.monkeyrunner.MonkeyRunnerOptions] Script terminated due to an exception
+120722 13:14:43.191:S [MainThread] [com.android.monkeyrunner.MonkeyRunnerOptions]Traceback (most recent call last):
+  File "/home/jeremy/tmp/AndroidViewClient/examples/./settings.py", line 45, in &lt;module&gt;
+    vc = ViewClient(device)
+  File "/home/jeremy/tmp/AndroidViewClient/src/com/dtmilano/android/viewclient.py", line 200, in __init__
+    raise Exception('Cannot start View server.\n'
+Exception: Cannot start View server.
+This only works on emulator and devices running developer versions. <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+Does hierarchyviewer work on your device ?</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+跟 <a href="android-hierarchyviewer.html#developer-version-only">Hierarchy Viewer</a> 有相同的要求。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>有人在 <a href="http://dtmilano.blogspot.tw/2012/02/monkeyrunner-interacting-with-views.html">monkeyrunner: interacting with the Views</a> 對作者提問：</p></div>
+<div class="quoteblock">
+<div class="content">
+<div class="paragraph"><p>the core concept is dump the infomation of current view, and store it into the vc.views. then pick up the position and id informaiton from it. BUT, the data is so large about 2M,each dump action will use more than 10s via the adb port forward. So I think it is the key trouble</p></div>
+<div class="paragraph"><p>Is there any documentation or webpage how it is taking the dump.dump action is taking 8­-10 secs,sometimes UI is changing by the time.</p></div>
+</div>
+<div class="attribution">
+</div></div>
+<div class="paragraph"><p>隨後作者回說：</p></div>
+<div class="quoteblock">
+<div class="content">
+<div class="paragraph"><p>Unfortunately the time it takes to get the dump is mainly due to the ViewServer and not much can be done on the client side. If you run hierarchyviewer you can see that it takes almost the same time because both tools use the same strategy.</p></div>
+</div>
+<div class="attribution">
+</div></div>
+<div class="paragraph"><p>感覺跟 <a href="../monkeyrunner/monkeyrunner-hierarchyviewer.html#dump">HierarchyViewer API</a> 背後的機制很像&#8230;</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">網站</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://dtmilano.blogspot.tw/search/label/AndroidViewClient">Diego Torres Milano&#8217;s blog: AndroidViewClient</a>
+</p>
+</li>
+<li>
+<p>
+<a href="https://github.com/dtmilano/AndroidViewClient">dtmilano/AndroidViewClient · GitHub</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">官方文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://dtmilano.blogspot.tw/2012/05/androidviewclient-q.html">Diego Torres Milano&#8217;s blog: AndroidViewClient: Q&amp;A</a> (2012-05-12)
+</p>
+</li>
+<li>
+<p>
+<a href="http://dtmilano.blogspot.tw/2012/03/eclipse-working-monkeyrunner.html">Diego Torres Milano&#8217;s blog: Eclipse: working monkeyrunner configuration</a> (2012-03-12) - 把 AndroidViewClient 用在 unit test 裡。
+</p>
+</li>
+<li>
+<p>
+<a href="http://dtmilano.blogspot.tw/2012/02/monkeyrunner-interacting-with-views.html">Diego Torres Milano&#8217;s blog: monkeyrunner: interacting with the Views</a> (2012-02-07) - 提到 AndroidViewClient 在 monkeyrunner 上加了一些功能，跟 chimpchat 不同？而且可以運作在 device 上？
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:07:13 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

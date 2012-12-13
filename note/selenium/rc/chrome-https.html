@@ -1,0 +1,188 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>Selenium RC: Google Chrome SSL Error</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="chrome-https.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>Selenium RC: Google Chrome SSL Error</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>用 <a href="../selenium-rc.html">Selenium RC</a> + <a href="../../chrome/chrome.html">Chrome</a> 測試 https:// 網站時，會遇到 <a href="../../ssl/ssl.html">SSL</a> Error：</p></div>
+<div class="tableblock">
+<table rules="none"
+frame="void"
+cellspacing="0" cellpadding="4">
+<col />
+<col />
+<tbody>
+<tr>
+<td align="center" valign="top"><p class="table"><span class="image">
+<img src="chrome-https/cert_not_trusted.png" alt="chrome-https/cert_not_trusted.png" />
+</span></p></td>
+<td align="center" valign="top"><p class="table"><span class="image">
+<img src="chrome-https/certerr_tip.png" alt="chrome-https/certerr_tip.png" />
+</span></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="quoteblock">
+<div class="content">
+<div class="paragraph"><p>When you connect to a secure website, the server hosting that site presents your browser with something called a "certificate" to verify its identity. This certificate contains identity information, such as the address of the website, which is verified by a third party that your computer trusts. By checking that the address in the certificate matches the address of the website, it is possible to verify that you are securely communicating with the website you intended, and not a third party (such as an attacker on your network).</p></div>
+<div class="paragraph"><p>In this case, the certificate has not been verified by a third party that your computer trusts. Anyone can create a certificate claiming to be whatever website they choose, which is why it must be verified by a trusted third party. Without that verification, the identity information in the certificate is meaningless. It is therefore not possible to verify that you are communicating with ooo.xxx.com instead of an attacker who generated his own certificate claiming to be ooo.xxx.com. You should not proceed past this point.</p></div>
+<div class="paragraph"><p>If, however, you work in an organization that generates its own certificates, and you are trying to connect to an internal website of that organization using such a certificate, you may be able to solve this problem securely. You can import your organization&#8217;s root certificate as a "root certificate", and then certificates issued or verified by your organization will be trusted and you will not see this error next time you try to connect to an internal website. Contact your organization&#8217;s help staff for assistance in adding a new root certificate to your computer.</p></div>
+</div>
+<div class="attribution">
+</div></div>
+<div class="paragraph"><p><a href="../../ssl/certificates.html">Certificate</a> 的內容如下：</p></div>
+<div class="imageblock">
+<div class="content">
+<img src="chrome-https/cert_info.png" alt="chrome-https/cert_info.png" />
+</div>
+<div class="title">Figure 1. 由 CyberVillians Certification Authority 發行</div>
+</div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">這個時候用 <a href="../selenium-rc-api.html">RC API</a> <code>get_html_source()</code> 傳回的不像 IE 是這個警告畫面的 source，也就是說 Chrome 並沒有換掉網頁的內容，只是拿另一個畫面擋在前面而已。另外一開始 Selenium 開出來的 Chrome 視窗是看不到的（縮在桌面的左上方），要調整視窗大小或是 "Show as tab" 才看得到。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>遇到這種狀況，只要讓系統信任 CyberVillians 即可，在 Windows 下可以這麼做：</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+解開 <code>selenium-server-standalone-&lt;version&gt;.jar</code> 取得 <code>sslSupport/cybervillainsCA.cer</code>。
+</p>
+</li>
+<li>
+<p>
+將 <code>cybervillainsCA.cer</code> 加到 Trusted Root Certification Authorities。
+</p>
+</li>
+</ol></div>
+<div class="paragraph"><p>之後就可以正常瀏覽 https:// 了，<a href="../selenium-server.html">Selenium Server</a> 啟動時也不用加 <code>-trustAllSSLCertificates</code>。不過下面 "Couldn&#8217;t proxy to &#8230; because host not found" 的訊息，在某些機器上還是會出現：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>11:44:41.867 INFO - Launching Google Chrome...
+11:44:41.992 INFO - Couldn't proxy to http://vtlwjmussv/ because host not found
+11:44:41.992 INFO - Couldn't proxy to http://rezujlojan/ because host not found
+11:44:41.992 INFO - Couldn't proxy to http://mmowlbwfel/ because host not found</code></pre>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">2012-07-17 搭配 Selenium Server 2.23.1 在某台 XP 下遇到 CPU 100% 的問題（最後出現 <code>Error 7 (net::ERR_TIMED_OUT): The operation timed out.</code> 的錯誤），按<a href="http://code.google.com/p/selenium/issues/detail?id=3498">這裡</a>的說法，將 Selenium Server 降到 2.19.0 有改善，但操作起來還是比沒問題的機器慢很多&#8230;</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>如果原本這個 certificate 不只不受信任，而且遇有其他問題的話（例如主機名稱與宣稱的不符），緊接著還會遇到下面的錯誤：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>HTTP ERROR: 400
+
+Could not proxy https://ooo.xxx.com:443/...
+java.lang.RuntimeException: Couldn't establish SSL handshake.  Try using trustAllSSLCertificates.
+sun.security.validator.ValidatorException: PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
+RequestURI=/ooo/xxx
+
+Powered by Jetty://</code></pre>
+</div></div>
+<div class="paragraph"><p>還好只要按指示在啟動 Selenium Server 加上 <code>-trustAllSSLCertificates</code> 即可。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://svn.openqa.org/fisheye/browse/~raw,r=2074/selenium-rc/trunk/website/tutorial.html">Tutorial</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://code.google.com/p/selenium/issues/detail?id=3498">Issue 3498 - selenium - Selenium&#8217;s proxy server performance regression for HTTPS pages - Browser automation framework - Google Project Hosting</a> (2012-03-05) - 跟某些機器上會出現 CPU 100% 的狀況很類似，從 2.20 開始&#8230;
+</p>
+</li>
+<li>
+<p>
+<a href="https://groups.google.com/forum/?fromgroups#!topic/selenium-developers/d83nt9CVA6g">Unable to open HTTPS sites in Google Chrome using SeleniumRC - Google Groups</a> (2011-05-23) - 出現 "Error 111 (net::ERR_TUNNEL_CONNECTION_FAILED): Unknown error." 的錯誤，有人建議裝 <code>cybervillainsCA.cer</code>。
+</p>
+</li>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/5832769/how-can-i-remote-control-an-https-site-in-google-chrome-through-selenium-rc">How can I remote control an https site in google chrome through Selenium RC - Stack Overflow</a> (2011-04-29) - 加 <code>-trustAllSSLCertificates</code>?
+</p>
+</li>
+<li>
+<p>
+<a href="http://code.google.com/p/selenium/issues/detail?id=1317">Issue 1317 - selenium - HTTPS support for Google Chrome - Browser automation framework - Google Project Hosting</a> (2011-02-18) - 修了，但要加 <code>-trustAllSSLCertificates</code>。
+</p>
+</li>
+<li>
+<p>
+<a href="http://blog.mogotest.com/2010/04/13/how-to-accept-self-signed-ssl-certificates-in-selenium/">Mogotest | How to Accept Self-Signed SSL Certificates in Selenium</a> (2010-04-13) - 對 proxy server 跟 proxy injection mode 有很完整的說明。
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:16:12 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

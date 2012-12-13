@@ -1,0 +1,226 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Android] Logging</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="android-logging.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>[Android] Logging</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>程式是透過 <code>android.util.Log</code> 來寫出 log，例如：</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>Log.i("MyActivity", "MyClass.getView() — get item number " + position);</code></pre>
+</div></div>
+<div class="paragraph"><p>除了 <code>Log.i()</code> 之外，類似的方法還有 <code>Log.d()</code>、<code>Log.i()</code>、<code>Log.w()</code>、<code>Log.e()</code> 等，分別對應不同的 priority level：（由低至高）</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>println(int priority, String tag, String msg)</code> - <code>Log.ASSERT</code>
+</p>
+</li>
+<li>
+<p>
+<code>v(String tag, String msg[, Throwable tr])</code> - <code>Log.VERBOSE</code>
+</p>
+</li>
+<li>
+<p>
+<code>d(String tag, String msg[, Throwable tr])</code> - <code>Log.DEBUG</code>
+</p>
+</li>
+<li>
+<p>
+<code>i(String tag, String msg[, Throwable tr])</code> - <code>Log.INFO</code>
+</p>
+</li>
+<li>
+<p>
+<code>w(String tag, String msg[, Throwable tr])</code> - <code>Log.WARN</code>
+</p>
+</li>
+<li>
+<p>
+<code>e(String tag, String msg[, Throwable tr])</code> - <code>Log.ERROR</code>
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>以上面的程式碼為例：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code> ,----------- Priority Level <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+ v             ,------- Process ID
+ I/MyActivity( 1557): MyClass.getView() — get item number 1
+   ^                  `------- Message
+   `----------- Tag <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+單一個大寫字母，代表不同的 priority level。
+<div class="openblock">
+<div class="content">
+<div class="paragraph"><p><a href="http://developer.android.com/guide/developing/debugging/debugging-log.html#filteringOutput">官方文件</a>上寫說，除了 <code>V/D/I/W/E</code> 之外，還有 <code>F</code> (Fatal)，大概只有系統遇到很嚴重的錯誤時才會發生？</p></div>
+</div></div>
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+用來識別這個 log 是誰寫出來的 tag。但的寫法好像沒什麼規範，不同應用程式之間可能會用到相同的 tag 而難以識別？聽說用 <code>System.out.print()</code> 寫出的部份可以用 <code>System.out</code> 這個 tag 來過濾？
+</td></tr>
+</table></div>
+<div class="paragraph"><p>減少 Logging 對效能的衝擊</p></div>
+<div class="paragraph"><p>Log.isLoggable(TAG)，只要用 log.tag.TAG = level 就可以顯示出來，這麼做有什麼用嗎？而且 <code>isLoggable()</code> 似乎很少人在用？</p></div>
+<div class="paragraph"><p>對照 <a href="http://developer.android.com/reference/android/util/Log.html"><code>android.util.Log</code></a> 的說法，verbose logs 要自己拿掉，但 debug logs 還是存在的，<em>stripped</em> 指的就是 <code>isLoggable(DEBUG)</code> 過不了 log level 預設值 info 的檢查而已。</p></div>
+<div class="quoteblock">
+<div class="content">
+<div class="paragraph"><p>Verbose should never be compiled into an application except during development. Debug logs are compiled in but stripped at runtime. Error, warning and info logs are always kept.</p></div>
+</div>
+<div class="attribution">
+</div></div>
+<div class="paragraph"><p>如果沒有 <code>isLoggable(DEBUG)</code> 的話，debug log 固定會寫出去，設了 <code>log.tag.TAG LEVEL</code> 也沒用，更重要的是 log message 拼接需要的時間，也這麼浪費掉了。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_延伸閱讀">延伸閱讀</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="android-logging-production.html">如何將 Verbose/Debug Log 拿掉？</a>
+</p>
+</li>
+<li>
+<p>
+<a href="android-logging-sysout.html"><code>System.out</code> 或 <code>System.out</code> 的輸出去了哪裡？</a>
+</p>
+</li>
+<li>
+<p>
+<a href="android-logging-buffer.html">Log Buffers</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://developer.android.com/guide/developing/debugging/debugging-log.html">Reading and Writing Logs | Android Developers</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://developer.android.com/reference/android/util/Log.html">Log | Android Developers</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://mobile.tutsplus.com/tutorials/android/logcat_android-sdk/">Android Essentials: Application Logging</a> (2011-01-25)
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.intertech.com/">Android Logging</a> (2012-03-16)
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.vogella.com/articles/AndroidLogging/article.html">Android Logging Tutorial</a> (2012-07-27)
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">工具</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://code.google.com/p/roboguice/wiki/Logging">Logging - RoboGuice 2</a> - 在 <code>android.uitl.Log</code> 之上提供一個更好的 wrapper。
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">其他文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://mobilebytes.wordpress.com/2010/07/19/logging-the-android-way/">Logging the Android Way « MobileBytes</a> (2010-07-19) - 提到 <code>setprops log.tag.&lt;tag&gt; &lt;level&gt;</code> 可以讓 debug logs 出現，這應該是搭配 <code>Log.isLoggable(tag, Log.DEBUG)</code> 的寫法，顯然 <code>Log.x()</code> 內部並不會檢查 level。
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.quietlycoding.com/?p=9">Android Logging … the awesome way | Quietly Coding</a> (2010-03-22) - 自訂一層 wrapper，裡面有用到 <code>isLoggable()</code>，但組合 log message 所花的時間還是浪費掉了。
+</p>
+</li>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/2018263/android-logging/2019002#2019002">Android logging - Stack Overflow</a> (2010-01-07) - 可以對 JAR 檔加工，將 <code>Log.v()</code> 的呼叫全部拿掉。
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:08:20 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

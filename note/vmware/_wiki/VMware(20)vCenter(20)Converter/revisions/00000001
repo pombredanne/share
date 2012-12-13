@@ -1,0 +1,58 @@
+= VMware vCenter Converter =
+<<TableOfContents>>
+
+== 隨手記 ==
+
+ * 這個新產品也是免費的!! 它整合了兩個舊的產品: VMware P2V Assistant 與 VMware Virtual Machine Importer.
+ * 就 "將 .vdi 轉成 .vmdk" 這個任務來講, 這個產品確實有點大材小用, 還是採用網路上流傳用 `qemu-img` 來轉的方法比較實在.
+
+== 學習指引 ==
+
+== 常見問題 ==
+
+=== 如何將 VirtualBox 的 VM 轉到 VMware ===
+
+ 1. 合併 !VirtualBox 的 Snapshots
+
+ 2. 將 `.vdi` 檔轉換成 fixed-size (如果直接拿 `.vdi` 來轉, 掛載上去之後會出現 "/dev/sda doesn't contain a valid partition table" 的錯誤)
+
+ {{{
+VBoxManage internalcommands converttoraw machine.vdi machine.raw
+ }}}
+
+ 3. 用 QEMU 的工具將 `.raw` 檔轉換成 `.vmdk`
+
+ {{{
+sudo apt-get install qemu
+qemu-img convert -O vmdk machine.raw machine.vmdk
+ }}}
+
+ 4. 在 VMware 新增一台新的 VM (硬體儘可能跟原來 !VirtualBox 的環境一致), 並將 `machine.vmdk` 做為 IDE 的第一顆硬碟.
+
+ 5. 開機後因為網卡 MAC address 改變 (從 !VirtualBox 換成 VMware 的硬體), 只要將 `/etc/udev/rules.d/70-persistent-net.rules` 裡 eth0 的設定註解掉, 然後將 eth1 更名為 eth0 即可.
+
+'''參考文件'''
+
+ * http://www.liucougar.net/blog/archives/118[Convert VirtualBox image (vdi) to VMWare (vmdk) - Fly together Forever] (2008-12-18)
+ * http://www.xgrr.de/wordpress/2008/02/25/convert-virtualbox-vdi-to-vmware-vmdk[xgrr.de - the whole not the half | Convert Virtualbox .vdi to VMware .vmdk] (2008-02-25)
+
+== 參考資料 ==
+
+'''關聯'''
+
+'''網站'''
+
+'''工具/方案'''
+
+'''應用案例'''
+
+'''書藉'''
+
+'''文章/新聞/討論'''
+
+'''關鍵字'''
+
+== 修訂記錄 ==
+
+|| 版次 || 日期 || 記錄 ||
+|| 1.0 || <<Date(2009-07-20T08:27:29Z)>> || 初稿 ||

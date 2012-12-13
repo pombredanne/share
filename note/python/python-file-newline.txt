@@ -1,0 +1,143 @@
+= [Python] 有效處理文字檔不同的換行字元 =
+
+讀寫文字檔的過程中，用 `open()` 開啟檔案時所用的 mode string，會影響內部對換行字元的處理方式：
+
+`open()` 預設採用 text mode，在讀寫的過程中會對換行字元進行轉換，所以 text mode 不能用在二進位檔，否則檔案內容會遭到破壞。而 universal newline support 則是 text mode 的延伸（預設不啟用），可以確保採用不同換行字元的文字檔，讀進 Python 之後都會統一都用 `\n` 來表示換行，程式處理起來比較簡單。
+
+假設有三支文字檔，內容採用各平台不同的link:../text/text-newline.html[換行字元]：
+
+--------------------------------------------------------------------------------
+$ hexdump -c lines_unix.txt 
+0000000   l   i   n   e   1  \n   l   i   n   e   2  \n                
+000000c
+$ hexdump -c lines_mac.txt 
+0000000   l   i   n   e   1  \r   l   i   n   e   2  \r                
+000000c
+$ hexdump -c lines_win.txt 
+0000000   l   i   n   e   1  \r  \n   l   i   n   e   2  \r  \n        
+000000e
+--------------------------------------------------------------------------------
+
+將下面的 `test_newline()` 分別執行在 Windows 與 Linux，觀察單純 text mode 沒有 universal newline support 時，讀進／寫出檔案的行為。
+
+--------------------------------------------------------------------------------
+def test_newline(suffix, universal=False):
+    with open('lines_%s.txt' % suffix, 'rU' if universal else 'r') as f:
+        lines = f.readlines()
+        print 'input.readlines() =', lines
+        print 'input.newlines =', repr(f.newlines)
+    with open('lines_%s_out.txt' % suffix, 'w') as f:  <1>
+        f.writelines(lines)
+    with open('lines_%s_out.txt' % suffix, 'rb') as f: <2>
+        print 'output.read() =', repr(f.read()) # binary raw data
+--------------------------------------------------------------------------------
+<1> Universal newline support 只能搭配 `r` 使用。
+<2> 採用 binary mode 讀取檔案，才能看到原始檔案內容。
+
+在 Windows 下，`readlines()` 會先將 Windows 換行字元 `\r\n` 置換成 `\n` 之後，再依 `\n` 拆成多行（效果就如同 `read().splitlines()`），寫回去時則固定會將 `\n` 置換回 `\r\n`：
+
+--------------------------------------------------------------------------------
+>>> test_newline('unix')
+input.readlines() = ['line1\n', 'line2\n'] <1>
+input.newlines = None
+output.read() = 'line1\r\nline2\r\n'
+>>>
+>>> test_newline('mac')
+input.readlines() = ['line1\rline2\r']     <2>
+input.newlines = None
+output.read() = 'line1\rline2\r'
+>>>
+>>> test_newline('win')
+input.readlines() = ['line1\n', 'line2\n'] <3>
+input.newlines = None
+output.read() = 'line1\r\nline2\r\n'
+--------------------------------------------------------------------------------
+<1> 原始檔案以 `\n` 做為換行字元，沒有 `\r\n` 可供置換，但還是有 `\n` 做為拆成多行的依據。寫回去時，`\n` 會被置換成 `\r\n`，所以檔案內容已經產生變化。
+<2> 原始檔案以 `\r` 做為換行字元，一樣沒有 `\r\n` 可供置換，結果就是沒有 `\n` 做為拆成多行的依據。寫回去時，同樣也沒有 `\n` 可供置換，所以檔案內容沒變。
+<3> 原始檔案以 `\r\n` 做為換行字元，置換成 `\n` 後再拆成多行。寫回去時 `\n` 會被置換成 `\r\n`，所以檔案內容也沒變。
+
+NOTE: `readlines()` 會保留行尾的換行字元，同樣 `writelines()` 也不會額外安插換行字元。
+
+至於 Linux，由於它跟 Python 同樣採用 `\n` 做為換行字元，所以相同的測試在 Linux 下進行，檔案的內容看不出來有變化：
+
+--------------------------------------------------------------------------------
+>>> test_newline('unix')
+input.readlines() = ['line1\n', 'line2\n']
+input.newlines = None
+output.read() = 'line1\nline2\n'
+>>> test_newline('mac')
+input.readlines() = ['line1\rline2\r']
+input.newlines = None
+output.read() = 'line1\rline2\r'
+>>> test_newline('win')
+input.readlines() = ['line1\r\n', 'line2\r\n']
+input.newlines = None
+output.read() = 'line1\r\nline2\r\n'
+--------------------------------------------------------------------------------
+
+可以發現，單純用 text mode 讀寫文字檔，結果跟原始檔案所採用的換行字元無關，而會跟程式當時執行的平台而異；這樣的差異在 Windows 下最為明顯。
+
+啟用 universal newline support 之後，發現 Python 看到的換行字元都被統一成 `\n` 了：
+
+.Windows
+--------------------------------------------------------------------------------
+>>> test_newline('unix', True)
+input.readlines() = ['line1\n', 'line2\n']
+input.newlines = '\n'
+output.read() = 'line1\r\nline2\r\n'
+>>> test_newline('mac', True)
+input.readlines() = ['line1\n', 'line2\n']
+input.newlines = '\r'
+output.read() = 'line1\r\nline2\r\n'
+>>> test_newline('win', True)
+input.readlines() = ['line1\n', 'line2\n']
+input.newlines = '\r\n'
+output.read() = 'line1\r\nline2\r\n'
+--------------------------------------------------------------------------------
+
+但由於 universal newline support 只作用在讀取檔案時，所以寫出檔案內容時，所有的 `\n` 都被換成當時平台所採用的換行字元。這個問題或許不大，至少其他人都用 `rU` 來做讀取時，最後都能成功地拆出不同的行。
+
+如果想要保留原先檔案所用的換行字元，上面 `file.newlines` 所記錄到的換行字元可以幫得上忙（啟用 universal newline support 時這個 attribute 才有參考價值）。將 `test_newline()` 簡單改寫過：
+
+--------------------------------------------------------------------------------
+def test_newline(suffix, universal=False):
+    with open('lines_%s.txt' % suffix, 'rU' if universal else 'r') as f:
+        lines = f.readlines(); newline = f.newlines <1>
+        print 'input.readlines() =', lines
+        print 'input.newlines =', repr(f.newlines)
+    with open('lines_%s_out.txt' % suffix, 'wb' if universal else 'w') as f: <2>
+        if universal: lines = [line.replace('\n', newline) for line in lines]
+        f.writelines(lines)
+    with open('lines_%s_out.txt' % suffix, 'rb') as f:
+        print 'output.read() =', repr(f.read()) # binary raw data
+--------------------------------------------------------------------------------
+<1> 讀取過內容後，將遇到的換行字元記錄下來。
+<2> 寫回去時採用 binary mode，但 `\n` 要先手動置換回原始檔案所採用的換行字元。
+
+.Windows
+--------------------------------------------------------------------------------
+>>> test_newline('unix', True)
+input.readlines() = ['line1\n', 'line2\n']
+input.newlines = '\n'
+output.read() = 'line1\nline2\n'
+>>> test_newline('mac', True)
+input.readlines() = ['line1\n', 'line2\n']
+input.newlines = '\r'
+output.read() = 'line1\rline2\r'
+>>> test_newline('win', True)
+input.readlines() = ['line1\n', 'line2\n']
+input.newlines = '\r\n'
+output.read() = 'line1\r\nline2\r\n'
+--------------------------------------------------------------------------------
+
+== 參考資料 ==
+
+.文件
+--
+ * http://docs.python.org/library/stdstypes.html#file-objects[Built-in types > File Objects]
+ * http://docs.python.org/library/functions.html#open[Built-in Functions > open()]
+ * http://docs.python.org/glossary.html#term-universal-newlines[Glossary > Universal Newlines]
+ * http://www.python.org/dev/peps/pep-0278/[PEP 278 -- Universal Newline Support]
+ * http://www.python.org/dev/peps/pep-3116/[PEP 3116 -- New I/O]
+--
+

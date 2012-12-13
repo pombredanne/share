@@ -1,0 +1,148 @@
+= link:ini.html[INI] / 檔案格式 =
+:title: INI 檔案格式
+
+INI 最重要的兩個概念就是 section 跟 property。一個 INI 檔至少要有一個 section（但不支援巢狀），每個 section 下可以有零或多個 property。下面用 Windows 下的 `system.ini` 來做說明：
+
+.`system.ini`
+--------------------------------------------------------------------------------
+; for 16-bit app support <1>
+
+[drivers] <2>
+wave=mmdrv.dll <3>
+timer=timer.drv
+
+[mci]
+[driver32]
+[386enh]
+woafont=dosapp.fon
+EGA80WOA.FON=EGA80WOA.FON
+EGA40WOA.FON=EGA40WOA.FON
+CGA80WOA.FON=CGA80WOA.FON
+CGA40WOA.FON=CGA40WOA.FON
+--------------------------------------------------------------------------------
+<1> 以分號（`;`）做為開頭的整行，會被視為註解。它可以落在 section 之外。
+<2> 單獨一行 `[section_name]` 的 section head 宣告另一個 section 的開始，後面的 property 都屬於這個 section，直到遇到另一個 section。
+<3> INI 組成的最小單位－property，也就是用等號隔開的 name-value pair。注意 value 的兩側並不需要用引號括起來。
+
+雖然是通行於各平台, 但由於沒有官方的 Specification, 所以許多細節會因 Implementations 而異，大部份的實作都會忽略空白行, 可以用來提高可讀性。
+
+INI 格式有很多細節沒有被定義清楚，因此不同的實作間會有些許差異。通常而言：
+
+ * section/property name 是不分大小寫的。
+ * property name 兩側的空白通常會被忽略，但 property name 兩側的空白通常會被保留。
+ * value 有多行？
+
+--------------------------------------------------------------------------------
+; last modified 1 April 2001 by John Doe
+[owner]
+name=John Doe
+organization=Acme Widgets Inc.
+ 
+[database]
+server=192.0.2.62     ; use IP address in case network name resolution is not working
+port=143
+file = "payroll.dat"
+--------------------------------------------------------------------------------
+
+.`win.ini`
+--------------------------------------------------------------------------------
+; for 16-bit app support
+[fonts]
+[extensions]
+[mci extensions]
+[files]
+[Mail]
+MAPI=1
+CMCDLLNAME32=mapi32.dll
+CMC=1
+MAPIX=1
+MAPIXVER=1.0.0.1
+OLEMessaging=1
+[MCI Extensions.BAK]
+3g2=MPEGVideo
+3gp=MPEGVideo
+...
+[annie]
+WantPreview=1
+UseFrameRate=1
+FrameRate=333333
+--------------------------------------------------------------------------------
+
+.`system.ini`
+--------------------------------------------------------------------------------
+; for 16-bit app support
+[386Enh]
+woafont=dosapp.fon
+EGA80WOA.FON=EGA80WOA.FON
+EGA40WOA.FON=EGA40WOA.FON
+CGA80WOA.FON=CGA80WOA.FON
+CGA40WOA.FON=CGA40WOA.FON
+
+[drivers]
+wave=mmdrv.dll
+timer=timer.drv
+
+[mci]
+--------------------------------------------------------------------------------
+
+.`PidList.ini`
+--------------------------------------------------------------------------------
+;[connect name] will modify the connection if ADC.connect="name"
+;[connect default] will modify the connection if name is not found
+;...
+
+[connect default]
+;If we want to disable unknown connect values, we set Access to NoAccess
+Access=NoAccess
+
+[sql default]
+;If we want to disable unknown sql values, we set Sql to an invalid query.
+Sql=" "
+
+[connect CustomerDatabase]
+Access=ReadWrite
+Connect="DSN=AdvWorks"
+
+[sql CustomerById]
+Sql="SELECT * FROM Customers WHERE CustomerID = ?"
+
+[connect AuthorDatabase]
+Access=ReadOnly
+Connect="DSN=MyLibraryInfo;UID=MyUserID;PWD=MyPassword"
+
+[userlist AuthorDatabase]
+Administrator=ReadWrite
+
+[sql AuthorById]
+Sql="SELECT * FROM Authors WHERE au_id = ?"
+--------------------------------------------------------------------------------
+
+組態的最小單位是 Parameter - Name/Value Pair, 兩者之間用 = 分隔開來, 例如 server=localhost
+
+ * 某些實作的 Name/Value 可以用 : 做為分隔字元, 但比較少見
+ * Name 與 Value 兩側的空白 (包含等號兩側的空白) 是否被視為 Name 或 Value 的一部份, 會因實作而異. 參考 Windows 下許多系統 .ini 的寫法, 等號兩側是沒有空白的, 例如 Access=ReadOnly
+ * 當 Value 包含空白或其他有特殊意義的字元時 (例如 =, ; 等), 許多實作都支援用雙引號將 Value 括起來, 例如 Connect="DSN=AdvWorks"
+ * 如果 Value 有多行時, 有些實作接受在上一行尾加上 Backslash (\) 的表示法
+
+可以透過 Named Sections 將多個 Parameters 做分組
+
+ * Section 可以用 [<section_name>] 獨立一行來宣告, 緊接在後的 Parameters 都會被歸入該 Section, 除非遇到另一個 Section Declaration/Header 或 End-Of-File
+ * 不支援 Nested Sections, 不過有些人會從 Hierarchical Naming Convention 下手來達成類似的效果, 不過這就有賴應用程式本身做進一步的處理了...
+
+-------------------------------------------------------------------------------- 
+[A.B.C]
+P=V
+
+[A\B\C]
+P=V
+
+[A]
+B,C,P=V
+-------------------------------------------------------------------------------- 
+
+註解是單獨以 `;` 開頭的一行。某些實作以 `#` 做為引導註解的字元, 甚至可以加在 Parameter 或 Section Declaration 之後 (通常前面會隔一個空白字元)
+
+== 參考資料 ==
+
+ * http://www.cloanto.com/specs/ini/[Cloanto Implementation of INI File Format]
+

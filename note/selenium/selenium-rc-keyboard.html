@@ -1,0 +1,210 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Selenium][RC] 鍵盤輸入與控制</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="selenium-rc-keyboard.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="selenium.html">Selenium</a> / <a href="selenium-rc.html">RC</a> / 鍵盤輸入與控制</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>主要跟鍵盤輸入／控制相關的 API 有：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>type(locator, value)</code> - 直接設定表單控制項的文字內容，不會引發 keystroke event。
+</p>
+</li>
+<li>
+<p>
+<code>type_keys(locator, value)</code> - 模擬使用者敲鍵盤的動作，會引發一連串的 keystroke event。
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p><code>type()</code> 跟 <code>type_keys()</code> 兩者最大的不同在於 “會不會引發 keystroke event”，如果需要藉由這些 event 來引發某些反應，就必須採用 <code>type_keys()</code>。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">在自動化測試時，建議優先考慮 <code>type_keys()</code>，儘可能模擬使用者的行為，而且不該假設 SUT 是否會根據 event 做出某些反應。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>實驗發現，<code>type_keys()</code> 雖然帶有 <em>locator</em> 參數，但還是得明確呼叫 <code>focus()</code> 先取得焦點才會有作用。取得焦點時，游標預設會停在文字內容的後面，所以 <code>type_keys()</code> 輸入的文字會附加在後面，如果想要事先清掉文字內容，可以透過 <code>type()</code> 來達成：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>locator = 'locator-to-a-form-element'
+sel.type(locator, '')
+sel.focus(locator)
+sel.type_keys(locator, 'new text here')</code></pre>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">
+<div class="paragraph"><p><code>type_keys()</code> 不能作用在 Firefox 12+，<a href="http://code.google.com/p/selenium/issues/detail?id=3861">Issue 3861</a> 提到的 <code>send_keys()</code> 也一直沒出現在官方文件（只加在 Selenium IDE），昇級到最新版的 selenium 2.26.0 也沒用。</p></div>
+<div class="paragraph"><p>既然 <code>type_keys()</code> 只是多了 keystroke event，只好暫時用 <code>type()</code> 來頂著：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>locator = 'locator-to-a-form-element'
+sel.focus(locator)
+sel.type(locator, 'new text here')
+sel.fire_event(locator, 'blur')</code></pre>
+</div></div>
+</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>除了上面兩個相對高階的 API，也支援許多低階的控制：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>key_down(locator, keySequence)</code>
+</p>
+</li>
+<li>
+<p>
+<code>key_down_native(keycode)</code>
+</p>
+</li>
+<li>
+<p>
+<code>key_press(locator, keySequence)</code>
+</p>
+</li>
+<li>
+<p>
+<code>key_press_native(keycode)</code>
+</p>
+</li>
+<li>
+<p>
+<code>key_up(locator, keySequence)</code>
+</p>
+</li>
+<li>
+<p>
+<code>key_up_native(keycode)</code>
+</p>
+</li>
+<li>
+<p>
+<code>meta_key_down()</code>
+</p>
+</li>
+<li>
+<p>
+<code>meta_key_up()</code>
+</p>
+</li>
+<li>
+<p>
+<code>alt_key_down()</code>
+</p>
+</li>
+<li>
+<p>
+<code>alt_key_up()</code>
+</p>
+</li>
+<li>
+<p>
+<code>control_key_down()</code> - 多選時要搭配 Ctrl 跟 Click 做多選
+</p>
+</li>
+<li>
+<p>
+<code>control_key_up()</code>
+</p>
+</li>
+<li>
+<p>
+<code>focus(locator)</code> - 鍵盤的輸入跟 focus 很有關聯。之前送出 <code>\t</code> 無法移開焦點（<code>key_press_native(9)</code> 也沒用），只好讓另一個 element 取得焦點。最後發現 <code>fire_event(locator, 'blur')</code> 會有作用&#8230;
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://selenium.googlecode.com/svn/trunk/docs/api/py/selenium/selenium.selenium.html">selenium.selenium — Selenium 2.0 documentation</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">其他文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://code.google.com/p/selenium/issues/detail?id=3861">Issue 3861 - selenium - Selenium IDE. Command TypeKeys does not work in FF 12.0 - Browser automation framework - Google Project Hosting</a> (2012-05-07) - IDE 增加了 <code>send_keys()</code>。
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-10 21:23:33 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

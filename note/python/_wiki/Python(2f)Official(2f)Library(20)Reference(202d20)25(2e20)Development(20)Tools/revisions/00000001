@@ -1,0 +1,493 @@
+= Python / Official / Library Reference - 25. Development Tools =
+http://docs.python.org/library/development.html
+<<TableOfContents>>
+
+== 25.3. unittest — Unit testing framework ==
+http://docs.python.org/library/unittest.html @2010/08/07
+
+New in version 2.1.
+
+__The Python unit testing framework, sometimes referred to as “!PyUnit,” is a Python language version of JUnit,__ by Kent Beck and Erich Gamma. JUnit is, in turn, a Java version of Kent’s Smalltalk testing framework. Each is the de facto standard unit testing framework for its respective language.
+
+__`unittest` supports test automation, sharing of setup and shutdown code for tests, aggregation of tests into collections, and independence of the tests from the ''reporting framework'' (這是 Test Runner 的責任).__ The `unittest` module provides classes that make it easy to support these qualities for a set of tests.
+
+To achieve this, `unittest` supports some important concepts:
+
+ * test fixture - __A test fixture represents the preparation needed to perform one or more tests, and any associate cleanup actions.__ This may involve, for example, creating temporary or proxy databases, directories, or starting a server process.
+
+ * test case - __A test case is the smallest unit of testing. It checks for a specific response to a particular set of inputs. `unittest` provides a base class, `TestCase`, which may be used to create new test cases.__
+
+ * test suite - A test suite is a collection of test cases, test suites, or both. It is used to aggregate tests that ''should'' be executed together. (聽起來好像支援 test case dependency[?])
+
+ * test runner - __A test runner is a component which orchestrates the execution of tests and provides the outcome to the user.__ The runner may use a graphical interface, a textual interface, or return a special value to indicate the results of executing the tests.
+
+__The test case and test fixture concepts are supported through the `TestCase` and `FunctionTestCase` classes; the former should be used when creating new tests, and the latter can be used when integrating existing test code with a unittest-driven framework. When building test fixtures using `TestCase`, the `setUp()` and `tearDown()` methods can be overridden to provide initialization and cleanup for the fixture. With `FunctionTestCase`, existing functions can be passed to the constructor for these purposes. When the test is run, the fixture initialization is run first; if it succeeds, the cleanup method is run after the test has been executed, regardless of the outcome of the test. '''Each instance of the `TestCase` will only be used to run a single test method, so a new fixture is created for each test.''')__
+
+Test suites are implemented by the `TestSuite` class. This class allows individual tests and test suites to be aggregated; when the suite is executed, all tests added directly to the suite and in “child” test suites are run.
+
+__A test runner is an object that provides a single method, `run()`, which accepts a `TestCase` or `TestSuite` object as a parameter, and returns a ''result object''. The class `TestResult` is provided for use as the result object. `unittest` provides the `TextTestRunner` as an example test runner which reports test results on the standard error stream by default.__ Alternate runners can be implemented for other environments (such as graphical environments) without any need to derive from a specific class.
+
+See Also:
+
+ * Module `doctest` - Another test-support module with a very different flavor.
+
+ * http://pypi.python.org/pypi/unittest2[unittest2`: A backport of new unittest features for Python 2.4-2.6] - __Many new features were added to `unittest` in Python 2.7, including ''test discovery''. `unittest2` allows you to use these features with earlier versions of Python.__
+
+ * http://www.xprogramming.com/testfram.htm[Simple Smalltalk Testing: With Patterns] - Kent Beck’s original paper on testing frameworks using the pattern shared by `unittest`.
+
+ * http://code.google.com/p/python-nose/[Nose] and http://pytest.org/[py.test] - Third-party unittest frameworks with a lighter-weight syntax for writing tests. For example, `assert func(10) == 42`.
+
+ * http://pycheesecake.org/wiki/PythonTestingToolsTaxonomy[The Python Testing Tools Taxonomy] - An extensive list of Python testing tools including functional testing frameworks and mock object libraries.
+
+ * http://lists.idyll.org/listinfo/testing-in-python[Testing in Python Mailing List] - A special-interest-group for discussion of testing, and testing tools, in Python.
+
+=== 25.3.1. Basic example ===
+
+The `unittest` module provides a rich set of tools for constructing and running tests. This section demonstrates that a small subset of the tools suffice to meet the needs of most users.
+
+Here is a short script to test three functions from the `random` module:
+
+ {{{
+import random
+import unittest
+
+class TestSequenceFunctions(unittest.TestCase):
+
+    def setUp(self):
+        self.seq = range(10)
+
+    def test_shuffle(self): # 跟 setUp 的命名慣例顯然不同
+        # make sure the shuffled sequence does not lose any elements
+        random.shuffle(self.seq)
+        self.seq.sort()
+        self.assertEqual(self.seq, range(10))
+
+        # should raise an exception for an immutable sequence
+        self.assertRaises(TypeError, random.shuffle, (1,2,3))
+
+    def test_choice(self):
+        element = random.choice(self.seq)
+        self.assertTrue(element in self.seq)
+
+    def test_sample(self):
+        with self.assertRaises(ValueError):
+            random.sample(self.seq, 20)
+        for element in random.sample(self.seq, 5):
+            self.assertTrue(element in self.seq)
+
+if __name__ == '__main__':
+    unittest.main()
+ }}}
+
+__A testcase is created by subclassing `unittest.TestCase`. The three individual tests are defined with methods whose names start with the letters `test`. This naming convention informs the test runner about which methods represent tests.__
+
+The crux of each test is a call to `assertEqual()` to check for an expected result; `assertTrue()` to verify a condition; or `assertRaises()` to verify that an expected exception gets raised. __These methods are used instead of the `assert` statement so the test runner can accumulate all test results and produce a report. (這跟 "can accumulate" 完全無關, 是因為 `unittest.failureException` 預設指向的 `AssertionError` 可能被改掉, 因此 `assert` 丟出的 `AssertionError` 不一定能被視為 Failure, 那麼 Test Runner 就無法正確分別統計出 Failure 與 Error 的結果了...)__
+
+When a `setUp()` method is defined, the test runner will run that method prior to each test. Likewise, if a `tearDown()` method is defined, the test runner will invoke that method after each test. In the example, `setUp()` was used to create a fresh sequence for each test.
+
+The final block shows a simple way to run the tests. __`unittest.main()` provides a command line interface to the test script. (其實 `unittest.main` 指向 `TestProgram` 類別, 因此 `unittest.main()` 就會呼叫到 `TestProgram.__init__()`)__ When run from the command line, the above script produces an output that looks like this:
+
+ {{{
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.000s
+
+OK
+ }}}
+
+__Instead of `unittest.main()`, there are other ways to run the tests with a finer level of control, less terse output, and no requirement to be run from the command line.__ For example, the last two lines may be replaced with:
+
+ {{{
+suite = unittest.TestLoader().loadTestsFromTestCase(TestSequenceFunctions)
+unittest.TextTestRunner(verbosity=2).run(suite)
+ }}}
+
+Running the revised script from the interpreter or another script produces the following output:
+
+ {{{
+test_choice (__main__.TestSequenceFunctions) ... ok
+test_sample (__main__.TestSequenceFunctions) ... ok
+test_shuffle (__main__.TestSequenceFunctions) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.110s
+
+OK
+ }}}
+
+The above examples show the most commonly used `unittest` features which are sufficient to meet many everyday testing needs. The remainder of the documentation explores the full feature set from first principles.
+
+=== 25.3.2. Command Line Interface ===
+
+The `unittest` module can be used from the command line to run tests from modules, classes or even individual test methods:
+
+ {{{
+python -m unittest test_module1 test_module2
+python -m unittest test_module.TestClass
+python -m unittest test_module.TestClass.test_method
+ }}}
+
+You can pass in a list with any combination of module names, and fully qualified class or method names.
+
+You can run tests with more detail (higher verbosity) by passing in the `-v` flag:
+
+ {{{
+python -m unittest -v test_module
+ }}}
+
+For a list of all the command line options:
+
+ {{{
+python -m unittest -h
+ }}}
+
+__Changed in version 2.7: In earlier versions it was only possible to run individual test methods and not modules or classes.__
+
+==== 25.3.2.1. failfast, catch and buffer command line options ====
+
+`unittest` supports three command options.
+
+ * `-b` / `--buffer` - The standard output and standard error streams are buffered during the test run. __'''Output during a passing test is discarded. Output is echoed normally on test fail or error and is added to the failure messages. (搭配 Logging 時尤其好用; 測試失敗時我們很需要透過 Logged Message 找出可能出錯的地方, 但測試成功時就不用了...)'''__
+
+ * `-c` / `--catch` - Control-C during the test run waits for the current test to end and then reports all the results so far. A second control-C raises the normal `KeyboardInterrupt` exception. See Signal Handling for the functions that provide this functionality.
+
+ * `-f` / `--failfast` - Stop the test run on the first error or failure.
+
+New in version 2.7: The command line options `-c`, `-b` and `-f` were added.
+
+__The command line can also be used for test discovery, for running all of the tests in a project or just a subset.__
+
+=== 25.3.3. Test Discovery ===
+
+:::
+
+=== 25.3.4. Organizing test code ===
+
+The basic building blocks of unit testing are test cases — ''single scenarios'' that must be set up and checked for correctness. In `unittest`, test cases are represented by instances of `unittest`‘s `TestCase` class. To make your own test cases you must write subclasses of `TestCase`, or use `FunctionTestCase`.
+
+__'''An instance of a `TestCase`-derived class is an object that can completely run a single test method, together with optional set-up and tidy-up code.'''__
+
+__The testing code of a `TestCase` instance should be entirely ''self contained'', such that it can be run either in isolation or in arbitrary combination with any number of other test cases.__
+
+The simplest `TestCase` subclass will simply override the `runTest()` method in order to perform specific testing code:
+
+ {{{
+import unittest
+
+class DefaultWidgetSizeTestCase(unittest.TestCase):
+    def runTest(self):
+        widget = Widget('The widget')
+        self.assertEqual(widget.size(), (50, 50), 'incorrect default size')
+ }}}
+
+Note that in order to test something, we use the one of the `assert*()` methods provided by the `TestCase` base class. __If the test fails, an exception will be raised, and `unittest` will identify the test case as a ''failure''. Any other exceptions will be treated as ''errors''. This helps you identify where the problem is: failures are caused by incorrect results - a 5 where you expected a 6. Errors are caused by incorrect code__ - e.g., a `TypeError` caused by an incorrect function call.
+
+The way to run a test case will be described later. For now, note that to construct an instance of such a test case, we call its constructor without arguments:
+
+ {{{
+testCase = DefaultWidgetSizeTestCase()
+ }}}
+
+Now, such test cases can be numerous, and their set-up can be repetitive. In the above case, constructing a `Widget` in each of 100 Widget test case subclasses would mean unsightly duplication.
+
+Luckily, we can factor out such set-up code by implementing a method called `setUp()`, which the testing framework will automatically call for us when we run the test:
+
+ {{{
+import unittest
+
+class SimpleWidgetTestCase(unittest.TestCase):
+    def setUp(self):
+        self.widget = Widget('The widget')
+
+class DefaultWidgetSizeTestCase(SimpleWidgetTestCase):
+    def runTest(self):
+        self.assertEqual(self.widget.size(), (50,50),
+                         'incorrect default size')
+
+class WidgetResizeTestCase(SimpleWidgetTestCase):
+    def runTest(self):
+        self.widget.resize(100,150)
+        self.assertEqual(self.widget.size(), (100,150),
+                         'wrong size after resize')
+ }}}
+
+__If the `setUp()` method raises an exception while the test is running, the framework will consider the test to have suffered an error, and the `runTest()` method will not be executed.__
+
+Similarly, we can provide a `tearDown()` method that tidies up after the `runTest()` method has been run:
+
+ {{{
+import unittest
+
+class SimpleWidgetTestCase(unittest.TestCase):
+    def setUp(self):
+        self.widget = Widget('The widget')
+
+    def tearDown(self):
+        self.widget.dispose()
+        self.widget = None
+ }}}
+
+__If `setUp()` succeeded, the `tearDown()` method will be run whether `runTest()` succeeded or not.__
+
+__Such a working environment for the testing code is called a ''fixture''.__
+
+Often, many small test cases will use the same fixture. In this case, we would end up subclassing `SimpleWidgetTestCase` into many small one-method classes such as `DefaultWidgetSizeTestCase`. This is time-consuming and discouraging, so in the same vein as JUnit, `unittest` provides a simpler mechanism:
+
+ {{{
+import unittest
+
+class WidgetTestCase(unittest.TestCase):
+    def setUp(self):
+        self.widget = Widget('The widget')
+
+    def tearDown(self):
+        self.widget.dispose()
+        self.widget = None
+
+    def test_default_size(self):
+        self.assertEqual(self.widget.size(), (50,50),
+                         'incorrect default size')
+
+    def test_resize(self):
+        self.widget.resize(100,150)
+        self.assertEqual(self.widget.size(), (100,150),
+                         'wrong size after resize')
+ }}}
+
+__Here we have not provided a `runTest()` method, but have instead provided two different test methods. Class instances will now each run one of the `test_*()` methods (實驗確認只要是 `test` 開頭的即可, 後面的底線不一定要有), with `self.widget` created and destroyed separately for each instance.__ When creating an instance we must specify the test method it is to run. We do this by passing the method name in the constructor:
+
+ {{{
+defaultSizeTestCase = WidgetTestCase('test_default_size')
+resizeTestCase = WidgetTestCase('test_resize')
+ }}}
+
+Test case instances are grouped together according to the features they test. `unittest` provides a mechanism for this: the test suite, represented by `unittest`‘s `TestSuite` class:
+
+ {{{
+widgetTestSuite = unittest.TestSuite()
+widgetTestSuite.addTest(WidgetTestCase('test_default_size'))
+widgetTestSuite.addTest(WidgetTestCase('test_resize'))
+ }}}
+
+For the ease of running tests, as we will see later, it is a good idea to provide in each test module a ''callable object'' that returns a pre-built test suite:
+
+ {{{
+def suite():
+    suite = unittest.TestSuite()
+    suite.addTest(WidgetTestCase('test_default_size'))
+    suite.addTest(WidgetTestCase('test_resize'))
+    return suite
+ }}}
+
+or even:
+
+ {{{
+def suite():
+    tests = ['test_default_size', 'test_resize']
+
+    return unittest.TestSuite(map(WidgetTestCase, tests))
+ }}}
+
+__Since it is a common pattern to create a `TestCase` subclass with many similarly named test functions, `unittest` provides a `TestLoader` class that can be used to automate the process of creating a test suite and populating it with individual tests.__ For example,
+
+ {{{
+suite = unittest.TestLoader().loadTestsFromTestCase(WidgetTestCase)
+ }}}
+
+will create a test suite that will run `WidgetTestCase.test_default_size()` and `WidgetTestCase.test_resize`. __`TestLoader` uses the `'test'` method name prefix to identify test methods automatically.__
+
+Note that the order in which the various test cases will be run is determined by sorting the test function names with the built-in `cmp()` function.
+
+Often it is desirable to group suites of test cases together, so as to run tests for the whole system at once. This is easy, since `TestSuite` instances can be added to a `TestSuite` just as `TestCase` instances can be added to a `TestSuite`:
+
+ {{{
+suite1 = module1.TheTestSuite()
+suite2 = module2.TheTestSuite()
+alltests = unittest.TestSuite([suite1, suite2])
+ }}}
+
+__You can place the definitions of test cases and test suites in the same modules as the code they are to test (such as `widget.py`), but there are several advantages to placing the test code in a separate module, such as `test_widget.py`:__
+
+ * The test module can be run standalone from the command line.
+ * __The test code can more easily be separated from shipped code.__
+ * There is less temptation to change test code to fit the code it tests without a good reason.
+ * __'''Test code should be modified much less frequently than the code it tests.'''__
+ * Tested code can be refactored more easily.
+ * Tests for modules written in C must be in separate modules anyway, so why not be consistent?
+ * If the testing strategy changes, there is no need to change the source code.
+
+=== 25.3.5. Re-using old test code ===
+
+:::
+
+=== 25.3.7. Classes and functions ===
+
+This section describes in depth the API of `unittest`.
+
+==== 25.3.7.1. Test cases ====
+
+'''`class unittest.TestCase([methodName])`'''
+
+__Instances of the `TestCase` class represent the ''smallest testable units'' in the `unittest` universe. This class is intended to be used as a base class, with specific tests being implemented by concrete subclasses. '''This class implements the interface needed by the test runner to allow it to drive the test, and methods that the test code can use to check for and report various kinds of failure.'''__
+
+Each instance of `TestCase` will run a single test method: the method named `methodName`. If you remember, we had an earlier example that went something like this:
+
+ {{{
+def suite():
+    suite = unittest.TestSuite()
+    suite.addTest(WidgetTestCase('test_default_size'))
+    suite.addTest(WidgetTestCase('test_resize'))
+    return suite
+ }}}
+
+Here, we create two instances of `WidgetTestCase`, each of which runs a single test.
+
+__`methodName` defaults to `runTest()`.__
+
+__`TestCase` instances provide three groups of methods: one group used to run the test, another used by the test implementation to check conditions and report failures, and some inquiry methods allowing information about the test itself to be gathered.__
+
+Methods in the first group (running the test) are:
+
+'''`setUp()`'''
+
+Method called to prepare the test fixture. This is called immediately before calling the test method; __any exception raised by this method will be considered an error rather than a test failure.__ The default implementation does nothing.
+
+'''`tearDown()`'''
+
+Method called immediately after the test method has been called and the result recorded. __This is called even if the test method raised an exception, so the implementation in subclasses may need to be particularly careful about checking internal state. Any exception raised by this method will be considered an error rather than a test failure. This method will only be called if the `setUp()` succeeds, regardless of the outcome of the test method.__ The default implementation does nothing.
+
+'''`setUpClass()`'''
+
+A class method called before tests in an individual class run. `setUpClass` is called with the class as the only argument and must be decorated as a `classmethod()`:
+
+ {{{
+@classmethod
+def setUpClass(cls):
+    ...
+ }}}
+
+See Class and Module Fixtures for more details.
+
+New in version 2.7.
+
+'''`tearDownClass()`'''
+
+A class method called after tests in an individual class have run. `tearDownClass` is called with the class as the only argument and must be decorated as a `classmethod()`:
+
+ {{{
+@classmethod
+def tearDownClass(cls):
+    ...
+ }}}
+
+See Class and Module Fixtures for more details.
+
+New in version 2.7.
+
+'''`run([result])`'''
+
+__Run the test, collecting the result into the test result object passed as `result`.__ If `result` is omitted or `None`, a temporary result object is created (by calling the `defaultTestResult()` method) and used. __The result object is not returned to `run()`‘s caller.__
+
+The same effect may be had by simply calling the `TestCase` instance.
+
+'''`skipTest(reason)`'''
+
+Calling this during a test method or `setUp()` skips the current test. See Skipping tests and expected failures for more information.
+
+New in version 2.7.
+
+'''`debug()`'''
+
+Run the test without collecting the result. This allows exceptions raised by the test to be propagated to the caller, and can be used to support running tests under a debugger. (給 Eclipse 之類的 IDE 使用...)
+
+The test code can use any of the following methods to check for and report failures.
+
+'''`assertTrue(expr[, msg])`'''
+'''`assert_(expr[, msg])`'''
+'''`failUnless(expr[, msg])`'''
+
+Signal a test failure if `expr` is false; the explanation for the failure will be `msg` if given, otherwise it will be `None`.
+
+__Deprecated since version 2.7: `failUnless()` and `assert_()`; use `assertTrue()`. (命名慣例逐漸趨向於跟 JUnit 一致)__
+
+'''`assertEqual(first, second[, msg])`'''
+'''`failUnlessEqual(first, second[, msg])`'''
+
+Test that `first` and `second` are equal. If the values do not compare equal, the test will fail with the explanation given by `msg`, or `None`. __Note that using `assertEqual()` improves upon doing the comparison as the first parameter to `assertTrue()`: the default value for `msg` include representations of both `first` and `second`.__
+
+__In addition, if `first` and `second` are the exact same type and one of `list`, `tuple`, `dict`, `set`, `frozenset` or `unicode` or any type that a subclass registers with `addTypeEqualityFunc()` the ''type specific equality function'' will be called in order to generate a more useful default error message.__
+
+Changed in version 2.7: Added the automatic calling of type specific equality function.
+
+Deprecated since version 2.7: `failUnlessEqual()`; use `assertEqual()`.
+
+:::
+
+'''`assertFalse(expr[, msg])`'''
+'''`failIf(expr[, msg])`'''
+
+The inverse of the `assertTrue()` method is the `assertFalse()` method. This signals a test failure if `expr` is true, with `msg` or `None` for the error message.
+
+Deprecated since version 2.7: `failIf()`; use `assertFalse()`.
+
+'''`fail([msg])`'''
+
+Signals a test failure unconditionally, with `msg` or `None` for the error message.
+
+:::
+
+=== 25.3.8. Class and Module Fixtures ===
+
+__Class and module level fixtures are implemented in `TestSuite`.__ When the test suite encounters a test from a new class then `tearDownClass()` from the previous class (if there is one) is called, followed by `setUpClass()` from the new class.
+
+Similarly if a test is from a different module from the previous test then `tearDownModule` from the previous module is run, followed by `setUpModule` from the new module.
+
+After all the tests have run the final `tearDownClass` and `tearDownModule` are run.
+
+__Note that shared fixtures do not play well with [potential] features like test parallelization and they break ''test isolation''.__ They should be used with care.
+
+__The default ordering of tests created by the `unittest` test loaders is to group all tests from the same modules and classes together. This will lead to `setUpClass` / `setUpModule` (etc) being called exactly once per class and module.__ If you randomize the order, so that tests from different modules and classes are adjacent to each other, then these shared fixture functions may be called multiple times in a single test run.
+
+Shared fixtures are not intended to work with suites with non-standard ordering. A `BaseTestSuite` still exists for frameworks that don’t want to support shared fixtures.
+
+__If there are any exceptions raised during one of the ''shared fixture functions'' the test is reported as an error.__ Because there is no corresponding test instance an `_ErrorHolder` object (that has the same interface as a `TestCase`) is created to represent the error. If you are just using the standard `unittest` test runner then this detail doesn’t matter, but if you are a framework author it may be relevant.
+
+==== 25.3.8.1. setUpClass and tearDownClass ====
+
+These must be implemented as ''class methods'':
+
+ {{{
+import unittest
+
+class Test(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls._connection = createExpensiveConnectionObject()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._connection.destroy()
+ }}}
+
+If you want the `setUpClass` and `tearDownClass` on base classes called then you must call up to them yourself. The implementations in `TestCase` are empty.
+
+If an exception is raised during a `setUpClass` then the tests in the class are not run and the `tearDownClass` is not run. Skipped classes will not have `setUpClass` or `tearDownClass` run. __If the exception is a `SkipTest` exception then the class will be reported as having been skipped instead of as an error.__
+
+==== 25.3.8.2. setUpModule and tearDownModule ====
+
+These should be implemented as ''functions'':
+
+ {{{
+def setUpModule():
+    createConnection()
+
+def tearDownModule():
+    closeConnection()
+ }}}
+
+If an exception is raised in a `setUpModule` then none of the tests in the module will be run and the `tearDownModule` will not be run. If the exception is a `SkipTest` exception then the module will be reported as having been skipped instead of as an error.
+
+=== 25.3.9. Signal Handling ===
+
+:::
+

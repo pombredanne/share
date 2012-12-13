@@ -1,0 +1,361 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Python][Windows] 存取 Windows Registry</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="registry.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="../python.html">Python</a> / <a href="windows.html">Windows</a> / 存取 Windows Registry</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>要從 Python 存取 <a href="../../windows/registry.html">Windows Registry</a>，可以透過 Python 2.0 就有的 <code>_winreg</code> 模組。它將 <a href="http://en.wikipedia.org/wiki/Windows_Registry#Programs_or_scripts">Windows Registry API</a> 重新包裝過，常用的方法有：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>OpenKey(key, sub_key[, res[, sam]])</code>
+</p>
+</li>
+<li>
+<p>
+<code>QueryValueEx(key, value_name)</code>
+</p>
+</li>
+<li>
+<p>
+<code>SetValueEx(key, value_name, reserved, type, value)</code>
+</p>
+</li>
+</ul></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">這裡 <code>OpenKey</code>, <code>QueryValueEx</code> 等命名方式其實是源自於 Registry API，所以沒什麼好奇怪的。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>要操作 registry，必須先取得 registry handle 才行（也就是上面的 <em>key</em> 參數）。<code>_winreg</code> 已經為標準的 root keys 事先建好對應的 <code>HKEY_*</code> 常數：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>HKEY_CLASSES_ROOT</code>
+</p>
+</li>
+<li>
+<p>
+<code>HKEY_CURRENT_USER</code>
+</p>
+</li>
+<li>
+<p>
+<code>HKEY_LOCAL_MACHINE</code>（HKLM）
+</p>
+</li>
+<li>
+<p>
+<code>HKEY_USERS</code>
+</p>
+</li>
+<li>
+<p>
+<code>HKEY_PERFORMANCE_DATA</code>
+</p>
+</li>
+<li>
+<p>
+<code>HKEY_CURRENT_CONFIG</code>
+</p>
+</li>
+<li>
+<p>
+<code>HKEY_DYN_DATA</code>
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>其他的 subkey 則必須間接透過 <code>OpenKey()</code> 來取得（搭配上述這些 root keys），例如：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; from _winreg import OpenKey, QueryValueEx, HKEY_LOCAL_MACHINE
+&gt;&gt;&gt; handle = OpenKey(HKEY_LOCAL_MACHINE, 'SOFTWARE')
+&gt;&gt;&gt; handle = OpenKey(HKEY_LOCAL_MACHINE, 'software')
+&gt;&gt;&gt; type(handle)
+&lt;type 'PyHKEY'&gt; <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+&gt;&gt;&gt; type(HKEY_LOCAL_MACHINE)
+&lt;type 'long'&gt;
+&gt;&gt;&gt;
+&gt;&gt;&gt; handle = OpenKey(HKEY_LOCAL_MACHINE, 'SOFTWAREXXX')
+Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+WindowsError: [Error 2] The system cannot find the file specified <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+&gt;&gt;&gt;
+&gt;&gt;&gt; jre_key = OpenKey(HKEY_LOCAL_MACHINE, r'SOFTWARE\JavaSoft\Java Runtime Environment') <img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+&gt;&gt;&gt; QueryValueEx(jre_key, 'CurrentVersion')
+(u'1.7', 1)
+&gt;&gt;&gt;
+&gt;&gt;&gt; QueryValueEx(jre_key, 'CurrentVersionXXX') <img src="../../../_asciidoc/images/icons/callouts/4.png" alt="4" />
+Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+WindowsError: [Error 2] The system cannot find the file specified</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+<code>OpenKey</code> 傳回 registry handle，跟 <code>HKEY_*</code> 的型態不同。<em>sub_key</em> 傳入 subkey 名稱，不分大小寫。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+<em>sub_key</em> 不存在時會丟出 <code>WindowsError</code>。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+<em>sub_key</em> 要表示階層關係時，可以將多個 subkey 用 <code>\</code> 分隔開來。（<code>QueryValueEx()</code> 的用法之後會做說明）
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/4.png" alt="4" /></td><td>
+指定的 registry value 不存在時，一樣丟出錯誤代碼為 2 的 <code>WindowsError</code>。
+</td></tr>
+</table></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">
+<div class="title">Open vs. Close</div>
+<div class="paragraph"><p>即然有 <code>OpenKey()</code>，是否是有對應的 <code>CloseKey()</code> 呢？答案是有的。</p></div>
+<div class="paragraph"><p>為了能儘早釋放資源，能夠明確呼叫 <code>_winreg.CloseKey(key)</code> 最好。但如果沒有明確做這個動作，Python 也會在回收 registry handle 時，明確做 close 的動作。</p></div>
+<div class="paragraph"><p>另外 registry handle 支援 context protocol，可以搭配 <code>with</code> 來使用：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>with OpenKey(HKEY_LOCAL_MACHINE, r'SOFTWARE\JavaSoft\Java Runtime Environment') as jre_key:
+    version = QueryValueEx(jre_key, 'CurrentVersion')[1]</code></pre>
+</div></div>
+<div class="paragraph"><p>一旦離開這個 context，就會自動關閉該 registry handle。</p></div>
+</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>到這裡，我們已經說明了 <em>key</em> 跟 <em>sub_key</em> 兩個參數。接下來說明剩下的兩個參數－<em>res</em> 與 <em>sam</em>。</p></div>
+<div class="paragraph"><p><em>res</em> 固定要傳入 <code>0</code>，所以 <code>OpenKey()</code> 的語法可以簡化成：</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>OpenKey(key, sub_key[, 0[, sam]])</code></pre>
+</div></div>
+<div class="paragraph"><p>至於 <em>sam</em> （應該是 <em>Security Access Mask</em> 的縮寫），則是用來控制操作 registry 前所要獲取的權限，<code>_winreg</code> 常用的常數有：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>KEY_READ</code>（預設值）
+</p>
+</li>
+<li>
+<p>
+<code>KEY_WRITE</code>
+</p>
+</li>
+<li>
+<p>
+<code>KEY_ALL_ACCESS</code>
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>實務上只要獲取<em>夠用</em>的權限就好，否則遇到系統安全控管比較嚴格的情況，連單純想要讀取 registry value 都會出狀況。例如 Windows Vista 開始引進的 <a href="../../windows/uac.html">UAC</a>，即便登入的身份是 Administrator，但如果應用程式沒有成為 elevated application，還是會遇到存取被拒的狀況：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; OpenKey(HKEY_LOCAL_MACHINE, r'SOFTWARE', KEY_WRITE) <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+WindowsError: [Error 5] Access is denied
+
+&gt;&gt;&gt; OpenKey(HKEY_LOCAL_MACHINE, r'SOFTWARE', KEY_READ)  <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+&gt;&gt;&gt;</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+注意權限的控制是在取得 registry handle 時。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+只要選對 access mask 就好了。
+</td></tr>
+</table></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">2012-05-04 在 Windows 8 Consumer Preview build 8250 上發現（搭配 Python 2.7.3），即便把 UAC 停掉之後，<code>KEY_WRITE</code> 還是會丟出 "Access is denied" 的錯誤。不知道之前 Windows 7 有沒有這個問題?</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_讀寫_registry_value_與處理不同的資料型態">讀寫 Registry Value 與處理不同的資料型態</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<code>(data, type) = QueryValueEx(key, value_name)</code>
+</p>
+</li>
+<li>
+<p>
+<code>SetValueEx(key, value_name, reserved, type, value)</code>
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>先從 <code>QueryValueEx()</code> 開始講起：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; ff_key = OpenKey(HKEY_LOCAL_MACHINE, r'SOFTWARE\Mozilla\Mozilla Firefox') <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+&gt;&gt;&gt; named_value = QueryValueEx(ff_key, 'CurrentVersion')
+&gt;&gt;&gt; named_value[0], named_value[1], named_value[1] == REG_SZ <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+(u'5.0 (en-US)', 1, True)
+&gt;&gt;&gt; print REG_SZ
+&gt;&gt;&gt; QueryValueEx(ff_key, '')                                 <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+(u'5.0', 1)
+&gt;&gt;&gt; QueryValueEx(ff_key, None)
+(u'5.0', 1)</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+<code>QueryKey()</code> 的回傳值是一個 2-tuple - (data, type)。其中 <em>data</em> 是 registry value 的內容，其型態則由 <em>type</em> 來決定。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+要存取 defalut/unnamed value 時，只要將空字串或 <code>None</code> 做為 value name 即可。
+</td></tr>
+</table></div>
+<div class="paragraph"><p><em>type</em> 的值會是 <code>_winreg</code> 定義好的常數之一，常用的有：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>REG_SZ</code> (1) - 字串。
+</p>
+</li>
+<li>
+<p>
+<code>REG_EXPAND_SZ</code> (2) - 也是字串，只是如果內含 environment variable 的參照（例如 <code>%TMP%</code>），讀取時會自動解開。
+</p>
+</li>
+<li>
+<p>
+<code>REG_BINARY</code> (3) - 二進位資料。
+</p>
+</li>
+<li>
+<p>
+<code>REG_DWORD</code> (4) - 數字（32-bit）。
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>至於 <code>SetValueEx()</code>，其中 <em>reserved</em> 固定要傳入 <code>0</code>，所以 <code>SetValueEx()</code> 的語法可以簡化成：</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>SetValueEx(key, value_name, 0, type, value)</code></pre>
+</div></div>
+<div class="paragraph"><p>一般來說，registry value 的 type 是不能變動的，所以 <code>SetValueEx()</code> 要傳入 <em>type</em> 的設計看起來有點怪&#8230;</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_延伸閱讀">延伸閱讀</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="registry-64bit.html">處理 32/64-bit 的差異（WoW64）</a>
+</p>
+</li>
+<li>
+<p>
+<a href="registry-exists.html">檢查 Registry Key/Value 是否存在</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://en.wikipedia.org/wiki/Windows_Registry">Windows Registry - Wikipedia, the free encyclopedia</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://docs.python.org/library/_winreg.html">_winreg – Windows registry access</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">其他文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.blog.pythonlibrary.org/2010/03/20/pythons-_winreg-editing-the-windows-registry/">Python’s _winreg: Editing the Windows Registry « The Mouse Vs. The Python</a> (2010-03-20)
+</p>
+</li>
+<li>
+<p>
+<a href="http://code.activestate.com/recipes/476229-yarw-yet-another-registry-wrapper/">YARW - Yet Another Registry Wrapper « Python recipes « ActiveState Code</a> (2006-04-04)
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-05 15:22:30 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

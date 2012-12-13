@@ -1,0 +1,49 @@
+= sed / Official / User's Manual =
+http://www.gnu.org/software/sed/manual/sed.html @2009/12/28
+<<TableOfContents>>
+
+This file documents version 4.1d of GNU `sed`, a stream editor. 
+
+== 1. Introduction ==
+
+`sed` is a stream editor. A stream editor is used to perform basic text ''transformations'' on an input stream (a file or input from a pipeline). While in some ways similar to an editor which permits scripted edits (such as `ed`), __`sed` works by making only ''one pass'' over the input(s), and is consequently more efficient. But it is `sed`'s ability to filter text in a pipeline which particularly distinguishes it from other types of editors.__
+
+== 2. Invocation ==
+
+Normally `sed` is invoked like this:
+
+ {{{
+sed SCRIPT INPUTFILE...
+ }}}
+
+The full format for invoking `sed` is:
+
+ {{{
+sed OPTIONS... [SCRIPT] [INPUTFILE...]
+ }}}
+
+If you do not specify `INPUTFILE`, or if `INPUTFILE` is `-`, `sed` filters the contents of the standard input. The script is actually the first non-option parameter, which `sed` specially considers a script and not an input file if (and only if) none of the other options specifies a script to be executed, that is if neither of the `-e` and `-f` options is specified.
+
+`sed` may be invoked with the following command-line options:
+
+:::
+
+== 3. sed Programs ==
+
+A `sed` program consists of one or more `sed` commands, passed in by one or more of the `-e`, `-f`, `--expression`, and `--file` options, or the first non-option argument if zero of these options are used. This document will refer to “the” `sed` script; this is understood to mean the in-order catenation of all of the scripts and script-files passed in.[?]
+
+__Each `sed` command consists of an optional ''address'' or ''address range'', followed by a one-character command name and any additional command-specific code.__
+
+=== 3.1 How sed Works ===
+
+`sed` maintains two data buffers: the ''active pattern space'', and the ''auxiliary hold space''.[?] Both are initially empty.
+
+`sed` operates by performing the following ''cycle'' on each lines of input: first, `sed` reads one line from the input stream, removes any trailing newline, and places it in the pattern space. Then commands are executed; each command can have an address associated to it: addresses are a kind of ''condition code'', and a command is only executed if the condition is verified before the command is to be executed.
+
+When the end of the script is reached, unless the `-n` option is in use, the contents of pattern space are printed out to the output stream, adding back the trailing newline if it was removed. (Actually, if sed prints a line without the terminating newline, it will nevertheless print the missing newline as soon as more text is sent to the same output stream, which gives the “least expected surprise” even though it does not make commands like `sed -n p' exactly identical to cat.) Then the next cycle starts for the next input line.
+
+Unless special commands (like `D`) are used, the pattern space is deleted between two cycles. The hold space, on the other hand, keeps its data between cycles (see commands `h`, `H`, `x`, `g`, `G` to move data between both buffers).
+
+::: 有點難以入門....
+
+

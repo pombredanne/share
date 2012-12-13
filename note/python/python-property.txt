@@ -1,0 +1,95 @@
+= [Python] Properties =
+
+[quote,'PEP 8 -- Style Guide for Python Code','http://www.python.org/dev/peps/pep-0008/#designing-for-inheritance[Designing for inheritance]']
+________________________________________________________________________________
+For simple public data attributes, it is best to expose just the attribute name, without complicated accessor/mutator methods. Keep in mind that Python provides *an easy path to future enhancement*, should you find that a simple data attribute needs to *grow functional behavior*. In that case, use properties to hide functional implementation behind simple data attribute access syntax.
+________________________________________________________________________________
+
+這是否意謂著一開始就考慮用 properties 的做法並不妥當？
+
+最新遇到的狀況是，如果 class 裡有的用 property，有的又用 accessor/mutator，用起來會很不一致？或許拿掉 `is_` 跟 `set_` 就會好多了？
+
+--------------------------------------------------------------------------------
+@property
+def name(self): pass
+
+def is_enabled(self): pass
+
+def set_enabled(self, enabled): pass
+--------------------------------------------------------------------------------
+
+如果有多個值要設定，或許可以考慮 tuple 包裝起來...
+
+== Lazy Property ==
+
+Lazy property 最簡單的做法如下：
+
+--------------------------------------------------------------------------------
+class Foo:
+
+    def __init__(self):
+        self._bar = None
+
+    @property
+    def bar(self):
+        if self._bar is None:
+            self._bar = Bar()
+        return self._bar
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+class Foo:
+
+    def __init__(self):
+        self._bar_ = None
+
+    @property
+    def _bar(self):
+        if self._bar_ is None:
+            self._bar_ = Bar()
+        return self._bar_
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+import random
+
+class Foo:
+
+  @property
+  def bar(self, v=[]):
+      if not v:
+          print 'initialize the value'
+          v.append(random.randint(1, 10))
+      return v[0]
+--------------------------------------------------------------------------------
+
+測試結果：
+
+--------------------------------------------------------------------------------
+>>> foo1 = Foo()
+>>> foo2 = Foo()
+>>> foo1.bar
+initialize the value
+3
+>>> foo2.bar
+3
+--------------------------------------------------------------------------------
+
+顯然這麼做是行不通的。
+
+== 參考資料 ==
+
+.文件
+--
+ * http://www.python.org/dev/peps/pep-0008/#designing-for-inheritance[PEP 8 -- Style Guide for Python Code > Designing for inheritance]
+ * http://oreilly.com/catalog/9780596158071/[O'Reilly - Learning Python, Fourth Edition > Chapter 37 Managed Attributes] (2009.09)
+--
+
+.其他文件
+--
+ * http://stackoverflow.com/questions/3012421/python-lazy-property-decorator[Python lazy property decorator - Stack Overflow] (2010-06-10)
+ * http://jeetworks.org/node/62[Lazy-Loading/Cached Properties Using Descriptors and Decorators | Jeet Sukumaran] (2010-03-21)
+ * http://code.activestate.com/recipes/363602-lazy-property-evaluation/[Lazy property evaluation « Python recipes « ActiveState Code] (2005-01-18)
+--
+

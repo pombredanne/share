@@ -1,0 +1,60 @@
+= link:autoit.html[AutoIt] / 定位控制項 =
+:title: [AutoIt] 定位控制項
+
+ * timeout 的預設值是多少？好像沒給 timeout 值時會一直等，所以還是養成習慣給一下 timeout 的秒數。
+ * Windows can be referenced by title, text on the window, size, position, class and even internal Win32 API handles.（後面這些都是透過 window/control descript 來達成的）
+ * 視窗可以用 title 定位到。
+   ** title 重複時，可以再加上 text，如果再不行，就得靠 window description 或 window handle 了。
+   ** 許多 window function (`WinXXX()`) 都提供有 title 跟 text 的參數，title 是必要的，但 text 通常是可有可無的。
+   ** 通常 title 跟 text 同時傳入空字串時（空字串表示 match all，跟 visible window text 無關），可以定位到 currently active window。但從 title 傳入 `[ACTIVE]` 的做法比較好。
+   ** Button text like &Yes, &No, &Next (the & indicates an underlined letter)
+ * window function 的 title 可以傳入 title, window description 或 window handle (HWND)
+   ** case sensitive，建議從 Window Info Tool 複製貼上。
+   ** http://www.autoitscript.com/autoit3/docs/functions/AutoItSetOption.htm#WinTitleMatchMode[WinTitleMatchModes] 可以設定 title matching 的原則。
+   ** 知道 AutoIt 預設的行為（default mode）還滿重要的。為什麼 Window Titles and Text (Advanced) 的 Mode 1 (default) 卻說 Matches partial titles from the start. 而非 Window Titles and Text (Basic) 所說的 You must match the case and punctuation exactly。
+   ** title 的比對由 Window (Title) Matching Mode 來決定
+      *** AutoItSetOption/WinTitleMatchMode 設定
+      *** Mode 1 (default) - Matches partial titles from the start. - 實驗結果確實是這樣；雖然是從頭開始比對，但比對時還是區分大小寫。
+      *** Mode 2 - Matches any substring in the title.
+      *** Mode 3 - Exact title match.
+      *** Mode 4 (Advance Mode)，透過 Advanced Window Descriptions 來比對（title 的比對更有彈性，甚至可以用 regex）
+   ** title 可以傳入 window descriptions（一或多個 properties），跟現在採用哪個 window matching mode 無關
+      *** [PROPERTY1:Value1; PROPERTY2:Value2]，要表示單一個 ';' 時，可以用 ';;' 來表示
+      *** TITLE - Window title
+      *** CLASS - The internal window classname
+      *** REGEXPTITLE - Window title using a regular expression (if the regular expression is wrong @error will be set to 2)
+      *** REGEXPCLASS - Window classname using a regular expression (if the regular expression is wrong @error will be set to 2)
+      *** LAST - Last window used in a previous AutoIt command
+      *** ACTIVE - Currently active window
+      *** X \ Y \ W \ H - The position and size of a window
+      *** INSTANCE - The 1-based instance when all given properties match （多個符合條件時，用在 Wait 時，可以用來等待下一個符合條件的 window 出現）
+   ** title 也可以傳入 window handle (HWND)
+      *** 每個 window 被建立時都會給一個 window handle，可以用來識別特定 window。因此當 title 傳入 handle 時，text 參數就會被忽略掉。
+      *** WinGetHandle, WinList 都會傳回 handle。
+ * text 會被視為 substring 來做比對（區分大小寫）跟 title 不一樣，跟當下的 window (title) matching mode 無關。
+ * Hidden window can be matched by "title" only if "text" is empty (""). ??
+ * 定位某個 window 裡的 control，因為 control function 的前兩個參數固定是 title 跟 text，如果不想填 text 時，還是得傳入空字串才行。
+ * control function (`ControlXXX()`) 的 controlID 可以傳入 control ID, ClassnameNN, text, control description 或 control handle (HWND)
+   ** http://www.autoitscript.com/autoit3/docs/intro/controls.htm[這裡]提到 "work directly with 'certain types' of Window Controls"，http://www.autoitscript.com/autoit3/docs/history.htm[這裡]又提到 ToolBarWindow32 的支援... Added: ControlCommand() "SendCommandID" - used to send WM_COMMAND Control ID messages. Allows the automation of ToolBarWindow32 controls (amongst others). For example, the "Back" button of Internet Explorer. Use Au3Info to get the Command ID from the ToolBar tab.
+   ** In fact Notepad is just one big "Edit" control!
+   ** AutoIt only works with standard Microsoft controls - some applications write their own custom controls which may look like a standard MS control but may resist automation. Experiment! 
+   ** HWND, The handle changes each time the control is created.
+ * control description
+   ** ID - The internal control ID. The Control ID is the internal numeric identifier that windows gives to each control. It is generally the best method of identifying controls.（每次執行都一樣？）
+   ** TEXT - The text on a control, for example "&Next" on a button
+   ** CLASS - The internal control classname such as "Edit" or "Button"
+   ** CLASSNN - The ClassnameNN value as used in previous versions of AutoIt, such as "Edit1"。其中 NN 指的是 class NAME 跟 iNstance 嗎？ http://www.autohotkey.com/forum/topic5851.html[class NN]
+   ** NAME - The internal .NET Framework WinForms name (if available；怎麼會跟 NAME 扯上關係？)
+   ** REGEXPCLASS - Control classname using a regular expression
+   ** X \ Y \ W \ H - The position and size of a control.
+   ** INSTANCE - The 1-based instance when all given properties match.
+
+== 參考資料 ==
+
+ * http://www.autoitscript.com/autoit3/docs/intro/au3spy.htm[AutoIt Window Info Tool]
+ * http://www.autoitscript.com/autoit3/docs/intro/windowsbasic.htm[Window Titles and Text (Basic)]
+ * http://www.autoitscript.com/autoit3/docs/intro/windowsadvanced.htm[Window Titles and Text (Advanced)]
+ * http://www.autoitscript.com/autoit3/docs/intro/controls.htm[Controls]
+ * http://www.autoitscript.com/autoit3/docs/functions.htm[Functions]
+ * http://www.autoitscript.com/autoit3/docs/appendix/SendKeys.htm[Send Key list]
+

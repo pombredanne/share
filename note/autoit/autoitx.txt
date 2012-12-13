@@ -1,0 +1,173 @@
+= AutoItX DLL/COM 元件 =
+
+== AutoItX API ==
+
+用其他程式語言來整合 AutoItX 時，通常只會用到下面它操控 UI 的部份：
+
+ * Window Management
+ * Keyboard Control
+ * Mouse Control
+ * Graphic Functions
+ * Environment Management (`ClipGet`, `ClipPut`)
+
+其他的功能，大概都可以用程式語言自有的 library 處理掉。
+
+[CAUTION]
+.AU3 與 AutoItX 兩者 API 的用法存在某些細微的差異
+================================================================================
+使用 AutoItX 時，務必參考 AutoItX Help （`.chm`），因為有些 function 在 AU3/AutoItX 兩邊有不同的用法。
+
+例如 `WinWait` 在 http://www.autoitscript.com/autoit3/docs/functions.htm[Function Reference] 裡提到：
+
+________________________________________________________________________________
+WinWait ( "title" [, "text" [, timeout]] )
+...
+
+Return Value
+
+Success: 	Returns handle to the requested window.
+Failure: 	Returns 0 if timeout occurred.
+________________________________________________________________________________
+
+但 AutoItX Help 裡卻是這麼寫的：
+
+________________________________________________________________________________
+WinWait "title" [, "text" [, timeout]]
+...
+
+Return Value
+
+Success: Returns 1. 
+Failure: Returns 0 if timeout occurred. 
+________________________________________________________________________________
+
+另外 window description 的 property name 在 AU3/AutoItX 兩邊也不一樣。例如 window handle 在 AU3 用 `HWND` 表示，但在 AutoItX 卻是用 `HANDLE`。
+================================================================================
+
+[CAUTION]
+.操作無效？Timing Issue？沒有 Run as administrator？
+================================================================================
+image:Using_AutoItX.files/file_download_warning.png
+
+def a():
+    autoit.WinWait('File Download - Security Warning', '', 5)
+    autoit.WinActivate('File Download - Security Warning')
+    time.sleep(1) <-- 少了這一行，Send() 跟 ControlClick() 都行不通！
+    #autoit.Send('{TAB}{TAB}')
+    #autoit.ControlFocus('File Download - Security Warning', '', 'Button1')
+    #time.sleep(3)
+    #autoit.Send('{ENTER}')
+    autoit.Send('{TAB}{TAB}{ENTER}')
+    #autoit.ControlClick('File Download - Security Warning', '', 'Button1')
+    #autoit.Send('{TAB}{TAB}{TAB}{ENTER}')
+    #autoit.ControlSend('File Download - Security Warning', '', 'Button1', '{ENTER}')
+    #autoit.Send('{TAB}{TAB}{TAB}{SPACE}')
+
+要模擬人的操作，所以不能太快。就像 Selenium 操作太快有時會出現 Permission Denied 的問題，養成習慣在模擬輸入的動作時：
+
+ * 視窗必須先被 activate，即便視覺上該視窗已經是 active。
+ * 暫時停頓一下.... 或許也是因為這樣，Selenium IDE 才會 Fast/Slow 的設計？
+
+另外在 Windows 7 發現，`Send()` 在某些時候沒有作用（例如 Firefox 的 Security Warning；視窗定位得到，也可以 activate，但 keystroke 就是送不進去）。只要執行在 Run as administrator 的環境下就沒這個問題。這個問題還滿妙的，因為這些操作都沒有涉及系統的異動，但某些操作就會失效...
+
+================================================================================
+
+=== Process Management ===
+
+ * `ProcessExists(process)` - 檢查某個 process 是否存在，存在時傳回 process ID，否則傳回 0。
+ * `ProcessClose(process)` - 中斷某個 prcess 的執行。固定傳回 1，跟該 process 有沒有成功地被中斷無關（可以用 `ProcessExists()` 檢查）。
+
+其中 'process' 可以是 process 的名稱（不分大小寫）或 ID。
+
+--------------------------------------------------------------------------------
+C:\>tasklist
+
+Image Name                   PID Session Name     Session#    Mem Usage
+========================= ====== ================ ======== ============
+System Idle Process            0 Console                 0         28 K
+System                         4 Console                 0        236 K
+...
+cmd.exe                      908 Console                 0      2,864 K
+calc.exe                    3272 Console                 0      3,440 K
+calc.exe                    3736 Console                 0      3,436 K
+tasklist.exe                4028 Console                 0      4,412 K
+
+C:\>python
+>>> from win32com.client import Dispatch
+>>> autoit = Dispatch('AutoItX3.Control')
+>>> autoit.ProcessExists('calc')      <1>
+0
+>>> autoit.ProcessExists('calc.exe')
+3272
+>>> autoit.ProcessExists('Calc.EXE')  <2>
+3272
+>>> autoit.ProcessExists(3272)
+3272
+>>> autoit.ProcessExists('3272')      <3>
+3272
+>>> autoit.ProcessExists(12345)
+0
+--------------------------------------------------------------------------------
+<1> 必須跟 `tasklist` 輸出的 Image Name 一樣。這裡少了 `.exe`。
+<2> Process 名稱的比對不分大小寫。
+<3> 傳入 process ID 時，型態是整數或字串都沒差。
+
+NOTE: 如果兩個 process 有相同的名稱（image name），雖然官方文件講說 `ProcessClose()` 會中斷 process ID 值最大的那個。但實驗發現卻是最早開啟的那個 process，跟 process ID 的大小無關。顯然這種情況下，`ProcessClose()` 的行為並沒有被定義得很清楚，最好用 ID 來明確指定要中斷哪個 process。
+
+=== Control Manipulation ===
+
+ * `ControlXXX()` 中的 control ID 如果是給 `[TEXT:xxx]` 有時候會失敗，反到用 ClassNN 比較不會出問題。為了避免 L10N 的問題，建議使用 ClassNN。
+
+== 常見問題 ==
+
+=== from win32com.client import Dispatch -> EOFError ===
+
+--------------------------------------------------------------------------------
+>>> from win32com.client import Dispatch
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "C:\Python27\lib\site-packages\win32com\client\__init__.py", line 11, in <module>
+    import gencache
+  File "C:\Python27\lib\site-packages\win32com\client\gencache.py", line 662, in <module>
+    __init__()
+  File "C:\Python27\lib\site-packages\win32com\client\gencache.py", line 56, in __init__
+    _LoadDicts()
+  File "C:\Python27\lib\site-packages\win32com\client\gencache.py", line 109, in _LoadDicts
+    version = p.load()
+EOFError
+--------------------------------------------------------------------------------
+
+把 `C:\Python27\Lib\site-packages\win32com\gen_py\dicts.dat` 刪掉，結果引發另一個錯誤：
+
+--------------------------------------------------------------------------------
+>>> from win32com.client import Dispatch
+Rebuilding cache of generated files for COM support...
+Checking F8937E53-D444-4E71-9275-35B64210CC3Bx0x1x0
+Could not add module (IID('{F8937E53-D444-4E71-9275-35B64210CC3B}'), 0, 1, 0) -
+<type 'exceptions.ImportError'>: cannot import name Dispatch
+Done.
+--------------------------------------------------------------------------------
+
+之後把 `C:\Python27\Lib\site-packages\win32com\gen_py` 整個資料夾刪掉就好了。
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://www.mail-archive.com/python-win32@python.org/msg07854.html[Re: <python-win32> EOFError in gencache.py]
+================================================================================
+
+== 操作 ComboBox ==
+
+--------------------------------------------------------------------------------
+print auto.ControlCommand('Save As','','ComboBox3','GetCurrentSelection','')
+--------------------------------------------------------------------------------
+
+可以用來取得 ComboBox 當下選取項目的文字內容。
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://www.autoitscript.com/forum/topic/4997-combobox-find-select-a-string/[ComboBox - find & select a string - AutoIt Forums] (2004-09-22)
+================================================================================
+
+

@@ -1,0 +1,171 @@
+= sed =
+<<TableOfContents>>
+
+== Sed - An Introduction and Tutorial ==
+http://www.grymoire.com/Unix/Sed.html
+
+How to use sed, a special editor for modifying files automatically. If you want to write a program to make changes in a file, sed is the tool to use.
+
+There are a few programs that are the real workhorse(勞役馬) in the Unix toolbox. These programs are simple to use for simple applications, yet have a rich set of commands for performing complex actions. Don't let the complex potential of a program keep you from making use of the simpler aspects. This chapter, like all of the rest, start with the simple concepts and introduces the advanced topics later on.
+
+A note on comments. When I first wrote this, most versions of sed did not allow you to place comments inside the script. __Lines starting with the '#' characters are comments. Newer versions of sed may support comments at the end of the line as well.__
+
+=== The Awful(可怕的) Truth about sed ===
+
+Sed is the ultimate ''stream editor''. If that sounds strange, picture(想像) a stream flowing through a pipe. Okay, you can't see a stream if it's inside a pipe. That's what I get for attempting a flowing analogy(類比). You want literature, read James Joyce.
+
+__Anyhow(無論如何), sed is a marvelous(了不起的) utility. Unfortunately, most people never learn its real power. The language is very simple, but the documentation is terrible(很糟的).__ The Solaris on-line manual pages for sed are five pages long, and two of those pages describe the 34 different errors you can get. A program that spends as much space documenting the errors than it does documenting the language has a serious learning curve.
+
+Do not fret(煩躁)! It is not your fault you don't understand sed. I will cover sed completely. But I will describe the features in the order that I learned them. I didn't learn everything at once. You don't need to either.
+
+=== The essential command: s for substitution ===
+
+Sed has several ''commands'', but most people only learn the substitute command: `s`. The substitute command changes all occurrences of the regular expression (預設就是採用通用運算式) into a new value. A simple example is changing "day" in the "old" file to "night" in the "new" file:
+
+ {{{
+sed s/day/night/ <old >new
+ }}}
+
+Or another way (for Unix beginners),
+
+ {{{
+sed s/day/night/ old >new
+ }}}
+
+and for those who want to test this:
+
+ {{{
+echo day | sed s/day/night/
+ }}}
+
+This will output "night".
+
+I didn't put quotes around the argument because this example didn't need them. If you read my earlier tutorial, you would understand why it doesn't need quotes. However, I recommend you do use quotes. __If you have ''meta-characters'' in the command, quotes are necessary. And if you aren't sure, it's a good habit, and I will henceforth quote future examples to emphasize the "best practice."__ Using the strong (single quote) character, that would be:
+
+ {{{
+sed 's/day/night/' <old >new
+ }}}
+
+I must emphasize the the sed editor changes exactly what you tell it to. So if you executed
+
+ {{{
+echo Sunday | sed 's/day/night/' <old >new
+ }}}
+
+This would output the word "Sunnight" bacause sed found the string "day" in the input.
+
+There are four parts to this substitute command:
+
+ * `s` - Substitute command
+ * `/../../` - Delimiter
+ * `day` - Regular Expression Pattern Search Pattern
+ * `night` - Replacement string
+
+The ''search pattern'' is on the left hand side and the ''replacement string'' is on the right hand side.
+
+We've covered http://www.grymoire.com/Unix/Quote.html[quoting] and http://www.grymoire.com/Unix/Regular.html[regular expressions]. That's 90% of the effort needed to learn the substitute command. To put it another way, you already know how to handle 90% of the most frequent uses of sed. There are a ... few fine points that an future sed expert should know about. (You just finished section 1. There's only 63 more sections to cover. :-) Oh. And you may want to bookmark this page, .... just in case you don't finish.
+
+=== The slash as a delimiter ===
+
+The character after the `s` is the ''delimiter''. It is conventionally a slash, because this is what `ed`, `more`, and `vi` use. It can be anything you want, however. If you want to change a pathname that contains a slash - say `/usr/local/bin` to `/common/bin` - you could use the backslash to ''quote'' the slash:
+
+ {{{
+sed 's/\/usr\/local\/bin/\/common\/bin/' <old >new
+ }}}
+
+__Gulp(因吃驚而屏息). Some call this a 'Picket Fence(柵欄)' and it's ugly.__ It is easier to read if you use an underline instead of a slash as a delimiter: (直接換掉 "/", 相當直覺!!)
+
+ {{{
+sed 's_/usr/local/bin_/common/bin_' <old >new
+ }}}
+
+Some people use colons:
+
+ {{{
+sed 's:/usr/local/bin:/common/bin:' <old >new
+ }}}
+
+Others use the "|" character.
+
+ {{{
+sed 's|/usr/local/bin|/common/bin|' <old >new
+ }}}
+
+__Pick one you like. As long as it's not in the string you are looking for, anything goes. And remember that you need three delimiters. If you get a "Unterminated `s' command" it's because you are missing one of them.__
+
+=== Using & as the matched string ===
+
+Sometimes you want to search for a pattern and add some characters, like parenthesis, around or near the pattern you found. It is easy to do this if you are looking for a particular string:
+
+ {{{
+sed 's/abc/(abc)/' <old >new
+ }}}
+
+This won't work if you don't know exactly what you will find. How can you put the string you found in the replacement string if you don't know what it is?
+
+The solution requires the special character "&." It corresponds to the pattern found.
+
+ {{{
+sed 's/[a-z]*/(&)/' <old >new
+ }}}
+
+You can have any number of "&" in the replacement string. You could also double a pattern, e.g. the first number of a line:
+
+ {{{
+% echo "123 abc" | sed 's/[0-9]*/& &/'
+123 123 abc
+ }}}
+
+Let me slightly amend() this example. Sed will match the first string, and make it as ''greedy(貪婪的)'' as possible. The first match for '`[0-9]*`' is the first character on the line, as this matches zero of more numbers. So if the input was "abc 123" the output would be unchanged (well, except for a space before the letters; 可以參考 [[Java/RegularExpression#|Java Regular Expression]] 中 "Zero-Length Matches" 的說明). A better way to duplicate the number is to make sure it matches a number:
+
+ {{{
+% echo "123 abc" | sed 's/[0-9][0-9]*/& &/'
+123 123 abc
+ }}}
+
+The string "abc" is unchanged, because it was not matched by the regular expression. If you wanted to eliminate "abc" from the output, you must ''expand'' the the regular expression to match the rest of the line and explicitly exclude part of the expression using "(", ")" and "\1", which is the next topic.
+
+=== Using \1 to keep part of the pattern ===
+
+I have already described the use of "(" ")" and "1" in my tutorial on regular expressions. To review, the escaped parentheses (that is, parentheses with backslashes before them) ''remember'' portions of the regular expression. You can use this to exclude part of the regular expression. The "\1" is the first remembered pattern, and the "\2" is the second remembered pattern. Sed has up to nine remembered patterns.
+
+If you wanted to keep the first word of a line, and delete the rest of the line, mark the important part with the parenthesis:
+
+ {{{
+sed 's/\([a-z]*\).*/\1/'
+ }}}
+
+I should elaborate(詳盡地說明) on this. Regular exprssions are greedy, and try to match as much as possible. "[a-z]*" matches zero or more lower case letters, and tries to be as big as possible. The ".*" matches zero or more characters after the first match. Since the first one grabs all of the lower case letters, the second matches anything else. Therefore if you type
+
+ {{{
+echo abcd123 | sed 's/\([a-z]*\).*/\1/'
+ }}}
+
+This will output "abcd" and delete the numbers.
+
+If you want to switch two words around, you can remember two patterns and change the order around:
+
+ {{{
+sed 's/\([a-z]*\) \([a-z]*\)/\2 \1/'
+ }}}
+
+Note the space between the two remembered patterns. This is used to make sure two words are found.
+
+__The "\1" doesn't have to be in the replacement string (in the right hand side). It can be in the pattern you are searching for (in the left hand side).__ If you want to eliminate duplicated words, you can try:
+
+ {{{
+sed 's/\([a-z]*\) \1/\1/'
+ }}}
+
+You can have up to nine values: "\1" thru "\9." 
+
+=== Substitute Flags ===
+
+__You can add additional ''flags'' after the last delimiter. These flags can specify what happens when there is ''more than one occurrence'' of a pattern on a single line, and what to do if a substitution is found.__ Let me describe them. 
+
+:::
+
+== Scratch ==
+
+ * `iconv -f big5 -t utf8//IGNORE wrapper.log.* | grep SHORT_MESSAGE_LOG | grep -v '上帝說...' | sed -r 's|^.*?([0-9]{4}/[0-9]{2}/[0-9]{2} 星期.*)$|\1|' | sort -g > messages` 可以取出所有 Zappy 的對話訊息.
+

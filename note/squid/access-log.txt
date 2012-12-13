@@ -1,0 +1,48 @@
+= Squid: Access Log =
+
+TCP_MISS means the URL has no stored objects in cache,
+
+ * TCP_MISS - 沒 cache
+ * TCP_CLIENT_REFRESH_MISS - 有 cache，但 client 端要求不要用 cache
+ * TCP_DENIED - 因為http_access或http_reply_access規則，客戶端的請求被拒絕了。注意被http_access拒絕的請求在第9域的值是NONE/-，然而被http_reply_access拒絕的請求，在相應地方有一個有效值。
+
+第2個token是HTTP響應狀態碼（例如200,304,404等）。狀態碼通常來自原始服務器。在某些情形下，squid可能有義務自己選擇狀態碼。這些編碼在HTTP的RFC裡定義，在後面會有概述。
+
+ONE/-這個值指明squid不轉發該請求到任何其他服務器
+
+Squid 只有在整個響應發送到客戶端完成以後，才寫access.log日誌。這點允許squid在日誌文件裡包含請求和響應兩者信息。然而，需要花費數分鐘甚至 數小時才能完成的事務，請求期間的日誌在access.log裡不可見。
+
+用 Safari 做測試：
+
+--------------------------------------------------------------------------------
+1343272005.165      0 10.201.175.222 TCP_DENIED/407 1670 GET http://www.apple.com/ - NONE/- text/html <1>
+1343272015.874      1 10.201.175.222 TCP_DENIED/407 1670 GET http://www.apple.com/ wfbss NONE/- text/html <2>
+--------------------------------------------------------------------------------
+<1> Browser 收到 407，跳出來問帳密
+<2> 密碼錯時還是得到 `TCP_DENIED/407`，但 `NONE/-` 前面會帶帳號
+
+固定將密碼設錯，拿 Update Now 來做測試：
+
+--------------------------------------------------------------------------------
+1343272113.722      0 10.201.175.222 TCP_DENIED/407 413 HEAD http://wfbs-svc30-p.activeupdate.trendmicro.com/activeupdate/ini_xml.zip - NONE/- text/html
+1343272113.729      0 10.201.175.222 TCP_DENIED/407 413 HEAD http://wfbs-svc30-p.activeupdate.trendmicro.com/activeupdate/ini_xml.zip wfbss NONE/- text/html
+1343272113.737      0 10.201.175.222 TCP_DENIED/407 413 HEAD http://wfbs-svc30-p.activeupdate.trendmicro.com/activeupdate/server.ini - NONE/- text/html
+1343272113.748      1 10.201.175.222 TCP_DENIED/407 413 HEAD http://wfbs-svc30-p.activeupdate.trendmicro.com/activeupdate/server.ini wfbss NONE/- text/html
+1343272113.770      0 10.201.175.222 TCP_DENIED/407 413 HEAD http://wfbs-svc30-p.activeupdate.trendmicro.com/activeupdate/server.ini - NONE/- text/html
+1343272113.777      0 10.201.175.222 TCP_DENIED/407 413 HEAD http://wfbs-svc30-p.activeupdate.trendmicro.com/activeupdate/server.ini wfbss NONE/- text/html
+--------------------------------------------------------------------------------
+
+證明了上述的推論，先收到 `TCP_DENIED/407` + `- NONE/-`，然後試著送出帳密時會得到 `TCP_DENIED/407` + `wfbss NONE/-`。
+
+但改電腦名稱後，顯然程式沒有對 407 做處理。
+
+--------------------------------------------------------------------------------
+1343272394.861      0 10.201.175.222 TCP_DENIED/407 1727 CONNECT wfbs-svc-nabu-dev-aal.trendmicro.com:443 - NONE/- text/html
+1343272394.871      0 10.201.175.222 TCP_DENIED/407 1727 CONNECT wfbs-svc-nabu-dev-aal.trendmicro.com:443 - NONE/- text/html
+--------------------------------------------------------------------------------
+
+== 參考資料 ==
+
+ * http://article.denniswave.com/6307[Squid 記錄檔-access.log | 六藝草堂] (2009-10-27)
+ * http://www.linofee.org/~jel/proxy/Squid/accesslog.shtml[Squid access.log]
+

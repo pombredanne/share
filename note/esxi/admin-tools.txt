@@ -1,0 +1,70 @@
+= [ESXi] 管理工具 =
+
+ESXi 內建的管理工具有：
+
+ * <<dcui,"Direct Control User Interface (DCUI)">>
+ * link:shell.html[ESXi Shell]
+ * link:../vsphere/client.html[vSphere Client]
+
+[[dcui]]
+== Direct Control User Interface (DCUI) ==
+
+所謂的 DCUI 指的是按 F2 (Customize System/View Logs) 所看到的選單操作畫面，在這裡可以：
+
+ * 修改 root 帳號的密碼。
+ * 設定、重啟或測試網路。
+ * 查看系統日誌。
+ * 啟用／停用 link:shell.html[ESXi Shell] 或 SSH （在 Troubleshooting Mode Options 底下）
+
+TIP: DCUI 看似只能在本機存取，但它其實也可以透過 SSH 存取到，只要在 ESXi Shell 裡輸入 `dcui` 就可以啟動相同的界面。
+
+=== 複製 VM 或 ISO 到 ESXi ===
+
+做為 ESX / ESXi 檔案管理的解決方案，Veeam FastSCP 聲稱複製檔案到 ESX 的速度比 WinSCP 快上六倍，另外也可以在 ESX 伺服器之間直接交換檔案。從http://www.vmwarevideos.com/video-using-free-fast-veeam-fastscp-transfer-vm-iso-vsphere[這一段影片]可以快速地瞭解到，FastSCP 打破了 local computer、remote ESX servers、VMs 的界線...
+
+必須先以公司的 Email 帳號（不接受如 Gmail 之類的信箱）註冊後才能下載 FastSCP。
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://www.veeam.com/vmware-esxi-fastscp.html[Veeam FastSCP - VMware ESX / ESXi file Management]
+ * http://www.vmwarevideos.com/video-using-free-fast-veeam-fastscp-transfer-vm-iso-vsphere[VIDEO: Using the Free Veeam FastSCP to Transfer VMs and ISOs to vSphere] (2010-07-22)
+ * http://www.vnotion.com/?p=38[Slow disk read speed on ESX4 | vNotion] (2009-06-11)
+ * http://www.yellow-bricks.com/2009/01/20/fastscp-vs-winscp/[FastSCP vs WinSCP » Yellow Bricks] (2009-01-20)
+================================================================================
+
+== 疑難排解 ==
+
+=== Unable to find a supported device to write the VMware ESX Server 3i 3.5.0 image to ===
+
+--------------------------------------------------------------------------------
+Unable to find a supported device to write the VMware ESX Server 3i 3.5.0 image to.
+--------------------------------------------------------------------------------
+
+今天 @2008/11/04 由 Jack 首次安裝 ESXi 3.5.0 U2 時, 開始安裝之前就遇到了上面的錯誤.
+
+在 http://communities.vmware.com/blogs/virtually.nick/2008/08/15/esxi-on-whitebox-hardware[ESXi on Whitebox Hardware] 有提到 - The on-board SATA controller is the Adaptec ICH6 controller, which is also supported under the ata_piix chipset. This has to be set up in the BIOS in "combined" mode with the SATA controller in "Native" mode in order for ESXi to see it correctly.
+
+將 BIOS 裡的 SATA 啟用 Native 模式後就可以了.
+
+=== IP 0.0.0.0 with Hostname localhost ===
+
+@2008/11/04 安裝完成 ESXi 之後, 發現網路設定只能做 restore 的動作 (此時 IP 為 0.0.0.0, 而 hostname 則為 localhost)...
+
+按http://communities.vmware.com/message/1024184[這裡]的說法, 是因為 onboard NIC 沒有被識別出來所造成, 
+
+按 http://forums.whirlpool.net.au/forum-replies-archive.cfm/1048212.html[VMware ESXi Problem] 這裡的說法 - Stick an Intel or Broadcom based NIC in to your system, embedded desktop grade Intel NICs and others that aren't the brands above tend not to work with ESX, as the previous poster said, is it on the HCL – ESX is VERY fussy about hardware and is generally only meant to work on server grade hardware.
+
+=== 可以 ping 出去，但外面 ping 不進來 ===
+
+2012-02-03 遇到一台 Windows XP 一開機後可以 ping 得到，但之後的 ping 都會 timeout，即便回到之前相對 clean 的 snaphost，狀況也是一樣。
+
+之後用 `easymac -s` 產生 MAC address 後，從外面 ping 就比較穩定了。
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://www.easyvmx.com/blog/?q=generate_mac_addresses_for_vmware[VMware Pros: MAC Address Generator | EasyVMX! Blog] - `easymac.sh` 可以產生 random/static MAC address，但什麼是 random?
+================================================================================
+
+

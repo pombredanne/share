@@ -1,0 +1,316 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>AutoItX DLL/COM 元件</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="autoitx.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>AutoItX DLL/COM 元件</h1>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_autoitx_api">AutoItX API</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>用其他程式語言來整合 AutoItX 時，通常只會用到下面它操控 UI 的部份：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+Window Management
+</p>
+</li>
+<li>
+<p>
+Keyboard Control
+</p>
+</li>
+<li>
+<p>
+Mouse Control
+</p>
+</li>
+<li>
+<p>
+Graphic Functions
+</p>
+</li>
+<li>
+<p>
+Environment Management (<code>ClipGet</code>, <code>ClipPut</code>)
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>其他的功能，大概都可以用程式語言自有的 library 處理掉。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/caution.png" alt="Caution" />
+</td>
+<td class="content">
+<div class="title">AU3 與 AutoItX 兩者 API 的用法存在某些細微的差異</div>
+<div class="paragraph"><p>使用 AutoItX 時，務必參考 AutoItX Help （<code>.chm</code>），因為有些 function 在 AU3/AutoItX 兩邊有不同的用法。</p></div>
+<div class="paragraph"><p>例如 <code>WinWait</code> 在 <a href="http://www.autoitscript.com/autoit3/docs/functions.htm">Function Reference</a> 裡提到：</p></div>
+<div class="quoteblock">
+<div class="content">
+<div class="paragraph"><p>WinWait ( "title" [, "text" [, timeout]] )
+&#8230;</p></div>
+<div class="paragraph"><p>Return Value</p></div>
+<div class="paragraph"><p>Success:        Returns handle to the requested window.
+Failure:        Returns 0 if timeout occurred.</p></div>
+</div>
+<div class="attribution">
+</div></div>
+<div class="paragraph"><p>但 AutoItX Help 裡卻是這麼寫的：</p></div>
+<div class="quoteblock">
+<div class="content">
+<div class="paragraph"><p>WinWait "title" [, "text" [, timeout]]
+&#8230;</p></div>
+<div class="paragraph"><p>Return Value</p></div>
+<div class="paragraph"><p>Success: Returns 1.
+Failure: Returns 0 if timeout occurred.</p></div>
+</div>
+<div class="attribution">
+</div></div>
+<div class="paragraph"><p>另外 window description 的 property name 在 AU3/AutoItX 兩邊也不一樣。例如 window handle 在 AU3 用 <code>HWND</code> 表示，但在 AutoItX 卻是用 <code>HANDLE</code>。</p></div>
+</td>
+</tr></table>
+</div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/caution.png" alt="Caution" />
+</td>
+<td class="content">
+<div class="title">操作無效？Timing Issue？沒有 Run as administrator？</div>
+<div class="paragraph"><p>image:Using_AutoItX.files/file_download_warning.png</p></div>
+<div class="paragraph"><p>def a():
+    autoit.WinWait(<em>File Download - Security Warning</em>, <em>', 5)
+    autoit.WinActivate('File Download - Security Warning</em>)
+    time.sleep(1) &#8592;- 少了這一行，Send() 跟 ControlClick() 都行不通！
+    #autoit.ControlFocus(<em>File Download - Security Warning</em>, <em>', 'Button1</em>)
+    #time.sleep(3)
+    #autoit.ControlClick(<em>File Download - Security Warning</em>, <em>', 'Button1</em>)</p></div>
+<div class="paragraph"><p>要模擬人的操作，所以不能太快。就像 Selenium 操作太快有時會出現 Permission Denied 的問題，養成習慣在模擬輸入的動作時：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+視窗必須先被 activate，即便視覺上該視窗已經是 active。
+</p>
+</li>
+<li>
+<p>
+暫時停頓一下&#8230;. 或許也是因為這樣，Selenium IDE 才會 Fast/Slow 的設計？
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>另外在 Windows 7 發現，<code>Send()</code> 在某些時候沒有作用（例如 Firefox 的 Security Warning；視窗定位得到，也可以 activate，但 keystroke 就是送不進去）。只要執行在 Run as administrator 的環境下就沒這個問題。這個問題還滿妙的，因為這些操作都沒有涉及系統的異動，但某些操作就會失效&#8230;</p></div>
+</td>
+</tr></table>
+</div>
+<div class="sect2">
+<h3 id="_process_management">Process Management</h3>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>ProcessExists(process)</code> - 檢查某個 process 是否存在，存在時傳回 process ID，否則傳回 0。
+</p>
+</li>
+<li>
+<p>
+<code>ProcessClose(process)</code> - 中斷某個 prcess 的執行。固定傳回 1，跟該 process 有沒有成功地被中斷無關（可以用 <code>ProcessExists()</code> 檢查）。
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>其中 <em>process</em> 可以是 process 的名稱（不分大小寫）或 ID。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>C:\&gt;tasklist
+
+Image Name                   PID Session Name     Session#    Mem Usage
+========================= ====== ================ ======== ============
+System Idle Process            0 Console                 0         28 K
+System                         4 Console                 0        236 K
+...
+cmd.exe                      908 Console                 0      2,864 K
+calc.exe                    3272 Console                 0      3,440 K
+calc.exe                    3736 Console                 0      3,436 K
+tasklist.exe                4028 Console                 0      4,412 K
+
+C:\&gt;python
+&gt;&gt;&gt; from win32com.client import Dispatch
+&gt;&gt;&gt; autoit = Dispatch('AutoItX3.Control')
+&gt;&gt;&gt; autoit.ProcessExists('calc')      <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+0
+&gt;&gt;&gt; autoit.ProcessExists('calc.exe')
+3272
+&gt;&gt;&gt; autoit.ProcessExists('Calc.EXE')  <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+3272
+&gt;&gt;&gt; autoit.ProcessExists(3272)
+3272
+&gt;&gt;&gt; autoit.ProcessExists('3272')      <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+3272
+&gt;&gt;&gt; autoit.ProcessExists(12345)
+0</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+必須跟 <code>tasklist</code> 輸出的 Image Name 一樣。這裡少了 <code>.exe</code>。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+Process 名稱的比對不分大小寫。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+傳入 process ID 時，型態是整數或字串都沒差。
+</td></tr>
+</table></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">如果兩個 process 有相同的名稱（image name），雖然官方文件講說 <code>ProcessClose()</code> 會中斷 process ID 值最大的那個。但實驗發現卻是最早開啟的那個 process，跟 process ID 的大小無關。顯然這種情況下，<code>ProcessClose()</code> 的行為並沒有被定義得很清楚，最好用 ID 來明確指定要中斷哪個 process。</td>
+</tr></table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_control_manipulation">Control Manipulation</h3>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>ControlXXX()</code> 中的 control ID 如果是給 <code>[TEXT:xxx]</code> 有時候會失敗，反到用 ClassNN 比較不會出問題。為了避免 L10N 的問題，建議使用 ClassNN。
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_常見問題">常見問題</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_from_win32com_client_import_dispatch_8594_eoferror">from win32com.client import Dispatch &#8594; EOFError</h3>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; from win32com.client import Dispatch
+Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+  File "C:\Python27\lib\site-packages\win32com\client\__init__.py", line 11, in &lt;module&gt;
+    import gencache
+  File "C:\Python27\lib\site-packages\win32com\client\gencache.py", line 662, in &lt;module&gt;
+    __init__()
+  File "C:\Python27\lib\site-packages\win32com\client\gencache.py", line 56, in __init__
+    _LoadDicts()
+  File "C:\Python27\lib\site-packages\win32com\client\gencache.py", line 109, in _LoadDicts
+    version = p.load()
+EOFError</code></pre>
+</div></div>
+<div class="paragraph"><p>把 <code>C:\Python27\Lib\site-packages\win32com\gen_py\dicts.dat</code> 刪掉，結果引發另一個錯誤：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; from win32com.client import Dispatch
+Rebuilding cache of generated files for COM support...
+Checking F8937E53-D444-4E71-9275-35B64210CC3Bx0x1x0
+Could not add module (IID('{F8937E53-D444-4E71-9275-35B64210CC3B}'), 0, 1, 0) -
+&lt;type 'exceptions.ImportError'&gt;: cannot import name Dispatch
+Done.</code></pre>
+</div></div>
+<div class="paragraph"><p>之後把 <code>C:\Python27\Lib\site-packages\win32com\gen_py</code> 整個資料夾刪掉就好了。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.mail-archive.com/python-win32@python.org/msg07854.html">Re: &lt;python-win32&gt; EOFError in gencache.py</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_操作_combobox">操作 ComboBox</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre><code>print auto.ControlCommand('Save As','','ComboBox3','GetCurrentSelection','')</code></pre>
+</div></div>
+<div class="paragraph"><p>可以用來取得 ComboBox 當下選取項目的文字內容。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.autoitscript.com/forum/topic/4997-combobox-find-select-a-string/">ComboBox - find &amp; select a string - AutoIt Forums</a> (2004-09-22)
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:17:47 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

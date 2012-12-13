@@ -1,0 +1,94 @@
+= grep =
+
+[quote,'http://en.wikipedia.org/wiki/Grep[grep - Wikipedia&#44; the free encyclopedia]']
+________________________________________________________________________________
+`grep` is a command-line utility for searching plain-text data sets for lines matching a regular expression. Grep was originally developed for the Unix operating system, but is available today for all Unix-like systems. Its name comes from the ed command g/re/p (global / regular expression / print).
+________________________________________________________________________________
+
+`grep` - print lines matching a pattern
+
+ grep [OPTIONS] PATTERN [FILE...]
+ grep [OPTIONS] [-e PATTERN | -f FILE] [FILE...]
+
+以一或多個檔案做為資料來源，逐行跟 search pattern 比對，預設會印出符合的行。當沒有提供 'FILE' 或 'FILE' 用單一個 `-` 表示時，會以 standard input 做為資料來源。
+
+NOTE: 當 'PATTERN' 以 `-` 做為開頭始，就必須採用第二種語法提供 search pattern，否則會被誤判為 option。
+
+常用的 option 有：
+
+ * `-e PATTERN, --regexp=PATTERN` - 以 'PATTERN' 做為 search pattern，可以使用多次提供多個 search patterns。
+ * `-E, --extended-regexp` - 採用 extended regular expression (ERE)，而非預設的 basic regular expression (BRE)。
++
+TIP: 在 BRE 裡 `?`、`+`、`{`、`|`、`(` 跟 `)` 都不具特殊的意義，必須要改用 backslashed version - `\?`、`\+`、`\{`、`\|`、`\(` 跟 `\)` 才行。
++
+ * `-i, --ignore-case` - 忽略大小寫的差別。
+ * `-v, --invert-match` - 倒過來比對出不符合 search pattern 的行。
+ * `-l, --files-with-matches` - 找到第一個符合 pattern 的內容後就停止搜尋，直接印出檔案名稱。
+ * `-R, -r, --recursive` - 繼續往子目錄找。
+ * `-H, --with-filename` - 強制額外輸出檔名。來源檔案有多個時，預設會在每一行內容前冠上檔案名稱。
+ * `-n, --line-number` - 額外輸出 1-based 行號。
+ * `-z, --null-data` - 改用 NULL 做為將 input 拆解成多個行的分隔字元，預設會用 link:../text/text-newline.html[newline]。
+ * `-Z, --null` - 輸出檔名時，改輸出 NULL 做為分隔字元，預設會用 newline。
+
+--------------------------------------------------------------------------------
+$ echo -e 'Line1\nline2\nline3' | grep -n line <1>
+2:line2
+3:line3
+$
+$ echo -e 'Line1\nline2\nline3' | grep -nv line
+1:Line1
+$
+$ echo -e 'Foo\nFoobar\nBar\nBarfoo' | grep -iE '^foo' <2>
+Foo
+Foobar
+$ echo -e 'Foo\nFoobar\nBar\nBarfoo' | grep -iE '^foo|bar$' <3>
+Foo
+Foobar
+Bar
+$ echo -e 'Foo\nFoobar\nBar\nBarfoo' | grep -i '^foo|bar$' <4>
+$ echo -e 'Foo\nFoobar\nBar\nBarfoo' | grep -i '^foo\|bar$'
+Foo
+Foobar
+Bar
+--------------------------------------------------------------------------------
+<1> `-n` 可以用來標示行號，`-v` 則可以反過來找出不符合條件的行。
+<2> 不分大小寫，找出以 `foo` 開頭的行。
+<3> 找出以 `foo` 開頭，"或是" 以 `bar` 結尾的行。注意這裡用的是 ERE，因為 `|` 在 BRE 裡不具特殊的意意。
+<4> 在 BRE 下，可以用 `\|` 來達到 ERE 下相同的效果。
+
+--------------------------------------------------------------------------------
+$ echo type > correct.txt
+$ echo this file contains a typo. > typo.txt
+$ grep -l typo *.txt
+typo.txt
+$
+$ grep -lZ typo *.txt | xargs -0 sed -i.bak 's/typo/type/g' <1>
+$ ls -1
+correct.txt
+typo.txt
+typo.txt.bak
+$
+$ cat typo.txt
+this file contains a type.
+$ cat typo.txt.bak
+this file contains a typo.
+--------------------------------------------------------------------------------
+<1> 先找到內含 `typo` 的檔案，再逐一交給 link:../sed/sed.html[`sed`] 做置換的動作。
+
+== 延伸閱讀 ==
+
+ * link:../unix-like/find-files.html[找檔案]
+
+== 參考資料 ==
+
+.文件
+--
+ * http://en.wikipedia.org/wiki/Grep[grep - Wikipedia, the free encyclopedia]
+ * http://manpages.debian.net/cgi-bin/man.cgi?query=grep[grep - Debian Hypertext Man Pages]
+--
+
+.其他文件
+--
+ * http://www.cyberciti.biz/faq/howto-use-grep-command-in-linux-unix/[HowTo: Use grep Command In Linux / UNIX [ Examples &#93;] (2007-08-06)
+--
+

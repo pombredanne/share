@@ -1,0 +1,78 @@
+= Selenium: 如何將 Page Object Pattern 應用在 Robot Framework =
+
+////////////////////////////////////////////////////////////////////////////////
+Google Alerts: "page object" "robot framework"
+////////////////////////////////////////////////////////////////////////////////
+
+花時間包裝好的 link:../selenium/selenium-page-object.html[page object]，除了可以從程式裡叫用之外，也可以稍作包裝後公開為 link:index.html[Robot Framework] 的 keyword，讓測試人員不用寫程式也可以享用到 page object 的便利。
+
+page library?
+
+如果把 UI Mapping 的資料分散在不同的 Page Object？會不會讓 UI Mapping 變得更容易管理？
+
+在 RF 裡用起來要像是個 keyword，所以不太適合吧 page object 整個往外丟到 RF 做為一個 keyword。而且繼承而來的 methods，會不會讓 keywords 產生衝突？
+
+.`BasePage.py`
+--------------------------------------------------------------------------------
+class BasePage():
+
+    def log_off(self):
+        print '*WARN* Log Off'
+--------------------------------------------------------------------------------
+
+.`AdminPage.py`
+--------------------------------------------------------------------------------
+from BasePage import BasePage
+
+class AdminPage(BasePage):
+
+    def add_user(self, acccount):
+        print '*WARN* Add User'
+--------------------------------------------------------------------------------
+
+.`test.txt`
+--------------------------------------------------------------------------------
+| *Setting* | *Value*
+| Library | BasePage
+| Library | AdminPage
+
+| *TestCase* | *Action* | *Argument*
+| Test
+| | Add User | acc
+| | Log Off
+--------------------------------------------------------------------------------
+
+結果：
+
+--------------------------------------------------------------------------------
+$ pybot test.txt
+==============================================================================
+Test                                                                          
+==============================================================================
+[ WARN ] Add User                                                             
+Test                                                                  | FAIL |
+Multiple keywords with name 'Log Off' found.
+Give the full name of the keyword you want to use.
+Found: 'AdminPage.Log Off' and 'BasePage.Log Off'
+--------------------------------------------------------------------------------
+
+也就是說，只要兩個頁面有相同的操作，就可能遇到衝突。對於 Log Off 這種到處都是的操作，可能比較適合抽出來不要放到某個 Page 裡。
+
+至於要判斷目前是否在某個頁面，`Should Be In The Page` 倒是滿實用的。
+
+發現要把 page object 整個推到前端做為 keyword 有點困難...
+
+ * 最大的挑戰在於 keyword library 在結構上是扁平的，但 page object 可以是階層式的。
+ * 如果把 page object 整個丟到前端，是否也在透漏 UI 細節？尤其 keyword 不應該有 component 之分... 
+ * 或許不該這麼做，應該朝向怎麼簡化 keyword 包裝 page objet 的工作（例如參數跟回傳值儘可能採用相同的字串），畢竟兩者的用法很不一樣，要分別適用不同的用法才是對的。
+ * 更何況 keyword 是 interface，不太能夠變動，可能要包裝 readability...
+ * 被當做 Keyword 使用時，page object 內部唯一的 assertion 不會作用，因為要明確寫出來以提高可讀性。
+ * page object 同一個操作會因為轉向不同的頁面而分出不同的版本，但 keyword 只會提供一個版本，因為 keyword 用不到操作完成後傳回的另一個 page object，而且 "強迫" 將 should be on page xxx 明確地寫出來的（確認在某個頁面後，內部固定會做 wait_for_idle 的等待），可以提高 test data 的可讀性。
+ * list 的操作要同時提供 index/row 跟 label 做為參數（index_or_label），用 label 可以讓 test data 的可讀性提高，但遇到 label 重複的狀況時，要能改用 index。
+
+
+== 參考資料 ==
+
+ * http://en.wikipedia.org/wiki/Test_automation[Test automation - Wikipedia, the free encyclopedia] - Graphical User Interface (GUI) testing 最後一段提到 model of AUT 的做法，聽起來好像是 keyword-driven 跟 page object pattern 的組合。
+ * http://www.beer30.org/?p=54[Page Objects for Robot Framework | Tony's Blog] (2012-05-26)
+

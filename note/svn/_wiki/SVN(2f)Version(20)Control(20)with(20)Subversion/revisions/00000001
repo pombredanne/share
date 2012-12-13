@@ -1,0 +1,225 @@
+= SVN / Version Control With Subversion =
+http://svnbook.red-bean.com/nightly/en/svn-book.html @2010/10/20
+<<TableOfContents>>
+
+= Chapter 3. Advanced Topics =
+
+:::
+
+== Properties ==
+
+We've already covered in detail how Subversion stores and retrieves various versions of files and directories in its repository. Whole chapters have been devoted to this most fundamental piece of functionality provided by the tool. And if the versioning support stopped there, Subversion would still be complete from a version control perspective.
+
+But it doesn't stop there.
+
+__In addition to versioning your directories and files, Subversion provides interfaces for adding, modifying, and removing ''versioned metadata'' on each of your versioned directories and files. We refer to this metadata as ''properties'', and they can be thought of as ''two-column tables'' that map property names to arbitrary values attached to each item in your working copy. Generally speaking, the names and values of the properties can be whatever you want them to be, with the constraint that the names must contain only ASCII characters. And the best part about these properties is that they, too, are versioned, just like the textual contents of your files. You can modify, commit, and revert property changes as easily as you can file content changes. And the sending and receiving of property changes occurs as part of your typical commit and update operations—you don't have to change your basic processes to accommodate them.__
+
+Note: __Subversion has reserved the set of properties whose names begin with `svn:` as its own.__ While there are only a handful of such properties in use today, you should avoid creating custom properties for your own needs whose names begin with this prefix. Otherwise, you run the risk that a future release of Subversion will grow support for a feature or behavior driven by a property of the same name but with perhaps an entirely different interpretation.
+
+__Properties show up elsewhere in Subversion, too. Just as files and directories may have arbitrary property names and values attached to them, each ''revision as a whole'' may have arbitrary properties attached to it. The same constraints apply—human-readable names and anything-you-want binary values. The main difference is that ''revision properties'' are not versioned. In other words, if you change the value of, or delete, a revision property, there's no way, within the scope of Subversion's functionality, to recover the previous value.__
+
+__Subversion has no particular policy regarding the use of properties. It asks only that you not use property names that begin with the prefix `svn:`. That's the namespace that it sets aside for its own use. And Subversion does, in fact, use properties—both the versioned and unversioned variety. Certain ''versioned properties'' have special meaning or effects when found on files and directories, or they house a particular bit of information about the revisions on which they are found. Certain revision properties are automatically attached to revisions by Subversion's commit process, and they carry information about the revision.__ Most of these properties are mentioned elsewhere in this or other chapters as part of the more general topics to which they are related. For an exhaustive list of Subversion's ''predefined properties'', see the section called “Subversion Properties”.
+
+Note: __While Subversion automatically attaches properties (`svn:date`, `svn:author`, `svn:log`, and so on) to revisions, it does not presume thereafter the existence of those properties, and neither should you or the tools you use to interact with your repository. Revision properties can be deleted programmatically or via the client (if allowed by the ''repository hooks'') without damaging Subversion's ability to function. So, when writing scripts which operate on your Subversion repository data, do not make the mistake of assuming that any particular revision property exists on a revision.__
+
+In this section, we will examine the utility—both to users of Subversion and to Subversion itself—of property support. You'll learn about the property-related `svn` subcommands and how property modifications affect your normal Subversion ''workflow''.
+
+=== Why Properties? ===
+
+:::
+
+== Externals Definitions ==
+
+__Sometimes it is useful to construct a working copy that is made out of a number of different checkouts. For example, you may want different subdirectories to come from different locations in a repository or perhaps from different repositories altogether.__ You could certainly set up such a scenario by hand—using `svn checkout` to create the sort of nested working copy structure you are trying to achieve. But if this layout is important for everyone who uses your repository, every other user will need to perform the same checkout operations that you did.
+
+__Fortunately, Subversion provides support for externals definitions. An externals definition is a mapping of a local directory to the URL—and ideally a particular revision—of a versioned directory. In Subversion, you declare externals definitions in groups using the `svn:externals` property. You can create or modify this property using `svn propset` or `svn propedit` (see the section called “Manipulating Properties”). It can be set on any versioned directory, and its value describes both the external repository location and the client-side directory to which that location should be checked out.__
+
+__The convenience of the `svn:externals` property is that once it is set on a versioned directory, everyone who checks out a working copy with that directory also gets the benefit of the externals definition. In other words, once one person has made the effort to define the nested working copy structure, no one else has to bother—Subversion will, after checking out the original working copy, automatically also check out the ''external working copies''.__
+
+Warning: __The ''relative target subdirectories'' of externals definitions must not already exist on your or other users' systems—Subversion will create them when it checks out the external working copy.__
+
+You also get in the externals definition design all the regular benefits of Subversion properties. __The definitions are versioned. If you need to change an externals definition, you can do so using the regular property modification subcommands. When you commit a change to the `svn:externals` property, Subversion will synchronize the checked-out items against the changed externals definition when you next run `svn update`.__ The same thing will happen when others update their working copies and receive your changes to the externals definition.
+
+Tip: __Because the `svn:externals` property has a multiline value, we strongly recommend that you use `svn propedit` instead of `svn propset`.__
+
+__Subversion releases prior to 1.5 honor an externals definition format that is a ''multiline table of subdirectories'' (relative to the versioned directory on which the property is set), optional ''revision flags'', and fully qualified, absolute Subversion repository URLs.__ An example of this might look as follows:
+
+ {{{
+$ svn propget svn:externals calc
+third-party/sounds             http://svn.example.com/repos/sounds
+third-party/skins -r148        http://svn.example.com/skinproj
+third-party/skins/toolkit -r21 http://svn.example.com/skin-maker
+ }}}
+
+__When someone checks out a working copy of the `calc` directory referred to in the previous example, Subversion also continues to check out the items found in its externals definition.__
+
+ {{{
+$ svn checkout http://svn.example.com/repos/calc
+A  calc
+A  calc/Makefile
+A  calc/integer.c
+A  calc/button.c
+Checked out revision 148.
+
+Fetching external item into calc/third-party/sounds
+A  calc/third-party/sounds/ding.ogg
+A  calc/third-party/sounds/dong.ogg
+A  calc/third-party/sounds/clang.ogg
+…
+A  calc/third-party/sounds/bang.ogg
+A  calc/third-party/sounds/twang.ogg
+Checked out revision 14.
+
+Fetching external item into calc/third-party/skins
+…
+ }}}
+
+__As of Subversion 1.5, though, a new format of the `svn:externals` property is supported. Externals definitions are still multiline, but the order and format of the various pieces of information have changed. The new syntax more closely mimics the order of arguments you might pass to `svn checkout`: the optional revision flags come first, then the external Subversion repository URL, and finally the relative local subdirectory. Notice, though, that this time we didn't say “fully qualified, absolute Subversion repository URLs.” That's because the new format supports relative URLs and URLs that carry ''peg revisions''.__ The previous example of an externals definition might, in Subversion 1.5, look like the following:
+
+ {{{
+$ svn propget svn:externals calc
+      http://svn.example.com/repos/sounds third-party/sounds
+-r148 http://svn.example.com/skinproj third-party/skins
+-r21  http://svn.example.com/skin-maker third-party/skins/toolkit
+ }}}
+
+Or, making use of the ''peg revision syntax'' (which we describe in detail in the section called “Peg and Operative Revisions”), it might appear as:
+
+ {{{
+$ svn propget svn:externals calc
+http://svn.example.com/repos/sounds third-party/sounds
+http://svn.example.com/skinproj@148 third-party/skins
+http://svn.example.com/skin-maker@21 third-party/skins/toolkit
+ }}}
+
+__Tip: You should seriously consider using explicit revision numbers in all of your externals definitions. Doing so means that you get to decide when to pull down a different snapshot of external information, and exactly which snapshot to pull. Besides avoiding the surprise of getting changes to third-party repositories that you might not have any control over, using explicit revision numbers also means that as you backdate your working copy to a previous revision, your externals definitions will also revert to the way they looked in that previous revision, which in turn means that the external working copies will be updated to match the way they looked back when your repository was at that previous revision. For software projects, this could be the difference between a successful and a failed build of an older snapshot of your complex codebase.__
+
+__For most repositories, these three ways of formatting the externals definitions have the same ultimate effect.__ They all bring the same benefits. Unfortunately, they all bring the same annoyances, too. __Since the definitions shown use absolute URLs, moving or copying a directory to which they are ''attached'' will not affect what gets checked out as an external (though the relative local target subdirectory will, of course, move with the renamed directory).__ This can be confusing—even frustrating—in certain situations. For example, say you have a top-level directory named `my-project`, and you've created an externals definition on one of its subdirectories (`my-project/some-dir`) that tracks the latest revision of another of its subdirectories (`my-project/external-dir`).
+
+ {{{
+$ svn checkout http://svn.example.com/projects .
+A    my-project
+A    my-project/some-dir
+A    my-project/external-dir
+…
+Fetching external item into 'my-project/some-dir/subdir'
+Checked out external at revision 11.
+
+Checked out revision 11.
+$ svn propget svn:externals my-project/some-dir
+subdir http://svn.example.com/projects/my-project/external-dir
+
+$
+ }}}
+
+Now you use `svn move` to rename the `my-project` directory. At this point, your externals definition will still refer to a path under the `my-project` directory, even though that directory no longer exists.
+
+ {{{
+$ svn move -q my-project renamed-project
+$ svn commit -m "Rename my-project to renamed-project."
+Deleting       my-project
+Adding         renamed-project
+
+Committed revision 12.
+$ svn update
+
+Fetching external item into 'renamed-project/some-dir/subdir'
+svn: Target path does not exist
+$
+ }}}
+
+__Also, absolute URLs can cause problems with repositories that are available via multiple URL schemes. For example, if your Subversion server is configured to allow everyone to check out the repository over `http://` or `https://`, but only allow commits to come in via `https://`, you have an interesting problem on your hands. If your externals definitions use the `http://` form of the repository URLs, you won't be able to commit anything from the ''working copies created by those externals''. On the other hand, if they use the `https://` form of the URLs, anyone who might be checking out via `http://` because his client doesn't support `https://` will be unable to fetch the external items. Be aware, too, that if you need to ''reparent'' your working copy (using `svn switch` with the `--relocate` option), externals definitions will not also be reparented.__
+
+__Subversion 1.5 takes a huge step in relieving these frustrations. As mentioned earlier, the URLs used in the new externals definition format can be relative, and Subversion provides ''syntax magic'' for specifying multiple flavors of URL relativity.__
+
+ * `../` - Relative to the URL of the directory on which the `svn:externals` property is set
+ * `^/` - Relative to the root of the repository in which the `svn:externals` property is versioned
+ * `//` - Relative to the scheme of the URL of the directory on which the `svn:externals` property is set
+ * `/` - Relative to the root URL of the server on which the `svn:externals` property is versioned
+
+So, looking a fourth time at our previous externals definition example, and making use of the new absolute URL syntax in various ways, we might now see:
+
+ {{{
+$ svn propget svn:externals calc
+^/sounds third-party/sounds
+/skinproj@148 third-party/skins
+//svn.example.com/skin-maker@21 third-party/skins/toolkit
+ }}}
+
+__Subversion 1.6 brings another improvement to externals definitions by introducing ''external definitions for files''. File externals are configured just like externals for directories and appear as a versioned file in the working copy.__
+
+For example, let's say you had the file `/trunk/bikeshed/blue.html` in your repository, and you wanted this file, as it appeared in revision 40, to appear in your working copy of `/trunk/www/` as `green.html`.
+
+The externals definition required to achieve this should look familiar by now:
+
+ {{{
+$ svn propget svn:externals www/
+^/trunk/bikeshed/blue.html@40 green.html
+$ svn update
+Fetching external item into 'www'
+E    www/green.html
+Updated external to revision 40.
+
+Update to revision 103.
+$ svn status
+    X   www/green.html
+ }}}
+
+As you can see in the previous output, __Subversion denotes file externals with the letter `E` when they are fetched into the working copy, and with the letter `X` when showing the working copy status.__
+
+Warning: __While directory externals can place the external directory at any depth, and any missing intermediate directories will be created, file externals must be placed into a working copy that is already checked out.__
+
+__When examining the file external with `svn info`, you can see the URL and revision the external is coming from__:
+
+ {{{
+$ svn info www/green.html 
+Path: www/green.html
+Name: green.html
+URL: http://svn.example.com/projects/my-project/trunk/bikeshed/blue.html
+Repository UUID: b2a368dc-7564-11de-bb2b-113435390e17
+Revision: 40
+Node kind: file
+Schedule: normal
+Last Changed Author: harry
+Last Changed Rev: 40
+Last Changed Date: 2009-07-20 20:38:20 +0100 (Mon, 20 Jul 2009)
+Text Last Updated: 2009-07-20 23:22:36 +0100 (Mon, 20 Jul 2009)
+Checksum: 01a58b04617b92492d99662c3837b33b
+ }}}
+
+__Because file externals appear in the working copy as versioned files, they can be modified and even committed if they reference a file at the HEAD revision. The committed changes will then appear in the external as well as the file referenced by the external.__ However, in our example, we ''pinned'' the external to an older revision, so attempting to commit the external fails:
+
+ {{{
+$ svn status
+M   X   www/green.html
+$ svn commit -m "change the color" www/green.html
+Sending        www/green.html
+svn: Commit failed (details follow):
+svn: File '/trunk/bikeshed/blue.html' is out of date
+ }}}
+
+__Keep this in mind when defining file externals. If you need the external to refer to a certain revision of a file you will not be able to modify the external. If you want to be able to modify the external, you cannot specify a revision other than the HEAD revision, which is implied if no revision is specified.__
+
+Unfortunately, the support which exists for externals definitions in Subversion remains less than ideal. Both file and directory externals have shortcomings. __For either type of external, the local subdirectory part of the definition cannot contain `..` parent directory indicators (such as `../../skins/myskin`). File externals cannot refer to files from other repositories. A file external's URL must always be in the same repository as the URL that the file external will be inserted into. Also, file externals cannot be moved or deleted. The `svn:externals` property must be modified instead. However, file externals can be copied.__
+
+:::
+
+= Chapter 9. Subversion Complete Reference =
+
+:::
+
+== Subversion Properties ==
+
+__Subversion allows users to invent arbitrarily named versioned properties on files and directories, as well as unversioned properties on revisions. The only restriction is on properties whose names begin with `svn:` (those are reserved for Subversion's own use).__ While these properties may be set by users to control Subversion's behavior, users may not invent new `svn:` properties.
+
+=== Versioned Properties ===
+
+These are the versioned properties that Subversion reserves for its own use:
+
+:::
+
+`svn:externals`
+
+__If present on a directory, the value is a ''multiline list'' of other paths and URLs the client should check out.__ See the section called “Externals Definitions”.
+
+:::

@@ -1,0 +1,413 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>SIKULI Internals</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="internals.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>SIKULI Internals</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="listingblock">
+<div class="title"><code>sikuli/Sikuli.py</code></div>
+<div class="content">
+<pre><code>_si = SikuliScript()
+
+def addImagePath(path):
+   ImageLocator.addImagePath(path)
+
+def getImagePath():
+   return ImageLocator.getImagePath()
+
+def removeImagePath(path):
+   ImageLocator.removeImagePath(path)
+
+def setBundlePath(path):
+   if path[-1:] == java.io.File.separator:
+      path = path[:-1]
+   Settings.BundlePath = path
+
+def switchApp(app):
+   return _si.switchApp(app)
+
+def openApp(app):
+   return _si.openApp(app)
+
+def closeApp(app):
+   return _si.closeApp(app)
+
+##
+# Runs the given string command.
+# @param msg The given string command.
+# @return Returns the output from the executed command.
+def run(cmd):
+    return _si.run(cmd)
+
+############### SECRET FUNCTIONS ################
+
+def getSikuliScript():
+   return _si
+
+def initSikuli():
+   dict = globals()
+   dict['SCREEN'] = Screen()
+   dict['SCREEN']._exposeAllMethods(__name__) <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+   #print "Sikuli is initialized. ", id(dict['SCREEN'])
+
+
+initSikuli()</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+<code>from sikuli.Sikuli import *</code> 就是從這裡來的。
+</td></tr>
+</table></div>
+<div class="listingblock">
+<div class="title"><code>org/sikuli/script/Region.java</code></div>
+<div class="content">
+<pre><code>public class Region {
+
+   private IRobot _robot; // 必要的五項資訊
+   private IScreen _scr;
+   public int x, y, w, h;
+
+   Region(Rectangle r, IScreen parentScreen) { <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+      init(r.x, r.y, r.width, r.height, parentScreen);
+   }
+
+   protected Region(){} <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+
+   protected void init(int x_, int y_, int w_, int h_, IScreen parentScreen) { <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+      x = x_;
+      y = y_;
+      w = w_;
+      h = h_;
+      if(parentScreen != null)
+         _scr = parentScreen;
+      else
+         _scr = initScreen();
+      _robot = _scr.getRobot();
+   }
+
+   public &lt;PSRML&gt; int click(PSRML target, int modifiers)
+                                                throws  FindFailed{
+      Location loc = getLocationFromPSRML(target);
+      int ret = _click(loc, InputEvent.BUTTON1_MASK, modifiers, false);
+
+      SikuliActionManager.getInstance().clickTarget(this, target, _lastScreenImage, _lastMatch);
+      return ret;
+   }
+
+   public &lt;PSRML&gt; Location getLocationFromPSRML(PSRML target) <img src="../../_asciidoc/images/icons/callouts/4.png" alt="4" />
+                                             throws  FindFailed {
+      if(target instanceof Pattern || target instanceof String){
+         Match m = find(target); <img src="../../_asciidoc/images/icons/callouts/5.png" alt="5" />
+         if(m!=null)
+            return m.getTarget();
+         return null;
+      }
+      if(target instanceof Match) return ((Match)target).getTarget();
+      if(target instanceof Region) return ((Region)target).getCenter();
+      if(target instanceof Location) return (Location)target;
+      return null;
+   }
+
+   public Region below(){     return below(999999);   }
+   public Region below(int range){
+      Rectangle bounds = getScreen().getBounds();
+      Rectangle rect = new Rectangle(x,y+h,w,range);
+      rect = rect.intersection(bounds);
+      return Region.create(rect); <img src="../../_asciidoc/images/icons/callouts/6.png" alt="6" />
+   }
+
+   public &lt;PSC&gt; Match find(final PSC target) throws FindFailed{
+      if(_autoWaitTimeout &gt; 0){
+         return wait(target, _autoWaitTimeout);
+      }
+      while (true){
+         try{
+            _lastMatch = doFind(target);
+         }catch (Exception e){
+            throw new FindFailed(e.getMessage());
+         }
+
+         if (_lastMatch != null){
+            return _lastMatch;
+         }
+
+         if (!handleFindFailed(target))
+            return null;
+      }
+   }
+
+   public &lt;PSC&gt; Match wait(PSC target, double timeout) throws FindFailed{
+
+      while (true){
+         try {
+            Debug.log(2, "waiting for " + target + " to appear");
+            RepeatableFind rf = new RepeatableFind(target);
+            rf.repeat(timeout);
+            _lastMatch = rf.getMatch();
+
+         } catch (Exception e) {
+            throw new FindFailed(e.getMessage());
+         }
+
+         if (_lastMatch != null){
+            Debug.log(2, "" + target + " has appeared.");
+            break;
+         }
+
+         Debug.log(2, "" + target + " has not appeared.");
+
+         if (!handleFindFailed(target))
+            return null;
+      }
+
+      return _lastMatch;
+   }
+
+   class RepeatableFind extends Repeatable{
+
+      Object _target;
+      Match _match = null;
+      public &lt;PSC&gt; RepeatableFind(PSC target){
+         _target = target;
+      }
+
+      public Match getMatch() {
+         return _match;
+      }
+
+      @Override
+      public void run() throws IOException{
+         _match = doFind(_target); // 最後又回到 doFind 了
+      }
+
+       @Override
+      boolean ifSuccessful() {
+         return _match != null;
+      }
+
+   }
+
+   &lt;PSC&gt; Match doFind(PSC ptn) throws IOException{ // 可惜 doFind 是 no modifier
+      ScreenImage simg = getScreen().capture(x, y, w, h);
+      _lastScreenImage = simg;
+      Finder f = new Finder(simg, this);
+      f.find(ptn);
+      if(f.hasNext()){
+         return f.next();
+      }
+      return null;
+   }</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+別的套件存取不到。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+什麼事都沒做，之後 <code>region.getScreen()</code> 會取不到東西。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+還好還有 <code>init()</code> 可以把自訂的 <code>IScreen</code> 傳進去。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/4.png" alt="4" /></td><td>
+原來 PSRML 指的就是 Pattern、String、Region、Match、Location。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/5.png" alt="5" /></td><td>
+所以才說 <code>click()</code> 內含 <code>wait()</code> 的動作。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/6.png" alt="6" /></td><td>
+<code>Region.java</code> 裡有很多 <code>Region.create</code> 的呼叫。
+</td></tr>
+</table></div>
+<div class="listingblock">
+<div class="title"><code>org/sikuli/script/Match.java</code></div>
+<div class="content">
+<pre><code>public class Match extends Region implements Comparable { <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+   double score;
+   String _text = null;
+
+   private Location _target = null;</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+讓人意外的是，<code>Match</code> 也是個 <code>Region</code>。
+</td></tr>
+</table></div>
+<div class="listingblock">
+<div class="title"><code>org/sikuli/script/Finder.java</code></div>
+<div class="content">
+<pre><code>public class Finder implements Iterator&lt;Match&gt;{
+   private Region _region = null;
+   private Pattern _pattern = null;
+
+   public Match next(){
+      Match ret = null;
+      if(hasNext()){
+         FindResult fr = _results.get(_cur_result_i++);
+         IScreen parentScreen = null;
+         if(_region != null)
+            parentScreen = _region.getScreen();
+         ret = new Match(fr, parentScreen); <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+         if(_region != null){
+            ret = _region.toGlobalCoord(ret);
+         }
+         if(_pattern != null){
+            Location offset = _pattern.getTargetOffset();
+            ret.setTargetOffset(offset);
+         }
+      }
+      return ret;
+   }</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+這裡會是個問題。
+</td></tr>
+</table></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">網站</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="https://github.com/sikuli/sikuli/tree/X1.0-rc3">sikuli/sikuli · GitHub</a> (X1.0 rc3)
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="https://github.com/sikuli/sikuli/blob/X1.0-rc3/sikuli-script/src/main/java/org/sikuli/script/Screen.java">Screen.java</a>
+</p>
+</li>
+<li>
+<p>
+<a href="https://github.com/sikuli/sikuli/blob/X1.0-rc3/sikuli-script/src/main/java/org/sikuli/script/Region.java">Region.java</a>
+</p>
+</li>
+<li>
+<p>
+<a href="https://github.com/sikuli/sikuli/blob/X1.0-rc3/sikuli-script/src/main/java/org/sikuli/script/Match.java">Match.java</a>
+</p>
+</li>
+<li>
+<p>
+<a href="https://github.com/sikuli/sikuli/blob/X1.0-rc3/sikuli-script/src/main/java/org/sikuli/script/Finder.java">Finder.java</a>
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+<a href="https://launchpad.net/sikuli">Sikuli in Launchpad</a>
+</p>
+</li>
+<li>
+<p>
+<a href="https://bugs.launchpad.net/sikuli">Bugs : Sikuli</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">參考文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://sikuli.org/doc/java-x/">org.sikuli.script (Javadoc of Sikuli Script)</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">官方文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://sikuli.org/docx/contributing.html">How to get involved — Sikuli X 1.0 documentation</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_學習筆記">學習筆記</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+如果 Sikuli 內部是用 object factory 或 IoC 來實作的話，改寫支援 Android 就不會這麼困難跟 dirty 了。
+</p>
+</li>
+<li>
+<p>
+如果要自訂其他 screen，可以仿 <code>org.sikuli.script.Screen</code>，繼承自 <code>Region</code> 並實作 <code>IScreen</code>。
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:15:40 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

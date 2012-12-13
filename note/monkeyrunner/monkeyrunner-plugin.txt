@@ -1,0 +1,127 @@
+= Extending monkeyrunner =
+
+所謂擴充 monkeyrunner API，指的是在 `monkeyrunner` 帶出的執行環境下，增加可以存取 Java class 或 Python module，或是事先對該環境做一些初始化。其中：
+
+ * JAR 檔要透過 `-plugin xxx.jar` 帶進去，但不用放到 `$ANDROID_HOME/tools/lib`。但如果不是 plugin 的 JAR 檔，還是得放到 `$ANDROID_HOME/tools/lib` 才行。
+ * monkeyrunner 不吃 `JYTHONPATH` 的設定，所以其他 Python modules (`*.py`) 只能事先擺到 `$ANDROID_HOME/tools/lib/Lib` 才行。想到可以進到 plugin 之後，自己再做 `sys.path.append(os.environ['JYTHONPATH'])`...
+ * 事後如果更新 SDK，這些手動佈署的檔案都會被拿掉，所以最好有自動佈署的機制，檢查到檔案不見或內容不一致時就再佈署一次。
+
+.`monkeyrunner-plugin/build.xml`
+--------------------------------------------------------------------------------
+.
+|-- build.xml
+|-- src
+|   `-- main
+|       `-- java
+|           `-- example
+|               `-- MonkeyPlugin.java
+`-- test.py
+--------------------------------------------------------------------------------
+
+.`monkeyrunner-plugin/src/main/java/example/MonkeyPlugin.java`
+--------------------------------------------------------------------------------
+package example;
+
+import com.google.common.base.Predicate;
+import org.python.util.PythonInterpreter;
+
+public class MonkeyPlugin implements Predicate<PythonInterpreter> {
+
+    @Override
+    public boolean apply(PythonInterpreter anInterpreter) {
+        System.out.println("MonkeyPlugin inited.");
+        anInterpreter.exec("import sys, os.path as path"); <1>
+        anInterpreter.exec("pring sys.argv");
+        return true; <2>
+    }
+
+}
+--------------------------------------------------------------------------------
+<1> 環境內可以直接存取 `sys` 跟 ``path`。
+<2> 不知道傳回 `true` 或 `false` 有什麼差別??
+
+--------------------------------------------------------------------------------
+$ ant jar
+...
+
+$ monkeyrunner -plugin target/monkeyrunner-plugin.jar
+Jython 2.5.0 (Release_2_5_0:6476, Jun 16 2009, 13:33:26) 
+[OpenJDK 64-Bit Server VM (Sun Microsystems Inc.)] on java1.6.0_20
+>>> 
+
+$ monkeyrunner -plugin target/monkeyrunner-plugin.jar test.py
+MonkeyPlugin inited. <1>
+['/storage/data/Dropbox/KM/monkeyrunner/monkeyrunner-plugin/test.py']
+without explicitly importing os.path, alias 'path' is immediately available, because of the plugin.
+the path separator = [/]
+
+$ cd target
+$ monkeyrunner -plugin monkeyrunner-plugin.jar ../test.py 
+MonkeyPlugin inited.
+['/storage/data/Dropbox/KM/monkeyrunner/monkeyrunner-plugin/target/../test.py'] <2>
+without explicitly importing os.path, alias 'path' is immediately available, because of the plugin.
+the path separator = [/]
+--------------------------------------------------------------------------------
+<1> 測試發現，plugin 只有在執行 script 時才會被初始化。
+<2> `sys.argv[0]` 固定傳回 script 的完整路徑。
+
+== 從 Java 裡叫用 monkeyruuner API ==
+
+`com.android.monkeyrunner.MonkeyRunner` 其 `waitForConnection()` 的原始碼如下：
+
+--------------------------------------------------------------------------------
+private static MonkeyRunnerBackend backend;
+
+static void setBackend(MonkeyRunnerBackend backend) {
+    MonkeyRunner.backend = backend;
+}
+
+...
+
+public static MonkeyDevice waitForConnection(PyObject[] args, String[] kws) { <1>
+    ArgParser ap = JythonUtils.createArgParser(args, kws);
+    Preconditions.checkNotNull(ap);
+
+    long timeoutMs;
+    try {
+        double timeoutInSecs = JythonUtils.getFloat(ap, 0);
+        timeoutMs = (long) (timeoutInSecs * 1000.0);
+    } catch (PyException e) {
+        timeoutMs = Long.MAX_VALUE;
+    }
+
+    return backend.waitForConnection(timeoutMs, <2>
+            ap.getString(1, ".*"));
+}
+--------------------------------------------------------------------------------
+<1> 這裡 `(PyObject[] args, String[] kws)` 的寫法是為了支援 Python 裡 `(*args, **kwargs)` 的用法。
+<2> 從呼叫方式看起來 `MonkeyRunnerBackend` 似乎更適合從 Java 裡呼叫？但它不是 monkeyrunner API 的一部份，不應該相依在內部的實作細節。而且目前 (2012-04-26) 的 monkeyrunner 也已經找不到 `MonkeyRunnerBackend` 了...
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://www.jython.org/archive/22/userfaq.html#extending-jython[Jython FAQ > Extending Jython] - 提到 `foo(PyObject[] args, String[] keywords)` 的用法。
+ * http://www.java2s.com/Open-Source/Android/android-core/platform-sdk/com/android/monkeyrunner/MonkeyRunner.java.htm[MonkeyRunner.java]
+================================================================================
+
+== 參考資料 ==
+
+.網站
+--
+ * http://www.java2s.com/Open-Source/Android/android-core/platform-sdk/com/android/monkeyrunner/Catalogmonkeyrunner.htm[monkeyrunner (com.android.monkeyrunner) 的原始碼]
+--
+
+.官方文件
+--
+ * http://developer.android.com/guide/developing/tools/monkeyrunner_concepts.html[monkeyrunner > Extending monkeyrunner with Plugins]
+--
+
+.其他文件
+--
+ * http://code.google.com/p/android-in-practice/source/browse/trunk/appendices/DealDroidMonkeyrunner/?r=570[/trunk/appendices/DealDroidMonkeyrunner/ - android-in-practice] - Android in Practice 這本書有提到 monkeyrunner plugin 的寫法。
+--
+
+
+== 學習筆記 ==
+
+

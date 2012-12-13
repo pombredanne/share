@@ -1,0 +1,266 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>Siklui: 鍵盤操作與文字輸入</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="keyboard.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>Siklui: 鍵盤操作與文字輸入</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/caution.png" alt="Caution" />
+</td>
+<td class="content">
+<div class="paragraph"><p>適時用鍵盤的操作（尤其是使用快捷鍵）來取代圖像式的操作，可以讓測試程式比較不容易受到顯示條件的影響。不過鍵盤與滑鼠的操作必須要取得平衡，否則用鍵盤操作都測不到問題，但滑鼠操作的問題都沒有被反應出來。簡單地來說：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+如果操作的對像是受測的應用程式，要能兼顧鍵盤與滑鼠來操作；當然，如果沒有特殊的考量，用鍵盤來操作是比較不容易出錯的。
+</p>
+</li>
+<li>
+<p>
+否則，儘量用鍵盤來取代滑鼠定位的操作。
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>跟鍵盤或文字輸入相關的操作有：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>Region.type()</code>
+</p>
+</li>
+<li>
+<p>
+<code>Region.paste()</code>
+</p>
+</li>
+<li>
+<p>
+<code>Region.keyDown()</code>
+</p>
+</li>
+<li>
+<p>
+<code>Region.keyUp()</code>
+</p>
+</li>
+<li>
+<p>
+<code>Env.isLockOn()</code>
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>先看相對高階的操作：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>paste([PSMRL], text)</code>
+</p>
+</li>
+<li>
+<p>
+<code>type([PSMRL], text[, modifiers])</code> - 直接在目前取得焦點的控制項上輸入 <em>text</em>，或是點擊 <em>PSMRL</em> 之後再接著輸入 <em>text</em>。
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>其中 <code>type()</code> 會模擬鍵盤按鍵的動作，所以不能輸入英文以外的字元，而 <code>paste()</code> 則是透過剪貼簿將文字貼到控制項上，所以可以支援英文以外的字元。由於這樣的差異，建議單純將 <code>type()</code> 用在模擬使用者連續敲鍵盤按鍵的動作（通常是組合鍵），文字的輸入則統一交給 <code>paste()</code>，或許 <code>type()</code> 的 <em>text</em> 參數應該取做 <em>keys</em> 比較不會造成混淆。</p></div>
+<div class="paragraph"><p>下面示範在 Mac OS X 下用 TextEdit 打開 <code>log.txt</code>：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>openApp('TextEdit')
+sleep(2) <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+type('o', KeyModifier.CMD) <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+sleep(2)
+type('g', KeyModifier.CMD | KeyModifier.SHIFT)
+sleep(2)
+paste('/Users/jeremy/Desktop/log.txt')
+type(Key.ENTER)</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+按鍵不能送得太快，否則畫面可能還沒開出來。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+送出 CMD + O 的意思。測試發現傳入大寫的 <code>O</code> 反而不會有作用，跟當時 Caps Lock 的狀態無關。
+<div class="openblock">
+<div class="content">
+<div class="paragraph"><p>同時間要按下的修飾鍵（key modifiers）由參數 <em>modifiers</em> 來控制，可使用的常數都定義在 <code>KeyModifier</code> 裡：(<code>KeyModifier.CONSTANT</code>)</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>CTRL</code>
+</p>
+</li>
+<li>
+<p>
+<code>SHIFT</code>
+</p>
+</li>
+<li>
+<p>
+<code>ALT</code> - 也就是 Mac 下的 Option。
+</p>
+</li>
+<li>
+<p>
+<code>CMD</code>
+</p>
+</li>
+<li>
+<p>
+<code>WIN</code> - 微軟的國旗鍵。
+</p>
+</li>
+<li>
+<p>
+<code>META</code> - 在 Windows/Linux 與 Mac 下分別對應 <code>KeyModifier.WIN</code> 與 <code>KeyModifier.CMD</code>。
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>如果有多個修飾鍵，可以用 <code>|</code> 串接起來，例如 <code>KeyModifier.CMD | KeyModifier.SHIFT</code></p></div>
+<div class="paragraph"><p>修飾鍵以外的按鍵則由參數 <em>text</em> 來控制。一般的按鍵可以用對應的字元來表示，其他的功能鍵則由定義在 <code>Key</code> 的常數表示：(<code>Key.CONSTANT</code>)</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>ENTER, TAB, ESC, BACKSPACE, DELETE, INSERT</code>
+</p>
+</li>
+<li>
+<p>
+<code>SPACE</code>
+</p>
+</li>
+<li>
+<p>
+<code>F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15</code>
+</p>
+</li>
+<li>
+<p>
+<code>HOME, END, LEFT, RIGHT, DOWN, UP, PAGE_DOWN, PAGE_UP</code>
+</p>
+</li>
+<li>
+<p>
+<code>PRINTSCREEN, PAUSE, CAPS_LOCK, SCROLL_LOCK, NUM_LOC</code>
+</p>
+</li>
+<li>
+<p>
+<code>NUM0, NUM1, NUM2, NUM3, NUM4, NUM5, NUM6, NUM7, NUM8, NUM9, SEPARATOR, ADD, MINUS, MULTIPLY, DIVIDE</code>
+</p>
+</li>
+<li>
+<p>
+<code>ALT, CMD, CTRL, META, SHIFT, WIN</code>
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>如果要連續按下多個按鍵可以用 <code>+</code> 將多個 <code>Key.CONSTANT</code> 串接起來。例如 <code>type(Key.DOWN + Key.DOWN + Key.ENTER)</code> 表示連按兩次方向鍵，再接著按 Enter。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/warning.png" alt="Warning" />
+</td>
+<td class="content">別寫成 <code>type(Key.CMD + 'o')</code>，這意謂著連續按下 CMD 跟 O，跟同時按下 CMD + O 的意義完全不同。基本上 <code>Key.CONSTANT</code> 只能用在參數 <em>text</em>，而 <code>KeyModifier.CONSTANT</code> 則只能用在參數 <em>modifiers</em>。</td>
+</tr></table>
+</div>
+</div></div>
+</td></tr>
+</table></div>
+<div class="paragraph"><p>再來看比較低階的鍵盤操作：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>keyDown(key | list-of-keys)</code> - 按下一或多個鍵，直到用 <code>Region.keyUp()</code> 放開為止。
+</p>
+</li>
+<li>
+<p>
+<code>keyUp([key | list-of-keys])</code> - 放開一或多個鍵；如果沒有給定任何鍵的話，表示放開所有目前被按下的鍵。
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>&#8230;</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://sikuli.org/docx/region.html#Region.type">Acting on a Region - type</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://sikuli.org/docx/region.html#low-level-mouse-and-keyboard-actions">Low-level Mouse and Keyboard Actions</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:13:42 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

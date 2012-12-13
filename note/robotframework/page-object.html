@@ -1,0 +1,171 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>Selenium: 如何將 Page Object Pattern 應用在 Robot Framework</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="page-object.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>Selenium: 如何將 Page Object Pattern 應用在 Robot Framework</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>花時間包裝好的 <a href="../selenium/selenium-page-object.html">page object</a>，除了可以從程式裡叫用之外，也可以稍作包裝後公開為 <a href="index.html">Robot Framework</a> 的 keyword，讓測試人員不用寫程式也可以享用到 page object 的便利。</p></div>
+<div class="paragraph"><p>page library?</p></div>
+<div class="paragraph"><p>如果把 UI Mapping 的資料分散在不同的 Page Object？會不會讓 UI Mapping 變得更容易管理？</p></div>
+<div class="paragraph"><p>在 RF 裡用起來要像是個 keyword，所以不太適合吧 page object 整個往外丟到 RF 做為一個 keyword。而且繼承而來的 methods，會不會讓 keywords 產生衝突？</p></div>
+<div class="listingblock">
+<div class="title"><code>BasePage.py</code></div>
+<div class="content">
+<pre><code>class BasePage():
+
+    def log_off(self):
+        print '*WARN* Log Off'</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="title"><code>AdminPage.py</code></div>
+<div class="content">
+<pre><code>from BasePage import BasePage
+
+class AdminPage(BasePage):
+
+    def add_user(self, acccount):
+        print '*WARN* Add User'</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="title"><code>test.txt</code></div>
+<div class="content">
+<pre><code>| *Setting* | *Value*
+| Library | BasePage
+| Library | AdminPage
+
+| *TestCase* | *Action* | *Argument*
+| Test
+| | Add User | acc
+| | Log Off</code></pre>
+</div></div>
+<div class="paragraph"><p>結果：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ pybot test.txt
+==============================================================================
+Test
+==============================================================================
+[ WARN ] Add User
+Test                                                                  | FAIL |
+Multiple keywords with name 'Log Off' found.
+Give the full name of the keyword you want to use.
+Found: 'AdminPage.Log Off' and 'BasePage.Log Off'</code></pre>
+</div></div>
+<div class="paragraph"><p>也就是說，只要兩個頁面有相同的操作，就可能遇到衝突。對於 Log Off 這種到處都是的操作，可能比較適合抽出來不要放到某個 Page 裡。</p></div>
+<div class="paragraph"><p>至於要判斷目前是否在某個頁面，<code>Should Be In The Page</code> 倒是滿實用的。</p></div>
+<div class="paragraph"><p>發現要把 page object 整個推到前端做為 keyword 有點困難&#8230;</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+最大的挑戰在於 keyword library 在結構上是扁平的，但 page object 可以是階層式的。
+</p>
+</li>
+<li>
+<p>
+如果把 page object 整個丟到前端，是否也在透漏 UI 細節？尤其 keyword 不應該有 component 之分&#8230;
+</p>
+</li>
+<li>
+<p>
+或許不該這麼做，應該朝向怎麼簡化 keyword 包裝 page objet 的工作（例如參數跟回傳值儘可能採用相同的字串），畢竟兩者的用法很不一樣，要分別適用不同的用法才是對的。
+</p>
+</li>
+<li>
+<p>
+更何況 keyword 是 interface，不太能夠變動，可能要包裝 readability&#8230;
+</p>
+</li>
+<li>
+<p>
+被當做 Keyword 使用時，page object 內部唯一的 assertion 不會作用，因為要明確寫出來以提高可讀性。
+</p>
+</li>
+<li>
+<p>
+page object 同一個操作會因為轉向不同的頁面而分出不同的版本，但 keyword 只會提供一個版本，因為 keyword 用不到操作完成後傳回的另一個 page object，而且 "強迫" 將 should be on page xxx 明確地寫出來的（確認在某個頁面後，內部固定會做 wait_for_idle 的等待），可以提高 test data 的可讀性。
+</p>
+</li>
+<li>
+<p>
+list 的操作要同時提供 index/row 跟 label 做為參數（index_or_label），用 label 可以讓 test data 的可讀性提高，但遇到 label 重複的狀況時，要能改用 index。
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://en.wikipedia.org/wiki/Test_automation">Test automation - Wikipedia, the free encyclopedia</a> - Graphical User Interface (GUI) testing 最後一段提到 model of AUT 的做法，聽起來好像是 keyword-driven 跟 page object pattern 的組合。
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.beer30.org/?p=54">Page Objects for Robot Framework | Tony&#8217;s Blog</a> (2012-05-26)
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:10:20 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

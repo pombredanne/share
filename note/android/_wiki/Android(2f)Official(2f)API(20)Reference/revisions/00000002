@@ -1,0 +1,1213 @@
+= Android / Official / API =
+<<TableOfContents>>
+
+= Package android.app =
+
+== Class Activity ==
+http://developer.android.com/reference/android/app/Activity.html @2010/01/30
+
+ {{{
+java.lang.Object
+   ↳ 	android.content.Context
+  	   ↳ 	android.content.ContextWrapper
+  	  	   ↳ 	android.view.ContextThemeWrapper
+  	  	  	   ↳ 	android.app.Activity
+
+public class Activity
+extends ContextThemeWrapper
+implements ComponentCallbacks, KeyEvent.Callback, LayoutInflater.Factory, View.OnCreateContextMenuListener, Window.Callback
+ }}}
+
+Known Direct Subclasses: `AccountAuthenticatorActivity`, `ActivityGroup`, `AliasActivity`, `ExpandableListActivity`, `ListActivity`
+
+Known Indirect Subclasses: `LauncherActivity`, `PreferenceActivity`, `TabActivity`
+
+=== Class Overview ===
+
+__An activity is a single, ''focused'' thing that the user can do. Almost all activities interact with the user, so the `Activity` class takes care of creating a window for you in which you can place your UI with `setContentView(View)`. While activities are often presented to the user as full-screen windows, they can also be used in other ways: as floating windows (via a theme with `windowIsFloating` set; 一個旗標值) or ''embedded'' inside of another activity (using `ActivityGroup`).__ There are two methods almost all subclasses of `Activity` will implement:
+
+ * __`onCreate(Bundle)` is where you initialize your activity. Most importantly, here you will usually call `setContentView(int)` with a layout resource defining your UI, and using `findViewById(int)` to retrieve the widgets in that UI that you need to interact with programmatically.__
+
+ * __`onPause()` is where you deal with the user ''leaving'' your activity. (可能一去不回頭了...)__ Most importantly, any changes made by the user should at this point be ''committed'' (usually to the `ContentProvider` holding the data).
+
+To be of use(有用) with `Context.startActivity()`, all activity classes must have a corresponding `<activity>` declaration in their package's `AndroidManifest.xml`.
+
+__The `Activity` class is an important part of an application's overall lifecycle, and the way activities are launched and put together is a fundamental part of the platform's ''application model''.__ For a detailed perspective on the structure of Android applications and lifecycles, please read the Dev Guide document on [[http://developer.android.com/guide/topics/fundamentals.html|Application Fundamentals]].
+
+Topics covered here:
+
+ 1. Activity Lifecycle
+ 2. Configuration Changes
+ 3. Starting Activities and Getting Results
+ 4. Saving Persistent State
+ 5. Permissions
+ 6. Process Lifecycle 
+
+==== Activity Lifecycle ====
+
+底下的說明幾乎跟 [[http://developer.android.com/guide/topics/fundamentals.html#lcycles|Application Fundamentals / Component Lifecycles]] 一樣...
+
+__Activities in the system are managed as an ''activity stack''. When a new activity is started, it is placed on the top of the stack and becomes the ''running activity'' -- the previous activity always remains below it in the stack, and '''will not come to the foreground again until the new activity exits.'''__
+
+An activity has essentially four states:
+
+ * If an activity in the foreground of the screen (at the top of the stack), it is ''active'' or ''running''.
+
+ * __If an activity has ''lost focus but is still visible'' (that is, a new non-full-sized or transparent activity has focus on top of your activity), it is ''paused''.__ A paused activity is completely alive (it maintains all state and member information and remains attached to the window manager), but can be killed by the system in extreme low memory situations.
+
+ * __If an activity is completely obscured(遮蔽) by another activity, it is ''stopped''.__ It still retains all state and member information, however, it is no longer visible to the user so its window is hidden and it will often be killed by the system when memory is needed elsewhere.
+
+ * If an activity is paused or stopped, the system can drop the activity from memory by either asking it to finish, or simply killing its process. When it is displayed again to the user, it must be completely restarted and restored to its previous state.
+
+The following diagram shows the important ''state paths'' of an `Activity`. The square rectangles represent callback methods you can implement to perform operations when the `Activity` moves between states. The colored ovals are major states the `Activity` can be in.
+
+attachment:activity_lifecycle.png <<BR>> State diagram for an Android `Activity` Lifecycle.
+
+There are three ''key loops'' you may be interested in monitoring within your activity:
+
+ * The ''entire lifetime'' of an activity happens between the first call to `onCreate(Bundle)` through to a single final call to `onDestroy()`. An activity will do all setup of "global" state in `onCreate()`, and release all remaining resources in `onDestroy()`. For example, if it has a thread running in the background to download data from the network, it may create that thread in `onCreate()` and then stop the thread in `onDestroy()`.
+
+ * The ''visible lifetime'' of an activity happens between a call to `onStart()` until a corresponding call to `onStop()`. During this time the user can see the activity on-screen, though it may not be in the foreground and interacting with the user. Between these two methods you can maintain resources that are needed to show the activity to the user. For example, you can register a `BroadcastReceiver` in `onStart()` to monitor for changes that impact your UI, and unregister it in `onStop()` when the user an no longer see what you are displaying. The `onStart()` and `onStop()` methods can be called multiple times, as the activity becomes visible and hidden to the user.
+
+ * The ''foreground lifetime'' of an activity happens between a call to `onResume()` until a corresponding call to `onPause()`. During this time the activity is in front of all other activities and interacting with the user. An activity can frequently go between the resumed and paused states -- for example when the device goes to sleep, when an activity result is delivered, when a new intent is delivered -- so the code in these methods should be fairly lightweight.
+
+The entire lifecycle of an activity is defined by the following `Activity` methods. All of these are hooks that you can override to do appropriate work when the activity changes state. All activities will implement `onCreate(Bundle)` to do their initial setup; many will also implement `onPause()` to commit changes to data and otherwise prepare to stop interacting with the user. __You should always call up to your superclass when implementing these methods.__
+
+ {{{
+public class Activity extends ApplicationContext {
+  protected void onCreate(Bundle savedInstanceState);
+  protected void onStart();
+  protected void onRestart();
+  protected void onResume();
+  protected void onPause();
+  protected void onStop();
+  protected void onDestroy();
+}
+ }}} 
+
+In general the movement through an activity's lifecycle looks like this:
+
+|| Method || Description || Killable? || Next ||
+|| `onCreate()` || Called when the activity is first created. This is where you should do all of your normal static set up: create views, bind data to lists, etc. This method also provides you with a `Bundle` containing the activity's previously ''frozen state'', if there was one. <<BR>> Always followed by `onStart()`. || No  || `onStart()` ||
+|| `onRestart()` || Called after your activity has been stopped, prior to it being started again. <<BR>> Always followed by `onStart()` || No || `onStart()` ||
+|| `onStart()` || Called when the activity is becoming visible to the user. <<BR>> Followed by `onResume()` if the activity comes to the foreground, or `onStop()` if it becomes hidden. || No || `onResume()` or `onStop()` ||
+|| `onResume()` || Called when the activity will start interacting with the user. At this point your activity is at the top of the activity stack, with user input going to it. <<BR>> Always followed by `onPause()`. || No || `onPause()` ||
+|| `onPause()` || Called when the system is about to start ''resuming a previous activity''. This is typically used to commit unsaved changes to persistent data, stop animations and other things that may be consuming CPU, etc. Implementations of this method must be very quick because the next activity will not be resumed until this method returns. <<BR>> Followed by either `onResume()` if the activity returns back to the front, or `onStop()` if it becomes invisible to the user. || Yes || `onResume()` or `onStop()` ||
+|| `onStop()` || Called when the activity is no longer visible to the user, because another activity has been resumed and is covering this one. __This may happen either because a new activity is being started, an existing one is being brought in front of this one, or this one is being destroyed.__ <<BR>> Followed by either `onRestart()` if this activity is coming back to interact with the user, or `onDestroy()` if this activity is going away. || Yes || `onRestart()` or `onDestroy()` ||
+|| `onDestroy()` || The final call you receive before your activity is destroyed. This can happen either because the activity is finishing (someone called `finish()` on it, or because the system is temporarily destroying this instance of the activity to save space. You can distinguish between these two scenarios with the `isFinishing()` method. || Yes || nothing ||
+
+Note the "Killable" column in the above table -- for those methods that are marked as being killable, after that method returns the process hosting the activity may killed by the system at any time without another line of its code being executed. Because of this, you should use the `onPause()` method to write any persistent data (such as user edits) to storage. __In addition, the method `onSaveInstanceState(Bundle)` is called before placing the activity in such a ''background state'', allowing you to save away any ''dynamic instance state'' in your activity into the given `Bundle`, to be later received in `onCreate(Bundle)` if the activity needs to be re-created.__ See the [[http://developer.android.com/reference/android/app/Activity.html#ProcessLifecycle|Process Lifecycle]] section for more information on how the lifecycle of a process is tied to the activities it is hosting. __Note that it is important to save persistent data in `onPause()` instead of `onSaveInstanceState(Bundle)` because the later is not part of the lifecycle callbacks, so will not be called in every situation as described in its documentation.__
+
+For those methods that are not marked as being killable, the activity's process will not be killed by the system starting from the time the method is called and continuing after it returns. Thus an activity is in the killable state, for example, between after `onPause()` to the start of `onResume()`.
+
+==== Configuration Changes ====
+
+If the configuration of the device (as defined by the `Resources.Configuration` class) changes, then anything displaying a user interface will need to update to match that configuration. Because `Activity` is the primary mechanism for interacting with the user, it includes special support for handling configuration changes.
+
+__Unless you specify otherwise, a configuration change (such as a change in screen orientation, language, input devices, etc) will cause your current activity to be destroyed, going through the normal activity lifecycle process of `onPause()`, `onStop()`, and `onDestroy()` as appropriate. If the activity had been in the foreground or visible to the user, once `onDestroy()` is called in that instance then a new instance of the activity will be created, with whatever `savedInstanceState` the previous instance had generated from `onSaveInstanceState(Bundle)`. (過程就像使用者自行存檔關閉後再重開應用程式; 多虧 `onSaveInstanceState`/`onRestoreInstanceState` 的設計, 讓整個應用程式重新來過是最單純的應對方式)__
+
+This is done because any application resource, including layout files, can change based on any configuration value. Thus the only safe way to handle a configuration change is to ''re-retrieve all resources'', including layouts, drawables, and strings. __Because activities must already know how to save their state and re-create themselves from that state, this is a convenient way to have an activity restart itself with a new configuration.__
+
+In some special cases, you may want to bypass restarting of your activity based on one or more types of configuration changes. __This is done with the `android:configChanges` attribute in its manifest. For any types of configuration changes you say that you handle there, you will receive a call to your current activity's `onConfigurationChanged(Configuration)` method instead of being restarted.__ If a configuration change involves any that you do not handle, however, the activity will still be restarted and `onConfigurationChanged(Configuration)` will not be called.
+
+==== Starting Activities and Getting Results ====
+
+The `startActivity(Intent)` method is used to start a new activity, which will be placed at the top of the activity stack. It takes a single argument, an `Intent`, which describes the activity to be executed.
+
+Sometimes you want to get a result back from an activity when it ends. For example, you may start an activity that lets the user pick a person in a list of contacts; when it ends, it returns the person that was selected. __To do this, you call the `startActivityForResult(Intent, int)` version with a second integer parameter ''identifying the call'' (= Request Code). The result will come back through your `onActivityResult(int, int, Intent)` method. (會有 Request Code 的設計, 大概是因為 `startActivityForResult` 屬於非同步的呼叫, 同時發出多個請求後, `onActivityResult` 才能夠識別是那一次的要求有結果傳回來了)__
+
+__When an activity exits, it can call `setResult(int)` to return data back to its parent. It must always supply a ''result code'', which can be the standard results `RESULT_CANCELED`, `RESULT_OK`, or any custom values starting at `RESULT_FIRST_USER`. (有點像是 Console 應用程式 Exit Status/Return Code 或 HTTP Status Code 的設計, 用以粗略判斷執行結果) In addition, it can optionally return back an `Intent` containing any additional data it wants. All of this information appears back on the parent's `Activity.onActivityResult()`, '''along with the integer identifier it originally supplied.'''__
+
+__If a ''child activity'' fails for any reason (such as crashing), the parent activity will receive a result with the code `RESULT_CANCELED`.__
+
+ {{{
+public class MyActivity extends Activity {
+  ...
+  static final int PICK_CONTACT_REQUEST = 0;
+
+  protected boolean onKeyDown(int keyCode, KeyEvent event) {
+    if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER) {
+      // When the user center presses, let them pick a contact.
+      startActivityForResult(
+          new Intent(Intent.ACTION_PICK,
+          new Uri("content://contacts")),
+          PICK_CONTACT_REQUEST);
+      return true;
+    }
+    return false;
+  }
+
+  protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    if (requestCode == PICK_CONTACT_REQUEST) {
+      if (resultCode == RESULT_OK) {
+        // A contact was picked.  Here we will just display it
+        // to the user.
+        startActivity(new Intent(Intent.ACTION_VIEW, data));
+      }
+    }
+  }
+}
+ }}}
+ 
+==== Saving Persistent State ====
+
+__There are generally two kinds of persistent state than an activity will deal with: ''shared document-like data'' (typically stored in a SQLite database using a content provider) and ''internal state'' such as ''user preferences''.__
+
+__For content provider data, '''we suggest that activities use a "edit in place" user model. That is, any edits a user makes are effectively made immediately without requiring an additional confirmation step.'''__ Supporting this model is generally a simple matter of following two rules:
+
+ * When creating a new document, the backing database entry or file for it is created immediately. For example, if the user chooses to write a new e-mail, a new entry for that e-mail is created as soon as they start entering data, so that if they go to any other activity after that point this e-mail will now appear in the list of drafts.
+
+ * When an activity's `onPause()` method is called, it should commit to the backing content provider or file any changes the user has made. __This ensures that those changes will be seen by any other activity that is about to run.__ You will probably want to commit your data even more aggressively(有闖勁地) at key times during your activity's lifecycle: for example before starting a new activity, before finishing your own activity, when the user switches between input fields, etc.
+
+__This model is designed to prevent data loss when a user is navigating between activities, and allows the system to safely kill an activity (because system resources are needed somewhere else) at any time after it has been paused. '''Note this implies that the user pressing BACK from your activity does not mean "cancel" -- it means to leave the activity with its current contents saved away. Cancelling edits in an activity must be provided through some other mechanism, such as an explicit "revert" or "undo" option.'''__
+
+See the [[http://developer.android.com/reference/android/content/ContentProvider.html|content package]] for more information about content providers. These are a key aspect of how different activities invoke and propagate data between themselves.
+
+The `Activity` class also provides an API for managing internal persistent state associated with an activity. This can be used, for example, to remember the user's preferred initial display in a calendar (day view or week view) or the user's default home page in a web browser.
+
+__`Activity` persistent state is managed with the method [[http://developer.android.com/reference/android/app/Activity.html#getPreferences(int)|getPreferences(int)]], allowing you to retrieve and modify a set of name/value pairs associated with the activity. (針對特定 `Activity`) To use preferences that are shared across multiple application components (同一個 Applications 的其他組成; activities, receivers, services, providers), you can use the underlying `Context.getSharedPreferences()` method to retrieve a preferences object stored under a ''specific name''. (這裡將 States 區分為 Activity/Application Specific 的做法, 跟 Tapestry 中分別有 Page Properties 跟 Application State Objects 的規劃很類似; Note that it is not possible to share settings data across application packages -- for that you will need a content provider.)__
+
+__從 Andriod 1.1 到 2.1 都沒有這個都查不到 `getSharedPreferences()` 這個方法, 完整的 Signature 應該是 `getSharedPreference(String, int)`. 其實 `getPreferences(int)` 內部就是以 Activity 的 Class Name 為名轉呼叫 `getSharedPreference(String, int)` 的. 2010-01-30__
+
+Here is an excerpt(摘錄) from a calendar activity that stores the user's preferred view mode in its persistent settings:
+
+ {{{
+public class CalendarActivity extends Activity {
+  ...
+  static final int DAY_VIEW_MODE = 0;
+  static final int WEEK_VIEW_MODE = 1;
+
+  private SharedPreferences mPrefs;
+  private int mCurViewMode;
+
+  protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+
+    SharedPreferences mPrefs = getSharedPreferences();
+    mCurViewMode = mPrefs.getInt("view_mode" DAY_VIEW_MODE);
+  }
+
+  protected void onPause() {
+    super.onPause();
+
+    SharedPreferences.Editor ed = mPrefs.edit();
+    ed.putInt("view_mode", mCurViewMode);
+    ed.commit();
+  }
+}
+ }}} 
+
+==== Permissions ====
+
+The ability to start a particular `Activity` can be enforced when it is declared in its manifest's `<activity>` tag. By doing so, other applications will need to declare a corresponding `<uses-permission>` element in their own manifest to be able to start that activity.[?]
+
+See the [[http://developer.android.com/guide/topics/security/security.html|Security and Permissions]] document for more information on permissions and security in general. 
+
+==== Process Lifecycle ====
+
+The Android system attempts to keep application process around(活的) for as long as possible, but eventually will need to remove old processes when memory runs low. As described in [[http://developer.android.com/reference/android/app/Activity.html#ActivityLifecycle|Activity Lifecycle]], __the decision about which process to remove is intimately tied to the state of the user's interaction with it. In general, there are four states a process can be in '''based on the activities running in it,''' listed here in order of importance. The system will kill less important processes (the last ones) before it resorts to(訴諸於) killing more important processes (the first ones).__
+
+ 1. The ''foreground activity'' (the activity at the top of the screen that the user is currently interacting with) is considered the most important. Its process will only be killed as a last resort(最後一招), if it uses more memory than is available on the device. __Generally at this point the device has reached a ''memory paging state'', so this is required in order to keep the user interface responsive. (至少不會整台手機當掉?)__
+
+ 2. A ''visible activity'' (an activity that is visible to the user but not in the foreground, such as one sitting behind a foreground dialog) is considered extremely important and will not be killed unless that is required to keep the foreground activity running.
+
+ 3. A ''background activity'' (an activity that is not visible to the user and has been paused) is no longer critical, so the system may safely kill its process to reclaim memory for other foreground or visible processes. __If its process needs to be killed, when the user navigates back to the activity (making it visible on the screen again), its `onCreate(Bundle)` method will be called with the `savedInstanceState` it had previously supplied in `onSaveInstanceState(Bundle)` so that it can restart itself in the same state as the user last left it.__
+
+ 4. An ''empty process'' is one hosting no activities or other application components (such as `Service` or `BroadcastReceiver` classes). These are killed very quickly by the system as memory becomes low. __For this reason, any background operation you do outside of an activity must be executed in the context of an activity `BroadcastReceiver` or `Service` to ensure that the system knows it needs to keep your process around.__
+
+Sometimes an `Activity` may need to do a long-running operation that exists independently of the activity lifecycle itself. An example may be a camera application that allows you to upload a picture to a web site. The upload may take a long time, and the application should allow the user to leave the application will it is executing. __To accomplish this, your `Activity` should start a `Service` in which the upload takes place. This allows the system to properly prioritize your process (considering it to be more important than other non-visible applications) for the duration of the upload, independent of whether the original activity is paused, stopped, or finished.__ 
+
+=== findViewById ===
+
+ {{{
+public View findViewById(int id)
+ }}}
+
+Since: API Level 1
+
+__Finds a view that was identified by the `id` attribute from the XML that was processed in `onCreate(Bundle)`.__
+
+Returns
+
+ * The view if found or `null` otherwise. 
+
+=== onCreate ===
+
+ {{{
+protected void onCreate (Bundle savedInstanceState)
+ }}}
+
+Since: API Level 1
+
+Called when the activity is starting. __This is where most initialization should go: calling `setContentView(int)` to inflate the activity's UI, using `findViewById(int)` to programmatically interact with widgets in the UI, '''calling `managedQuery(android.net.Uri, String[], String, String[], String)` to retrieve cursors for data being displayed,''' etc.__
+
+You can call `finish()` from within this function, in which case `onDestroy()` will be immediately called without any of the rest of the activity lifecycle (`onStart()`, `onResume()`, `onPause()`, etc) executing. (什麼情況下會在初始化的過程中就將自己結束掉?)
+
+__Derived classes must call through to the super class's implementation of this method. '''If they do not, an exception will be thrown.'''__
+
+'''Parameters'''
+
+ * `savedInstanceState` - If the activity is being re-initialized after previously being shut down then this `Bundle` contains the data it most recently supplied in `onSaveInstanceState(Bundle)`. __Note: Otherwise it is `null`.__
+
+'''See Also'''
+
+ * `onStart()`
+ * `onSaveInstanceState(Bundle)`
+ * `onRestoreInstanceState(Bundle)`
+ * `onPostCreate(Bundle)`
+
+=== onCreateOptionsMenu ===
+
+ {{{
+public boolean onCreateOptionsMenu(Menu menu)
+ }}}
+
+Since: API Level 1
+
+Initialize the contents of the `Activity`'s standard ''options menu''. You should place your menu items in to menu.
+
+__This is only called once, the first time the options menu is displayed. To update the menu every time it is displayed, see `onPrepareOptionsMenu(Menu)`.__
+
+__The default implementation populates the menu with standard system menu items. These are placed in the `CATEGORY_SYSTEM` group so that they will be correctly ordered with application-defined menu items. Deriving classes should always call through to the base implementation.__
+
+You can safely hold on to menu (and any items created from it), making modifications to it as desired, until the next time `onCreateOptionsMenu()` is called.
+
+When you add items to the menu, you can implement the `Activity`'s `onOptionsItemSelected(MenuItem)` method to handle them there.
+
+'''Parameters'''
+
+ * `menu` - The options menu in which you place your items.
+
+'''Returns'''
+
+ * __You must return `true` for the menu to be displayed; if you return `false` it will not be shown.__
+
+'''See Also'''
+
+ * `onPrepareOptionsMenu(Menu)`
+ * `onOptionsItemSelected(MenuItem)`
+
+=== onOptionsItemSelected ===
+
+ {{{
+public boolean onOptionsItemSelected (MenuItem item)
+ }}}
+
+Since: API Level 1
+
+This hook is called whenever an item in your options menu is selected. __The default implementation simply returns `false` to have the normal processing happen (calling the item's `Runnable` or sending a message to its `Handler` as appropriate).__ You can use this method for any items for which you would like to do processing without those other facilities.
+
+Derived classes should call through to the base class for it to perform the default menu handling.
+
+__[[http://developer.android.com/resources/tutorials/notepad/notepad-ex1.html|Notepad Tutorial]] 的 Step 10 示範了先處理自己的事件才轉呼叫上層的 `onOptionsItemSelected` 的做法, 不過如果某個項目已經被處理過時, 就會直接傳回 `true` 而略過上層 `onOptionsItemSelected` 的呼叫. '''這個做法有點像是 DHTML 裡的 Event Bubbling 機制, 只不過回傳的布林值剛好相反而已.'''__
+
+'''Parameters'''
+
+ * `item` - The menu item that was selected.
+
+'''Returns'''
+
+ * __Return `false` to allow normal menu processing to proceed, `true` to ''consume'' it here.__
+
+'''See Also'''
+
+ * `onCreateOptionsMenu(Menu)`
+
+=== setContentView(int) ===
+
+ {{{
+public void setContentView(int layoutResID)
+ }}}
+
+Since: API Level 1
+
+Set the activity content from a layout resource. The resource will be inflated(膨脹的?), adding all top-level views to the activity.
+
+'''Parameters'''
+
+ * `layoutResID` - Resource ID to be inflated.
+
+=== setContentView(View) ===
+
+ {{{
+public void setContentView(View view)
+ }}}
+
+Since: API Level 1
+
+Set the activity content to an explicit view. This view is placed directly into the activity's view hierarchy. It can itself be a complex view hierarhcy.
+
+'''Parameters'''
+
+ * `view` - The desired content to display.
+
+=== startActivity ===
+
+ {{{
+public void startActivity(Intent intent)
+ }}}
+
+Since: API Level 1
+
+Launch a new activity. You will not receive any information about when the activity exits. This implementation overrides the base version, providing information about the activity performing the launch. __Because of this additional information, the `FLAG_ACTIVITY_NEW_TASK` launch flag is not required; if not specified, the new activity will be added to the task of the caller.__
+
+This method throws `ActivityNotFoundException` if there was no `Activity` found to run the given `Intent`.
+
+'''Parameters'''
+
+ * `intent` - The intent to start.
+
+'''Throws'''
+
+ * `android.content.ActivityNotFoundException`
+
+'''See Also'''
+
+ * `startActivityForResult(Intent, int)`
+
+=== startActivityForResult ===
+
+ {{{
+public void startActivityForResult(Intent intent, int requestCode)
+ }}}
+
+Since: API Level 1
+
+Launch an activity for which you would like a result when it finished. __When this activity exits, your `onActivityResult()` method will be called with the given `requestCode`. Using a negative `requestCode` is the same as calling `startActivity(Intent)` (the activity is not launched as a ''sub-activity'').__
+
+__Note that this method should only be used with `Intent` ''protocols'' that are defined to return a result. In other protocols (such as `ACTION_MAIN` or `ACTION_VIEW`), you may not get the result when you expect. For example, if the activity you are launching uses the `singleTask` launch mode, it will not run in your task and thus you will immediately receive a cancel result.[?]__
+
+__As a special case, if you call `startActivityForResult()` with a `requestCode` >= 0 during the initial `onCreate(Bundle savedInstanceState)`/`onResume()` of your activity, then your window will not be displayed until a result is returned back from the started activity. This is to avoid visible flickering(閃爍) when redirecting to another activity.__
+
+This method throws `ActivityNotFoundException` if there was no `Activity` found to run the given `Intent`.
+
+'''Parameters'''
+
+ * `intent` - The intent to start.
+
+ * `requestCode` - If >= 0, this code will be returned in `onActivityResult()` when the activity exits.
+
+'''Throws'''
+
+ * `android.content.ActivityNotFoundException`
+
+'''See Also'''
+
+ * `startActivity(Intent)`
+
+=== startManagingCursor ===
+
+ {{{
+public void startManagingCursor(Cursor c)
+ }}}
+
+Since: API Level 1
+
+__'''This method allows the activity to take care of managing the given `Cursor`'s lifecycle for you based on the activity's lifecycle.''' That is, when the activity is stopped it will automatically call `deactivate()` on the given `Cursor`, and when it is later restarted it will call `requery()` for you. When the activity is destroyed, all managed `Cursor`s will be closed automatically.__
+
+'''Parameters'''
+
+ * `c` - The `Cursor` to be managed.
+
+See Also
+
+ * `managedQuery(android.net.Uri, String[], String, String[], String)`
+ * `stopManagingCursor(Cursor)`
+
+== Class ListActivity ==
+http://developer.android.com/reference/android/app/ListActivity.html @2010/01/30
+
+ {{{
+java.lang.Object
+   ↳ 	android.content.Context
+  	   ↳ 	android.content.ContextWrapper
+  	  	   ↳ 	android.view.ContextThemeWrapper
+  	  	  	   ↳ 	android.app.Activity
+  	  	  	  	   ↳ 	android.app.ListActivity
+
+public class ListActivity
+extends Activity
+ }}}
+
+Known Direct Subclasses: `LauncherActivity`, `PreferenceActivity`
+
+=== Class Overview ===
+
+__An activity that displays a list of items by binding to a data source such as an array or `Cursor`, and ''exposes'' event handlers when the user selects an item.__d
+
+__`ListActivity` hosts a `ListView` object that can be bound to different data sources,__ typically either an array or a `Cursor` holding query results. Binding, screen layout, and row layout are discussed in the following sections.
+
+==== Screen Layout ====
+
+`ListActivity` has a default layout that consists of a single, full-screen list in the center of the screen. However, if you desire, you can customize the screen layout by setting your own view layout with `setContentView()` in `onCreate()`. __To do this, your own view MUST contain a `ListView` object with the id `"@android:id/list"` (or `list` if it's in code; 因為上層 `ListActivity` 的邏輯會找特定 ID 的 View 來做處理, 下面 `android:empty` 的用法也是一樣)__
+
+__Optionally, your custom view can contain another view object of any type to display when the list view is empty. This "empty list" notifier must have an id `"android:empty"`. Note that when an empty view is present, the list view will be hidden when there is no data to display.__
+
+The following code demonstrates an (ugly) custom screen layout. It has a list with a green background, and an alternate red "no data" message.
+
+ {{{
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="vertical"
+              android:layout_width="fill_parent" 
+              android:layout_height="fill_parent"
+              android:paddingLeft="8dp"
+              android:paddingRight="8dp">
+
+   <ListView android:id="@id/android:list"
+             android:layout_width="fill_parent" 
+             android:layout_height="fill_parent"
+             android:background="#00FF00"
+             android:layout_weight="1"
+             android:drawSelectorOnTop="false"/>
+   <TextView id="@id/android:empty"
+             android:layout_width="fill_parent" 
+             android:layout_height="fill_parent"
+             android:background="#FF0000"
+             android:text="No data"/>
+</LinearLayout>
+ }}} 
+
+==== Row Layout ====
+
+You can specify the layout of individual rows in the list. You do this by specifying a layout resource in the `ListAdapter` object hosted by the activity (the `ListAdapter` binds the `ListView` to the data; more on this later).
+
+__A `ListAdapter` constructor takes a parameter that specifies a layout resource for each row. It also has two additional parameters that let you specify which ''data field'' to associate with which object in the row layout resource. These two parameters are typically ''parallel arrays''.__
+
+Android provides some standard row layout resources. These are in the `R.layout` class, and have names such as `simple_list_item_1`, `simple_list_item_2`, and `two_line_list_item`. The following layout XML is the source for the resource `two_line_list_item`, which displays two data fields, one above the other, for each list row.
+
+ {{{
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="fill_parent"
+              android:layout_height="wrap_content"
+              android:orientation="vertical">
+
+   <TextView android:id="@+id/text1"
+             android:textSize="16sp"
+             android:textStyle="bold"
+             android:layout_width="fill_parent"
+             android:layout_height="wrap_content"/>
+   <TextView android:id="@+id/text2"
+             android:textSize="16sp"
+             android:layout_width="fill_parent"
+             android:layout_height="wrap_content"/>
+</LinearLayout>
+ }}} 
+
+You must identify the data bound to each `TextView` object in this layout. The syntax for this is discussed in the next section.
+
+==== Binding to Data ====
+
+__You bind the `ListActivity`'s `ListView` object to data using a class that implements the `ListAdapter` interface.__ Android provides two standard list adapters: `SimpleAdapter` for static data (`Map`s), and `SimpleCursorAdapter` for `Cursor` query results.
+
+The following code from a custom `ListActivity` demonstrates querying the Contacts provider for all contacts, then binding the Name and Company fields to a two line row layout in the activity's `ListView`.
+
+ {{{
+public class MyListAdapter extends ListActivity {
+
+  @Override
+  protected void onCreate(Bundle savedInstanceState){
+    super.onCreate(savedInstanceState);
+
+    // We'll define a custom screen layout here (the one shown above), but
+    // typically, you could just use the standard ListActivity layout.
+    setContentView(R.layout.custom_list_activity_view);
+
+    // Query for all people contacts using the Contacts.People convenience class.
+    // Put a managed wrapper around the retrieved cursor so we don't have to worry about
+    // requerying or closing it as the activity changes state.
+    mCursor = People.query(this.getContentResolver(), null);
+    startManagingCursor(mCursor);
+
+    // Now create a new list adapter bound to the cursor. 
+    // SimpleListAdapter is designed for binding to a Cursor.
+    ListAdapter adapter = new SimpleCursorAdapter(
+        this, // Context.
+        android.R.layout.two_line_list_item,  // Specify the row template to use (here, two columns bound to the two retrieved cursor rows).
+        mCursor,                                    // Pass in the cursor to bind to.
+        new String[] {People.NAME, People.COMPANY}, // Array of cursor columns to bind to.
+        new int[]);                                 // Parallel array of which template objects to bind to those columns.
+
+    // Bind to our new adapter.
+    setListAdapter(adapter);
+  }
+}
+ }}} 
+
+See Also
+
+ * `setListAdapter(ListAdapter)`
+ * `ListView`
+
+= Package android.content ==
+
+== Class ContentValues ==
+http://developer.android.com/reference/android/content/ContentValues.html @2010/01/31
+
+ {{{
+java.lang.Object
+   ↳ 	android.content.ContentValues
+
+public final class ContentValues
+extends Object
+implements Parcelable
+ }}}
+
+__This class is used to store a set of values that the `ContentResolver` can process.__
+
+=== Constructor / ContentValues() ===
+
+ {{{
+public ContentValues()
+ }}}
+
+Since: API Level 1
+
+Creates an empty set of values using the default initial size
+
+=== Constructor / ContentValues(int) ===
+
+ {{{
+public ContentValues(int size)
+ }}}
+
+Since: API Level 1
+
+Creates an empty set of values using the given initial size
+
+'''Parameters'''
+
+ * `size` - the initial size of the set of values
+
+=== Constructor / ContentValues(ContentValues) ===
+
+ {{{
+public ContentValues (ContentValues from)
+ }}}
+
+Since: API Level 1
+
+Creates a set of values copied from the given set
+
+'''Parameters'''
+
+ * `from` - the values to copy 
+
+=== put(String, String) ===
+
+ {{{
+public void put(String key, String value)
+ }}}
+
+Since: API Level 1
+
+Adds a value to the set.
+
+'''Parameters'''
+
+ * `key` - 	the name of the value to put
+ * `value` - the data for the value to put
+
+= Package android.database.sqlite =
+
+== Class SQLiteDatabase ==
+http://developer.android.com/reference/android/database/sqlite/SQLiteDatabase.html @2010/01/31
+
+ {{{
+java.lang.Object
+   ↳ 	android.database.sqlite.SQLiteClosable
+  	   ↳ 	android.database.sqlite.SQLiteDatabase
+
+public class SQLiteDatabase
+extends SQLiteClosable
+ }}}
+
+=== Class Overview ===
+
+Exposes methods to manage a SQLite database.
+
+`SQLiteDatabase` has methods to create, delete, execute SQL commands, and perform other common database management tasks.
+
+See the Notepad sample application in the SDK for an example of creating and managing a database.
+
+__'''Database names must be unique within an application, not across all applications.'''__
+
+==== Localized Collation - ORDER BY ====
+
+In addition to SQLite's default `BINARY` collator(排序程序), Android supplies two more, `LOCALIZED`, which changes with the system's current locale if you wire it up correctly (XXX a link needed![?]), and `UNICODE`, which is the Unicode Collation Algorithm and not tailored to the current locale.
+
+=== delete ===
+
+ {{{
+public int delete(String table, String whereClause, String[] whereArgs)
+ }}}
+
+Since: API Level 1
+
+Convenience method for deleting rows in the database.
+
+'''Parameters'''
+
+ * `table` - the table to delete from
+
+ * `whereClause` - the optional `WHERE` clause to apply when deleting. Passing `null` will delete all rows. (不用在前面串上 "`WHERER`")
+
+ * `whereArgs` - 參考 `query` 中 `selectionArgs` 參數的說明
+
+'''Returns'''
+
+ * the number of rows affected if a `whereClause` is passed in, 0 otherwise. To remove all rows and get a count pass "1" as the `whereClause`.[?]
+
+=== execSQL(String, Object[]) ===
+
+ {{{
+public void execSQL(String sql, Object[] bindArgs)
+ }}}
+
+Since: API Level 1
+
+Execute a single SQL statement that is not a query. For example, `CREATE TABLE`, `DELETE`, `INSERT`, etc. __Multiple statements separated by `;`s are not supported. it takes a write lock,__
+
+'''Parameters'''
+
+ * `bindArgs` - only `byte[]`, `String`, `Long` and `Double` are supported in `bindArgs`.
+
+'''Throws'''
+
+ * `SQLException` - If the SQL string is invalid for some reason
+
+=== execSQL(String) ===
+
+ {{{
+public void execSQL(String sql)
+ }}}
+
+Since: API Level 1
+
+Execute a single SQL statement that is not a query. For example, `CREATE TABLE`, `DELETE`, `INSERT`, etc. Multiple statements separated by `;`s are not supported. it takes a write lock
+
+'''Throws'''
+
+ * `SQLException` - If the SQL string is invalid for some reason
+
+=== insert ===
+
+ {{{
+public long insert(String table, String nullColumnHack, ContentValues values)
+ }}}
+
+Since: API Level 1
+
+Convenience method for inserting a row into the database.
+
+'''Parameters'''
+
+ * `table` - the table to insert the row into
+
+ * `nullColumnHack` - SQL doesn't allow inserting a completely empty row, so if `initialValues` is empty this column will explicitly be assigned a `NULL` value (這個參數的型態是 `String`, 要傳入什麼才對?)
+
+ * `values` - this map contains the initial column values for the row. __The keys should be the column names and the values the column values__
+
+'''Returns'''
+
+ * the row ID (型態是 `long`) of the newly inserted row, or `-1` if an error occurred (注意不會丟出例外)
+
+=== insertOrThrow ===
+
+ {{{
+public long insertOrThrow(String table, String nullColumnHack, ContentValues values)
+ }}}
+
+Since: API Level 1
+
+Convenience method for inserting a row into the database.
+
+'''Parameters'''
+
+ * `table` - the table to insert the row into
+
+ * `nullColumnHack` - SQL doesn't allow inserting a completely empty row, so if initialValues is empty this column will explicitly be assigned a `NULL` value
+
+ * `values` - this map contains the initial column values for the row. The keys should be the column names and the values the column values
+
+'''Returns'''
+
+ * the row ID of the newly inserted row, or `-1` if an error occurred 
+
+'''Throws'''
+
+ * `SQLException` - 到底是傳回 -1 還是丟出例外[?]
+
+=== query(boolean, String, String[], String, String[], String, String, String, String) ===
+
+ {{{
+public Cursor query(boolean distinct, String table, String[] columns, String selection, String[] selectionArgs, String groupBy, String having, String orderBy, String limit)
+ }}}
+
+Since: API Level 1
+
+Query the given URL (為什麼會有 URL 的說法?), returning a `Cursor` over the ''result set''.
+
+'''Parameters'''
+
+ * `distinct` - `true` if you want each row to be unique, `false` otherwise.
+
+ * `table` - The table name to compile the query against.
+
+ * `columns`  - A list of which columns to return. __Passing `null` will return all columns, which is discouraged to prevent reading data from storage that isn't going to be used.__
+
+ * `selection`  - A filter declaring which rows to return, formatted as an SQL `WHERE` clause (excluding the `WHERE` itself). Passing `null` will return all rows for the given table.
+
+ * `selectionArgs` - __You may include `?`s in selection, which will be replaced by the values from `selectionArgs`, in order that they appear in the selection. The values will be bound as `String`s.__
+
+ * `groupBy` - A filter declaring how to group rows, formatted as an SQL `GROUP BY` clause (excluding the `GROUP BY` itself). Passing `null` will cause the rows to not be grouped.
+
+ * `having` - A filter declare which row groups to include in the cursor, if row grouping is being used, formatted as an SQL `HAVING` clause (excluding the `HAVING` itself). Passing `null` will cause all row groups to be included, and is required when row grouping is not being used.
+
+ * `orderBy` - How to order the rows, formatted as an SQL `ORDER BY` clause (excluding the `ORDER BY` itself). __Passing `null` will use the default sort order, which may be unordered.__
+
+ * `limit` - Limits the number of rows returned by the query, formatted as `LIMIT` clause. Passing `null` denotes no `LIMIT` clause.
+
+'''Returns'''
+
+ * A `Cursor` object, which is positioned ''before'' the first entry (查無結果時會傳回 `null`[?])
+
+'''See Also'''
+
+ * `Cursor`
+
+=== query(String, String[], String, String[], String, String, String) ===
+
+ {{{
+public Cursor query(String table, String[] columns, String selection, String[] selectionArgs, String groupBy, String having, String orderBy)
+ }}}
+
+Since: API Level 1
+
+Query the given table, returning a `Cursor` over the result set. (相對上下兩個 `query` 方法比較常用; 比上一個 `query` 少了 `distinct` 跟 `limit` 兩個參數, 比下一個 `query` 少了一個 `limit` 參數)
+
+'''Parameters'''
+
+ * `table` - The table name to compile the query against.
+
+ * `columns` - A list of which columns to return. Passing `null` will return all columns, which is discouraged to prevent reading data from storage that isn't going to be used.
+
+ * `selection` - A filter declaring which rows to return, formatted as an SQL `WHERE` clause (excluding the `WHERE` itself). Passing `null` will return all rows for the given table.
+
+ * `selectionArgs` - You may include `?`s in selection, which will be replaced by the values from `selectionArgs`, in order that they appear in the selection. The values will be bound as `String`s.
+
+ * `groupBy` - A filter declaring how to group rows, formatted as an SQL `GROUP BY` clause (excluding the `GROUP BY` itself). Passing `null` will cause the rows to not be grouped.
+
+ * `having` - A filter declare which row groups to include in the cursor, if row grouping is being used, formatted as an SQL `HAVING` clause (excluding the `HAVING` itself). Passing `null` will cause all row groups to be included, and is required when row grouping is not being used.
+
+ * `orderBy` - How to order the rows, formatted as an SQL `ORDER BY` clause (excluding the `ORDER BY` itself). Passing `null` will use the default sort order, which may be unordered.
+
+'''Returns'''
+
+ * A `Cursor` object, which is positioned before the first entry
+
+'''See Also'''
+
+ * `Cursor`
+
+=== query(String, String[], String, String[], String, String, String, String) ===
+
+ {{{
+public Cursor query(String table, String[] columns, String selection, String[] selectionArgs, String groupBy, String having, String orderBy, String limit)
+ }}}
+
+Since: API Level 1
+
+Query the given table, returning a `Cursor` over the result set.
+
+'''Parameters'''
+
+ * `table` - The table name to compile the query against.
+
+ * `columns` - A list of which columns to return. Passing `null` will return all columns, which is discouraged to prevent reading data from storage that isn't going to be used.
+
+ * `selection` - A filter declaring which rows to return, formatted as an SQL `WHERE` clause (excluding the `WHERE` itself). Passing `null` will return all rows for the given table.
+
+ * `selectionArgs` - You may include `?`s in selection, which will be replaced by the values from `selectionArgs`, in order that they appear in the selection. The values will be bound as `String`s.
+
+ * `groupBy` - A filter declaring how to group rows, formatted as an SQL `GROUP BY` clause (excluding the `GROUP BY` itself). Passing `null` will cause the rows to not be grouped.
+
+ * `having` - A filter declare which row groups to include in the cursor, if row grouping is being used, formatted as an SQL `HAVING` clause (excluding the `HAVING` itself). Passing `null` will cause all row groups to be included, and is required when row grouping is not being used.
+
+ * `orderBy` - How to order the rows, formatted as an SQL `ORDER BY` clause (excluding the `ORDER BY` itself). Passing `null` will use the default sort order, which may be unordered.
+
+ * `limit` - Limits the number of rows returned by the query, formatted as `LIMIT` clause. Passing `null` denotes no `LIMIT` clause.
+
+'''Returns'''
+
+ * A `Cursor` object, which is positioned before the first entry
+
+'''See Also'''
+
+ * `Cursor`
+
+=== update ===
+
+ {{{
+public int update(String table, ContentValues values, String whereClause, String[] whereArgs)
+ }}}
+
+Since: API Level 1
+
+Convenience method for updating rows in the database.
+
+'''Parameters'''
+
+ * `table` - the table to update in
+ * `values` - a map from column names to new column values. __`null` is a valid value that will be translated to `NULL`.__
+ * `whereClause` - the optional `WHERE` clause to apply when updating. Passing `null` will update all rows.
+ * `whereArgs` - 參考 `query` 中 `selectionArgs` 參數的說明
+
+'''Returns'''
+
+ * the number of rows affected
+
+== Class SQLiteOpenHelper ==
+http://developer.android.com/reference/android/database/sqlite/SQLiteOpenHelper.html @2010/01/31
+
+ {{{
+java.lang.Object
+   ↳ 	android.database.sqlite.SQLiteOpenHelper
+
+public abstract class SQLiteOpenHelper
+extends Object
+ }}}
+
+__A helper class to manage database creation and ''version management''. You create a subclass implementing `onCreate(SQLiteDatabase)`, `onUpgrade(SQLiteDatabase, int, int)` and optionally `onOpen(SQLiteDatabase)`, and this class takes care of opening the database if it exists, creating it if it does not, and upgrading it as necessary. Transactions are used to make sure the database is always in a sensible state.__
+
+For an example, see the `NotePadProvider` class in the `NotePad` sample application, in the `samples/` directory of the SDK.
+
+=== Constructor ===
+
+ {{{
+public SQLiteOpenHelper(Context context, String name, SQLiteDatabase.CursorFactory factory, int version)
+ }}}
+
+Since: API Level 1
+
+Create a helper object to create, open, and/or manage a database. __The database is not actually created or opened until one of `getWritableDatabase()` or `getReadableDatabase()` is called.__
+
+'''Parameters'''
+
+ * `context` - to use to open or create the database
+ * `name` - of the database file, or `null` for an ''in-memory'' database
+ * `factory` - to use for creating cursor objects, or `null` for the default
+ * `version` - __number of the database (starting at 1); if the database is older, `onUpgrade(SQLiteDatabase, int, int)` will be used to upgrade the database__
+
+=== close ===
+
+ {{{
+public synchronized void close()
+ }}}
+
+Since: API Level 1
+
+Close any open database object.
+
+=== getReadableDatabase ===
+
+ {{{
+public synchronized SQLiteDatabase getReadableDatabase()
+ }}}
+
+Since: API Level 1
+
+Create and/or open a database. This will be the same object returned by `getWritableDatabase()` unless some problem, such as a full disk, requires the database to be opened ''read-only''. In that case, a read-only database object will be returned. If the problem is fixed, a future call to `getWritableDatabase()` may succeed, __in which case the read-only database object will be closed and the read/write object will be returned in the future. (顯然 `getWritableDatabase()` 跟 `getReadableDatabase()` 內部是共用一個變數來存放 Cache; 在 Writable/Readable 之間切換時, 上一個 Database 都會先被關掉...)__
+
+'''Returns'''
+
+ * a database object valid until `getWritableDatabase()` or `close()` is called. 
+
+'''Throws'''
+
+ * `SQLiteException` - if the database cannot be opened
+
+=== getWritableDatabase ===
+
+ {{{
+public synchronized SQLiteDatabase getWritableDatabase()
+ }}}
+
+Since: API Level 1
+
+Create and/or open a database that will be used for reading and writing. __Once opened successfully, the database is ''cached'', so '''you can call this method every time you need to write to the database.''' Make sure to call `close()` when you no longer need it.__
+
+Errors such as bad permissions or a full disk may cause this operation to fail, but future attempts may succeed if the problem is fixed. (自動回復)
+
+'''Returns'''
+
+ * a read/write database object valid until `close()` is called 
+
+'''Throws'''
+
+ * `SQLiteException` - if the database cannot be opened for writing
+
+=== onCreate ===
+
+ {{{
+public abstract void onCreate(SQLiteDatabase db)
+ }}}
+
+Since: API Level 1
+
+Called when the database is created for the first time. This is where the creation of tables and the ''initial population'' of the tables should happen.
+
+'''Parameters'''
+
+ * `db` - The database.
+
+=== onOpen ===
+
+ {{{
+public void onOpen(SQLiteDatabase db)
+ }}}
+
+Since: API Level 1
+
+Called when the database has been opened. Override method should check `isReadOnly()` before updating the database.
+
+'''Parameters'''
+
+ * `db` - The database.
+
+=== onUpgrade ===
+
+ {{{
+public abstract void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion)
+ }}}
+
+Since: API Level 1
+
+Called when the database needs to be upgraded. The implementation should use this method to drop tables, add tables, or do anything else it needs to upgrade to the new schema version.
+
+The SQLite `ALTER TABLE` documentation can be found [[http://sqlite.org/lang_altertable.html|here]]. If you add new columns you can use `ALTER TABLE` to insert them into a live table. __If you rename or remove columns you can use `ALTER TABLE` to rename the old table, then create the new table and then populate the new table with the contents of the old table.__
+
+'''Parameters'''
+
+ * `db` - The database.
+ * `oldVersion` - The old database version.
+ * `newVersion` - The new database version.
+
+= Package android.view =
+
+== Interface Menu ==
+http://developer.android.com/reference/android/view/Menu.html @2010/01/31
+
+ {{{
+android.view.Menu
+
+public interface Menu
+ }}}
+
+Known Indirect Subclasses: `ContextMenu`, `SubMenu`
+
+Interface for managing the items in a menu.
+
+By default, every `Activity` supports an options menu of actions or options. You can add items to this menu and handle clicks on your additions. __The easiest way of adding menu items is inflating an XML file into the `Menu` via `MenuInflater`.[?]__ The easiest way of attaching code to clicks is via `onOptionsItemSelected(MenuItem)` and `onContextItemSelected(MenuItem)`.
+
+Different menu types support different features:
+
+ 1. Context menus: Do not support item shortcuts and item icons.
+
+ 2. Options menus: __The icon menus do not support item check marks and only show the item's condensed(簡短扼要的) title. The expanded menus (only available if six or more menu items are visible, reached via the 'More' item in the icon menu) do not show item icons, and item check marks are discouraged.__
+
+ 3. Sub menus: Do not support item icons, or nested sub menus.
+
+=== Field / NONE ===
+
+ {{{
+public static final int NONE
+ }}}
+
+Since: API Level 1
+
+Value to use for group and item identifier integers when you don't care about them.
+
+Constant Value: 0 (0x00000000)
+
+=== add(int, int, int, int) ===
+
+ {{{
+public abstract MenuItem add (int groupId, int itemId, int order, int titleRes)
+ }}}
+
+Since: API Level 1
+
+Variation on `add(int, int, int, CharSequence)` that takes a string resource identifier instead of the string itself.
+
+'''Parameters'''
+
+ * `groupId` - The group identifier that this item should be part of. This can also be used to define groups of items for batch state changes. Normally use `NONE` if an item should not be in a group.
+
+ * `itemId` - Unique item ID. Use `NONE` if you do not need a unique ID.
+
+ * `order` - The order for the item. Use `NONE` if you do not care about the order. See `getOrder()`.
+
+ * `titleRes` - Resource identifier of title string.
+
+'''Returns'''
+
+ * The newly added menu item.
+
+== Interface MenuItem ==
+http://developer.android.com/reference/android/view/MenuItem.htm @2010/01/31
+
+ {{{
+android.view.MenuItem
+
+public interface MenuItem
+ }}}
+
+Interface for direct access to a previously created menu item.
+
+An `Item` is returned by calling one of the `add(int)` methods.
+
+For a feature set of specific menu types, see `Menu`.
+
+=== getItemId ===
+
+ {{{
+public abstract int getItemId ()
+ }}}
+
+Since: API Level 1
+
+Return the identifier for this menu item. __The identifier can not be changed after the menu is created.__
+
+'''Returns'''
+
+ * The menu item's identifier.
+
+== Interface Adapter ==
+http://developer.android.com/reference/android/widget/Adapter.html @2010/01/30
+
+ {{{
+android.widget.Adapter
+
+public interface Adapter
+ }}}
+
+Known Indirect Subclasses: `ArrayAdapter<T>`, `BaseAdapter`, `CursorAdapter`, `HeaderViewListAdapter`, `ListAdapter`, `ResourceCursorAdapter`, `SimpleAdapter`, `SimpleCursorAdapter`, `SpinnerAdapter`, `WrapperListAdapter`
+
+__An `Adapter` object acts as a bridge between an `AdapterView` and the underlying data for that view. The `Adapter` provides access to the data items. The `Adapter` is also responsible for making a `View` for each item in the data set.__
+
+'''See Also'''
+
+ * `ArrayAdapter`
+ * `CursorAdapter`
+ * `SimpleCursorAdapter`
+
+:::
+
+== Interface ListAdapter ==
+http://developer.android.com/reference/android/widget/ListAdapter.html @2010/01/30
+
+ {{{
+android.widget.ListAdapter
+
+public interface ListAdapter
+implements Adapter
+ }}}
+
+Known Indirect Subclasses: `ArrayAdapter<T>`, `BaseAdapter`, `CursorAdapter`, `HeaderViewListAdapter`, `ResourceCursorAdapter`, `SimpleAdapter`, `SimpleCursorAdapter`, `WrapperListAdapter` 
+
+__Extended `Adapter` that is the bridge between a `ListView` and the data that backs the list. Frequently that data comes from a `Cursor`, but that is not required. The `ListView` can display any data provided that it is wrapped in a `ListAdapter`. (跟一般常用的 `ListActivity` 沒有直接的關係)__
+
+=== areAllItemsEnabled ===
+
+ {{{
+public abstract boolean areAllItemsEnabled()
+ }}}
+
+Since: API Level 1
+
+Are all items in this `ListAdapter` enabled? If yes it means all items are selectable and clickable. (沒有 Separators 而言)
+
+'''Returns'''
+
+ * True if all items are enabled
+
+=== isEnabled ===
+
+ {{{
+public abstract boolean isEnabled(int position)
+ }}}
+
+Since: API Level 1
+
+__Returns `true` if the item at the specified position is ''not a separator''. (A separator is a non-selectable, non-clickable item).__
+
+'''Parameters'''
+
+ * `position` - 	Index of the item
+
+'''Returns'''
+
+ * True if the item is not a separator 
+
+== Class ListView ==
+http://developer.android.com/reference/android/widget/ListView.html @2010/01/30
+
+ {{{
+java.lang.Object
+   ↳ 	android.view.View
+  	   ↳ 	android.view.ViewGroup
+  	  	   ↳ 	android.widget.AdapterView<T extends android.widget.Adapter>
+  	  	  	   ↳ 	android.widget.AbsListView
+  	  	  	  	   ↳ 	android.widget.ListView
+
+public class ListView
+extends AbsListView
+ }}}
+
+Known Direct Subclasses: `ExpandableListView`
+
+A view that shows items in a vertically scrolling list. The items come from the `ListAdapter` associated with this view.
+
+== Class SimpleCursorAdapter ==
+http://developer.android.com/reference/android/widget/SimpleCursorAdapter.html @2010/01/30
+
+ {{{
+java.lang.Object
+   ↳ 	android.widget.BaseAdapter
+  	   ↳ 	android.widget.CursorAdapter
+  	  	   ↳ 	android.widget.ResourceCursorAdapter
+  	  	  	   ↳ 	android.widget.SimpleCursorAdapter
+
+public class SimpleCursorAdapter
+extends ResourceCursorAdapter
+ }}}
+
+__An easy adapter to ''map'' columns from a cursor to `TextView`s or `ImageView`s defined in an XML file. (對照 [[http://developer.android.com/resources/tutorials/notepad/notepad-ex1.html|Notepad Tutorial]] Step 12 的說明比較容易理解)__ You can specify which columns you want, which views you want to display the columns, and the XML file that defines the appearance of these views.
+
+Binding occurs in two phases. First, if a `SimpleCursorAdapter.ViewBinder` is available, `setViewValue(android.view.View, android.database.Cursor, int)` is invoked. If the returned value is `true`, binding has occured. If the returned value is `false` and the view to bind is a `TextView`, `setViewText(TextView, String)` is invoked. If the returned value is `false` and the view to bind is an `ImageView`, `setViewImage(ImageView, String)` is invoked. If no appropriate binding can be found, an `IllegalStateException` is thrown. If this adapter is used with filtering, for instance in an `AutoCompleteTextView`, you can use the `SimpleCursorAdapter.CursorToStringConverter` and the `FilterQueryProvider` interfaces to get control over the filtering process. You can refer to `convertToString(android.database.Cursor)` and `runQueryOnBackgroundThread(CharSequence)` for more information.[?]
+
+=== Constructor ===
+
+ {{{
+public SimpleCursorAdapter(Context context, int layout, Cursor c, String[] from, int[] to)
+ }}}
+
+Since: API Level 1
+
+Constructor.
+
+'''Parameters'''
+
+ * `context` - The context where the `ListView` associated with this `SimpleListItemFactory` is running
+
+ * `layout` - resource identifier of a layout file that defines the views for this list item. The layout file should include at least those named views defined in "`to`" (參數)
+
+ * `c` - The database cursor. Can be `null` if the cursor is not available yet.
+
+ * `from` - A list of column names representing the data to bind to the UI. Can be `null` if the cursor is not available yet.
+
+ * `to` - __The views that should display column in the "`from`" parameter. These should all be `TextView`s. (注意它是個 `int` 陣列, 跟 `from` 參數的 `String[]` 不同)__ The first N views in this list are given the values of the first N columns in the `from` parameter. Can be `null` if the cursor is not available yet.
+
+

@@ -1,0 +1,59 @@
+= 在 Python 裡判斷作業系統的位元數（bit architecture） =
+
+要在 Python 裡判斷作業系統的位元數（注意不是 CPU 的架構本身），並不如想像中的簡單...
+
+Python Standard Library 只提供 `platform.architecture()` 用來取得 "某個執行檔" 的位元數，預設會檢查 Python Interpreter (`sys.executable`)：
+
+--------------------------------------------------------------------------------
+>>> import sys, platform
+>>> sys.executable
+'C:\\Python27\\python.exe'
+>>>
+>>> platform.architecture()
+('64bit', 'WindowsPE')
+--------------------------------------------------------------------------------
+
+不過http://docs.python.org/library/platform.html#platform.architecture[官方文件]也說，某些平台下有所謂的 universal executable，可以同時執行在不同的 bit architecture，上面的方式可能會誤判，因此建議下面的方法，檢查 "Python Interpreter" 自己：
+
+ is_64bits = sys.maxsize > 2**32
+
+但以上這些方法，不是針對某個 “執行檔“ 就是 “Python Interpreter” 自己，如果使用者在 64-bit 環境下安裝了 32-bit 的 Python Interpreter，這些方法就會破功了。
+
+`platform.machine()` 似乎是個解法？
+
+--------------------------------------------------------------------------------
+import os
+import sys
+import platform
+
+def machine():
+    """Return type of machine."""
+    if os.name == 'nt' and sys.version_info[:2] < (2,7):
+        return os.environ.get("PROCESSOR_ARCHITEW6432", 
+               os.environ.get('PROCESSOR_ARCHITECTURE', ''))
+    else:
+        return platform.machine()
+
+def os_bits(machine=machine()):
+    """Return bitness of operating system, or None if unknown."""
+    machine2bits = {'AMD64': 64, 'x86_64': 64, 'i386': 32, 'x86': 32}
+    return machine2bits.get(machine, None)
+
+print (os_bits())
+--------------------------------------------------------------------------------
+
+== 參考資料 ==
+
+.官方文件
+--
+ * http://docs.python.org/library/platform.html#platform.architecture[platform — Access to underlying platform’s identifying data]
+ * http://bugs.python.org/issue7860[Issue 7860: 32-bit Python on 64-bit Windows reports incorrect architecture - Python tracker] (2010-03-23; PDF) - 這個問題在 Python 2.6 被解掉了？之後可以從 `platform.machine()` 判斷，還是 `platform.architecture()[0]` 就可以了？
+--
+
+.其他文件
+--
+ * http://stackoverflow.com/questions/7164843/in-python-how-do-you-determine-whether-the-kernel-is-running-in-32-bit-or-64-bi[In Python, how do you determine whether the kernel is running in 32-bit or 64-bit mode? - Stack Overflow] (2011-08-23) - 根據官方 http://bugs.python.org/issue7860[Issue 7860]，用 `platform.machine()` 的回傳判斷 OS 的 bit architecture
+ * http://stackoverflow.com/questions/2208828/detect-64bit-os-windows-in-python[Detect 64bit OS (windows) in Python - Stack Overflow] (2010-02-05) - 有人提到，在 64-bit 環境下安裝 32-bit 的 Python Interpreter 時，`platform.architecture()[0]` 還是傳回 `32bit`，所以並不可靠。另外檢查 `PROGRAMFILES(X86)` 這個只存在 64-bit Windows 的環境變數，似乎不受 Python Interpreter 的影響...
+ * http://blogs.msdn.com/b/david.wang/archive/2006/03/26/howto-detect-process-bitness.aspx[HOWTO: Detect Process Bitness - David Wang - Site Home - MSDN Blogs] (2006-03-27) - 檢查 `PROCESSOR_ARCHITECTURE` 跟 `PROCESSOR_ARCHITEW6432` 這兩個環境變數。
+--
+

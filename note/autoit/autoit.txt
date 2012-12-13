@@ -1,0 +1,122 @@
+= AutoIt =
+
+[TIP]
+.延伸閱讀
+================================================================================
+ * link:install.html[安裝 AutoIt 跟 AutoItX]
+ * link:uac.html[AutoIt 與 UAC]
+ * link:info-tool.html[AutoIt Window Info Tool (AU3Info)]
+================================================================================
+
+AutoIt 一開始是為了簡化 “安裝與設定大批 Windows 電腦“ 這個工作而被發展出來的。許多特別的設計，使它能支援繁複的系統管理工作：
+
+ * 支援最新、最多的 Windows 平台（包括 2000 / XP / 2003 / Vista / 2008 / Windows 7 / 2008 R2 等），當然也支援 x64 跟 Unicode。
+ * Self-contained 且不需安裝。執行期不會用到外部的 DLL 或存取 registry，尤其適合用在 server 平台上。
+ * 可以操控標準的 GUI 控制項（也就是不適用 link:../java/swing/swing.html[Java Swing] 或 link:../xul/xul.html[XUL] 等建構出來的 UI），並精確地在不同平台上模擬出鍵盤或滑鼠的操作。
+ * Scriptable RunAs functions
+ * Works with Windows Vista’s User Account Control (UAC)
+
+AutoIt 有兩種用法：
+
+ * 用 BASIC-like 的 scripting language 寫 `.au3`，然後用 `AutoIt3.exe` 執行，或是用 `Aut2Exe.exe` 轉成可執行檔。
+ * 用其他程式語言直接操作 link:autoitx.html[AutoItX DLL/COM 元件]。
+
+主要的使用族群是系統管理人員，對支援的平台數量有很強烈的需求，再加上社群也很活躍；綜合上面這些特點，使得 AutoItX 尤其適合拿來實作 Windows 上的 link:../gui/test/automation.html[GUI Automation]。
+
+////////////////////////////////////////////////////////////////////////////////
+ * 熟悉 Window Info Tool（AU3Info.exe） 的用法，不過應該有更好的工具吧？
+ * 除了通用的互動方式之外，文件要從不同的 control 下去寫
+////////////////////////////////////////////////////////////////////////////////
+
+== Hello World ==
+
+不免俗地，先用 AutoIt script 寫個 http://en.wikipedia.org/wiki/Hello_world_program[Hello World]。
+
+用 AutoIt 內附的 SciTE 或你偏好的文字編輯器，建立一支叫做 `HelloWorld.au3` 的檔案，內容如下：
+
+.`C:\AutoIt\Examples\HelloWord.au3` （改寫成用 Notepad 秀出 \'Hello World!'）
+--------------------------------------------------------------------------------
+; Greeting in AutoIt                 <1>
+MsgBox(0, 'AutoIt', "Hello World!")  <2>
+--------------------------------------------------------------------------------
+<1> 以分號（`;`）開始的行會被視為註解（習慣在分號後面留一個空白）。
+<2> 呼叫 `MsgBox()` 這個函數（function），並傳入 3 個參數；第一個參數會影響對話視窗的表現方式（按鈕數量、圖示、強制回應等），第二、三個參數則分別表示視窗的抬頭跟內容（字串可以用單引號或雙引號框起來）。實際上 `MsgBox()` 接受 5 個參數，細節請參考http://www.autoitscript.com/autoit3/docs/functions/MsgBox.htm[這裡]。
+
+接下來用 AutoIt 主程式（`AutoIt.exe`）來執行這個 script：
+
+--------------------------------------------------------------------------------
+C:\AutoIt>AutoIt.exe Examples\HelloWorld.au3
+--------------------------------------------------------------------------------
+
+會出現下面的對話視窗：
+
+image::autoit/helloworld.png[]
+
+== 定位操作的對象 ==
+
+GUI 操作相關的 function 有：
+
+ * `MouseXXX()` - 模擬滑鼠操作，例如 `MouseClick`、`MouseClickDrag`、`MouseMove` 等。
+ * `SendXXX()` - 模擬鍵盤的操作，例如 `Send`。
+ * `WinXXX()` - 跟視窗有關的操作，例如 `WinWait`、`WinActivate`、`WinClose` 等，統稱做 Window Functions。
+ * `ControlXXX()` - 跟視窗裡單一個控制項有關的操作，例如 `ControlClick`、`ControlFocus`、`ControlGetPos` 等，統稱做 Control Functions。
+
+Window/Control Function 通常具有特定的型式：
+
+ * `WinXXX(title[, text[, ...]])`
+ * `ControlXXX(title, text, ControlID[, ...])`
+
+其中 'title' 跟 'text' 都是用來定位視窗，而 'controlID' 則是用來定位視窗裡特定一個控制項。
+
+=== 如何處理 Poup-up Menu ===
+
+ * 選單跳出來後，可以用 `Send()` 送出方向鍵選取所要的項目，然後再按 Enter。例如：`Send('{DOWN}{DOWN}{ENTER}')`。
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://stackoverflow.com/questions/3849307/autoit-ctivate-and-choose-elements-context-menu-in-controltreeview[AutoIt: Аctivate and choose elements context menu in ControlTreeView - Stack Overflow] (2010-10-03)
+================================================================================
+
+== 參考資料 ==
+
+.網站
+--
+ * http://www.autoitscript.com/site/autoit/[AutoIt]
+   ** http://www.autoitscript.com/forum/[Forums]
+--
+
+.書籍
+--
+ * http://shop.oreilly.com/product/9780596515126.do[O'Reilly - AutoIt v3: Your Quick Guide] (2007-09)
+ * http://shop.oreilly.com/product/9781932111873.do[O'Reilly - Windows Admin Scripting Little Black Book, Second Edition] (2004-01)
+--
+
+.文件
+--
+ * http://www.autoitscript.com/autoit3/docs/[Online Documentation] (`www.autoitscript.com/autoit3/docs/index.pdf`)
+ * http://www.autoitscript.com/autoit3/docs/functions.htm[Function Reference]（AutoItX 要參考 `AutoItX.chm` 比較適用）
+ * http://www.autoitscript.com/wiki/Main_Page[Wiki]
+ * http://www.autoitscript.com/autoit3/docs/faq.htm[FAQ]
+--
+
+.其他文件
+--
+ * http://vnucleus.com/2011/07/using-autoit-an-introduction/[Using AutoIt: An Introduction | vNucleus] (2011-07-29)
+--
+
+////////////////////////////////////////////////////////////////////////////////
+
+ * 之前有發生執行身份要是 Admin 才能點到操作某個視窗的問題，原因應該是出在 Admin 才能去點 Admin 的視窗，執行身份要相同才行。
+ * 可以執行在 Windows 95/98/ME, Windows NT 4.0, Windows 2000, XP, 2003, Windows Vista, Windows Server 2008, Windows 7 and Windows 2008 R2。
+ * Unicode and x64 support
+ * Directly call external DLL and Windows API functions. Call Win32 and third-party DLL APIs. 不知道用 Python 來做，會不會變得很困難？
+ * Scriptable RunAs functions
+ * AutoIt has been designed to be as small as possible and stand-alone with no external .dll files or registry entries required making it safe to use on Servers.
+ * AutoIt 只能操作 standard windows controls，所以 Java Swing 或 Firefox XUL 等介面，內部的細節都抓不到。
+ * 很多時候，不一定有視窗跟控制項可以抓；這時送 key 進去是最好的做法，因為控制項在畫面上的位置不一定抓得到。
+ * 很多時候，如果不是 active window，直接操作 control 並不會有效果。
+ * For portability，應該優先考慮快捷鍵，因為這是 UI 對外的承諾，變動性比較小，而且通常有慣例可循。
+
+////////////////////////////////////////////////////////////////////////////////
+

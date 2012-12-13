@@ -1,0 +1,64 @@
+= Squid =
+
+ * link:authentication.html[Authentication]
+ * link:access-log.html[Access Log]
+
+ $ sudo apt-get install squid
+ /etc/squid/squid.conf
+
+sudo chown -R proxy:proxy /var/log/squid/
+sudo chown proxy:proxy /etc/squid/squid.conf
+
+acl internal_network src 192.168.0.0/24
+
+http_port 3128
+
+
+
+acl localnet src 10.0.0.0/8     # RFC1918 possible internal network
+acl localnet src 172.16.0.0/12  # RFC1918 possible internal network
+acl localnet src 192.168.0.0/16 # RFC1918 possible internal network
+
+icp_access allow localnet
+icp_access deny all
+
+acl sit src 10.201.174.0/23
+http_access allow sit
+
+/etc/init.d/squid 找不到，只有 /usr/sbin/squid
+
+`/var/log/squid` 有 3 支檔案：`access.log`、`cache.log` 還有 `store.log`。
+
+--------------------------------------------------------------------------------
+1343193810.275    818 10.201.175.188 TCP_MISS/200 20601 GET http://www.google.com.tw/ - DIRECT/173.194.72.94 text/html
+1343193810.289      0 10.201.175.188 TCP_HIT/200 501 GET http://www.google.com.tw/blank.html - NONE/- text/html
+1343193810.415      0 10.201.175.188 TCP_NEGATIVE_HIT/204 330 GET http://clients1.google.com.tw/generate_204 - NONE/- text/html
+1343193810.527    105 10.201.175.188 TCP_MISS/204 398 GET http://www.google.com.tw/csi? - DIRECT/173.194.72.94 image/gif
+--------------------------------------------------------------------------------
+
+== 參考資料 ==
+
+.網站
+--
+ * http://www.squid-cache.org/[squid : Optimising Web Delivery]
+ * http://wiki.squid-cache.org/[Squid Web Proxy Wiki]
+--
+
+.書籍
+--
+ * http://www.packtpub.com/squid-proxy-server-31-beginners-guide/book[Packt - Squid Proxy Server 3.1: Beginner's Guide] (2011-02)
+--
+
+.官方文件
+--
+ * http://www.squid-cache.org/Doc/config/[Squid configuration directives]
+ * http://wiki.squid-cache.org/ConfigExamples[ConfigExamples - Squid Web Proxy Wiki]
+--
+
+.文件
+--
+ * http://en.wikipedia.org/wiki/Squid_(software)[Squid (software) - Wikipedia, the free encyclopedia]
+ * http://sylvarwolflinux.wordpress.com/2007/12/18/installing-squid-proxy-server-in-ubuntu/[Installing Squid proxy server in Ubuntu « Sylvarwolf Linux Blog] (2007-12-18)
+ * http://linux.vbird.org/linux_server/0420squid.php[鳥哥的 Linux 私房菜 -- 代理伺服器的設定： squid]
+--
+

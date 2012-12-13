@@ -1,0 +1,133 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Python] 交換 Cookies</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="cookies.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="../python.html">Python</a> / <a href="internet.html">Internet</a> / 交換 Cookies</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>要在 client/server 間交換 cookies，只要為 <a href="http-client.html"><code>urllib2</code></a> opener 掛上 cookie processor 即可。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; import cookielib, urllib2
+&gt;&gt;&gt; cookie_jar = cookielib.CookieJar()
+&gt;&gt;&gt; opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookie_jar)) <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+&gt;&gt;&gt; opener.open('http://www.google.com') <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+&lt;addinfourl at 142980844 whose fp = &lt;socket._fileobject object at 0x883892c&gt;&gt;
+&gt;&gt;&gt;
+&gt;&gt;&gt; cookies = [cookie for cookie in cookie_jar] <img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+&gt;&gt;&gt; cookie = cookies[0]; cookie
+Cookie(version=0, name='PREF', value='ID=355d24f8b83c55e6:FF=0:TM=1322534559:LM=1322534559:S=cEQeul_fl-MLjwoZ', port=None, port_specified=False, domain='.google.com', domain_specified=True, domain_initial_dot=True, path='/', path_specified=True, secure=False, expires=1385606559, discard=False, comment=None, comment_url=None, rest={}, rfc2109=False)
+&gt;&gt;&gt;
+&gt;&gt;&gt; dir(cookie)                                 <img src="../../../_asciidoc/images/icons/callouts/4.png" alt="4" />
+['__doc__', '__init__', '__module__', '__repr__', '__str__', '_rest', 'comment', 'comment_url', 'discard', 'domain', 'domain_initial_dot', 'domain_specified', 'expires', 'get_nonstandard_attr', 'has_nonstandard_attr', 'is_expired', 'name', 'path', 'path_specified', 'port', 'port_specified', 'rfc2109', 'secure', 'set_nonstandard_attr', 'value', 'version']
+&gt;&gt;&gt; cookie.name, cookie.value
+('PREF', 'ID=355d24f8b83c55e6:FF=0:TM=1322534559:LM=1322534559:S=cEQeul_fl-MLjwoZ')</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+準備一個容器（<code>cookielib.CookieJar</code>）來存放 cookie。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+透過 <code>urllib2.HTTPCookieProcessor</code> 的幫忙，它會自動將收到的 cookie 寫到 cookie jar 裡頭，另外之後的 request 也會自動挾帶 cookies 回伺服端。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+<code>CookieJar</code> 本身實作 iterator protocol，藉以取出所有的 cookie。當然這一行也可以簡單寫成 <code>cookies = list(cookie_jar)</code>。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/4.png" alt="4" /></td><td>
+<code>Cookie</code> 所有的資訊都透過 attribute 公開出來，其中最常用的就是 <code>name</code> 跟 <code>value</code>。
+</td></tr>
+</table></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">注意 <code>CookieJar</code> 取出的 cookie，它的型態是 <code>cookielib.Cookie</code>，跟 <a href="http://docs.python.org/library/cookie.html"><code>Cookie.BaseCookie</code></a> 沒有關係（常用在 server-side），不要搞混了。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>可惜 <code>CookieJar</code> 並不是個 dictionary-like object，否則用起來會更方便。不過只要簡單一行程式就可以轉換過來：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; cookies = dict([(cookie.name, cookie.value) for cookie in cookie_jar])
+&gt;&gt;&gt; cookies.keys()
+['PREF', 'NID']
+&gt;&gt;&gt; cookies['PREF']
+'ID=c1dc8c58680de189:FF=0:TM=1322534559:LM=1322534559:S=SL2sEAprvMY3wrE-'</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://docs.python.org/library/urllib2.html">urllib2 — extensible library for opening URLs — The Python Standard Library</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://docs.python.org/library/cookielib.html">cookielib — Cookie handling for HTTP clients — The Python Standard Library</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-11 12:13:36 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

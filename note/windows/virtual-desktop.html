@@ -1,0 +1,189 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>Windows Virtual Desktop</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="virtual-desktop.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>Windows Virtual Desktop</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>目前試用下來，WindowsPager 在 Windows 7 32/64-bit 下運作良好，跟系統的整合度也很高。</p></div>
+<div class="paragraph"><p>從官網下載 <code>windowspager-&lt;version&gt;.zip</code>，解開後依 OS 選擇執行 32/64-bit 的 <code>windowspager.exe</code>（免安裝）。要實現開機自動執行的功能，只要把它接到系統選單的 Startup 即可。</p></div>
+<div class="paragraph"><p>將 Ubuntu 運作為 VMware 的 guest OS 時，為了方便在 Ubuntu 自己與 WindowsPager 的 virtual desktop 間做切換，建議將 WindowsPager 預設組合鍵改成跟 Ubuntu 一樣，VMware 用來 ungrab 的組合鍵則要調整成 Ctrl+Shift+Alt）</p></div>
+<div class="paragraph"><p>跟 <code>windowspager.exe</code> 相同的目錄下有一支 <code>windowspager.ini</code>，可以從這裡修改組合鍵：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>;;Hotkeys to switch to certain desktop
+[HotkeysDesktopSwitch]
+;;modifier Key: one or a combination of 'control', 'alt', 'win'  and 'shift', whitespace separated
+;;example: modifier=control alt
+;;default is 'control win'
+modifier=control win <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+
+;;keyboard shortcut/hotkey for each desktop
+;;allowed values: 'a' - 'z', '0'-9', 'F1'-'F12', for the Numpad keys: 'numpad0' - 'numpad9'  or
+;;you can use directly a 'virtual key code' (hexadecimal value). For a list of these values see:
+;;http://msdn.microsoft.com/en-us/library/dd375731(VS.85).aspx
+;;example for right-arrow key (VK_RIGHT ) : desktop1= 0x27
+;;to find out which combination is working with the modifier key is up to you.
+;;default: 'numpadx'
+desktop1=numpad1 <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+desktop2=numpad2
+desktop3=numpad3
+desktop4=numpad4
+
+;;Hotkeys to switch to the left/right/up/down desktop
+[HotkeysDesktopScrolling]
+modifier=control win <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+page_left=0x25
+page_right=0x27
+page_up=0x26
+page_down=0x28
+
+;;Hotkeys to move the active window to the left/right/up/down desktop, or to a certain desktop
+[HotkeysMoveToDesktop]
+modifier=control alt win <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+page_left=0x25
+page_right=0x27
+page_up=0x26
+page_down=0x28
+
+desktop1=numpad1
+desktop2=numpad2
+desktop3=numpad3
+desktop4=numpad4
+
+...
+;;list of applications WindowsPager should ignore
+;;you can use the Window-Selector from the pager right-click menu: 'Add window(s) to ignore list'
+;;to add a window to this list
+;;syntax: ignore_&lt;number_before+1&gt;=application_name:&lt;Window-Class|*&gt;
+;;to ignore all windows from an application use '*', else use the window class
+[IgnoreWindows] <img src="../../_asciidoc/images/icons/callouts/4.png" alt="4" />
+ignore_1=skype.exe:*
+ignore_2=sidebar.exe:*
+ignore_3=rocketdock.exe:*
+ignore_4=rainlendar2.exe:RainlendarWindow
+ignore_5=rainlendar2.exe:RainlendarEditWindow</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+將這一行改成 <code>control alt</code> 跟 <code>1</code> - <code>4</code>，就可以用 Ctrl+Alt+1/2/3/4 切換到特定桌面。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+將這一行也改成 <code>control alt</code>。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+將這一行改成 <code>shift control alt</code>。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/4.png" alt="4" /></td><td>
+有些應用程式希望它的視窗可以出現在所有桌面，可以把它加到 <code>[IgnoreWindows]</code>。常見的有：
+<div class="ulist"><ul>
+<li>
+<p>
+<code>communicator.exe:*</code>
+</p>
+</li>
+<li>
+<p>
+<code>notepad++.exe:*</code>
+</p>
+</li>
+</ul></div>
+</td></tr>
+</table></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="exampleblock">
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+Virtual desktop - Wikipedia, the free encyclopedia : <a href="http://en.wikipedia.org/wiki/Virtual_desktop">http://en.wikipedia.org/wiki/Virtual_desktop</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://technet.microsoft.com/en-us/sysinternals/cc817881.aspx">Desktops - Windows Sysinternals</a> - 官方提供的工具當然比較穩定，但可惜不支援在不同桌面之間搬移視窗的功能。
+</p>
+</li>
+<li>
+<p>
+<a href="http://windows.microsoft.com/en-US/windows/downloads/windows-xp">Virtual Desktop Manager - Windows XP PowerToys</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://windowspager.sourceforge.net/">WindowsPager</a>
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://windowspager.sourceforge.net/documentation.html">Documentation</a>
+</p>
+</li>
+</ul></div>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:18:02 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

@@ -1,0 +1,226 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Python][Windows] 取得 Process 清單</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="process-list.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="../python.html">Python</a> / <a href="windows.html">Windows</a> / 取得 Process 清單</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>要取得 process 清單，常見的方法有：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+透過 Performance Data Helpe (PDH)。
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+PyWin32 提供有 <code>win32pdh</code> 模組用來存取 PDH。
+</p>
+</li>
+<li>
+<p>
+雖然可行，但遶經 performance 間接取得 process 清單做法有點怪，而且 PDH 的 API 用起來並不直覺。
+</p>
+</li>
+<li>
+<p>
+雖然 <code>win32process.EnumProcesses()</code> 可以用來取得所有的 process ID，但卻沒有其他的方法可以取得 process ID 對應的名稱。
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+透過 Windows Management Instrumentation (WMI)。
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+Python WMI 模組用 PyWin32 重新包裝過 WMI API，方便 Python 直接透過 WMI 取得各類系統資訊。
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+呼叫外部程式 <code>tasklist.exe</code>
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+這是最輕量的方式（但得自己 parsing 輸出），但好像不是所有版本的 Windows 都提供有這支程式？
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+利用 <code>psutil</code> 可以跨平台取得 process 的資料。
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+跟 Java <a href="http://support.hyperic.com/display/SIGAR/Home">SIGAR</a> 專案很像。
+</p>
+</li>
+<li>
+<p>
+提供的 installer 不是很完整；Python 64-bit 只提供 Python 2.7 的版本，但 OS X 卻又只提供 Python 2.6 的版本。
+</p>
+</li>
+</ul></div>
+</li>
+</ul></div>
+<div class="paragraph"><p>另外要砍 process 的話，常見的方法有：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+直接呼叫外部程式 <code>taskkill /IM %s /F /T</code>。其中 <code>/F</code> 跟 <code>/T</code> 分別表示 forcefully 跟 tree kill。
+</p>
+</li>
+<li>
+<p>
+<code>psutil</code> 也支援 kill process 的功能。
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">工具</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://code.google.com/p/psutil/">psutil - A cross-platform system and process utilities module for Python</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://timgolden.me.uk/python/wmi/">Python WMI module</a>
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://pypi.python.org/pypi/WMI/">WMI (PyPI)</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://tgolden.sc.sabren.com/python/wmi/tutorial.html">wmi Tutorial</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://timgolden.me.uk/python/wmi/cookbook.html">wmi Cookbook</a>
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+<a href="http://python.net/crew/mhammond/win32/">Python for Windows Extensions (PyWin32)</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.blog.pythonlibrary.org/2010/10/03/how-to-find-and-list-all-running-processes-with-python/">How to Find and List All Running Processes with Python « The Mouse Vs. The Python</a> (2010-10-03) - 比較不同的方案之後，<code>psutil</code> 勝出。
+</p>
+</li>
+<li>
+<p>
+<a href="http://code.activestate.com/recipes/303339-getting-process-information-on-windows/">getting process information on windows « Python recipes « ActiveState Code</a> (2004-09-03) - 利用s PyWin32 與 PDH。
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.rgagnon.com/javadetails/java-0593.html">List currently running processes (Windows) - Real&#8217;s Java How-to</a> - 呼叫 <code>tasklist.exe</code> 外部程式。
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">討論</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/1632234/python-list-running-processes-64bit-windows">Python, List running processes 64Bit Windows - Stack Overflow</a> (2009-10-27)
+</p>
+</li>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/54686/how-to-get-a-list-of-current-open-windows-process-with-java">How to get a list of current open windows/process with Java? - Stack Overflow</a> (2008-09-10)
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-05 15:19:01 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

@@ -1,0 +1,230 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>Siklui: 在特定的區域內找尋操作的目標</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="matching.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>Siklui: 在特定的區域內找尋操作的目標</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>用 String 來定位最方便，但可能會有 L10N 的問題，但如果不是用來走流程的話，就不用擔心這一段。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_先決定有效的區域">先決定有效的區域</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>Region</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.docjar.org/docs/api/java/awt/Rectangle.html">java.awt: public class: Rectangle</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_用文字比對">用文字比對</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+比較的效果實在讓人很難捉摸：
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+有些小的字反而比對得到
+</p>
+</li>
+<li>
+<p>
+整串字比對不到，但比對其中一個字串就可以。
+</p>
+</li>
+<li>
+<p>
+有 focus 時藍色的底比對不到，但將 focus 移開變灰就可以比對得到。
+</p>
+</li>
+</ul></div>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_尋找或等待目標出現">尋找或等待目標出現</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>首先要透過 visual object (標的物) 定位出要操作的區域。</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>find(PS)</code>
+</p>
+</li>
+<li>
+<p>
+<code>findAll(PS)</code> - 傳回的東西有順序嗎？
+</p>
+</li>
+<li>
+<p>
+<code>wait(PS[, seconds])</code>
+</p>
+</li>
+<li>
+<p>
+<code>waitVanish(PS[, seconds])</code>
+</p>
+</li>
+<li>
+<p>
+<code>exists(PS[, seconds])</code> - 內部也是 wait 的概念，但 <em>seconds</em> 傳入零時，可以即時判斷當下某個 visual object 在不在。
+</p>
+</li>
+<li>
+<p>
+PS 指的 visual object，可以是 <code>Pattern</code>、圖檔的路徑、或是要找的文字 (pattern or string)，有找到表示兩者的相似度高於某個值（預設是 70%），<code>Pattern</code> 可以個別要求最底的相似度。
+</p>
+</li>
+<li>
+<p>
+找不到時會丟出 <code>FindFailed</code>，很多時候這個錯誤是因為圖形大小不符所造成，一直調 similarity 也沒有用。
+</p>
+</li>
+<li>
+<p>
+找到的結果習慣從 reg.getLastMatch() 取出，例如 <code>if exists(圖): click(圖)</code> 的寫法會很沒有效率，建議改成 <code>if exists(圖): click(getLastMatch())</code>
+</p>
+</li>
+<li>
+<p>
+wait 的概念其實是 "每秒檢查幾次" 的概念，由 <code>Settings.WaitScanRate</code> 來控制，預設是每秒檢查 3 次。這對於截圖相對耗時某些應用，例如從高解析的手機或平板截圖大概要 3 秒左右。要注意這個時間要跟 region 裡的 <code>_autoWaitTimeout</code> 大，否則頂多就檢查一次，沒有太大的意義。
+</p>
+<div class="listingblock">
+<div class="content">
+<pre><code> public class Settings {
+   public static float WaitScanRate = 3f; // frames per second</code></pre>
+</div></div>
+</li>
+<li>
+<p>
+發現 similarity 調成 1.0 成反而比對不到，這時候調成 0.99 就可以了。很多時候會一直找不到問題，明明抓的區域沒問題，裡面也沒有特定的圖樣，但就是被判定為 match （而且差很大），但切記預設的 minimum similarity 是 0.7。
+</p>
+</li>
+<li>
+<p>
+圖形如果是文字內容，可以先考慮用 string 來定位，反正都有 L10N 的問題，比較不容易受到系統字型改變的影響。
+</p>
+</li>
+</ul></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>abstract class Repeatable{
+
+   abstract void run() throws Exception;
+   abstract boolean ifSuccessful();
+
+   // return TRUE if successful before timeout
+   // return FALSE if otherwise
+   // throws Exception if any unexpected error occurs
+   boolean repeat(double timeout) throws Exception{
+
+      int MaxTimePerScan = (int)(1000.0/Settings.WaitScanRate); <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+      long begin_t = (new Date()).getTime();
+      do{
+         long before_find = (new Date()).getTime();
+
+         run();
+         if (ifSuccessful())
+            return true;
+
+         long after_find = (new Date()).getTime();
+         if(after_find-before_find&lt;MaxTimePerScan) <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+            _robot.delay((int)(MaxTimePerScan-(after_find-before_find)));
+         else
+            _robot.delay(10);
+      }while( begin_t + timeout*1000 &gt; (new Date()).getTime() );
+
+      return false;
+   }
+}</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+理論上，平均拍一次畫面所花的時間。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+如果實際上拍畫面比理論值還快，就要放慢速度，休息一下。
+</td></tr>
+</table></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://sikuli.org/docx/globals.html#mintargetsize">Global Functions and Features &gt; MinTargetSize — Sikuli X 1.0 documentation</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:09:26 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

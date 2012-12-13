@@ -1,0 +1,81 @@
+= Windows Virtual Desktop =
+
+目前試用下來，WindowsPager 在 Windows 7 32/64-bit 下運作良好，跟系統的整合度也很高。
+
+從官網下載 `windowspager-<version>.zip`，解開後依 OS 選擇執行 32/64-bit 的 `windowspager.exe`（免安裝）。要實現開機自動執行的功能，只要把它接到系統選單的 Startup 即可。
+
+將 Ubuntu 運作為 VMware 的 guest OS 時，為了方便在 Ubuntu 自己與 WindowsPager 的 virtual desktop 間做切換，建議將 WindowsPager 預設組合鍵改成跟 Ubuntu 一樣，VMware 用來 ungrab 的組合鍵則要調整成 Ctrl+Shift+Alt）
+
+跟 `windowspager.exe` 相同的目錄下有一支 `windowspager.ini`，可以從這裡修改組合鍵：
+
+--------------------------------------------------------------------------------
+;;Hotkeys to switch to certain desktop
+[HotkeysDesktopSwitch]
+;;modifier Key: one or a combination of 'control', 'alt', 'win'  and 'shift', whitespace separated
+;;example: modifier=control alt
+;;default is 'control win'
+modifier=control win <1>
+
+;;keyboard shortcut/hotkey for each desktop
+;;allowed values: 'a' - 'z', '0'-9', 'F1'-'F12', for the Numpad keys: 'numpad0' - 'numpad9'  or
+;;you can use directly a 'virtual key code' (hexadecimal value). For a list of these values see:
+;;http://msdn.microsoft.com/en-us/library/dd375731(VS.85).aspx
+;;example for right-arrow key (VK_RIGHT ) : desktop1= 0x27
+;;to find out which combination is working with the modifier key is up to you.
+;;default: 'numpadx'
+desktop1=numpad1 <1>
+desktop2=numpad2
+desktop3=numpad3
+desktop4=numpad4
+
+;;Hotkeys to switch to the left/right/up/down desktop
+[HotkeysDesktopScrolling]
+modifier=control win <2>
+page_left=0x25 
+page_right=0x27
+page_up=0x26
+page_down=0x28
+
+;;Hotkeys to move the active window to the left/right/up/down desktop, or to a certain desktop
+[HotkeysMoveToDesktop]
+modifier=control alt win <3>
+page_left=0x25 
+page_right=0x27
+page_up=0x26
+page_down=0x28
+
+desktop1=numpad1
+desktop2=numpad2
+desktop3=numpad3
+desktop4=numpad4
+
+...
+;;list of applications WindowsPager should ignore
+;;you can use the Window-Selector from the pager right-click menu: 'Add window(s) to ignore list'
+;;to add a window to this list
+;;syntax: ignore_<number_before+1>=application_name:<Window-Class|*>
+;;to ignore all windows from an application use '*', else use the window class
+[IgnoreWindows] <4>
+ignore_1=skype.exe:*
+ignore_2=sidebar.exe:*
+ignore_3=rocketdock.exe:*
+ignore_4=rainlendar2.exe:RainlendarWindow
+ignore_5=rainlendar2.exe:RainlendarEditWindow
+--------------------------------------------------------------------------------
+<1> 將這一行改成 `control alt` 跟 `1` - `4`，就可以用 Ctrl+Alt+1/2/3/4 切換到特定桌面。
+<2> 將這一行也改成 `control alt`。
+<3> 將這一行改成 `shift control alt`。
+<4> 有些應用程式希望它的視窗可以出現在所有桌面，可以把它加到 `[IgnoreWindows]`。常見的有：
+    * `communicator.exe:*`
+    * `notepad++.exe:*`
+
+== 參考資料 ==
+
+================================================================================
+ * Virtual desktop - Wikipedia, the free encyclopedia : http://en.wikipedia.org/wiki/Virtual_desktop
+ * http://technet.microsoft.com/en-us/sysinternals/cc817881.aspx[Desktops - Windows Sysinternals] - 官方提供的工具當然比較穩定，但可惜不支援在不同桌面之間搬移視窗的功能。
+ * http://windows.microsoft.com/en-US/windows/downloads/windows-xp[Virtual Desktop Manager - Windows XP PowerToys]
+ * http://windowspager.sourceforge.net/[WindowsPager]
+   ** http://windowspager.sourceforge.net/documentation.html[Documentation]
+================================================================================
+

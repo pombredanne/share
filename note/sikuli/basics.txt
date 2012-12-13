@@ -1,0 +1,165 @@
+= SIKULI Basics =
+
+== 基本操作 ==
+
+ * 畫面左側提供常用的 Command List。照相機圖示代表接受 screenshot 做為參數，最下方的 Auto Capture 被勾選時，表示插入某個 function 時，要自動進入 capturing mode。
+ * 抓圖的方法：
+   ** 利用主畫面上方的 Take screenshot。可以搭配 Preferences... > Screen Capturing > Delay before capture 的設定，按下 Take screenshot 的數秒之後才會進入 capturing mode。
+   ** 利用 Preferences... > Screen Capturing > Quick capture hotkey 所設定快捷鍵（預設是 Ctrl/Command+Shift+2）。要注意的是，快捷鍵按下去總是立即切換到 capturing mode，不受 Delay before capture 設定的影響。
+   ** 實驗發現在 capturing mode 下，有些畫面還是抓不到，例如 Ubuntu 系統選單或應用程式的右鍵選單被帶出來時，快捷鍵會起不了作用，或是選單會因為按下快捷鍵而消失。這個時候可以考慮採用其他第三方的抓圖工具，抓完圖之後再用主畫面上方的 Insert image 把圖插進來。
+   
+常用的幾個指令（global functions）：
+
+ * Find
+   ** `exists(screenshot)`
+   ** `find(screenshot)`，接受 `\t` 做為 Tab
+   ** `findAll(screenshot)`
+   ** `wait(screenshot)`
+   ** `waitVanish(screenshot)`
+ * Mouse Actions
+   ** `click(screenshot)`，裡面隱含 `wait()` 的動作。
+   ** `doubleClick(screenshot)`
+   ** `rightClick(screenshot)`
+   ** `hover(screenshot)`
+   ** `dragDrop(screenshot1, screenshot2)`
+ * Keyboard Actions
+   ** `type(text)`
+   ** `type(screenshot, text)`
+   ** `paste(text)`
+   ** `paste(screenshot, text)`
+
+其他：
+
+ * switchApp('System Preferences.app')
+ * findAll("screenshot.png")
+ * visual pattern
+ * region, spatial operators - below(), nearby()
+ * target offset, defaults to center of a pattern
+   ** getCenter().offset(), getTarget().offset()
+   ** target 可以是 Pattern、String、Region、Match、Location
+ * target offset 跟 mouse pointer 移動的路徑有關，如果路徑上會滑過畫面上其他 element 造成一些變化的話，要注意 target offset 的選定才行。之前遇到的案例是 Apple > About this Mac，最後卻點到 About Sikuli，因為 mouse pointer 移往 About this Mac "中間" 的過程式，滑過 Sikuli 導致 menu 切換過去。
+
+== 調整 Region ==
+
+ * left()
+ * right()
+ * top()
+ * bottom()
+ * inside()
+ * nearby()
+
+不支援兩個 region 的交集，或許可以用 rectangle 自己運算？
+
+== 基本概念 ==
+
+Sikuli 最重要的四個概念是－Pattern、Region、Match、Location。
+
+== Target ==
+
+PSRML 指的就是 Pattern、String、Region、Match、Location。
+
+== Pattern ==
+
+Pattern 可以是 `Pattern`、圖檔檔名、或是單純的字串。
+
+== Region ==
+
+實務上通常不會直接建立 region，而是從 screen 找尋某個 pattern 開始...
+
+--------------------------------------------------------------------------------
+match = 
+--------------------------------------------------------------------------------
+
+由於 Screen 跟 Macth 都是 Region
+
+Region 表示畫面上的某個（矩形）區域，內部只記錄該區域的左上角座標 (x, y) 跟大小 (w, h)，不管該區域內實際的內容是什麼。
+
+Region 支援下面幾種操作：
+
+拿到 region 後，可以對它進行下面幾種操作：
+
+=== `highlight([seconds])` ===
+
+用紅色的邊框在畫面上標示出 region 的位置跟大小，它並不會讓程式卡住。
+
+如果沒有給定 'seconds' 的話，該邊框要等另一個不帶參數的 `highlight()` 被呼叫時才會消失。也就是說，畫面上是有可能同時存在兩個 highlight 的。
+
+在程式的實作上，`Match` 跟 `Screen` 都是繼承自 `org.sikuli.script.Region`。
+
+ * 在 Linux 下不支援，會遇到 "[error] highlight does not work on Linux." 的錯誤。
+ * 常用的 `right()`、`left()`、`below()`、`above()` 等，結果並不包含原來的 range 在內，所以 below(10) 並不是原來的 height 加 10，而是最後的 range 是原 range 的下緣加 10。
+ * `exists()` 也是傳回 Match，而非 boolean。
+
+
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://sikuli.org/docx/region.html[Region — Sikuli X 1.0 documentation]
+ * http://sikuli.org/doc/java-x/org/sikuli/script/Region.html[Region (Javadoc of Sikuli Script)]
+ * https://github.com/sikuli/sikuli/blob/develop/sikuli-script/src/main/java/org/sikuli/script/Region.java[Region.java]
+================================================================================
+
+== Match ==
+
+事實上 Match 也是個 Region。
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://sikuli.org/docx/match.html[Match — Sikuli X 1.0 documentation]
+ * http://sikuli.org/doc/java-x/org/sikuli/script/Match.html[Match (Javadoc of Sikuli Script)]
+ * https://github.com/sikuli/sikuli/blob/develop/sikuli-script/src/main/java/org/sikuli/script/Match.java[Match.java]
+================================================================================
+
+== Jython API ==
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://sikuli.org/docx/faq/000-can-i-do-xxx.html[Can I do X or Y or Z in Sikuli?] - 在 Python/Java 裡能做的事，基本上都可以在 Sikuli 裡做。
+================================================================================
+
+== 參考資料 ==
+
+.官方文件
+--
+ * http://sikuli.org/demo.shtml[Demo]
+ * http://sikuli.org/docx/tutorials/index.html[Tutorials]
+ * http://sikuli.org/docx/sikuli-script-index.html[Everything about Sikuli Script] - 其中 `Region`、`Match` 跟 `Screen` 是重點。
+ * http://sikuli.org/docx/[Sikuli Documentation]
+ * http://www.slideshare.net/vgod/practical-sikuli-using-screenshots-for-gui-automation-and-testing[Practical Sikuli: using screenshots for GUI automation and testing] （SIKULI 作者寫的）
+--
+
+.其他文件
+--
+ * http://www.scribd.com/doc/87618834/sikuli-detailed-Doc[SIKULI Detailed Document]
+--
+
+== 學習筆記 ==
+
+ * 程式碼是代管在 https://launchpad.net/sikuli[LaunchPad]，但官網左上角還是有 Fork me on GitHub 的連結。
+ * 可以執行在 Windows/Linux/Mac OS X, or even an iphone or android application running in a simulator or via VNC. 
+ * SIKULI 除了在講專案時才用大寫，其他時候都慣用 Sikuli。例如 Projet SIKULI 及 Sikuli Script/IDE。
+ * Sikuli Script 其實就是 Jython code (a visual scripting API for Jython)，因此如果 script 夠複雜的話，也可以切出 modules。像下面這段程式在 Sikuli IDE 直接執行是沒問題的。
++
+--------------------------------------------------------------------------------
+def main():
+    if exists("1323829870428.png"):
+        print "hello"
+    else:
+        print "no no.."
+
+if __name__ == '__main__':
+    main()
+--------------------------------------------------------------------------------
++
+ * 要操作的對象也是慣稱 'target'
+ * 進入 screen capturing mode 後螢幕不會暗掉，是因為 Remote Desktop 的關係嗎？按 Esc 可以跳出來。
+ * `.sikuli` 是 source script，而 `.skl` 則是 executable script，由 `.sikuli` 匯出的二進位檔。
+ * `.sikuli` 其實是個資料夾，裡面包含 `.py`, `.html` 與一些拍下來的圖檔，其中 `.html` 大概是為了方便那些沒有 IDE 的人方便檢視 script 吧？
+ * `.py` 裡並沒有做 import 的動作，那 `exists` 這些 function 是怎麼來的？如何做到跟 Robot Framework 接軌之後還能用 Sikuli IDE 開起來做維護。
+ * 為什麼產品名現在改做 Sikuli X 1.0，其中 'X' 指的是什麼？
+ * Sikuli IDE 裡的圖形，其實就是一個檔案的字串，所以可以做一些運算...
+
+

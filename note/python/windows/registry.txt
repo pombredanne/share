@@ -1,0 +1,149 @@
+= link:../python.html[Python] / link:windows.html[Windows] / 存取 Windows Registry =
+:title: [Python][Windows] 存取 Windows Registry
+
+要從 Python 存取 link:../../windows/registry.html[Windows Registry]，可以透過 Python 2.0 就有的 `_winreg` 模組。它將 http://en.wikipedia.org/wiki/Windows_Registry#Programs_or_scripts[Windows Registry API] 重新包裝過，常用的方法有：
+
+ * `OpenKey(key, sub_key[, res[, sam]])`
+ * `QueryValueEx(key, value_name)`
+ * `SetValueEx(key, value_name, reserved, type, value)`
+
+TIP: 這裡 `OpenKey`, `QueryValueEx` 等命名方式其實是源自於 Registry API，所以沒什麼好奇怪的。
+
+要操作 registry，必須先取得 registry handle 才行（也就是上面的 'key' 參數）。`_winreg` 已經為標準的 root keys 事先建好對應的 `HKEY_*` 常數：
+
+ * `HKEY_CLASSES_ROOT`
+ * `HKEY_CURRENT_USER`
+ * `HKEY_LOCAL_MACHINE`（HKLM）
+ * `HKEY_USERS`
+ * `HKEY_PERFORMANCE_DATA`
+ * `HKEY_CURRENT_CONFIG`
+ * `HKEY_DYN_DATA`
+
+其他的 subkey 則必須間接透過 `OpenKey()` 來取得（搭配上述這些 root keys），例如：
+
+--------------------------------------------------------------------------------
+>>> from _winreg import OpenKey, QueryValueEx, HKEY_LOCAL_MACHINE
+>>> handle = OpenKey(HKEY_LOCAL_MACHINE, 'SOFTWARE')
+>>> handle = OpenKey(HKEY_LOCAL_MACHINE, 'software')
+>>> type(handle)
+<type 'PyHKEY'> <1>
+>>> type(HKEY_LOCAL_MACHINE)
+<type 'long'>
+>>>
+>>> handle = OpenKey(HKEY_LOCAL_MACHINE, 'SOFTWAREXXX')
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+WindowsError: [Error 2] The system cannot find the file specified <2>
+>>>
+>>> jre_key = OpenKey(HKEY_LOCAL_MACHINE, r'SOFTWARE\JavaSoft\Java Runtime Environment') <3>
+>>> QueryValueEx(jre_key, 'CurrentVersion')
+(u'1.7', 1)
+>>>
+>>> QueryValueEx(jre_key, 'CurrentVersionXXX') <4>
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+WindowsError: [Error 2] The system cannot find the file specified
+--------------------------------------------------------------------------------
+<1> `OpenKey` 傳回 registry handle，跟 `HKEY_*` 的型態不同。'sub_key' 傳入 subkey 名稱，不分大小寫。
+<2> 'sub_key' 不存在時會丟出 `WindowsError`。
+<3> 'sub_key' 要表示階層關係時，可以將多個 subkey 用 `\` 分隔開來。（`QueryValueEx()` 的用法之後會做說明）
+<4> 指定的 registry value 不存在時，一樣丟出錯誤代碼為 2 的 `WindowsError`。
+
+[TIP]
+.Open vs. Close
+================================================================================
+即然有 `OpenKey()`，是否是有對應的 `CloseKey()` 呢？答案是有的。
+
+為了能儘早釋放資源，能夠明確呼叫 `_winreg.CloseKey(key)` 最好。但如果沒有明確做這個動作，Python 也會在回收 registry handle 時，明確做 close 的動作。
+
+另外 registry handle 支援 context protocol，可以搭配 `with` 來使用：
+
+--------------------------------------------------------------------------------
+with OpenKey(HKEY_LOCAL_MACHINE, r'SOFTWARE\JavaSoft\Java Runtime Environment') as jre_key:
+    version = QueryValueEx(jre_key, 'CurrentVersion')[1]
+--------------------------------------------------------------------------------
+
+一旦離開這個 context，就會自動關閉該 registry handle。
+================================================================================
+
+到這裡，我們已經說明了 'key' 跟 'sub_key' 兩個參數。接下來說明剩下的兩個參數－'res' 與 'sam'。
+
+'res' 固定要傳入 `0`，所以 `OpenKey()` 的語法可以簡化成：
+
+ OpenKey(key, sub_key[, 0[, sam]])
+
+至於 'sam' （應該是 'Security Access Mask' 的縮寫），則是用來控制操作 registry 前所要獲取的權限，`_winreg` 常用的常數有：
+
+ * `KEY_READ`（預設值）
+ * `KEY_WRITE`
+ * `KEY_ALL_ACCESS`
+
+實務上只要獲取'夠用'的權限就好，否則遇到系統安全控管比較嚴格的情況，連單純想要讀取 registry value 都會出狀況。例如 Windows Vista 開始引進的 link:../../windows/uac.html[UAC]，即便登入的身份是 Administrator，但如果應用程式沒有成為 elevated application，還是會遇到存取被拒的狀況：
+
+--------------------------------------------------------------------------------
+>>> OpenKey(HKEY_LOCAL_MACHINE, r'SOFTWARE', KEY_WRITE) <1>
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+WindowsError: [Error 5] Access is denied
+
+>>> OpenKey(HKEY_LOCAL_MACHINE, r'SOFTWARE', KEY_READ)  <2>
+>>>
+--------------------------------------------------------------------------------
+<1> 注意權限的控制是在取得 registry handle 時。
+<2> 只要選對 access mask 就好了。
+
+NOTE: 2012-05-04 在 Windows 8 Consumer Preview build 8250 上發現（搭配 Python 2.7.3），即便把 UAC 停掉之後，`KEY_WRITE` 還是會丟出 "Access is denied" 的錯誤。不知道之前 Windows 7 有沒有這個問題?
+
+== 讀寫 Registry Value 與處理不同的資料型態 ==
+
+ * `(data, type) = QueryValueEx(key, value_name)`
+ * `SetValueEx(key, value_name, reserved, type, value)`
+
+先從 `QueryValueEx()` 開始講起：
+
+--------------------------------------------------------------------------------
+>>> ff_key = OpenKey(HKEY_LOCAL_MACHINE, r'SOFTWARE\Mozilla\Mozilla Firefox') <1>
+>>> named_value = QueryValueEx(ff_key, 'CurrentVersion')
+>>> named_value[0], named_value[1], named_value[1] == REG_SZ <1>
+(u'5.0 (en-US)', 1, True)
+>>> print REG_SZ
+>>> QueryValueEx(ff_key, '')                                 <2>
+(u'5.0', 1)
+>>> QueryValueEx(ff_key, None)
+(u'5.0', 1)
+--------------------------------------------------------------------------------
+<1> `QueryKey()` 的回傳值是一個 2-tuple - (data, type)。其中 'data' 是 registry value 的內容，其型態則由 'type' 來決定。
+<2> 要存取 defalut/unnamed value 時，只要將空字串或 `None` 做為 value name 即可。
+
+'type' 的值會是 `_winreg` 定義好的常數之一，常用的有：
+
+ * `REG_SZ` (1) - 字串。
+ * `REG_EXPAND_SZ` (2) - 也是字串，只是如果內含 environment variable 的參照（例如 `%TMP%`），讀取時會自動解開。
+ * `REG_BINARY` (3) - 二進位資料。
+ * `REG_DWORD` (4) - 數字（32-bit）。
+
+至於 `SetValueEx()`，其中 'reserved' 固定要傳入 `0`，所以 `SetValueEx()` 的語法可以簡化成：
+
+ SetValueEx(key, value_name, 0, type, value)
+
+一般來說，registry value 的 type 是不能變動的，所以 `SetValueEx()` 要傳入 'type' 的設計看起來有點怪...
+
+== 延伸閱讀 ==
+
+ * link:registry-64bit.html[處理 32/64-bit 的差異（WoW64）]
+ * link:registry-exists.html[檢查 Registry Key/Value 是否存在]
+
+== 參考資料 ==
+
+.文件
+--
+ * http://en.wikipedia.org/wiki/Windows_Registry[Windows Registry - Wikipedia, the free encyclopedia]
+ * http://docs.python.org/library/_winreg.html[_winreg – Windows registry access]
+--
+
+.其他文件
+--
+ * http://www.blog.pythonlibrary.org/2010/03/20/pythons-_winreg-editing-the-windows-registry/[Python’s _winreg: Editing the Windows Registry « The Mouse Vs. The Python] (2010-03-20)
+ * http://code.activestate.com/recipes/476229-yarw-yet-another-registry-wrapper/[YARW - Yet Another Registry Wrapper « Python recipes « ActiveState Code] (2006-04-04)
+--
+

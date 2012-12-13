@@ -1,0 +1,176 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title><a href="python.html">Python</a> / Logging</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="python-logging.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="python.html">Python</a> / Logging</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>Python 由 <code>logging</code> 模組來提供 logging 的功能。有四個很重要的角色：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+Logger
+</p>
+</li>
+<li>
+<p>
+Handler
+</p>
+</li>
+<li>
+<p>
+Filter
+</p>
+</li>
+<li>
+<p>
+Formatter
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>Logger 主要提供的 API 有：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>Logger.debug()</code>
+</p>
+</li>
+<li>
+<p>
+<code>Logger.info()</code>
+</p>
+</li>
+<li>
+<p>
+<code>Logger.warning()</code> - 雖然從原始碼來看，<code>warning()</code> 有另一個別名 <code>warn()</code>，但官方文件對這件事隻字未題，還是守規矩用 <code>warning()</code> 比較穩當。
+</p>
+</li>
+<li>
+<p>
+<code>Logger.error()</code>
+</p>
+</li>
+<li>
+<p>
+<code>Logger.critical()</code>
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p><a href="http://stackoverflow.com/questions/5191830/python-exception-logging">python exception logging - Stack Overflow</a></p></div>
+<div class="paragraph"><p>CLI 整合 Options 與 Logging 的範本</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>import optparse, logging
+
+_logger = logging.getLogger(__name__)
+
+def main(opts, args):
+  ...
+
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(threadName)s] %(levelname)-6s %(name)s - %(message)s')
+
+    parser = OptionParser(usage='%prog [options] xxx ooo')
+    parser.add_option('--debug', action='store_true', dest="debug", default=True, help="Enable debug mode")
+    opts, args = parser.parse_args()
+
+    if opts.debug: logging.getLogger().setLevel(loggin.DEBUG)
+    main(opts, args)</code></pre>
+</div></div>
+<div class="paragraph"><p>畫面上印少量的訊息，但檔案裡記錄最詳細的訊息：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>_logger = logging.getLogger(__name__)
+_LOG_FORMAT = '%(asctime)s [%(threadName)s] %(levelname)-6s %(name)s - %(message)s'
+
+def main():
+    options, args = parser.parse_args()
+    _init_logger()
+
+def _init_logger():
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.DEBUG)
+
+    default_hdr = logging.StreamHandler()
+    default_hdr.setFormatter(logging.Formatter(_LOG_FORMAT, None))
+    default_hdr.setLevel(logging.DEBUG if options.debug else logging.WARNING)
+    root_logger.addHandler(default_hdr)
+
+    # file handler always have more detailed output
+    file_handler = logging.FileHandler(_logger_file, 'w')
+    file_handler.setFormatter(logging.Formatter(_LOG_FORMAT, None))
+    file_handler.setLevel(logging.DEBUG)
+    root_logger.addHandler(file_handler)</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://docs.python.org/2/howto/logging.html">Logging HOWTO —  Python HOWTOs</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:18:09 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

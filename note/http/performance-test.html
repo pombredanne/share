@@ -1,0 +1,145 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>測試 HTTP 的服務效能</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="performance-test.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="index.html">HTTP</a> / 測試 HTTP 的服務效能</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p><code>httping</code> 這個工具可以用來測試 web server 的 latency 及 throughput。</p></div>
+<div class="paragraph"><p>在 Ubuntu 下安裝 <code>httping</code> 套件即可，至於 CentOS 則比較麻煩一點：</p></div>
+<div class="paragraph"><p>主要有下面兩種用法：</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>httping [optoins] -g url
+httping [options] -Gbg url</code></pre>
+</div></div>
+<div class="paragraph"><p>前者發出 HEAD request，用來測試 latency：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ httping -c 5 -g http://www.google.com
+PING www.google.com:80 (http://www.google.com):
+connected to www.google.com:80, seq=0 time=89.33 ms
+connected to www.google.com:80, seq=1 time=71.32 ms
+connected to www.google.com:80, seq=2 time=89.76 ms
+connected to www.google.com:80, seq=3 time=72.00 ms
+connected to www.google.com:80, seq=4 time=82.23 ms
+--- http://www.google.com ping statistics ---
+5 connects, 5 ok, 0.00% failed
+round-trip min/avg/max = 71.3/80.9/89.8 ms</code></pre>
+</div></div>
+<div class="paragraph"><p>後者發出 GET request，會等到整個頁面都載完，用來測試 throughput：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ httping -c 5 -Gbg http://www.google.com
+PING www.google.com:80 (http://www.google.com):
+connected to www.google.com:80, seq=0 time=74.63 ms  27446KB/s
+connected to www.google.com:80, seq=1 time=100.01 ms  54748KB/s
+connected to www.google.com:80, seq=2 time=71.50 ms  53639KB/s
+connected to www.google.com:80, seq=3 time=72.72 ms  54033KB/s
+connected to www.google.com:80, seq=4 time=71.15 ms  71108KB/s
+--- http://www.google.com ping statistics ---
+5 connects, 5 ok, 0.00% failed
+round-trip min/avg/max = 71.1/78.0/100.0 ms
+Transfer speed: min/avg/max = 27446/52195/71108 KB</code></pre>
+</div></div>
+<div class="paragraph"><p>常用的 option 有：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>-c count</code> - 發出 request 的次數。
+</p>
+</li>
+<li>
+<p>
+<code>-x proxyhost:port</code> - 指定 proxy server。
+</p>
+</li>
+<li>
+<p>
+<code>-G</code> - 改發出 GET request 而非預設的 HEAD request。前者（GET）用來測試 throughput，後者（HEAD）則用來測試 latency。
+</p>
+</li>
+<li>
+<p>
+<code>-b</code> - 統計資料傳輸速度（KB/s）。
+</p>
+</li>
+<li>
+<p>
+<code>-f</code> - 瘋狂地發出 request（flood ping；每一個 ping 之間不做停頓）。
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>更多細節請參考 <code>man httping</code>。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.cyberciti.biz/faq/linux-unix-measure-lateceny-throughput-of-webserver/">How to: Measure the Lateceny and Throughput of Apache / Lighttpd / IIS Webserver</a> (2007-11-22)
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:17:09 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

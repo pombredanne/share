@@ -1,0 +1,408 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>Jython</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="jython.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>Jython</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>目前最新版是 2011-03-03 釋出的 Jython 2.5.2</p></div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_standalone_mode">Standalone Mode</h3>
+<div class="paragraph"><p>安裝過程中被問到 installation type 時，如果選 "Standalone (a single, executable .jar)"，最後只會得到一個 <code>jython.jar</code> 檔。<code>jython.jar</code> 裡面的 <code>/Lib</code> 包含 Python standard library，可惜並沒有 pre-compiled <code>.class</code>。</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>java -jar jython.jar [script.py]</code></pre>
+</div></div>
+<div class="ulist"><ul>
+<li>
+<p>
+The Jython Standalone installation is a Jython JAR also containing all Python standard libraries.
+</p>
+</li>
+<li>
+<p>
+The standalone option does no caching and so avoids the startup overhead (most likely at the cost of some speed in calling Java classes, but I have not profiled it) &#8230; 沒有 cache 為什麼反而比較快??
+</p>
+</li>
+</ul></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://wiki.python.org/jython/InstallationInstructions">Installation</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pythonpath_jythonpath">PYTHONPATH? JYTHONPATH</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<code>-Dpython.path</code> 等同 CPython 的 <code>PYTHONPATH</code>，實驗確認 Jython 是完全不吃 <code>PYTHONPATH</code> 的設定，但它會吃 <code>JYTHONPATH</code> 的設定。當 <code>-Dpython.path</code> 同時給時，實驗確認最後會以 <code>JYTHONPATH</code> 的設定為主。
+</p>
+</li>
+<li>
+<p>
+很多人都提到只要把 <code>.py</code> 放到 <code>jython.jar/Lib</code> 底下即可，那其他的 Jar 檔呢??
+</p>
+</li>
+</ul></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://wiki.python.org/jython/JythonFaq/DistributingJythonScripts">JythonFaq/DistributingJythonScripts - JythonWiki</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://jython.extreme.st/talk/talk.html">jython.extreme.st/talk/talk.html</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.jython.org/docs/using/cmdline.html">1. Command line and environment — Jython v2.5.2 documentation</a> - 提到吃 <code>JYTHONPATH</code> 的設定。
+</p>
+</li>
+<li>
+<p>
+<a href="http://wiki.python.org/jython/UserGuide#registry-properties">UserGuide - JythonWiki</a> - 提到 <code>-Dpython.path</code> 等同 CPython 的 <code>PYTHONPATH</code>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_整合_java">整合 Java</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>Jython 除了做為 Java Scripting 的方案之一，它之於 Python 最大的優勢就是可以直接從 Python code 裡直接調用 Java 實作的 library （也就是一堆 class），而且用起來跟 Python class 沒什麼兩樣：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; from java.util import ArrayList <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+&gt;&gt;&gt; words = ArrayList()             <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+&gt;&gt;&gt; words.add('Hello')
+True
+&gt;&gt;&gt; words.add('Jython')
+True
+&gt;&gt;&gt; words[0], words[1]              <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+(u'Hello', u'Jython')
+&gt;&gt;&gt; ', '.join(words)
+u'Hello, Jython'
+&gt;&gt;&gt;
+&gt;&gt;&gt; words.class                     <img src="../../_asciidoc/images/icons/callouts/4.png" alt="4" />
+&lt;type 'java.util.ArrayList'&gt;
+&gt;&gt;&gt; words.__class__
+&lt;type 'java.util.ArrayList'&gt;
+&gt;&gt;&gt; type(words)
+&lt;type 'java.util.ArrayList'&gt;
+&gt;&gt;&gt;
+&gt;&gt;&gt; words = words.toArray()         <img src="../../_asciidoc/images/icons/callouts/5.png" alt="5" />
+&gt;&gt;&gt; words.__class__
+&lt;type 'array.array'&gt;
+&gt;&gt;&gt; type(words)
+&lt;type 'array.array'&gt;
+&gt;&gt;&gt; words.class                     <img src="../../_asciidoc/images/icons/callouts/6.png" alt="6" />
+Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+AttributeError: 'array.array' object has no attribute 'class'
+&gt;&gt;&gt;
+&gt;&gt;&gt; System.currentTimeMillis()           <img src="../../_asciidoc/images/icons/callouts/7.png" alt="7" />
+Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+NameError: name 'System' is not defined
+&gt;&gt;&gt; from java.lang import System         <img src="../../_asciidoc/images/icons/callouts/8.png" alt="8" />
+&gt;&gt;&gt; System.out.println(', '.join(words))
+Hello, Jython</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+用 Python 的語法引入 Java class <code>java.util.ArrayList</code>。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+之後用起來就跟 Python class 沒什麼兩樣，例如直接呼叫該 class 就可以生成一個 instance，用 <code>.</code> 就可以呼叫 instance method 等。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+沒想到在 Jython 裡的 <code>java.util.ArrayList</code> 直接支援 Python 裡 sequence/iterable 的用法。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/4.png" alt="4" /></td><td>
+雖然型態是 <code>java.util.ArrayList</code>，除了 Java 的用法（<code>words.class</code>），也完全支援 Python 的用法（<code>words.__class__</code> 跟 <code>type(words)</code>）。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/5.png" alt="5" /></td><td>
+某些資料型態的轉換會自動發生在從 Python 傳入 Java method 的參數，也會發生在從 Java method 返回的回傳值。例如 Java 的 array 會變成 Python 的 <code>array.array</code>，其他型態的對應可以參考 <a href="http://wiki.python.org/jython/UserGuide#calling-java-methods-and-functions">User Guide &gt; Calling Java Methods and Functions</a>。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/6.png" alt="6" /></td><td>
+轉成 Python 的型態之後，Java 專有的用法 <code>.class</code> 就不適用了。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/7.png" alt="7" /></td><td>
+在 Java 裡預設會被引入的 <code>java.lang.*</code>，在 Jython 裡也要手動引入才行。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/8.png" alt="8" /></td><td>
+呼叫 class method 的方式跟 instance method 一樣。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>如果 package name 相衝突時，會以 Python 或 Java 為主？</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.jython.org/jythonbook/en/1.0/ModulesPackages.html">Jython Book &gt; Modules and Packages for Code Reuse</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.jython.org/jythonbook/en/1.0/JythonAndJavaIntegration.html">Jython Book &gt; Jython and Java Integration</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">網站</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.jython.org/index.html">The Jython Project</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://wiki.python.org/jython/">Wiki</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://old.nabble.com/Jython-f4120.html">Old Nabble - Jython forum</a>
+</p>
+</li>
+<li>
+<p>
+<a href="irc://irc.freenode.net/#jython">IRC</a> (<a href="http://www.extreme.st/jython.extreme.st/irclogs/index.php/">Logs</a>) - 好像大家比較習慣在 IRC 上發問
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">官方文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.jython.org/docs/index.html">Jython Documentation</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://wiki.python.org/jython/JythonFaq">FAQ</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://wiki.python.org/jython/UserGuide">User Guide</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://wiki.python.org/jython/WhyJython">Why Jython</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">其他文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://en.wikipedia.org/wiki/Jython">Jython - Wikipedia, the free encyclopedia</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.ibm.com/developerworks/websphere/library/techarticles/1004_gibson/1004_gibson.html">Scripting from scratch: Creating a Jython administrative script for IBM WebSphere Application Server</a> (2010-04-07)
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.fishandcross.com/blog/?page_id=214">Jython Master Resource List – Bibliography : Road Warrior Collaboration</a> (2007-07-19)
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.ibm.com/developerworks/java/tutorials/j-jython1/">Intro to Jython, Part 1: Java programming made easier</a> (2004-04-08)
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.ibm.com/developerworks/java/tutorials/j-jython2/">Introduction to Jython, Part 2: Programming essentials</a> (2004-04-08)
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">書籍</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.springer.com/computer/book/978-1-84996-286-5">Springer - Scientific Data Analysis using Jython Scripting and Java</a> (2010-08)
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.apress.com/9781430225270">Apress - The Definitive Guide to Jython</a> (2010.03) - 這本書的線上版本在 <a href="http://jythonbook.com">http://jythonbook.com</a> (轉成 reStructuredText 後再用 Sphinx 輸出)
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.informit.com/store/product.aspx?isbn=0137009526">IBM - WebSphere Application Server Administration Using Jython</a> (2009-10)
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.informit.com/store/product.aspx?isbn=0201616165">Addison-Wesley - Python Programming with the Java™ Class Libraries</a> (2002-06)
+</p>
+</li>
+<li>
+<p>
+<a href="http://shop.oreilly.com/product/9780596002473.do">O&#8217;Reilly - Jython Essentials</a> (2002-03)
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.informit.com/store/product.aspx?isbn=0735711119">Sams - Jython for Java Programmers</a> (2001-12)
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_學習筆記">學習筆記</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+Java Scripting 的好處是不用裝 JDK 也可以用 Java 寫新的程式，而且 Jython 可以用來說明 Java API 的用法（但又怕不懂 Python 的人看不懂？）
+</p>
+</li>
+<li>
+<p>
+<a href="http://docs.oracle.com/cd/E13222_01/wls/docs90/config_scripting/using_WLST.html">WebLogic Scripting Tool</a> (WLST) 就是用 Jython 來寫，所以在查一些問題時可以用 WLST 當關鍵字。
+</p>
+</li>
+<li>
+<p>
+2010-10-04 在 Jython 2.5.2 Beta 2 上, 確認沒有提供 <code>_winreg</code> 模組（在 Windows 上也是一樣）, 另外 <code>os.name</code> 會傳回 <em>java</em>. 這將是一個很大的問題 - 如果要用 Jython 的方式寫 Java Application, 用 Groovy 會更好, 但要用 Jython 來寫 Python Script, 卻又少了某些系統特有的 Modules, 也就是說兩邊寫出來的 <code>.py</code> 檔並不能互通, 充其量 Jython 不過是用了 Python 的語法而已, 做為 Java 的 Scripting Language, 為什麼不選 Groovy 呢? 定位上確實有點尷尬. 更何況所有的平台幾乎都提供有 CPython, 並不需要 JVM 來達到跨平台的目的.
+</p>
+</li>
+<li>
+<p>
+以後應以 jython 優先考量，因為 jython 能跑，python 就沒問題，但反之則不然
+</p>
+</li>
+<li>
+<p>
+使用 <code>with</code> 時會遇到 <code>'with' will become a reserved keyword in Python 2.6</code> 的錯誤，可以在 <code>.py</code> 最前面加上 <code>from __future__ import with_statement</code> 即可。
+</p>
+</li>
+<li>
+<p>
+把 <code>*.py</code> 放在 <code>.jar</code> 的 <code>/Lib</code> 好像是慣例?
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:16:16 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

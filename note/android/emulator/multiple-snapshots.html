@@ -1,0 +1,235 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>Android Emulator: 如何讓一個 AVD 有多個 Snapshots</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="multiple-snapshots.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>Android Emulator: 如何讓一個 AVD 有多個 Snapshots</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p><a href="emulator.html">emulator</a> 內建支援多個 <a href="snapshots.html">snapshots</a> 的功能，我們先從 <a href="console.html">Console</a> 的 <code>avd snapshot</code> 看起：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ telnet localhost 5554
+...
+OK
+help avd snapshot
+allows you to save and restore the virtual device state in snapshots
+
+available sub-commands:
+   avd snapshot list             list available state snapshots
+   avd snapshot save             save state snapshot
+   avd snapshot load             load state snapshot
+   avd snapshot del              delete state snapshot
+
+OK
+help avd snapshot list
+'avd snapshot list' will show a list of all state snapshots that can be loaded
+OK
+help avd snapshot save
+'avd snapshot save &lt;name&gt;' will save the current (run-time) state to a snapshot with the given name
+OK
+help avd snapshot load
+'avd snapshot load &lt;name&gt;' will load the state snapshot of the given name
+OK
+help avd snapshot del
+'avd snapshot del &lt;name&gt;' will delete the state snapshot with the given name
+OK</code></pre>
+</div></div>
+<div class="paragraph"><p>從上面所有 <code>avd snapshot</code> 的說明可以看出， Emulator 對 Snapshot 的支援其實相當完整；可以隨時在 emulator 運行的過程中拍多個 snapshots，也可以隨時回到之前拍下的某個 snapshot。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">這也就是為什麼 <code>~/android/&lt;avd_name&gt;.avd/snapshots.img</code> 的主檔名後面多了個 "s" 的關係。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>另外 <code>emulator</code> 的 <code>-snapshot-list</code> 也可以用來列出 <code>snapshots.img</code> 裡所有的 snapshots，即便在 AVD 沒有啟動的情況下也可以查詢：</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>$ emulator @&lt;avd_name&gt; -snapshot-list</code></pre>
+</div></div>
+<div class="paragraph"><p>以下就拿一個做過一次 snapshot 的 <a href="snapshots.html#myphone">MyPhone</a> 繼續往下做測試；先從單一個 snapshot 開始：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ ls -1sh snapshots.img
+227M snapshots.img
+$ emulator @MyPhone -snapshot-list <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+Snapshots in file '/home/&lt;user&gt;/.android/avd/MyPhone.avd/snapshots.img':
+ ID        TAG                 VM SIZE                DATE       VM CLOCK
+ 1         default-boot           226M 2012-07-14 23:31:44   00:03:29.315
+$
+$ emulator @MyPhone -no-snapshot-save &amp;
+$ telnet localhost 5554
+avd snapshot list <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+Snapshot devices: ide0-hd1
+Snapshot list (from ide0-hd1):
+ID        TAG                 VM SIZE                DATE       VM CLOCK
+1         default-boot           226M 2012-07-14 23:31:44   00:03:29.315
+OK
+avd snapshot save <img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+KO: argument missing, try 'avd snapshot save &lt;name&gt;'
+avd snapshot save default-boot
+OK
+avd snapshot list
+Snapshot devices: ide0-hd1
+Snapshot list (from ide0-hd1):
+ID        TAG                 VM SIZE                DATE       VM CLOCK
+1         default-boot           226M 2012-07-14 23:33:47   00:04:25.274
+OK
+exit
+$ ls -1sh snapshots.img
+454M snapshots.img
+$
+$ telnet localhost 5554
+avd snapshot load <img src="../../../_asciidoc/images/icons/callouts/4.png" alt="4" />
+KO: argument missing, try 'avd snapshot load &lt;name&gt;'
+avd snapshot load default-boot
+OK
+avd snapshot save before-install <img src="../../../_asciidoc/images/icons/callouts/5.png" alt="5" />
+OK
+avd snapshot list
+Snapshot devices: ide0-hd1
+Snapshot list (from ide0-hd1):
+ID        TAG                 VM SIZE                DATE       VM CLOCK
+1         default-boot           226M 2012-07-14 23:33:47   00:04:25.274
+2         before-install         227M 2012-07-14 23:35:50   00:06:26.578
+OK
+exit
+$ ls -1sh snapshots.img
+455M snapshots.img
+$
+$ telnet localhost 5554
+avd snapshot save after-install <img src="../../../_asciidoc/images/icons/callouts/6.png" alt="6" />
+OK
+avd snapshot list
+Snapshot devices: ide0-hd1
+Snapshot list (from ide0-hd1):
+ID        TAG                 VM SIZE                DATE       VM CLOCK
+1         default-boot           226M 2012-07-14 23:33:47   00:04:25.274
+2         before-install         227M 2012-07-14 23:35:50   00:06:26.578
+3         after-install          231M 2012-07-14 23:38:31   00:09:06.587
+OK
+exit
+$ ls -1sh snapshots.img
+686M snapshots.img
+$
+$ telnet localhost 5554
+avd snapshot del before-install <img src="../../../_asciidoc/images/icons/callouts/7.png" alt="7" />
+OK
+avd snapshot list
+Snapshot devices: ide0-hd1
+Snapshot list (from ide0-hd1):
+ID        TAG                 VM SIZE                DATE       VM CLOCK
+1         default-boot           226M 2012-07-14 23:33:47   00:04:25.274
+3         after-install          231M 2012-07-14 23:38:31   00:09:06.587
+OK
+exit
+$ ls -1sh snapshots.img
+686M snapshots.img</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+在還沒啟動 AVD 之前，先用 <code>emulator</code> 看一下 <code>snapshots.img</code> 的內容。原來 AVD 關閉時預設會將狀態寫回一個名叫 <code>default-root</code> 的 snapshot。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+啟動 AVD 後，從 console 也可以看 snapshot 清單。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+什麼都不做，重新寫回 <code>default-boot</code>，結果 <code>snapshots.img</code> 的大小變成原來的兩倍。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/4.png" alt="4" /></td><td>
+操作 emulator 一段時間後，隨時可以用回到起點。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/5.png" alt="5" /></td><td>
+可以拍更多的 snapshots，只要給 snapshot 不同的名稱即可；但這次 <code>snapshots.img</code> 的大小卻沒什麼增加？
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/6.png" alt="6" /></td><td>
+幾乎每增加一個 snapshot 就會成長一個單位，也就是第一個 snapshot 大小，在這個例子是 227M。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/7.png" alt="7" /></td><td>
+直接把中間的 snapshot 砍了，並不會影響到後面其他的 snapshots，顯然 snapshots 間是相互獨立的，這也難怪 <code>snapshots.img</code> 的檔案大小會成長得這麼快。另外就是 snaphost 砍掉後 <code>snapshots.img</code> 並不會變小，要把 VM 交給其他人恐怕會有困難&#8230;
+</td></tr>
+</table></div>
+<div class="paragraph"><p>AVD 啟動時預設會去載一個名叫 <code>default-boot</code> 的 snapshot，如果要直接載入其他 snapshot 的話，可以用 <code>-snapshot &lt;name&gt;</code> 來指定。例如：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ emulator @MyPhone -snapshot-list
+Snapshots in file '/home/&lt;user&gt;/.android/avd/MyPhone.avd/snapshots.img':
+ ID        TAG                 VM SIZE                DATE       VM CLOCK
+ 1         default-boot           226M 2012-07-14 23:33:47   00:04:25.274
+ 3         after-install          231M 2012-07-14 23:38:31   00:09:06.587
+$
+$ emulator @MyPhone -snapshot after-install -no-snapshot-save</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://archive.cnblogs.com/a/2479750/">命令行启动Android虚拟机快照 - 博客文库 - 博客园</a> (2012-05-02)
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-07 22:45:51 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

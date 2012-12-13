@@ -1,0 +1,432 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>SIKULI and Android Testing</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="monkeyrunner-sikuli-inspire.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>SIKULI and Android Testing</h1>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_android_robot">android-robot</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>SIKULI 有個 extension 叫 <a href="https://github.com/sikuli/sikuli/tree/develop/extensions/android-robot">android-robot</a>，不過距現在 (2012-04-14) 已經 7 個月沒有進 code，用起來像<a href="https://github.com/sikuli/sikuli/blob/develop/extensions/android-robot/example/android-example.sikuli/android-example.py">這個樣子</a>：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>from org.sikuli.script.android import AndroidScreen
+
+scr = AndroidScreen(10000, ".*") # compatiable with Sikuli Screen/Region
+dev = scr.getRobot().getDevice() # Android Monkey device
+
+if not scr.exists("lock.png"):
+   dev.press('KEYCODE_POWER', 'DOWN_AND_UP')
+scr.dragDrop("lock.png", "speaker.png")
+scr.click("google.png")</code></pre>
+</div></div>
+<div class="paragraph"><p>不過 <code>android-robot-&lt;version&gt;.jar</code> 必須要自行編譯才能取得，而且跟最新的 SDK 不搭，出現許多<a href="https://answers.launchpad.net/sikuli/+question/177331">套件找不到的情形</a>。</p></div>
+<div class="paragraph"><p><a href="https://answers.launchpad.net/sikuli/+question/169859">這裡提到</a> "The Android support is already in the latest build, so it would be in the RC3 as well. Mac accessibility will come later than RC3."，但在 daily build 也找不到。</p></div>
+<div class="paragraph"><p>要等官方直接支援 Android 嗎? 還是想辦法把 monkeyrunner 整進來?? 或是要花時間改 android-robot，好處是不用把手機的畫面投到螢幕上。</p></div>
+<div class="paragraph"><p>android-robot 示範了兩種整合方式：</p></div>
+<div class="listingblock">
+<div class="title"><code>example/run-sikuli-monkey.sh</code> (從 SIKULI 整合 monkeyrunner)</div>
+<div class="content">
+<pre><code>#!/bin/sh
+SIKULI_SCRIPT_JAR=sikuli-script.jar
+ANDROID_ROBOT_JAR=android-robot-0.3.jar
+ANDROID_SDK=/opt/android-sdk-mac_x86
+
+CLASSPATH=$SIKULI_SCRIPT_JAR:$ANDROID_ROBOT_JAR
+
+java -cp $CLASSPATH \
+     -Dandroid.path=$ANDROID_SDK \
+     org.sikuli.script.SikuliScript $*</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="title"><code>exp/run-sikuli-monkey.sh</code> (從 monkeyrunner 整合 SIKULI)</div>
+<div class="content">
+<pre><code>#!/bin/sh
+SIKULI_SCRIPT_JAR=sikuli-script.jar
+ANDROID_SDK=/opt/android-sdk-mac_x86
+java -cp $SIKULI_SCRIPT_JAR:$ANDROID_SDK/tools/lib/monkeyrunner.jar -Djava.ext.dirs=$ANDROID_SDK/tools/lib -Djava.library.path=$ANDROID_SDK/tools/lib -Dcom.android.monkeyrunner.bindir=$ANDROID_SDK/tools -Dpython.path=$SIKULI_SCRIPT_JAR com.android.monkeyrunner.MonkeyRunnerStarter $*</code></pre>
+</div></div>
+<div class="ulist"><ul>
+<li>
+<p>
+從 SIKULI 整合 monkeyrunner
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+搭配 Sikuli IDE 寫 script 才會直覺，不過這會跟 monkeyrunner 內部的實作細節產生相依，很容易造成只能搭配某個版本 SDK 一起運作的結果。
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+從 monkeyrunner 整合 SIKULI
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+相對簡單，但 Sikuli IDE 裡的 Run (in slow motion) 就不能直接使用。
+</p>
+</li>
+</ul></div>
+</li>
+</ul></div>
+<div class="paragraph"><p>讓事情變得單純一點，同時操作 desktop 跟 Android 的這件事，交給 Robot Framework 來負責。像 <code>AndroidScreen</code> 跟 <code>MonkeyDevice</code> 等都應該要可以直接使用。這部份應該可以透過 monkeyrunner 的 plugin 機制餵進去，所以 <code>from sikuli.Sikuli import *</code> 要有其他的東西可以替代</p></div>
+<div class="paragraph"><p>基本上 <code>IRobot</code> 不適合用在觸控螢幕上，要針對 tap, pinch, swipe, long press 等重新包裝過。</p></div>
+<div class="paragraph"><p>如果要進一步將 SIKULI 的執行環境也整合進來，就會變成這樣子：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ java -Xmx128M -cp $JYTHON_HOME/jython.jar:$SIKULI_HOME/sikuli-script.jar:$ANDROID_HOME/tools/lib/monkeyrunner.jar:$ANDROID_HOME/tools/lib/guavalib.jar:$ANDROID_HOME/tools/lib/sdklib.jar:$ANDROID_HOME/tools/lib/ddmlib.jar:$ANDROID_HOME/tools/lib/chimpchat.jar -Djava.library.path=$ANDROID_HOME/tools/lib -Dcom.android.monkeyrunner.bindir=$ANDROID_HOME/tools -Dpython.path=$SIKULI_HOME/sikuli-script.jar/Lib com.android.monkeyrunner.MonkeyRunnerStarter
+Jython 2.5.2 (Release_2_5_2:7206, Mar 2 2011, 23:12:06)
+[OpenJDK 64-Bit Server VM (Sun Microsystems Inc.)] on java1.6.0_20
+&gt;&gt;&gt; from sikuli.Sikuli import *
+Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+ImportError: No module named sikuli <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+&gt;&gt;&gt;
+&gt;&gt;&gt; import sys; sys.path.insert(0, '/home/jeremy/dev/sikuli/sikuli-script.jar/Lib') <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+&gt;&gt;&gt; from sikuli.Sikuli import *
+[info] Sikuli vision engine loaded.
+[info] VDictProxy loaded.
+&gt;&gt;&gt;</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+顯然 <code>-Dpython.path</code> 的設定並沒有被吃進去。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+只要把 <code>sikuli-script.jar/Lib</code> 手動加到 <code>JYTHONPATH</code> 就可以了。
+</td></tr>
+</table></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="https://github.com/sikuli/sikuli/tree/develop/extensions/android-robot">sikuli/extensions/android-robot</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_從_monkeyrunner_整合_sikuli">從 monkeyrunner 整合 SIKULI</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+除非把 <code>monkeyrunner</code> 裡面 <code>-jar</code> 的用法改掉，否則就得要把 <code>sikuli-script.jar</code> 放到 <code>$ANDROID_SDK/tools/lib</code> 底下才行。
+</p>
+</li>
+<li>
+<p>
+在 Linux/Mac/Windows 實驗確認，monkeyrunner 確實不吃 <code>JYTHONPATH</code> 的設定。怪的是 Linux 下不用額外把 <code>slikuli-script.jar</code> 裡面的 <code>/Lib</code> 解開放到 <code>$ANDROID_SDK/tools/lib/Lib</code> 下，但 Mac/Windows 下如果不放的話，會出現 "ImportError: No module named sikuli" 的錯誤，即便做了 <code>sys.path.append(os.environ['JYTHONPATH'])</code> 的動作也沒用。
+</p>
+</li>
+</ul></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>C:\&gt;monkeyrunner -plugin C:\tmp\monkeyrunner-sikuli.jar C:\tmp\test.sikuli\test.py
+120508 16:00:54.813:S [main] [com.android.monkeyrunner.MonkeyRunnerOptions] Plugin Main through an exception.
+120508 16:00:54.813:S [main] [com.android.monkeyrunner.MonkeyRunnerOptions]Traceback (most recent call last):
+  File "&lt;string&gt;", line 34, in &lt;module&gt;
+  File "&lt;string&gt;", line 6, in _init
+ImportError: No module named sikuli <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+
+120508 16:00:54.813:S [main] [com.android.monkeyrunner.MonkeyRunnerOptions]at org.python.core.Py.ImportError(Py.java:264)
+120508 16:00:54.813:S [main] [com.android.monkeyrunner.MonkeyRunnerOptions]at org.python.core.imp.import_logic(imp.java:692)
+120508 16:00:54.813:S [main] [com.android.monkeyrunner.MonkeyRunnerOptions]at org.python.core.imp.import_name(imp.java:746)
+120508 16:00:54.813:S [main] [com.android.monkeyrunner.MonkeyRunnerOptions]at org.python.core.imp.importName(imp.java:791)
+120508 16:00:54.813:S [main] [com.android.monkeyrunner.MonkeyRunnerOptions]at org.python.core.ImportFunction.__call__(__builtin__.java:1236)
+120508 16:00:54.813:S [main] [com.android.monkeyrunner.MonkeyRunnerOptions]at org.python.core.PyObject.__call__(PyObject.java:367)
+120508 16:00:54.813:S [main] [com.android.monkeyrunner.MonkeyRunnerOptions]at org.python.core.__builtin__.__import__(__builtin__.java:1207)
+120508 16:00:54.813:S [main] [com.android.monkeyrunner.MonkeyRunnerOptions]at org.python.core.imp.importFromAs(imp.java:869)
+120508 16:00:54.813:S [main] [com.android.monkeyrunner.MonkeyRunnerOptions]at org.python.core.imp.importFrom(imp.java:845)
+120508 16:00:54.813:S [main] [com.android.monkeyrunner.MonkeyRunnerOptions]at org.python.pycode._pyx0._init$1(&lt;string&gt;:32)
+120508 16:00:54.813:S [main] [com.android.monkeyrunner.MonkeyRunnerOptions]at org.python.pycode._pyx0.call_function(&lt;string&gt;)
+120508 16:00:54.813:S [main] [com.android.monkeyrunner.MonkeyRunnerOptions]at org.python.core.PyTableCode.call(PyTableCode.java:165)
+120508 16:00:54.813:S [main] [com.android.monkeyrunner.MonkeyRunnerOptions]at org.python.core.PyBaseCode.call(PyBaseCode.java:117)
+120508 16:00:54.813:S [main] [com.android.monkeyrunner.MonkeyRunnerOptions]at org.python.core.PyFunction.__call__(PyFunction.java:307)
+120508 16:00:54.813:S [main] [com.android.monkeyrunner.MonkeyRunnerOptions]at org.python.pycode._pyx0.f$0(&lt;string&gt;:34)
+120508 16:00:54.813:S [main] [com.android.monkeyrunner.MonkeyRunnerOptions]at org.python.pycode._pyx0.call_function(&lt;string&gt;)
+120508 16:00:54.813:S [main] [com.android.monkeyrunner.MonkeyRunnerOptions]at org.python.core.PyTableCode.call(PyTableCode.java:165)
+120508 16:00:54.813:S [main] [com.android.monkeyrunner.MonkeyRunnerOptions]at org.python.core.PyCode.call(PyCode.java:18)
+120508 16:00:54.813:S [main] [com.android.monkeyrunner.MonkeyRunnerOptions]at org.python.core.Py.runCode(Py.java:1197)
+120508 16:00:54.813:S [main] [com.android.monkeyrunner.MonkeyRunnerOptions]at org.python.core.Py.exec(Py.java:1241)
+120508 16:00:54.813:S [main] [com.android.monkeyrunner.MonkeyRunnerOptions]at org.python.util.PythonInterpreter.exec(PythonInterpreter.java:138)
+120508 16:00:54.813:S [main] [com.android.monkeyrunner.MonkeyRunnerOptions]at org.sikuli.script.android.MonkeyPlugin.apply(Unknown Source)
+120508 16:00:54.813:S [main] [com.android.monkeyrunner.MonkeyRunnerOptions]at org.sikuli.script.android.MonkeyPlugin.apply(Unknown Source)
+120508 16:00:54.813:S [main] [com.android.monkeyrunner.MonkeyRunnerOptions]at com.android.monkeyrunner.ScriptRunner.run(ScriptRunner.java:100)
+120508 16:00:54.813:S [main] [com.android.monkeyrunner.MonkeyRunnerOptions]at com.android.monkeyrunner.MonkeyRunnerStarter.run(MonkeyRunnerStarter.java:77)
+120508 16:00:54.813:S [main] [com.android.monkeyrunner.MonkeyRunnerOptions]at com.android.monkeyrunner.MonkeyRunnerStarter.main(MonkeyRunnerStarter.java:189)
+120508 16:00:54.825:S [main] [com.android.monkeyrunner.MonkeyRunnerOptions] Script terminated due to an exception</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+不知道為什麼在 Windows 下會特別去存取 <code>sikuli</code> module，這個情形在 Linux/Mac 下是沒有的。
+</td></tr>
+</table></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ monkeyrunner -plugin target/monkeyrunner-sikuli.jar test.sikuli/test.py
+Init MonkeyRunner/Sikuli Env. PYTHONPATH = ['/Users/wfbss/dev/android-sdk/tools/lib/monkeyrunner.jar', '/Users/wfbss/dev/workspace/monkeyrunner-sikuli/test.sikuli', '/Users/wfbss/dev/workspace/monkeyrunner-sikuli/target/monkeyrunner-sikuli.jar', '/Users/wfbss/dev/android-sdk/tools/lib/Lib', '/Users/wfbss/dev/android-sdk/tools/lib/jython.jar/Lib', '__classpath__', '__pyclasspath__/']
+120509 11:03:41.885:S [main] [com.android.monkeyrunner.MonkeyRunnerOptions] Plugin Main through an exception.
+120509 11:03:41.885:S [main] [com.android.monkeyrunner.MonkeyRunnerOptions]Traceback (most recent call last):
+  File "&lt;string&gt;", line 34, in &lt;module&gt;
+  File "&lt;string&gt;", line 6, in _init
+ImportError: No module named sikuli</code></pre>
+</div></div>
+<div class="paragraph"><p>後來發現 "ImportError: No module named sikuli"，是因為 <code>initenv.py</code> 裡的這行程式造成的：</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>from org.sikuli.script.android import AndroidScreen</code></pre>
+</div></div>
+<div class="paragraph"><p>原因是因為 <code>org.sikuli.script.android.AndroidScreen</code> 已經更名為 <code>com.android.monkeyrunner.sikuli.AndroidScreen</code>。這裡會報錯 <code>sikuli</code> 而且又說 module，很容易造成誤解&#8230; XD!!</p></div>
+<div class="paragraph"><p>但後來 Windows 下的問題真的是要把 monkeyrunner-plugin 也一併放到 <code>%ANDROID_HOME%/tools/lib</code> 底下才行。這一點跟 Unix-like 不同，但相同的是 <code>sikuli-script.jar/Lib</code> 不用特別解到 <code>$ANDROID_HOME/tools/lib/Lib</code> 底下，應該是 class loader 的關係吧？</p></div>
+<div class="paragraph"><p>環境內同時有 JRE 6/7 時，由於 <code>monkeyrunner.bat</code> 好像不會看 <code>PATH</code> 來找 <code>java.exe</code>，只好對 <code>monkeyrunner-sikuli.bat</code> 跟 <code>monkeyrunner.bat</code> 動手腳。</p></div>
+<div class="paragraph"><p><code>monkeyrunner-sikuli.bat</code>:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>if defined PROGRAMFILES(X86) set SIKULI_JAVA_EXE="C:\Program Files (x86)\Java\jre6\bin\java.exe"</code></pre>
+</div></div>
+<div class="paragraph"><p><code>monkeyrunner.bat</code>:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>if defined SIKULI_JAVA_EXE set java_exe="C:\Program Files (x86)\Java\jre6\bin\java.exe"</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_怎麼在_ride_與_sikuli_monkeyrunner_間交換資料">怎麼在 RIDE 與 Sikuli/MonkeyRunner 間交換資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+Run Monkeyrunner Script 要能接受 keyword arguments。資料交換用 JSON 避開 environment variable 可能不吃 Unicode 的問題
+</p>
+</li>
+<li>
+<p>
+轉成 JSON 寫到 invars 後，再從 monkeyrunner 讀出來，讀出來後從 Sikuli script 裡要怎麼存取? rfvars[key] 嗎?
+</p>
+</li>
+<li>
+<p>
+同樣的，有回傳值也可以寫回 outvars，用 rfreturn()
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://dtmilano.blogspot.com/2012/01/automated-android-testing-using-sikuli.html">Diego Torres Milano&#8217;s blog: Automated Android testing using Sikuli</a> (2012-01-21) - 展示 SIKULI 解 emulator 上的 pattern lock。
+</p>
+</li>
+<li>
+<p>
+<a href="http://i-miss-erin.blogspot.com/2010/01/automated-test-in-android-by-sikuli.html">Reading, Writing and Arithmetic: Automated test in Android by Sikuli</a> (2010-01-25) - 0xlab 的 Erin Yueh 展示用 SIKULI 搭配 androidscreencast 做測試；官網http://sikuli.org/blog/2010/02/04/sikuli-is-on-android/[另一篇文章]也引用了這個做法。
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.51testing.com/?uid-49689-action-viewspace-itemid-213806">如何保存Sikuli執行結果 - Quality Trackers</a> (2010-05-12)
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_學習筆記">學習筆記</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+不走 instrumentation，在 Android code 外圍控制 emulator/device。包括安裝 app、送 touch/press event、拍 screenshot 等。
+</p>
+</li>
+<li>
+<p>
+android-robot 不是抓投射到桌面的畫面，這可以避開高解析度設備無法一次顯示在桌面的問題，而且也不較不會受到桌面其他應用程式的干擾。
+</p>
+</li>
+<li>
+<p>
+目前走圖像比對的方式有一點 performance issue，首先是 SIKULI 比對圖像的速度，但更花時間的是從 emulator/device 取出畫面的這個動作，通常要花 2 ~ 3 秒左右。
+</p>
+</li>
+<li>
+<p>
+Automation 的價值是 regression 找出 side effect，手動測試過程中將每個畫面都拍下來（每台手機都要走一次）。只要圖檔命名得當，每一台設備都有一組圖像，之後只要帶不同的 device 參數進去就可以走完相同的測試。
+</p>
+</li>
+<li>
+<p>
+螢幕大小不同的測試，更是要 visual 的圖像比對。
+</p>
+</li>
+<li>
+<p>
+有圖跟文字時，儘量抓圖就好，除了因為字可能會被翻譯之外，另外的考量是圖跟文字的 "相對位置" 可能會因螢幕大小而異。
+</p>
+</li>
+<li>
+<p>
+Sikuli 似乎不支援<a href="https://bugs.launchpad.net/sikuli/+bug/673995">去背</a>的比對，目前的解法就是圖不要抓滿，儘量不要沾到有背景的地方。沾到一點點沒關係。
+</p>
+</li>
+<li>
+<p>
+各家手機的介面設計不同，就算是走 rooted/component-based，能夠一體適用的機會還是很小。況且有很多東西是控制不到的，因為沒有特定的 app 可以 instrument。
+</p>
+</li>
+<li>
+<p>
+Image-based 要重用在 L10N 比較有困難？只要定位的基準儘量不拍圖即可。基本上 L10N 不 verify function，但會拍下過程中所有的畫面。
+</p>
+</li>
+<li>
+<p>
+SIKULI 原本有太多 global functions 不適合用在 touchable device，考慮只引入（外加）下面幾個基本的操作：
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>exists(screenshot)</code>
+</p>
+</li>
+<li>
+<p>
+<code>find(screenshot)</code>
+</p>
+</li>
+<li>
+<p>
+<code>findAll(screenshot)</code>
+</p>
+</li>
+<li>
+<p>
+<code>wait(screenshot)</code>
+</p>
+</li>
+<li>
+<p>
+<code>waitVanish(screenshot)</code>
+</p>
+</li>
+<li>
+<p>
+<code>dragDrop(screenshot1, screenshot2)</code>
+</p>
+</li>
+<li>
+<p>
+<code>type(text)</code>
+</p>
+</li>
+<li>
+<p>
+<code>type(screenshot, text)</code>
+</p>
+</li>
+<li>
+<p>
+<code>tap(screenshot)</code>
+</p>
+</li>
+<li>
+<p>
+<code>longPress(screenshot)</code>
+</p>
+</li>
+<li>
+<p>
+<code>press(key)</code>
+</p>
+</li>
+<li>
+<p>
+<code>shell(command)</code>
+</p>
+</li>
+<li>
+<p>
+<code>takeSnapshot()</code>
+</p>
+</li>
+</ul></div>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:11:01 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+= link:vim.html[Vim] / 執行 Shell Commands =
+:title: [Vim] 執行 Shell Commands
+
+要在 Vim 裡執行簡單的 shell commands，可以透過 `:!{commands}` 的方式，例如：
+
+ :!ls
+
+顯示執行結果後，按 Enter 回到 Vim。當然 'commands' 可以由多個 shell commands 組成，用 `|` 或 `;` 串接起來：
+
+ :!ls -l | wc -l
+ :!ls -l ; pwd
+
+如果要取得執行的結果，讓 'commands' 的輸出直接插入目前的文件，可以用 `:r !{commands}`：
+
+ :r !ls
+
+另外 `:w !{commands}` 則可以將目前文件的內容做為 'commands' 的輸入（尚未存檔也沒關係）。下面的例子可以計算目前檔案的行數：
+
+ :w !wc -l
+
+在 'commands' 裡，可以用 `%` 來表示目前的檔案名稱。下面的例子在 `lines.txt` 後面增加一行（但不存檔），然後用兩種方式來計算行數，結果分別是 2 跟 3。會有這樣的差異是因為，`:w !wc -l` 以修改過但尚未存檔的內容做為輸入，而 `:!wc -l %` 則是以檔案實際的內容做為輸入。
+
+--------------------------------------------------------------------------------
+$ cat lines.txt
+line1
+line2
+
+$ vi lines.txt
+line1
+line2
+line3
+
+:w !wc -l
+3
+
+Press ENTER or type command to continue
+
+:!wc -l %
+
+[No write since last change]
+2 lines.txt
+
+Press ENTER or type command to continue
+--------------------------------------------------------------------------------
+
+如果要重新執行最後一次的 shell commands，跟 shell 裡的用法是一樣的：
+
+ :!!
+
+如果要執行比較複雜的 shell commands，上面 `:! {commands}` 的做法可能就不適用了。這時候可以用 `:shell` 或 `:sh` 來開一個新的 shell（利用 `exit` 回到 Vim），或是按 Ctrl-Z 暫停 Vim，回到原來的 shell。
+
+== 參考資料 ==
+
+ - http://www.linux.com/learn/tutorials/442419-vim-tips-working-with-external-commands[Vim tips: Working with external commands | Linux.com] (2006-10-25)
+

@@ -1,0 +1,186 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>Robot Framework: Keyword Development</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="keyword-development.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>Robot Framework: Keyword Development</h1>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_builtin_做為_keyword_跟_robot_framework_溝通的橋樑">BuiltIn 做為 Keyword 跟 Robot Framework 溝通的橋樑</h2>
+<div class="sectionbody">
+<div class="paragraph"><p><a href="http://robotframework.googlecode.com/hg/doc/userguide/RobotFrameworkUserGuide.html?#using-builtin-library">官方文件</a>提到，keyword 跟 Robot Framework 執行期溝通最佳的管道就是 BuiltIn Library。</p></div>
+<div class="listingblock">
+<div class="title"><code>examples/rfapi/test.txt</code></div>
+<div class="content">
+<pre><code>| *Setting* | *Value
+| Library | mylib.py
+
+| *Test Case* | *Action* | *Argument* | *Argument*
+| Test | Set Test Variable | ${first_name} | Jeremy
+|      | Set Last Name | Kao
+|      | Log | Hello, ${first_name} ${last_name} | WARN <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+從 keyword 裡寫出的變數，可以從 test data 讀取到。
+</td></tr>
+</table></div>
+<div class="listingblock">
+<div class="title"><code>examples/rfapi/mylib.py</code></div>
+<div class="content">
+<pre><code>from robot.libraries.BuiltIn import BuiltIn
+
+_builtin = BuiltIn()
+
+def set_last_name(last_name):
+    print '*WARN*', 'first_name:', _builtin.get_variable_value('${first_name}'), '(in the keyword)' <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+    _builtin.set_test_variable('${last_name}', last_name) <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+Keyword 裡可以用 <code>BuiltIn.get_variable_value(name, default=None)</code> 取得變數值，也可以用它來檢查某個變數有沒有被設定；注意變數名稱要採用 <code>${variable}</code> 的格式。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+Keyword 裡可以用 <code>BuiltIn.set_xxx_variable()</code> 來設定不同 scope 的變數值，之後從 test data 也可以讀取到。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>執行結果：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ pybot test.txt
+==============================================================================
+Test
+==============================================================================
+[ WARN ] first_name: Jeremy (in the keyword)
+[ WARN ] Hello, Jeremy Kao
+Test                                                                  | PASS</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_code_kwargs_code_的支援"><code>**kwargs</code> 的支援</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="title"><code>examples/kwagrs/test.txt</code></div>
+<div class="content">
+<pre><code>| *Settings* | *Value*
+| Library    | mylib.py
+
+| *Test Case* | *Action* | *Argument* | *Argument* | *Argument*
+| Test **kwargs | My Keyword | Jeremy | weight=68 | height=178</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="title"><code>examples/kwargs/mylib.py</code></div>
+<div class="content">
+<pre><code>def my_keyword(name, **kwargs):
+    print '*WARN* ', name, kwargs</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ pybot test.txt
+...
+Test **kwargs                                                         | FAIL |
+Keyword 'mylib.My Keyword' expected 1 argument, got 3.</code></pre>
+</div></div>
+<div class="paragraph"><p>原來 Robot Framework 的 <a href="http://robotframework.googlecode.com/hg/doc/userguide/RobotFrameworkUserGuide.html#variable-number-of-arguments">varargs</a> 只支援 <code>*args</code> 但不支援 <code>**kwargs</code>（至少 v2.7.1 還是這樣）。</p></div>
+<div class="paragraph"><p>可以搭配 Collections Library 來應付這樣的需求：</p></div>
+<div class="listingblock">
+<div class="title"><code>examples/kwargs/test2.txt</code></div>
+<div class="content">
+<pre><code>| *Setting* | *Value*
+| Library      | Collections
+| Library      | mylib2.py
+
+| *Test Case* | *Action* | *Argument* | *Argument* | *Argument*
+| Test **kwargs | ${kwargs}= | Create Dictionary | weight | 68 | height | 178
+|               | My Keyword | Jeremy | ${kwargs}</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="title"><code>examples/kwargs/mylib2.py</code></div>
+<div class="content">
+<pre><code>def my_keyword(name, kwargs={}):
+    print '*WARN*', name, kwargs</code></pre>
+</div></div>
+<div class="paragraph"><p>測試結果如下：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ pybot test2.txt
+...
+[ WARN ] Jeremy {u'weight': u'68', u'height': u'178'}
+Test **kwargs                                                         | PASS |</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://robotframework.googlecode.com/hg/doc/userguide/RobotFrameworkUserGuide.html">Robot Framework User Guide</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://robot-framework.readthedocs.org/en/latest/">Robot Framework API documentation</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:15:35 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

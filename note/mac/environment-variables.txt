@@ -1,0 +1,29 @@
+= Mac OS X: 設定環境變數（Environment Variables） =
+
+[NOTE]
+================================================================================
+基於 Unix 的 Mac OS X，當然也支援 link:../bash/profile-rc.html[`~/.bash_profile`] 的用法。但透過這種方式設定的環境變數，只有 (thir-party) Terminal app 可以套用得到，OS X 視窗應用程式則完全不理會這裡的設定。
+
+儘管如此，實務上還是很常將環境變數設定在 `~/.bash_profile` 裡，因為 OS X 視窗應用程式通常不會用到環境變數。
+================================================================================
+
+如果環境變數要同時讓 Terminal app 及其他 OS X 視窗應用程式套用到，就必須要設定在 `~/.MacOSX/environment.plist`，這個檔案只有在使用者登入時才會被讀取，所以在裡面所做的異動要重新登入才會套用。
+
+這個檔案一開始並不存在，可以用下面的方法建立：
+
+--------------------------------------------------------------------------------
+$ cd
+$ mkdir .MacOSX
+$ echo "" > .MacOSX/environment.plist <1>
+$ open .MacOSX/environment.plist <2>
+--------------------------------------------------------------------------------
+<1> 這個動作很重要，如果單純用 `touch` 來產生這個檔案的話，下一步用 XCode 開啟檔案時就會遇到 "The data couldn't be read because it has been corrupted." 的錯誤。
+<2> 用 XCode 開啟編輯。
+
+== 參考資料 ==
+
+ * http://developer.apple.com/library/mac/#qa/qa1067/_index.html[Technical Q&A QA1067: Setting environment variables for user processes]
+ * http://mactip.blogspot.tw/2004/04/setting-environment-variables.html[Mac OSX Tips: Setting environment variables] (2004-04-21) - `open ~/.MacOSX/environment.plist` 做設定
+ * http://stackoverflow.com/questions/7501678/set-environment-variables-on-mac-os-x-lion[osx - Set environment variables on Mac OS X Lion - Stack Overflow] (2011-09-21) - 提到 OS X windows applications (包括 Terminal app) 只吃 `~/.MacOSX/environment.plist` 的設定。
+ * http://stackoverflow.com/questions/135688/setting-environment-variables-in-os-x[osx - Setting environment variables in OS X? - Stack Overflow] (2008-09-25) - 提到 `/etc/launchd.conf` (但這支檔案在 Lion 下找不到) 或 `launchctl setenv`
+

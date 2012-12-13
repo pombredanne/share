@@ -1,0 +1,170 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>Android Emulator: Console</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="console.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>Android Emulator: Console</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>跟 <a href="snapshots.html">snapshot</a> 一樣，不知道為什麼官方文件只提到有 Console 這個東西，但對 Console 的內容則幾乎沒有什麼著墨&#8230; 其實很多控制都得透過 Console 來做才行，例如<a href="multiple-snapshots.html">控制多個 snapshots</a>、模擬接到電話或 SMS 簡訊等&#8230;</p></div>
+<div class="paragraph"><p>每個 <a href="avd.html">AVD</a> 啟動之後，<a href="emulator.html">emulator</a> 固定會 LISTEN 兩個 port （5554 ～ 5585），其中雙數 port 是給 console connection 用的。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">
+<div class="paragraph"><p>同時啟動多個 AVD 時，可以從 emulator 視窗抬頭判別不同 AVD 的 console 埠號。</p></div>
+<div class="imageblock">
+<div class="content">
+<img src="console/title_port.png" alt="console/title_port.png" />
+</div>
+</div>
+</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>透過一般 telnet 工具可以連上 console：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ telnet localhost 5554
+Trying ::1...
+Trying 127.0.0.1...
+Connected to localhost.
+Escape character is '^]'.
+Android Console: type 'help' for a list of commands
+OK
+help
+Android console command help:
+
+    help|h|?         print a list of commands
+    event            simulate hardware events
+    geo              Geo-location commands
+    gsm              GSM related commands
+    cdma             CDMA related commands
+    kill             kill the emulator instance
+    network          manage network settings
+    power            power related commands
+    quit|exit        quit control session
+    redir            manage port redirections
+    sms              SMS related commands
+    avd              control virtual device execution
+    window           manage emulator window
+    qemu             QEMU-specific commands
+    sensor           manage emulator sensors
+
+try 'help &lt;command&gt;' for command-specific help
+OK
+help gsm <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+allows you to change GSM-related settings, or to make a new inbound phone call
+
+available sub-commands:
+   gsm list             list current phone calls
+   gsm call             create inbound phone call
+   gsm busy             close waiting outbound call as busy
+   gsm hold             change the state of an oubtound call to 'held'
+   gsm accept           change the state of an outbound call to 'active'
+   gsm cancel           disconnect an inbound or outbound phone call
+   gsm data             modify data connection state
+   gsm voice            modify voice connection state
+   gsm status           display GSM status
+   gsm signal           set sets the rssi and ber
+
+OK
+help gsm call <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+'gsm call &lt;phonenumber&gt;' allows you to simulate a new inbound call
+OK
+quit <img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+$</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+從上面 <code>help</code> 與 <code>help gsm</code> 的輸出可以發現，它跟 <a href="../android-adb-shell.html">ADB shell</a> 是完全不同的東西。如果用過 DDMS 裡 Emulator Control 的功能，也會發現 console 可以做的事情比 <a href="../android-ddms.html">DDMS</a> 裡的 Emulator Control 多很多。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+<code>help</code> 可以繼續往下查 sub-command 的用法。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+輸入 <code>quit</code> 或 <code>exit</code> 離開。
+</td></tr>
+</table></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.android-portal.com/2007/11/16/how-to-get-access-to-the-linux-shell-emulator-console-in-android-os/">Android Portal » How to get access to the Linux shell / emulator console in Android OS</a> (2007-11-16) - console 跟 shell 顯然是兩種很不一樣的東西。
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.linuxtopia.org/online_books/android/devguide/guide/developing/tools/android_emulator_console.html">Android - Using the Emulator Console</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.cnblogs.com/mindmac/">命令行关闭Android模拟器 - MindMac - 博客园</a> (2012-05-13)
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-07 22:46:40 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

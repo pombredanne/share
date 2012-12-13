@@ -1,0 +1,75 @@
+= Android Virtual Device (AVD) =
+
+[quote,'Android Developers','http://developer.android.com/tools/devices/index.html[Managing Virtual Devices]']
+________________________________________________________________________________
+An Android Virtual Device (AVD) is an emulator configuration that lets you model an actual device by defining hardware and software options to be emulated by the Android Emulator.
+________________________________________________________________________________
+
+AVD 跟 link:emulator.html[Emulator] 的關係密切，卻也讓人常常混淆。簡單的說 AVD 就是一組軟硬體的設定，Emulator 則是依照設定模擬出對應的執行環境。
+
+[frame="none",grid="none",halign="center",options="autowidth"]
+|===============================================================================
+.2+| image:avd/avd_create.png[] | image:avd/avd_target.png[]
+| image:avd/avd_launch.png[]
+|===============================================================================
+
+AVD 的組成有：
+
+ * AVD 的名稱 - 由英數字、`_`、`-` 和 `.` 組成，不能含有空白，建議用駱駝文。
+ * 關於硬體特徵（profile）的設定 - 包括螢幕大小、記憶體大小、有沒有 GPS、實體鍵盤、前後相機、SD card 等。
+ * Android 平台的版本 - 選擇可用的 link:disk-images.html[system image]，這也決定了 link:../android-api-level.html[API Level] 與 Add-on（例如 Google APIs）。
+ * 是否啟用 link:snapshots.html[Snapshot] 功能。
+
+IMPORTANT: 應用程式應在所有 API Level 大於或等於 minimum API Level 的不同 AVD 上測過，確保在不同版本的平台上都能正常運作。但這跟 forward-compatibility 有什麼關係？
+
+[[avd-files]]
+AVD 的設定預設會存放在 `~/.android/avd` 底下的 `.ini` 檔跟 `.avd` 資料夾。其中 `.adv` 資料夾除了 `config.ini` 存放幾乎所有的設定值之外，剩下的都是 link:disk-images.html[disk images]：
+
+--------------------------------------------------------------------------------
+$ cd ~/.android/avd
+$ tree
+.
+|-- MyPhone.avd
+|   |-- config.ini
+|   |-- sdcard.img    <3>
+|   |-- snapshots.img <4>
+|   `-- userdata.img  <5>
+`-- MyPhone.ini
+
+$ cat MyPhone.ini <1>
+target=android-8
+path=/home/<user>/.android/avd/MyPhone.avd
+
+$ cat MyPhone.avd/config.ini <2>
+hw.lcd.density=240
+sdcard.size=100M
+skin.name=WVGA800
+skin.path=platforms/android-8/skins/WVGA800
+hw.cpu.arch=arm
+abi.type=armeabi
+vm.heapSize=24
+snapshot.present=true
+image.sysdir.1=platforms/android-8/images/
+--------------------------------------------------------------------------------
+<1> AVD 的設定由 `.ini` 帶出來，裡面除了記載 API Level 之外，剩下的就是 `.avd` 資料夾的絕對路徑。
+<2> 除了 API Level 之外，AVD 其他的設定都在 `.avd/config.ini` 裡。
+<3> `sdcard.img` - 用來存放 SD card 的內容，有配置 SD card 時才有。
+<4> `snapshots.img` - 用來存放一或多個 snapshots，有啟用 Snapshot 時才有。
+<5> `userdata.img` - 用來存放使用者安裝的應用程式、設定等。
+
+ * Target 指的是 Android platform，更正確的說是 API level。但為什麼 Google API 都在選項裡面??
+ * 啟動 AVD 時可以勾選：
+   ** Scale display to real size。設定 DPI，讓電腦螢幕上看起來的大小跟實機差不多，感受實際的大小。
+   ** Wipe user data
+   ** 有 enable snapshot 時，啟動時就可以選 Launch from snapshot (啟動速度會快很多) 跟 Save to snapshot。看起來 snapshot 最多只有一個??
+ * 啟動後抬頭 5554:MyPhone??
+ * Although the emulator does not allow you to test every device feature (such as the accelerometer), it does allow you to verify that your application functions properly on different versions of the Android platform, in different screen sizes and orientations, and more. 也要在少數幾台 real device 上測過。
+ * 第一次啟動比較慢，之後比較快，即便沒有做 snapshot??
+
+== 參考資料 ==
+
+ * http://developer.android.com/tools/devices/index.html[Managing Virtual Devices | Android Developers]
+ * http://developer.android.com/tools/devices/managing-avds.html[Managing AVDs with AVD Manager | Android Developers]
+ * http://developer.android.com/tools/devices/managing-avds-cmdline.html[Managing AVDs from the Command Line | Android Developers]
+ * http://www.android-portal.com/2007/11/16/how-to-get-access-to-the-linux-shell-emulator-console-in-android-os/[Android Portal » How to get access to the Linux shell / emulator console in Android OS] (2007-11-16) - console 跟 shell 顯然是兩種很不一樣的東西。
+

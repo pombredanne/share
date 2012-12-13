@@ -1,0 +1,261 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>INI 檔案格式</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="ini-format.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="ini.html">INI</a> / 檔案格式</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>INI 最重要的兩個概念就是 section 跟 property。一個 INI 檔至少要有一個 section（但不支援巢狀），每個 section 下可以有零或多個 property。下面用 Windows 下的 <code>system.ini</code> 來做說明：</p></div>
+<div class="listingblock">
+<div class="title"><code>system.ini</code></div>
+<div class="content">
+<pre><code>; for 16-bit app support <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+
+[drivers] <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+wave=mmdrv.dll <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+timer=timer.drv
+
+[mci]
+[driver32]
+[386enh]
+woafont=dosapp.fon
+EGA80WOA.FON=EGA80WOA.FON
+EGA40WOA.FON=EGA40WOA.FON
+CGA80WOA.FON=CGA80WOA.FON
+CGA40WOA.FON=CGA40WOA.FON</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+以分號（<code>;</code>）做為開頭的整行，會被視為註解。它可以落在 section 之外。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+單獨一行 <code>[section_name]</code> 的 section head 宣告另一個 section 的開始，後面的 property 都屬於這個 section，直到遇到另一個 section。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+INI 組成的最小單位－property，也就是用等號隔開的 name-value pair。注意 value 的兩側並不需要用引號括起來。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>雖然是通行於各平台, 但由於沒有官方的 Specification, 所以許多細節會因 Implementations 而異，大部份的實作都會忽略空白行, 可以用來提高可讀性。</p></div>
+<div class="paragraph"><p>INI 格式有很多細節沒有被定義清楚，因此不同的實作間會有些許差異。通常而言：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+section/property name 是不分大小寫的。
+</p>
+</li>
+<li>
+<p>
+property name 兩側的空白通常會被忽略，但 property name 兩側的空白通常會被保留。
+</p>
+</li>
+<li>
+<p>
+value 有多行？
+</p>
+</li>
+</ul></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>; last modified 1 April 2001 by John Doe
+[owner]
+name=John Doe
+organization=Acme Widgets Inc.
+
+[database]
+server=192.0.2.62     ; use IP address in case network name resolution is not working
+port=143
+file = "payroll.dat"</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="title"><code>win.ini</code></div>
+<div class="content">
+<pre><code>; for 16-bit app support
+[fonts]
+[extensions]
+[mci extensions]
+[files]
+[Mail]
+MAPI=1
+CMCDLLNAME32=mapi32.dll
+CMC=1
+MAPIX=1
+MAPIXVER=1.0.0.1
+OLEMessaging=1
+[MCI Extensions.BAK]
+3g2=MPEGVideo
+3gp=MPEGVideo
+...
+[annie]
+WantPreview=1
+UseFrameRate=1
+FrameRate=333333</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="title"><code>system.ini</code></div>
+<div class="content">
+<pre><code>; for 16-bit app support
+[386Enh]
+woafont=dosapp.fon
+EGA80WOA.FON=EGA80WOA.FON
+EGA40WOA.FON=EGA40WOA.FON
+CGA80WOA.FON=CGA80WOA.FON
+CGA40WOA.FON=CGA40WOA.FON
+
+[drivers]
+wave=mmdrv.dll
+timer=timer.drv
+
+[mci]</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="title"><code>PidList.ini</code></div>
+<div class="content">
+<pre><code>;[connect name] will modify the connection if ADC.connect="name"
+;[connect default] will modify the connection if name is not found
+;...
+
+[connect default]
+;If we want to disable unknown connect values, we set Access to NoAccess
+Access=NoAccess
+
+[sql default]
+;If we want to disable unknown sql values, we set Sql to an invalid query.
+Sql=" "
+
+[connect CustomerDatabase]
+Access=ReadWrite
+Connect="DSN=AdvWorks"
+
+[sql CustomerById]
+Sql="SELECT * FROM Customers WHERE CustomerID = ?"
+
+[connect AuthorDatabase]
+Access=ReadOnly
+Connect="DSN=MyLibraryInfo;UID=MyUserID;PWD=MyPassword"
+
+[userlist AuthorDatabase]
+Administrator=ReadWrite
+
+[sql AuthorById]
+Sql="SELECT * FROM Authors WHERE au_id = ?"</code></pre>
+</div></div>
+<div class="paragraph"><p>組態的最小單位是 Parameter - Name/Value Pair, 兩者之間用 = 分隔開來, 例如 server=localhost</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+某些實作的 Name/Value 可以用 : 做為分隔字元, 但比較少見
+</p>
+</li>
+<li>
+<p>
+Name 與 Value 兩側的空白 (包含等號兩側的空白) 是否被視為 Name 或 Value 的一部份, 會因實作而異. 參考 Windows 下許多系統 .ini 的寫法, 等號兩側是沒有空白的, 例如 Access=ReadOnly
+</p>
+</li>
+<li>
+<p>
+當 Value 包含空白或其他有特殊意義的字元時 (例如 =, ; 等), 許多實作都支援用雙引號將 Value 括起來, 例如 Connect="DSN=AdvWorks"
+</p>
+</li>
+<li>
+<p>
+如果 Value 有多行時, 有些實作接受在上一行尾加上 Backslash (\) 的表示法
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>可以透過 Named Sections 將多個 Parameters 做分組</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+Section 可以用 [&lt;section_name&gt;] 獨立一行來宣告, 緊接在後的 Parameters 都會被歸入該 Section, 除非遇到另一個 Section Declaration/Header 或 End-Of-File
+</p>
+</li>
+<li>
+<p>
+不支援 Nested Sections, 不過有些人會從 Hierarchical Naming Convention 下手來達成類似的效果, 不過這就有賴應用程式本身做進一步的處理了&#8230;
+</p>
+</li>
+</ul></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>[A.B.C]
+P=V
+
+[A\B\C]
+P=V
+
+[A]
+B,C,P=V</code></pre>
+</div></div>
+<div class="paragraph"><p>註解是單獨以 <code>;</code> 開頭的一行。某些實作以 <code>#</code> 做為引導註解的字元, 甚至可以加在 Parameter 或 Section Declaration 之後 (通常前面會隔一個空白字元)</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.cloanto.com/specs/ini/">Cloanto Implementation of INI File Format</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:07:10 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+= link:../unix-like.html[Unix-like] / link:commands.html[Commands] / `nl` =
+:title: [Unix-like][Commands] `nl`
+
+`nl` - number lines of files
+
+nl [OPTION]... [FILE]...
+
+將 'FILE' 的內容輸出到輸出到 STDOUT，並在每一行前面加上行號。如果 'FILE' 沒有提供，或是用單一個 `-` 來表示，則以 STDIN 為資料來源。
+
+常用的 options 有：
+
+ * `-b, --body-numbering=STYLE` - 控制哪些行要加行號，預設會跳過空白行（長度為零）。其中 'STYLE' 可以是 `a`（全部）、`t`（非空白行）等。
+ * `-n, --number-format=FORMAT` - 控制行號要不要補上前導零（leading zeros），否則數字是要靠左（left justified）還是靠右（right justified）對齊。其中 'FORMAT' 可以是 `ln`（靠左）、`rn`（靠右）或 `rz`（補上前導零），預設用 `rz`。
+ * `-s, --number-separator=STRING` - 以 'STRING' 做為行號跟內容間的分隔字串，預設是 TAB。
+ * `-w, --number-width=NUMBER` - 預留 'NUMBER' 個字元的寬度給行號，預設是 6。
+
+--------------------------------------------------------------------------------
+$ echo -e 'line1\n\nline2\n \nline3' | nl
+     1	line1
+       
+     2	line2
+     3	 
+     4	line3
+^^^^^^ <1>
+$
+$ echo -e 'line1\n\nline2\n \nline3' | nl -ba -nrz -w3 -s': ' <2>
+001: line1
+002: 
+003: line2
+004:  
+005: line3
+--------------------------------------------------------------------------------
+<1> `nl` 預設留 6 個字元寬度給行號，靠右對齊，而且會跳過沒有內容的行數。
+<2> 留 3 個字元的空間給行號，並補上前導零，行號跟內容之間則用 ": " 隔開，並為全部的行加上行號。
+
+== 參考資料 ==
+
+ * http://manpages.debian.net/cgi-bin/man.cgi?query=nl[nl - Debian Hypertext Man Pages]
+

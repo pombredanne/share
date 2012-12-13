@@ -1,0 +1,226 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>Linux 開機程序</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="boot.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>Linux 開機程序</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>kernel 載入完成且硬體（驅動程式）就緒後，第一個被呼叫的程式是 <code>/sbin/init</code>，這也就是為什麼 <code>init</code> 的 PID 永遠是 1 的關係。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ ps ax | grep init
+    1 ?        Ss     0:00 /sbin/init
+ 3484 pts/0    S+     0:00 grep --color=auto init</code></pre>
+</div></div>
+<div class="paragraph"><p>相對驅動硬體的 kernel，<code>init</code> 的工作是讓軟體的執行環境就緒，包括網路、檔案系統、系統服務等。它的設定檔在 <code>/etc/inittab</code>，其中最重要的設定就是 runlevel。</p></div>
+<div class="paragraph"><p>要查看目前所處的 runlevel 可以用 <code>runlevel</code> 這個指令：</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>$ runlevel
+N 3</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="title"><code>/etc/inittab</code></div>
+<div class="content">
+<pre><code>#
+# inittab       This file describes how the INIT process should set up
+#               the system in a certain run-level.
+#
+# Author:       Miquel van Smoorenburg, &lt;miquels@drinkel.nl.mugnet.org&gt;
+#               Modified for RHS Linux by Marc Ewing and Donnie Barnes
+#
+
+# Default runlevel. The runlevels used by RHS are: <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+#   0 - halt (Do NOT set initdefault to this)
+#   1 - Single user mode
+#   2 - Multiuser, without NFS (The same as 3, if you do not have networking)
+#   3 - Full multiuser mode
+#   4 - unused
+#   5 - X11
+#   6 - reboot (Do NOT set initdefault to this)
+#
+id:3:initdefault: <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+
+# System initialization.
+si::sysinit:/etc/rc.d/rc.sysinit
+
+l0:0:wait:/etc/rc.d/rc 0 <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+l1:1:wait:/etc/rc.d/rc 1
+l2:2:wait:/etc/rc.d/rc 2
+l3:3:wait:/etc/rc.d/rc 3
+l4:4:wait:/etc/rc.d/rc 4
+l5:5:wait:/etc/rc.d/rc 5
+l6:6:wait:/etc/rc.d/rc 6
+
+# Trap CTRL-ALT-DELETE
+ca::ctrlaltdel:/sbin/shutdown -t3 -r now
+
+# When our UPS tells us power has failed, assume we have a few minutes
+# of power left.  Schedule a shutdown for 2 minutes from now.
+# This does, of course, assume you have powerd installed and your
+# UPS connected and working correctly.
+pf::powerfail:/sbin/shutdown -f -h +2 "Power Failure; System Shutting Down"
+
+# If power was restored before the shutdown kicked in, cancel it.
+pr:12345:powerokwait:/sbin/shutdown -c "Power Restored; Shutdown Cancelled"
+
+
+# Run gettys in standard runlevels
+1:2345:respawn:/sbin/mingetty tty1
+2:2345:respawn:/sbin/mingetty tty2
+3:2345:respawn:/sbin/mingetty tty3
+4:2345:respawn:/sbin/mingetty tty4
+5:2345:respawn:/sbin/mingetty tty5
+6:2345:respawn:/sbin/mingetty tty6
+
+# Run xdm in runlevel 5
+x:5:respawn:/etc/X11/prefdm -nodaemon</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+總共有 7 個不同的 runlevel。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+<code>id:3:initdefault:</code> 中間的數字，就是預設的 runlevel。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+不同 runlevel 要執行的 script，個別放在 <code>/etc/rc.d/rc&lt;runlevel&gt;.d/</code> 底下。
+</td></tr>
+</table></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ cd /etc/rc.d
+$ ls
+init.d  rc  rc.local  rc.sysinit  rc0.d  rc1.d  rc2.d  rc3.d  rc4.d  rc5.d  rc6.d
+$ find -name '*local' <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+./rc2.d/S99local
+./rc5.d/S99local
+./rc.local
+./rc3.d/S99local
+./rc4.d/S99local
+$ ls rc5.d/S99local -l
+lrwxrwxrwx 1 root root 11 Mar  5  2010 rc5.d/S99local -&gt; ../rc.local
+$
+$ cat rc.local <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+#!/bin/sh
+#
+# This script will be executed *after* all the other init scripts.
+# You can put your own initialization stuff in here if you don't
+# want to do the full Sys V style init stuff.
+
+
+touch /var/lock/subsys/local</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+每一個 <code>/etc/rc.d/rc&lt;runlevel&gt;.d/</code> 都有一個 symbolic link 指向上一層的 <code>/etc/rc.d/rc.local</code>
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+從 <code>rc.local</code> 的說明看起來，如果開機完還有某些初始化的工作要完成，可以直接寫在這裡。
+</td></tr>
+</table></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_查看系統開機記錄">查看系統開機記錄</h2>
+<div class="sectionbody">
+<div class="literalblock">
+<div class="content">
+<pre><code>$ last reboot</code></pre>
+</div></div>
+<div class="paragraph"><p>可以用來列出最近幾次的開機記錄，例如：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ last reboot
+reboot   system boot  2.6.35-32-generi Mon Jul  2 09:56 - 11:53  (01:57)
+                                                                 ^^^^^^^ 這應該是運作時間
+
+wtmp begins Mon Jul  2 07:35:21 2012</code></pre>
+</div></div>
+<div class="paragraph"><p>不知道為什麼在 Ubuntu 下只會列出最後一次開機的記錄，但在 CentOS 下就會列出過去所有的記錄？</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://en.wikipedia.org/wiki/Init">init - Wikipedia, the free encyclopedia</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://en.wikipedia.org/wiki/Runlevel">Runlevel - Wikipedia, the free encyclopedia</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://linux.vbird.org/linux_basic/0510osloader.php">鳥哥的 Linux 私房菜&#8201;&#8212;&#8201;開機關機流程與 Loader</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:07:17 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

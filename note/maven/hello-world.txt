@@ -1,0 +1,91 @@
+= Maven 學習指引 =
+Sardine Kao <sardine@amanner.com>
+v0.1, 2009-09-26
+
+== 快速體驗 ==
+
+這一章主要是想透過一個簡單的例子, 帶領使用者快速地體驗 - 用 Maven 來開發程式, 過程大概會是什麼樣子?
+
+=== 安裝 Maven ===
+
+1. 從 http://maven.apache.org/download.html[Maven 官網] 下載 `apache-maven-2.2.1-bin.tar.gz`
+
+2. 將 `apache-maven-2.2.1-bin.tar.gz` 解壓縮到 `~/dev/apache-maven-2.2.1/`
+
+3. 在 `~/dev/` 底下建立一個名為 `maven` 的 symbolic link 指向 `apache-maven-2.2.1/` (未來要昇級, 只要更新 `maven` 的指向即可)
+
+ ~/dev$ ln -s apache-maven-2.2.1 maven
+
+4. 組態 `M2_HOME` 與 `PATH` 環境變數, 方便在任何地方直接叫用 `mvn` 指令. (建議將這些設定加到 `~/.profile`)
+
+ ~$ export M2_HOME=~/dev/maven
+ ~$ export PATH=$PATH:$M2_HOME/bin
+
+5. 用 `mvn -v` 測試是否安裝妥當
+
+ ~$ mvn -v
+ Apache Maven 2.2.1 (r801777; 2009-08-07 03:16:01+0800)
+ Java version: 1.6.0_16
+ Java home: /usr/lib/jvm/java-6-sun-1.6.0.16/jre
+ Default locale: en_US, platform encoding: UTF-8
+ OS name: "linux" version: "2.6.28-15-generic" arch: "i386" Family: "unix"
+
+=== Hello World ===
+
+==== 第 1 步: 快速建立一個框架 ====
+
+用 http://maven.apache.org/plugins/maven-archetype-plugin/[Archetype Plugin] 快速建立一個框架, 做為開發的起點:
+
+ ~/tmp$ mvn archetype:create -DgroupId=com.amanner \
+                             -DartifactId=helloworld \
+                             -DpackageName=com.amanner.hello
+
+上面的指令會在目前路徑下建立一個名為 `helloword` 的資料夾, 內容如下:
+
+--------------------------------------------------------------------------------
+~/tmp$ tree helloworld
+helloworld
+|-- pom.xml
+`-- src
+    |-- main
+    |   `-- java
+    |       `-- com
+    |           `-- amanner
+    |               `-- hello
+    |                   `-- App.java
+    `-- test
+        `-- java
+            `-- com
+                `-- amanner
+                    `-- hello
+                        `-- AppTest.java
+
+11 directories, 3 files
+--------------------------------------------------------------------------------
+
+其中 `App.java` 的內容如下:
+
+[source,java]
+--------------------------------------------------------------------------------
+package com.amanner.hello;
+
+/**
+ * Hello world!
+ *
+ */
+public class App 
+{
+    public static void main( String[] args )
+    {
+        System.out.println( "Hello World!" );
+    }
+}
+--------------------------------------------------------------------------------
+
+==== 編譯程式 ====
+
+輸入下面的指令就可以編譯 `.java` 檔:
+
+ ~/tmp/helloworld$ mvn compile
+
+之後

@@ -1,0 +1,169 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Selenium][RC] 執行 JavaScript</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="selenium-rc-javascript.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="selenium.html">Selenium</a> / <a href="selenium-rc.html">RC</a> / 執行 JavaScript</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>Selenium 提供有一些 API 可以用 <a href="../javascript/javascript.html">JavaScript</a> 程式碼直接跟 <a href="../dom/dom.html">DOM</a> 互動，彌補 <a href="selenium-rc-api.html">RC API</a> 的不足。</p></div>
+<div class="paragraph"><p>首先來看 <code>get_eval()</code>，它可以執行一或多行 JavaScript 程式碼，然後傳回最後一行的執行結果。</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>get_eval(script)</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; sel.get_eval('doRefresh()')
+...
+Exception: ERROR: Threw an exception: doRefresh is not defined
+&gt;&gt;&gt; sel.get_eval('this.doRefresh()') <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+u'null'
+&gt;&gt;&gt; sel.get_eval("this.doOpen('http://www.google.com'); true") <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+u'true'
+&gt;&gt;&gt; sel.get_eval("window.document.title") <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+u'Google'
+&gt;&gt;&gt; sel.get_eval("document.title")
+u'Selenium Remote Control v2.24.1'</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+這段程式碼執行的 <a href="../javascript/javascript-context.html">context</a> 是 selenium 本身。
+<div class="openblock">
+<div class="content">
+<div class="listingblock">
+<div class="title"><a href="http://code.google.com/p/selenium/source/browse/trunk/common/src/js/core/scripts/selenium-api.js?r=8162"><code>selenium-api.js</code></a></div>
+<div class="content">
+<pre><code>Selenium.prototype.doRefresh = function() {
+    /** ... */
+    this.browserbot.refresh();
+};</code></pre>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/caution.png" alt="Caution" />
+</td>
+<td class="content">也可以改寫成 <code>sel.get_eval('this.browserbot.refresh()')</code> 直接呼叫 <code>browserbot</code>，但 <code>selenium-api.js</code> 開頭就寫著 "stop navigating this.browserbot.document() &#8230; it breaks encapsulation"，建議還是不要這樣用。</td>
+</tr></table>
+</div>
+</div></div>
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+多行程式可以用 <code>;</code> 或 <code>\n</code> 隔開，但只會傳回最後一行的執行結果。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+透過 <code>window</code> 可以存取到 AUT 的視窗，進一步操作 DOM。要注意 <code>window.document</code> 不同於 <code>document</code>，單純的 <code>document</code> 會存取到 Remote Control 的視窗。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>如果要操作的對象沒有 ID，要如何讓方便的 element locator 幫上忙呢？答案是 <code>assign_id()</code>：</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>assign_id(locator, identifier)</code></pre>
+</div></div>
+<div class="paragraph"><p>它可以 "暫時" 將 <em>locator</em> 所代表 element 的 <code>id</code> 設定成 <em>identifier</em>，之後就可以透過 ID 更快地存取到該 element，也方便從 JavaScript 裡參照。</p></div>
+<div class="paragraph"><p>下面示範將 <code>//*[@id='tsf']/div[2]/div[3]/center/input[2]</code> 這個按鈕的 <code>id</code> 設成 <code>lucky_button</code>（故意選用複雜的 locator），之後在 JavaScript 裡就可以直接透過 ID 存取到該按鈕。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; sel.get_eval('this.getTitle()')
+u'Google'
+&gt;&gt;&gt;
+&gt;&gt;&gt; print sel.get_value('name=btnI')
+好手氣
+&gt;&gt;&gt; sel.assign_id("//*[@id='tsf']/div[2]/div[3]/center/input[2]", 'lucky_button')
+&gt;&gt;&gt; print sel.get_eval("window.document.getElementById('lucky_button').value")
+好手氣</code></pre>
+</div></div>
+<div class="paragraph"><p>這裡會稱做 "暫時"，是因為這樣的改變在 page reload 後就會消失了。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; sel.refresh()
+&gt;&gt;&gt; sel.get_eval("window.document.getElementById('lucky_button').value")
+...
+Exception: ERROR: Threw an exception: window.document.getElementById("lucky_button") is null</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://code.google.com/p/selenium/source/browse/trunk/common/src/js/core/scripts/selenium-api.js?r=8162">selenium-api.js</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://code.google.com/p/selenium/source/browse/trunk/common/src/js/core/scripts/selenium-browserbot.js?r=8162">selenium-browserbot.js</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://selenium.googlecode.com/svn/trunk/docs/api/py/selenium/selenium.selenium.html">selenium.selenium — Selenium 2.0 documentation</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-12 19:32:31 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

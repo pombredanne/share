@@ -1,0 +1,246 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>Android Virtual Device (AVD)</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="avd.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>Android Virtual Device (AVD)</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="quoteblock">
+<div class="content">
+<div class="paragraph"><p>An Android Virtual Device (AVD) is an emulator configuration that lets you model an actual device by defining hardware and software options to be emulated by the Android Emulator.</p></div>
+</div>
+<div class="attribution">
+<em><a href="http://developer.android.com/tools/devices/index.html">Managing Virtual Devices</a></em><br />
+&#8212; Android Developers
+</div></div>
+<div class="paragraph"><p>AVD 跟 <a href="emulator.html">Emulator</a> 的關係密切，卻也讓人常常混淆。簡單的說 AVD 就是一組軟硬體的設定，Emulator 則是依照設定模擬出對應的執行環境。</p></div>
+<div class="tableblock">
+<table rules="none"
+frame="void"
+cellspacing="0" cellpadding="4">
+<col />
+<col />
+<tbody>
+<tr>
+<td rowspan="2" align="center" valign="top"><p class="table"><span class="image">
+<img src="avd/avd_create.png" alt="avd/avd_create.png" />
+</span></p></td>
+<td align="center" valign="top"><p class="table"><span class="image">
+<img src="avd/avd_target.png" alt="avd/avd_target.png" />
+</span></p></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table"><span class="image">
+<img src="avd/avd_launch.png" alt="avd/avd_launch.png" />
+</span></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="paragraph"><p>AVD 的組成有：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+AVD 的名稱 - 由英數字、<code>_</code>、<code>-</code> 和 <code>.</code> 組成，不能含有空白，建議用駱駝文。
+</p>
+</li>
+<li>
+<p>
+關於硬體特徵（profile）的設定 - 包括螢幕大小、記憶體大小、有沒有 GPS、實體鍵盤、前後相機、SD card 等。
+</p>
+</li>
+<li>
+<p>
+Android 平台的版本 - 選擇可用的 <a href="disk-images.html">system image</a>，這也決定了 <a href="../android-api-level.html">API Level</a> 與 Add-on（例如 Google APIs）。
+</p>
+</li>
+<li>
+<p>
+是否啟用 <a href="snapshots.html">Snapshot</a> 功能。
+</p>
+</li>
+</ul></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../../_asciidoc/images/icons/important.png" alt="Important" />
+</td>
+<td class="content">應用程式應在所有 API Level 大於或等於 minimum API Level 的不同 AVD 上測過，確保在不同版本的平台上都能正常運作。但這跟 forward-compatibility 有什麼關係？</td>
+</tr></table>
+</div>
+<div class="paragraph" id="avd-files"><p>AVD 的設定預設會存放在 <code>~/.android/avd</code> 底下的 <code>.ini</code> 檔跟 <code>.avd</code> 資料夾。其中 <code>.adv</code> 資料夾除了 <code>config.ini</code> 存放幾乎所有的設定值之外，剩下的都是 <a href="disk-images.html">disk images</a>：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ cd ~/.android/avd
+$ tree
+.
+|-- MyPhone.avd
+|   |-- config.ini
+|   |-- sdcard.img    <img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+|   |-- snapshots.img <img src="../../../_asciidoc/images/icons/callouts/4.png" alt="4" />
+|   `-- userdata.img  <img src="../../../_asciidoc/images/icons/callouts/5.png" alt="5" />
+`-- MyPhone.ini
+
+$ cat MyPhone.ini <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+target=android-8
+path=/home/&lt;user&gt;/.android/avd/MyPhone.avd
+
+$ cat MyPhone.avd/config.ini <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+hw.lcd.density=240
+sdcard.size=100M
+skin.name=WVGA800
+skin.path=platforms/android-8/skins/WVGA800
+hw.cpu.arch=arm
+abi.type=armeabi
+vm.heapSize=24
+snapshot.present=true
+image.sysdir.1=platforms/android-8/images/</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+AVD 的設定由 <code>.ini</code> 帶出來，裡面除了記載 API Level 之外，剩下的就是 <code>.avd</code> 資料夾的絕對路徑。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+除了 API Level 之外，AVD 其他的設定都在 <code>.avd/config.ini</code> 裡。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+<code>sdcard.img</code> - 用來存放 SD card 的內容，有配置 SD card 時才有。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/4.png" alt="4" /></td><td>
+<code>snapshots.img</code> - 用來存放一或多個 snapshots，有啟用 Snapshot 時才有。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/5.png" alt="5" /></td><td>
+<code>userdata.img</code> - 用來存放使用者安裝的應用程式、設定等。
+<div class="ulist"><ul>
+<li>
+<p>
+Target 指的是 Android platform，更正確的說是 API level。但為什麼 Google API 都在選項裡面??
+</p>
+</li>
+<li>
+<p>
+啟動 AVD 時可以勾選：
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+Scale display to real size。設定 DPI，讓電腦螢幕上看起來的大小跟實機差不多，感受實際的大小。
+</p>
+</li>
+<li>
+<p>
+Wipe user data
+</p>
+</li>
+<li>
+<p>
+有 enable snapshot 時，啟動時就可以選 Launch from snapshot (啟動速度會快很多) 跟 Save to snapshot。看起來 snapshot 最多只有一個??
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+啟動後抬頭 5554:MyPhone??
+</p>
+</li>
+<li>
+<p>
+Although the emulator does not allow you to test every device feature (such as the accelerometer), it does allow you to verify that your application functions properly on different versions of the Android platform, in different screen sizes and orientations, and more. 也要在少數幾台 real device 上測過。
+</p>
+</li>
+<li>
+<p>
+第一次啟動比較慢，之後比較快，即便沒有做 snapshot??
+</p>
+</li>
+</ul></div>
+</td></tr>
+</table></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://developer.android.com/tools/devices/index.html">Managing Virtual Devices | Android Developers</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://developer.android.com/tools/devices/managing-avds.html">Managing AVDs with AVD Manager | Android Developers</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://developer.android.com/tools/devices/managing-avds-cmdline.html">Managing AVDs from the Command Line | Android Developers</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.android-portal.com/2007/11/16/how-to-get-access-to-the-linux-shell-emulator-console-in-android-os/">Android Portal » How to get access to the Linux shell / emulator console in Android OS</a> (2007-11-16) - console 跟 shell 顯然是兩種很不一樣的東西。
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-07 22:45:50 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

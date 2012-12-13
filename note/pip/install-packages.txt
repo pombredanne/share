@@ -1,0 +1,135 @@
+= link:pip.html[Pip] / 安裝／昇級套件 =
+:title: [Pip] 安裝／昇級套件
+
+安裝或昇級套件都是透過 `pip install` 來完成，基本的用法如下：（完整的用法可以用 <<help,`pip help install`>> 取得）
+
+ pip install PACKAGE_NAME[==VERSION]
+ pip install --upgrade PACKAGE_NAME[==VERSION]
+ pip install path/to/source/distribution/file
+
+除了 'PACKAGE_NAME' 之外，其他相依的套件也會一併安裝。其中 `==VERSION` 的用法跟 link:../easyinstall/install-packages.html[EasyInstall] 相同，可以用來指定特定的版號，否則預設會安裝／昇級到最新版。
+
+另外 `pip` 也可以直接安裝 source distribution files，例如：
+
+ pip install ~/Downloads/package-version.tar.gz
+ pip install http://hostname/path/package-version.zip
+
+常用的 options 有：
+
+ * `-U, --upgrade` - 昇級套件。Upgrade all packages to the newest available version
+ * `-t, --target <DIR>` - 把套件安裝到 'DIR' 下。
+ * `-d, --download <DIR>` - 把套件下載到 'DIR' 但不安裝。
+
+[[example]]
+延續link:query-packages.html#example[查詢可用套件]的例子，繼續 link:../ride/index.html[RIDE] 的安裝：
+
+--------------------------------------------------------------------------------
+$ cd /usr/local/lib/python2.6/dist-packages
+$ sudo pip install robotframework-ride
+Downloading/unpacking robotframework-ride
+  Downloading robotframework-ride-0.54.tar.gz (799kB): 799kB downloaded
+  Running setup.py egg_info for package robotframework-ride
+Installing collected packages: robotframework-ride
+  Running setup.py install for robotframework-ride
+    ---> pavement.install
+    ---> pavement._prepare_build
+    Using version 0.54 from VERSION.txt
+    changing mode of build/scripts-2.6/ride.py from 644 to 755
+    changing mode of build/scripts-2.6/ride_postinstall.py from 644 to 755
+    changing mode of /usr/local/bin/ride_postinstall.py to 755
+    changing mode of /usr/local/bin/ride.py to 755 <1>
+Successfully installed robotframework-ride
+Cleaning up...
+$
+$ ls -1 robotframework_ride-0.54-py2.6.egg-info/
+dependency_links.txt
+installed-files.txt
+PKG-INFO
+SOURCES.txt
+top_level.txt
+$
+$ cat robotframework_ride-0.54-py2.6.egg-info/installed-files.txt <2>
+../robotide/__init__.py
+../robotide/robotapi.py
+../robotide/version.py
+...
+./
+SOURCES.txt
+dependency_links.txt
+PKG-INFO
+top_level.txt
+../../../../bin/ride_postinstall.py
+../../../../bin/ride.py
+--------------------------------------------------------------------------------
+<1> 除了 module 之外，也會安裝 scripts。
+<2> `xxx.egg-info/installed-files.txt` 記錄有所有安裝的檔案，難怪反安裝時可以清乾淨。
+
+[[help]]
+== `pip help install` ==
+
+--------------------------------------------------------------------------------
+$ pip help install
+Usage: pip install [OPTIONS] PACKAGE_NAMES...
+ --version                    show program's version number and exit
+ -h, --help                   show this help message and exit
+ -v, --verbose                Give more output
+ -q, --quiet                  Give less output
+ --log <FILENAME>             Log file where a complete (maximum verbosity) record will be kept
+ --proxy <PROXY>              Specify a proxy in the form user:passwd@proxy.server:port. Note that the user:password@ is optional and
+                              required only if you are behind an authenticated proxy. If you provide user@proxy.server:port then you
+                              will be prompted for a password.
+ --timeout <SECONDS>          Set the socket timeout (default 15 seconds)
+ --exists-action <EXISTS_ACTION>
+                              Default action when a path already exists. Use this option more than one time to specify another action
+                              if a certain option is not available. Choices: (s)witch, (i)gnore, (w)ipe, (b)ackup
+ -e, --editable <VCS+REPOS_URL[@REV]#EGG=PACKAGE>
+                              Install a package directly from a checkout. Source will be checked out into src/PACKAGE (lower-case)
+                              and installed in-place (using setup.py develop). You can run this on an existing directory/checkout
+                              (like pip install -e src/mycheckout). This option may be provided multiple times. Possible values for
+                              VCS are: svn, git, hg and bzr.
+ -r, --requirement <FILENAME>
+                              Install all the packages listed in the given requirements file. This option can be used multiple times.
+ -f, --find-links <URL>       URL to look for packages at
+ -i, --index-url <URL>        Base URL of Python Package Index (default http://pypi.python.org/simple/)
+ --extra-index-url <URL>      Extra URLs of package indexes to use in addition to --index-url
+ --no-index                   Ignore package index (only looking at --find-links URLs instead)
+ -M, --use-mirrors            Use the PyPI mirrors as a fallback in case the main index is down.
+ --mirrors <URL>              Specific mirror URLs to query when --use-mirrors is used
+ -b, --build <DIR>            Unpack packages into DIR (default /tmp/pip-build) and build from there
+ -t, --target <DIR>           Install packages into DIR.
+ -d, --download <DIR>         Download packages into DIR instead of installing them
+ --download-cache <DIR>       Cache downloaded packages in DIR
+ --src <DIR>                  Check out --editable packages into DIR (default /home/jeremy/src)
+ -U, --upgrade                Upgrade all packages to the newest available version
+ --force-reinstall            When upgrading, reinstall all packages even if they are already up-to-date.
+ -I, --ignore-installed       Ignore the installed packages (reinstalling instead)
+ --no-deps                    Ignore package dependencies
+ --no-install                 Download and unpack all packages, but don't actually install them
+ --no-download                Don't download any packages, just install the ones already downloaded (completes an install run with
+                              --no-install)
+ --install-option <INSTALL_OPTIONS>
+                              Extra arguments to be supplied to the setup.py install command (use like --install-option="--install-
+                              scripts=/usr/local/bin"). Use multiple --install-option options to pass multiple options to setup.py
+                              install. If you are using an option with a directory path, be sure to use absolute path.
+ --global-option <GLOBAL_OPTIONS>
+                              Extra global options to be supplied to the setup.py call before the install command
+ --user                       Install to user-site
+ --egg                        Install as self contained egg file, like easy_install does.
+--------------------------------------------------------------------------------
+
+== 延伸閱讀 ==
+
+ * link:uninstall-packages.html[移除套件]
+
+== 參考資料 ==
+
+.文件
+--
+ * http://www.pip-installer.org/en/latest/usage.html#install-packages[Install packages — pip documentation]
+--
+
+.其他文件
+--
+ * http://stackoverflow.com/questions/5226311/installing-specific-package-versions-with-pip[python - Installing specific package versions with Pip - Stack Overflow] (2011-03-07) - 
+--
+

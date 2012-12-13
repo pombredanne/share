@@ -1,0 +1,112 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Android] 如何得知目前畫面上呈現的 Activity</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="android-automation-current-activity.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>[Android] 如何得知目前畫面上呈現的 Activity</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p><a href="../monkeyrunner/monkeyrunner-property.html"><code>MonkeyDevice.getProperty()</code></a> 雖然提供了 <code>am.current.package</code> 這個 key (property name)，可以得知目前畫面上顯示的 activity 是屬於哪個 package，但卻沒有提供類似的 key 可以用來取得該 activity 的 component name。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; from com.android.monkeyrunner import MonkeyRunner
+&gt;&gt;&gt; device = MonkeyRunner.waitForConnection()
+&gt;&gt;&gt; device.getProperty('am.current.package') <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+u''
+&gt;&gt;&gt; device.getProperty('am.current.package')
+u''
+&gt;&gt;&gt; device.startActivity('market://details?id=org.jtb.alogcat') <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+&gt;&gt;&gt; device.getProperty('am.current.package')
+u'com.android.vending' <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+不知道為什麼第一次連線後，如果畫面沒有變化，從 <em>am.current.package</em> 就會取不到東西？
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+叫出 Google Play 安裝 aLogcat (<code>org.jtb.alogcat</code>)。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+Google Play 的 package 名稱是 <code>com.android.vending</code>。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>還好 <a href="android-adb-dumpsys.html"><code>dumpsys</code></a> 這個 shell command 的輸出，可以用來取得 running activities 的一些線索：（而且也沒有 <code>getProperty('am.current.package')</code> 連線後取不到東西的問題）</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ dumpsys activity
+...
+  Running activities (most recent first):
+    TaskRecord{40dadb38 #176 A com.android.vending}
+      Run #8: HistoryRecord{40a571d8 com.android.vending/com.google.android.finsky.activities.MainActivity}
+...
+
+  mPausingActivity: null
+  mResumedActivity: HistoryRecord{40a571d8 com.android.vending/com.google.android.finsky.activities.MainActivity}
+  mFocusedActivity: HistoryRecord{40a571d8 com.android.vending/com.google.android.finsky.activities.MainActivity}
+  mLastPausedActivity: HistoryRecord{405d6328 com.android.vending/com.google.android.finsky.activities.LaunchUrlHandlerActivity}</code></pre>
+</div></div>
+<div class="paragraph"><p>其中 <code>mFocusedActivity</code> 後面跟著的資訊，正是目前 activity 的 component name。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:16:37 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

@@ -1,0 +1,184 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[EasyInstall] 移除套件</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="uninstall-packages.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="easyinstall.html">EasyInstall</a> / 移除套件</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>EasyInstall 沒有提供移除套件的功能，必須手動來做：</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+執行 <code>easy_install -m package_name</code>，它會自動將 <code>site-packages/easy-install.pth</code> 裡對應的項目拿掉。
+</p>
+</li>
+<li>
+<p>
+手動將 <code>site-packages/xxx.egg</code> 資料夾刪除。
+</p>
+</li>
+<li>
+<p>
+手動將當初安裝時產生的 script 刪除。
+</p>
+</li>
+</ol></div>
+<div class="paragraph"><p>官網是這麼說的：</p></div>
+<div class="quoteblock">
+<div class="content">
+<div class="literalblock">
+<div class="content">
+<pre><code>easy_install -m PackageName</code></pre>
+</div></div>
+<div class="paragraph"><p>This will ensure that Python doesn’t continue to search for a package you’re planning to remove. After you’ve done this, you can safely delete the .egg files or directories, along with any scripts you wish to remove.</p></div>
+</div>
+<div class="attribution">
+&#8212; <a href="http://packages.python.org/distribute/easy_install.html#uninstalling-packages">Easy Install — Distribute documentation</a>
+</div></div>
+<div class="paragraph"><p>以 Selenium 的 <a href="../selenium/selenium-rc-install.html">client driver</a> 為例：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ cd /usr/local/lib/python2.6/dist-packages
+$ sudo easy_install selenium
+Searching for selenium
+Reading http://pypi.python.org/simple/selenium/
+Reading http://code.google.com/p/selenium/
+Reading http://seleniumhq.org/
+Reading http://www.openqa.org/
+Best match: selenium 2.27.0
+Downloading http://selenium.googlecode.com/files/selenium-2.27.0.tar.gz
+Processing selenium-2.27.0.tar.gz
+Writing /tmp/easy_install-22vaOq/selenium-2.27.0/setup.cfg
+Running selenium-2.27.0/setup.py -q bdist_egg --dist-dir /tmp/easy_install-22vaOq/selenium-2.27.0/egg-dist-tmp-csN5Yh
+warning: no files found matching 'docs/api/py/index.rst'
+Adding selenium 2.27.0 to easy-install.pth file <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+
+Installed /usr/local/lib/python2.6/dist-packages/selenium-2.27.0-py2.6.egg
+Processing dependencies for selenium
+Finished processing dependencies for selenium
+$
+$ sudo easy_install -m selenium <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+Searching for selenium
+Best match: selenium 2.27.0
+Processing selenium-2.27.0-py2.6.egg
+Removing selenium 2.27.0 from easy-install.pth file <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+
+Using /usr/local/lib/python2.6/dist-packages/selenium-2.27.0-py2.6.egg
+
+Because this distribution was installed --multi-version, before you can
+import modules from this package in an application, you will need to
+'import pkg_resources' and then use a 'require()' call similar to one of
+these examples, in order to select the desired version:
+
+    pkg_resources.require("selenium")  # latest installed version
+    pkg_resources.require("selenium==2.27.0")  # this exact version
+    pkg_resources.require("selenium&gt;=2.27.0")  # this version or higher
+
+Processing dependencies for selenium
+Finished processing dependencies for selenium
+$
+$ sudo rm -rf selenium-2.27.0-py2.6.egg <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+安裝過程中套件會註冊到 <code>easy-install.pth</code>。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+<code>easy_install -m</code> 會將套件的註冊資訊從 <code>easy-install.pth</code> 移除。這時候套件還在，只是不能直接引用而已。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+把套件的 <code>.egg</code> 資料夾，才算真正把套件移除。
+</td></tr>
+</table></div>
+<div class="paragraph" id="via-pip"><p>實際發現，EasyInstall 安裝的套件也可以用 <a href="../pip/pip.html">Pip</a> 來移除，也會一併更新 <code>easy-install.pth</code>：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ sudo pip uninstall selenium
+Uninstalling selenium:
+  /usr/local/lib/python2.6/dist-packages/selenium-2.27.0-py2.6.egg
+Proceed (y/n)? y
+  Successfully uninstalled selenium</code></pre>
+</div></div>
+<div class="paragraph"><p>不過反過來的情況，Pip 安裝套件的過程中，並不會對 <code>easy-install.pth</code> 做寫入。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://packages.python.org/distribute/easy_install.html#uninstalling-packages">Easy Install</a>- 官網也是寫要手動做，只是先跑過 <code>easy_install -mxN PackageName</code> 確認一下相依性而已。
+</p>
+</li>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/4358958/how-do-i-uninstall-a-python-module-egg-that-i-installed-with-easy-install">easy install - How do I uninstall a Python module (“egg”) that I installed with easy_install? - Stack Overflow</a> (2010-12-05) - 執行過 <code>easy_install -m</code> 就引用不到特定的套件了。
+</p>
+</li>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/1231688/how-do-i-remove-packages-installed-with-pythons-easy-install">How do I remove packages installed with Python&#8217;s easy_install? - Stack Overflow</a> (2009-08-05) - 有人建議改用 pip，因為它支援 uninstall 的動作，否則就是要手動刪除 <code>.egg</code> 跟 <code>easy-install.pth</code> 的內容。
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-12 15:33:57 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

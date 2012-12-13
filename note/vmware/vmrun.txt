@@ -1,0 +1,36 @@
+= vmrun =
+
+== 參考資料 ==
+
+ * http://www.vmware.com/pdf/vix160_vmrun_command.pdf[Using vmrun to Control Virtual Machines]
+
+== 雜記 ==
+
+ * `vmrun` 提供 CLI，透過 VIX API 來控制某台或整個 group/team 的 VM；VMware Workstation 跟 VMware Server 都提供有這個工具。
+ * 支援的 commands 有：
+   ** Power: start, stop, reset, suspend, pause, unpause
+   ** Snapshot: VMware Server 只能有一個 snapshot
+   ** Record/Replay: 只有 VMware Workstation 支援。
+   ** Guest Operating System: 執行 guest OS 的程式、在 host/guest 間交換檔案、設定 guest 的 environment variables 等。
+   ** Maintenance: 列出所有執行中的 VM、安裝 VMware Tools、昇級 hardware version 等。
+ * `vmrun <flags> <command> <parameters>` - 其中 'flags' 指的是 `vmrun` 的參數，而 'parameters' 則是給 'command' 的參數。
+   ** `-T server|ws|server1`
+   ** `-h https://<hostName or IPaddr>/sdk`
+   ** `-P <portNumber>` (預設是 443)
+   ** `-u <adminLogin on VMware Server>`
+   ** `-p <adminPassword on VMware Server>`
+ * 列出目前執行中的 VM
++
+--------------------------------------------------------------------------------
+$ vmrun -T server -h https://localhost:8333/sdk -u xxx -p xxx list
+Total running VMs: 2
+[standard] Application Server/Ubuntu Server 9.10 (64-bit).vmx
+[standard] Net Server/Ubuntu Server 9.10 (64-bit).vmx
+--------------------------------------------------------------------------------
++
+ * 啟動某個 VM。注意 "[standard] xxx.vmx" 的表示法，是相對於某個 datastore 的路徑，可以從 `vmrun list` 的結果取得。
++
+--------------------------------------------------------------------------------
+$ vmrun -T server -h https://localhost:8333/sdk -u xxx -p xxx start "[standard] Application Server/Ubuntu Server 9.10 (64-bit).vmx" nogui
+--------------------------------------------------------------------------------
+

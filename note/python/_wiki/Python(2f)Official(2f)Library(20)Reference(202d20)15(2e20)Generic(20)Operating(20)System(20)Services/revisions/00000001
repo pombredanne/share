@@ -1,0 +1,865 @@
+= Python / Official / Library Reference - 15. Generic Operating System Services =
+<<TableOfContents>>
+
+== 15.1. os — Miscellaneous operating system interfaces ==
+http://docs.python.org/library/os.html @2010/12/24
+
+__This module provides a portable way of using ''operating system dependent functionality''.__ If you just want to read or write a file see `open()`, if you want to manipulate paths, see the `os.path` module, and __if you want to read all the lines in all the files on the command line see the `fileinput` module. For creating temporary files and directories see the `tempfile` module, and for high-level file and directory handling see the `shutil` module.__
+
+:::
+
+'''`os.chdir(path)`'''
+
+__Change the current working directory to `path`.__
+
+Availability: Unix, Windows.
+
+'''`os.getcwd()`'''
+
+__Return a string representing the current working directory.__
+
+Availability: Unix, Windows.
+
+:::
+
+'''`os.remove(path)`'''
+
+__Remove (delete) the file path. If path is a directory, `OSError` is raised; see `rmdir()` below to remove a directory. This is identical to the `unlink()` function documented below. On Windows, attempting to remove a file that is in use causes an exception to be raised; on Unix, the directory entry is removed but the storage allocated to the file is not made available until the original file is no longer in use.__
+
+Availability: Unix, Windows.
+
+:::
+
+'''`os.stat(file)`'''
+
+__Perform a `stat()` system call on the given path. The return value is an object whose attributes correspond to the members of the `stat` structure, namely: `st_mode` (protection bits), `st_ino` (inode number), `st_dev` (device), `st_nlink` (number of hard links), `st_uid` (user id of owner), `st_gid` (group id of owner), `st_size` (size of file, in bytes), `st_atime` (time of most recent access), `st_mtime` (time of most recent content modification), `st_ctime` (platform dependent; time of most recent metadata change on Unix, or the time of creation on Windows):__
+
+ {{{
+>>> import os
+>>> statinfo = os.stat('somefile.txt')
+>>> statinfo
+(33188, 422511L, 769L, 1, 1032, 100, 926L, 1105022698,1105022732, 1105022732)
+>>> statinfo.st_size
+926L
+>>>
+ }}}
+
+__Changed in version 2.3: If `stat_float_times()` returns `True`, the time values are floats, measuring seconds. Fractions of a second may be reported if the system supports that. On Mac OS, the times are always floats.__ See `stat_float_times()` for further discussion.
+
+On some Unix systems (such as Linux), the following attributes may also be available: `st_blocks` (number of blocks allocated for file), `st_blksize` (filesystem blocksize), `st_rdev` (type of device if an inode device). `st_flags` (user defined flags for file).
+
+On other Unix systems (such as FreeBSD), the following attributes may be available (but may be only filled out if root tries to use them): `st_gen` (file generation number), `st_birthtime` (time of file creation).
+
+On Mac OS systems, the following attributes may also be available: `st_rsize`, `st_creator`, `st_type`.
+
+On RISCOS systems, the following attributes are also available: `st_ftype` (file type), `st_attrs` (attributes), `st_obtype` (object type).
+
+__For backward compatibility, the return value of `stat()` is also accessible as a tuple of at least 10 integers giving the most important (and portable) members of the `stat` structure, in the order `st_mode`, `st_ino`, `st_dev`, `st_nlink`, `st_uid`, `st_gid`, `st_size`, `st_atime`, `st_mtime`, `st_ctime`. More items may be added at the end by some implementations. The standard module `stat` defines functions and constants that are useful for extracting information from a `stat` structure. (On Windows, some items are filled with dummy values.)__
+
+Note: __The exact meaning and resolution of the `st_atime`, `st_mtime`, and `st_ctime` members depends on the operating system and the file system. For example, on Windows systems using the FAT or FAT32 file systems, `st_mtime` has 2-second resolution, and `st_atime` has only 1-day resolution. See your operating system documentation for details.__
+
+Availability: Unix, Windows.
+
+__Changed in version 2.2: Added access to values as attributes of the returned object.__
+
+Changed in version 2.5: Added `st_gen` and `st_birthtime`.
+
+:::
+
+'''`os.sep`'''
+
+__The character used by the operating system to separate pathname components. This is `'/'` for POSIX and `'\\'` for Windows. Note that knowing this is not sufficient to be able to parse or concatenate pathnames — use `os.path.split()` and `os.path.join()`__ — but it is occasionally useful. Also available via `os.path`.
+
+:::
+
+== 15.3 time — Time access and conversions ==
+http://docs.python.org/library/time.html @2010/11/03
+
+This module provides various time-related functions. For related functionality, see also the `datetime` and `calendar` modules.
+
+__Although this module is always available, not all functions are available on all platforms. Most of the functions defined in this module call platform C library functions with the same name. It may sometimes be helpful to consult the platform documentation, because the semantics of these functions varies among platforms.__
+
+:::
+
+'''`time.ctime([secs])`'''
+
+__Convert a time expressed in seconds since the epoch to a ''string representing'' local time. If `secs` is not provided or `None`, the current time as returned by `time()` is used. `ctime(secs)` is equivalent to `asctime(localtime(secs))`. Locale information is not used by `ctime()`.__
+
+Changed in version 2.1: Allowed `secs` to be omitted.
+
+Changed in version 2.4: If `secs` is `None`, the current time is used.
+
+:::
+
+'''`time.sleep(secs)`'''
+
+__Suspend execution for the given number of seconds. The argument may be a floating point number to indicate a more precise sleep time. The actual suspension time may be less than that requested because any caught signal will terminate the `sleep()` following execution of that signal’s catching routine. Also, the suspension time may be longer than requested by an arbitrary amount because of the scheduling of other activity in the system.__
+
+:::
+
+'''`time.time()`'''
+
+__Return the time as a floating point number expressed in seconds since the epoch, in UTC. Note that even though the time is always returned as a floating point number, not all systems provide time with a better precision than 1 second. While this function normally returns non-decreasing values, it can return a lower value than a previous call if the system clock has been set back between the two calls.__
+
+:::
+
+== 15.5. optparse — Parser for command line options ==
+http://docs.python.org/library/optparse.html @2010/10/05
+
+__Deprecated since version 2.7: The `optparse` module is deprecated and will not be developed further; development will continue with the `argparse` module.__
+
+New in version 2.3.
+
+`optparse` is a more convenient, flexible, and powerful library for parsing command-line options than the old `getopt` module. __`optparse` uses a more ''declarative'' style of command-line parsing: you create an instance of `OptionParser`, populate it with options, and parse the command line. `optparse` allows users to specify options in the conventional GNU/POSIX syntax, and additionally generates usage and help messages for you.__
+
+Here’s an example of using `optparse` in a simple script:
+
+ {{{
+from optparse import OptionParser
+[...]
+parser = OptionParser()
+parser.add_option("-f", "--file", dest="filename",
+                  help="write report to FILE", metavar="FILE")
+parser.add_option("-q", "--quiet",
+                  action="store_false", dest="verbose", default=True,
+                  help="don't print status messages to stdout")
+
+(options, args) = parser.parse_args()
+ }}}
+
+With these few lines of code, users of your script can now do the “usual thing” on the command-line, for example:
+
+ {{{
+<yourscript> --file=outfile -q
+ }}}
+
+__As it parses the command line, `optparse` sets attributes of the `options` object returned by `parse_args()` based on user-supplied command-line values.__ When `parse_args()` returns from parsing this command line, `options.filename` will be `"outfile"` and `options.verbose` will be `False`. __`optparse` supports both long and short options, allows short options to be merged together, and allows options to be associated with their ''arguments'' in a variety of ways.__ Thus, the following command lines are all equivalent to the above example:
+
+ {{{
+<yourscript> -f outfile --quiet
+<yourscript> --quiet --file outfile
+<yourscript> -q -foutfile
+<yourscript> -qfoutfile
+ }}}
+
+Additionally, users can run one of
+
+ {{{
+<yourscript> -h
+<yourscript> --help
+ }}}
+
+and `optparse` will print out a brief summary of your script’s options:
+
+ {{{
+usage: <yourscript> [options]
+
+options:
+  -h, --help            show this help message and exit
+  -f FILE, --file=FILE  write report to FILE
+  -q, --quiet           don't print status messages to stdout
+ }}}
+
+where the value of `yourscript` is determined at runtime (normally from `sys.argv[0]`).
+
+=== 15.5.1. Background ===
+
+__`optparse` was explicitly designed to encourage the creation of programs with straightforward, conventional command-line interfaces. To that end, it supports only the most common command-line syntax and semantics conventionally used under Unix.__ If you are unfamiliar with these conventions, read this section to acquaint yourself with them.
+
+==== 15.5.1.1. Terminology ====
+
+'''argument'''
+
+a string entered on the command-line, and passed by the shell to `execl()` or `execv()`. __In Python, arguments are elements of `sys.argv[1:]` (`sys.argv[0]` is the name of the program being executed).__ Unix shells also use the term “word”.
+
+It is occasionally desirable to substitute an ''argument list'' other than `sys.argv[1:]`, so you should read “argument” as “an element of `sys.argv[1:]`, or of some other list provided as a substitute for `sys.argv[1:]`“.
+
+'''option'''
+
+__an argument used to supply ''extra information'' to guide or customize the execution of a program. There are many different syntaxes for options; the traditional Unix syntax is a hyphen (“`-`“) followed by a single letter, e.g. "`-x`" or "`-F`". Also, traditional Unix syntax allows multiple options to be merged into a single argument, e.g. "`-x -F`" is equivalent to "`-xF`". The GNU project introduced "`--`" followed by a series of ''hyphen-separated words'', e.g. "`--file`" or "`--dry-run`". These are the only two option syntaxes provided by `optparse`.__
+
+Some other option syntaxes that the world has seen include:
+
+ * a hyphen followed by a few letters, e.g. "`-pf`" (this is not the same as multiple options merged into a single argument)
+
+ * a hyphen followed by a whole word, e.g. "`-file`" (this is technically equivalent to the previous syntax, but they aren’t usually seen in the same program)
+
+ * a plus sign followed by a single letter, or a few letters, or a word, e.g. "`+f`", "`+rgb`"
+
+ * a slash followed by a letter, or a few letters, or a word, e.g. "`/f`", "`/file`"
+
+__These option syntaxes are not supported by `optparse`, and they never will be. This is deliberate: the first three are non-standard on any environment, and the last only makes sense if you’re exclusively targeting VMS, MS-DOS, and/or Windows.__
+
+'''option argument'''
+
+__an argument that follows an option, is closely associated with that option, and is consumed from the argument list when that option is.__ With `optparse`, option arguments may either be in a separate argument from their option:
+
+ {{{
+-f foo
+--file foo
+ }}}
+
+or included in the same argument:
+
+ {{{
+-ffoo
+--file=foo
+ }}}
+
+__Typically, a given option either takes an argument or it doesn’t. Lots of people want an “optional option arguments” feature, meaning that some options will take an argument if they see it, and won’t if they don’t.__ This is somewhat controversial, because it makes parsing ambiguous: if "`-a`" takes an optional argument and "`-b`" is another option entirely, how do we interpret "`-ab`"? Because of this ambiguity, `optparse` does not support this feature.
+
+'''positional argument'''
+
+__something leftover in the argument list after options have been parsed,__ i.e. after options and their arguments have been parsed and removed from the argument list.
+
+'''required option'''
+
+an option that must be supplied on the command-line; __note that the phrase “required option” is self-contradictory in English.__ `optparse` doesn’t prevent you from implementing required options, but doesn’t give you much help at it either.
+
+For example, consider this hypothetical command-line:
+
+ {{{{
+prog -v --report /tmp/report.txt foo bar
+ }}}
+
+"`-v`" and "`--report`" are both options. Assuming that `--report` takes one argument, "`/tmp/report.txt`" is an option argument. "`foo`" and "`bar`" are positional arguments.
+
+==== 15.5.1.2. What are options for? ====
+
+__Options are used to provide extra information to tune or customize the execution of a program. In case it wasn’t clear, options are usually optional. A program should be able to run just fine with no options whatsoever. (Pick a random program from the Unix or GNU toolsets. Can it run without any options at all and still make sense? The main exceptions are `find`, `tar`, and `dd`—all of which are ''mutant oddballs'' that have been rightly criticized for their non-standard syntax and confusing interfaces.)__
+
+__'''Lots of people want their programs to have “required options”. Think about it. If it’s required, then it’s not optional!''' If there is a piece of information that your program absolutely requires in order to run successfully, that’s what positional arguments are for.__
+
+As an example of good command-line interface design, consider the humble `cp` utility, for copying files. It doesn’t make much sense to try to copy files without supplying a destination and at least one source. Hence, `cp` fails if you run it with no arguments. However, it has a flexible, useful syntax that does not require any options at all:
+
+ {{{
+cp SOURCE DEST
+cp SOURCE ... DEST-DIR
+ }}}
+
+You can get pretty far with just that. Most `cp` implementations provide a bunch of options to tweak exactly how the files are copied: you can preserve mode and modification time, avoid following symlinks, ask before clobbering existing files, etc. But none of this distracts from the core mission of `cp`, which is to copy either one file to another, or several files to another directory.
+
+==== 15.5.1.3. What are positional arguments for? ====
+
+__Positional arguments are for those pieces of information that your program absolutely, positively requires to run.__
+
+__A good user interface should have as few absolute requirements as possible.__ If your program requires 17 distinct pieces of information in order to run successfully, it doesn’t much matter how you get that information from the user—most people will give up and walk away before they successfully run the program. This applies whether the user interface is a command-line, a configuration file, or a GUI: if you make that many demands on your users, most of them will simply give up.
+
+__In short, try to minimize the amount of information that users are absolutely required to supply—use ''sensible defaults'' whenever possible. Of course, you also want to make your programs reasonably flexible. That’s what options are for. Again, it doesn’t matter if they are entries in a config file, widgets in the “Preferences” dialog of a GUI, or command-line options—'''the more options you implement, the more flexible your program is, and the more complicated its implementation becomes.''' Too much flexibility has drawbacks as well, of course; too many options can overwhelm users and make your code much harder to maintain.__
+
+=== 15.5.2. Tutorial ===
+
+While `optparse` is quite flexible and powerful, it’s also straightforward to use in most cases. This section covers the ''code patterns'' that are common to any `optparse`-based program.
+
+First, you need to import the `OptionParser` class; then, early in the main program, create an `OptionParser` instance:
+
+ {{{
+from optparse import OptionParser
+[...]
+parser = OptionParser()
+ }}}
+
+
+Then you can start defining options. The basic syntax is:
+
+ {{{
+parser.add_option(opt_str, ...,
+                  attr=value, ...)
+ }}}
+
+__Each option has one or more ''option strings'', such as "`-f`" or "`--file`", and several option attributes that tell `optparse` what to expect and what to do when it encounters that option on the command line.__
+
+Typically, each option will have one short option string and one long option string, e.g.:
+
+ {{{
+parser.add_option("-f", "--file", ...)
+ }}}
+
+__You’re free to define as many short option strings and as many long option strings as you like (including zero), as long as there is at least one option string overall.__
+
+The option strings passed to `add_option()` are effectively labels for the option defined by that call. For brevity, we will frequently refer to ''encountering an option'' on the command line; in reality, `optparse` encounters option strings and looks up options from them.
+
+Once all of your options are defined, instruct `optparse` to parse your program’s command line:
+
+ {{{
+(options, args) = parser.parse_args()
+ }}}
+
+__(If you like, you can pass a custom argument list to `parse_args()`, but that’s rarely necessary: by default it uses `sys.argv[1:]`. 方便做測試, 不一定要從 Command-Line 輸入 Arguments)__
+
+`parse_args()` returns two values:
+
+ * `options`, an object containing values for all of your options—e.g. if "`--file`" takes a single string argument, then `options.file` will be the filename supplied by the user, __or `None` if the user did not supply that option__
+
+ * __`args`, the list of positional arguments leftover after parsing options__
+
+This tutorial section only covers the four most important option attributes: `action`, `type`, `dest` (destination), and `help`. Of these, `action` is the most fundamental.
+
+==== 15.5.2.1. Understanding option actions ====
+
+Actions tell `optparse` what to do when it encounters an option on the command line. __There is a fixed set of actions hard-coded into `optparse`;__ adding new actions is an advanced topic covered in section Extending `optparse`. __Most actions tell `optparse` to store a value in some variable__—for example, take a string from the command line and store it in an attribute of `options`.
+
+If you don’t specify an option action, `optparse` defaults to `store`.
+
+==== 15.5.2.2. The store action ====
+
+__The most common option action is `store`, which tells `optparse` to take the next argument (or the remainder of the current argument), ensure that it is of the ''correct type'', and store it to your chosen destination.__
+
+For example:
+
+ {{{
+parser.add_option("-f", "--file",
+                  action="store", type="string", dest="filename")
+ }}}
+
+Now let’s make up a fake command line and ask `optparse` to parse it:
+
+ {{{
+args = ["-f", "foo.txt"]
+(options, args) = parser.parse_args(args)
+ }}}
+
+When `optparse` sees the option string `"-f"`, it consumes the next argument, `"foo.txt"`, and stores it in `options.filename`. So, after this call to `parse_args()`, `options.filename` is `"foo.txt"`.
+
+Some other option types supported by `optparse` are `int` and `float`. Here’s an option that expects an integer argument:
+
+ {{{
+parser.add_option("-n", type="int", dest="num")
+ }}}
+
+__Note that this option has no long option string, which is perfectly acceptable.__ Also, there’s no explicit action, since the default is `store`.
+
+Let’s parse another fake command-line. This time, we’ll jam the option argument right up against the option: since "`-n42`" (one argument) is equivalent to "`-n 42`" (two arguments), the code
+
+ {{{
+(options, args) = parser.parse_args(["-n42"])
+print options.num
+ }}}
+
+will print "`42`".
+
+If you don’t specify a type, `optparse` assumes `string`. Combined with the fact that the default action is `store`, that means our first example can be a lot shorter:
+
+ {{{
+parser.add_option("-f", "--file", dest="filename")
+ }}}
+
+__If you don’t supply a destination, `optparse` figures out a sensible default from the option strings: if the first long option string is "`--foo-bar`", then the default destination is `foo_bar`. If there are no long option strings, `optparse` looks at the first short option string: the default destination for "`-f`" is `f`.__
+
+`optparse` also includes built-in `long` and `complex` types. Adding types is covered in section Extending `optparse`.
+
+==== 15.5.2.3. Handling boolean (flag) options ====
+
+__''Flag options''—set a variable to true or false when a particular option is seen —are quite common.__ `optparse` supports them with two separate actions, `store_true` and `store_false`. For example, you might have a `verbose` flag that is turned on with "`-v`" and off with "`-q`":
+
+ {{{
+parser.add_option("-v", action="store_true", dest="verbose")
+parser.add_option("-q", action="store_false", dest="verbose")
+ }}}
+
+__Here we have two different options with the same destination, which is perfectly OK.__ (It just means you have to be a bit careful when setting default values— see below.)
+
+When `optparse` encounters "`-v`" on the command line, it sets `options.verbose` to `True`; when it encounters "`-q`", `options.verbose` is set to `False`.
+
+==== 15.5.2.4. Other actions ====
+
+Some other actions supported by `optparse` are:
+
+ * `store_const` - store a constant value
+ * `append` - append this option’s argument to a list
+ * `count` - increment a counter by one
+ * `callback` - call a specified function
+
+These are covered in section Reference Guide, Reference Guide and section Option Callbacks.
+
+==== 15.5.2.5. Default values ====
+
+All of the above examples involve setting some variable (the “destination”) when certain command-line options are seen. __What happens if those options are never seen? Since we didn’t supply any defaults, they are all set to `None`. This is usually fine, but sometimes you want more control. `optparse` lets you supply a default value for each destination, '''which is assigned before the command line is parsed.'''__
+
+First, consider the verbose/quiet example. If we want `optparse` to set `verbose` to `True` unless "`-q`" is seen, then we can do this:
+
+ {{{
+parser.add_option("-v", action="store_true", dest="verbose", default=True)
+parser.add_option("-q", action="store_false", dest="verbose")
+ }}}
+
+Since default values apply to the destination rather than to any particular option, and these two options happen to have the same destination, this is exactly equivalent:
+
+ {{{
+parser.add_option("-v", action="store_true", dest="verbose")
+parser.add_option("-q", action="store_false", dest="verbose", default=True)
+ }}}
+
+Consider this:
+
+ {{{
+parser.add_option("-v", action="store_true", dest="verbose", default=False)
+parser.add_option("-q", action="store_false", dest="verbose", default=True)
+ }}}
+
+Again, the default value for `verbose` will be `True`: __the last default value supplied for any particular destination is the one that counts.__
+
+A clearer way to specify default values is the `set_defaults()` method of `OptionParser`, which you can call at any time before calling `parse_args()`:
+
+ {{{
+parser.set_defaults(verbose=True)
+parser.add_option(...)
+(options, args) = parser.parse_args()
+ }}}
+
+As before, the last value specified for a given option destination is the one that counts. For clarity, try to use one method or the other of setting default values, not both.
+
+==== 15.5.2.6. Generating help ====
+
+`optparse`‘s ability to generate help and usage text automatically is useful for creating user-friendly command-line interfaces. __All you have to do is supply a `help` value for each option, and optionally a short usage message for your whole program.__ Here’s an `OptionParser` populated with user-friendly (documented) options:
+
+ {{{
+usage = "usage: %prog [options] arg1 arg2"
+parser = OptionParser(usage=usage)
+parser.add_option("-v", "--verbose",
+                  action="store_true", dest="verbose", default=True,
+                  help="make lots of noise [default]")
+parser.add_option("-q", "--quiet",
+                  action="store_false", dest="verbose",
+                  help="be vewwy quiet (I'm hunting wabbits)")
+parser.add_option("-f", "--filename",
+                  metavar="FILE", help="write output to FILE")
+parser.add_option("-m", "--mode",
+                  default="intermediate",
+                  help="interaction mode: novice, intermediate, "
+                       "or expert [default: %default]")
+ }}}
+
+__If `optparse` encounters either "`-h`" or "`--help`" on the command-line, or if you just call `parser.print_help()`, it prints the following to standard output:__
+
+ {{{
+usage: <yourscript> [options] arg1 arg2
+
+options:
+  -h, --help            show this help message and exit
+  -v, --verbose         make lots of noise [default]
+  -q, --quiet           be vewwy quiet (I'm hunting wabbits)
+  -f FILE, --filename=FILE
+                        write output to FILE
+  -m MODE, --mode=MODE  interaction mode: novice, intermediate, or
+                        expert [default: intermediate]
+ }}}
+
+(If the help output is triggered by a help option, `optparse` exits after printing the help text.)
+
+There’s a lot going on here to help `optparse` generate the best possible help message:
+
+ * the script defines its own usage message:
+
+ {{{
+usage = "usage: %prog [options] arg1 arg2"
+ }}}
+
+ __`optparse` expands "`%prog`" in the usage string to the name of the current program,__ i.e. `os.path.basename(sys.argv[0])`. The expanded string is then printed before the detailed option help.
+
+ __If you don’t supply a usage string, `optparse` uses a bland but sensible default: "`usage: %prog [options]`", which is fine if your script doesn’t take any positional arguments.__
+
+ * __every option defines a help string, and doesn’t worry about line-wrapping— `optparse` takes care of wrapping lines and making the help output look good.__
+
+ * options that take a value indicate this fact in their automatically-generated help message, e.g. for the “mode” option:
+
+ {{{
+-m MODE, --mode=MODE
+ }}}
+
+ __Here, “`MODE`” is called the ''meta-variable'': it stands for the argument that the user is expected to supply to `-m`/`--mode`. By default, `optparse` converts the destination variable name to uppercase and uses that for the meta-variable.__ Sometimes, that’s not what you want—for example, the `--filename` option explicitly sets `metavar="FILE"`, resulting in this automatically-generated option description:
+
+ {{{
+-f FILE, --filename=FILE
+ }}}
+
+ __This is important for more than just saving space, though: the manually written help text uses the meta-variable “FILE” to clue the user in that there’s a connection between the semi-formal syntax “`-f FILE`” and the informal semantic description “write output to FILE”. '''This is a simple but effective way to make your help text a lot clearer and more useful for end users.'''__
+
+__New in version 2.4: Options that have a default value can include `%default` in the help string—`optparse` will replace it with `str()` of the option’s default value. If an option has no default value (or the default value is `None`), `%default` expands to `none`.__
+
+__When dealing with many options, it is convenient to group these options for better help output. An `OptionParser` can contain several ''option groups'', each of which can contain several options.__
+
+Continuing with the parser defined above, adding an `OptionGroup` to a parser is easy:
+
+ {{{
+group = OptionGroup(parser, "Dangerous Options",
+                    "Caution: use these options at your own risk.  "
+                    "It is believed that some of them bite.")
+group.add_option("-g", action="store_true", help="Group option.")
+parser.add_option_group(group)
+ }}}
+
+This would result in the following help output:
+
+ {{{
+usage:  [options] arg1 arg2
+
+options:
+  -h, --help           show this help message and exit
+  -v, --verbose        make lots of noise [default]
+  -q, --quiet          be vewwy quiet (I'm hunting wabbits)
+  -fFILE, --file=FILE  write output to FILE
+  -mMODE, --mode=MODE  interaction mode: one of 'novice', 'intermediate'
+                       [default], 'expert'
+
+  Dangerous Options:
+  Caution: use of these options is at your own risk.  It is believed that
+  some of them bite.
+  -g                 Group option.
+ }}}
+
+==== 15.5.2.7. Printing a version string ====
+
+Similar to the brief usage string, `optparse` can also print a version string for your program. You have to supply the string as the `version` argument to `OptionParser`:
+
+ {{{
+parser = OptionParser(usage="%prog [-f] [-q]", version="%prog 1.0")
+ }}}
+
+__"`%prog`" is expanded just like it is in `usage`. Apart from that, version can contain anything you like. When you supply it, `optparse` automatically adds a "`--version`" option to your parser.__ If it encounters this option on the command line, it expands your version string (by replacing "`%prog`"), prints it to stdout, and exits.
+
+For example, if your script is called `/usr/bin/foo`:
+
+ {{{
+$ /usr/bin/foo --version
+foo 1.0
+ }}}
+
+The following two methods can be used to print and get the version string:
+
+ * `OptionParser.print_version(file=None)` - Print the version message for the current program (`self.version`) to file (default stdout). As with `print_usage()`, any occurrence of "`%prog`" in `self.version` is replaced with the name of the current program. __Does nothing if `self.version` is empty or undefined.__
+
+ * `OptionParser.get_version()` - Same as `print_version()` but returns the version string instead of printing it.
+
+==== 15.5.2.8. How optparse handles errors ====
+
+:::
+
+==== 15.5.2.9. Putting it all together ====
+
+Here’s what `optparse`-based scripts usually look like:
+
+ {{{
+from optparse import OptionParser
+[...]
+def main():
+    usage = "usage: %prog [options] arg"
+    parser = OptionParser(usage)
+    parser.add_option("-f", "--file", dest="filename",
+                      help="read data from FILENAME")
+    parser.add_option("-v", "--verbose",
+                      action="store_true", dest="verbose")
+    parser.add_option("-q", "--quiet",
+                      action="store_false", dest="verbose")
+    [...]
+    (options, args) = parser.parse_args()
+    if len(args) != 1: # Positional Arguments 必須要自行檢查
+        parser.error("incorrect number of arguments") # 印出訊息後離開程式
+    if options.verbose:
+        print "reading %s..." % options.filename
+    [...]
+
+if __name__ == "__main__":
+    main()
+ }}}
+
+=== 15.5.3. Reference Guide ===
+
+:::
+
+== 15.7. logging — Logging facility for Python ==
+http://docs.python.org/library/logging.html @2010/08/31
+
+New in version 2.3.
+
+This module defines functions and classes which implement a flexible ''error logging system'' for applications.
+
+__Logging is performed by calling methods on instances of the `Logger` class (hereafter called ''loggers''). Each instance has a ''name'', and they are conceptually arranged in a ''namespace hierarchy'' using dots (periods) as separators.__ For example, a logger named “`scan`” is the parent of loggers “`scan.text`”, “`scan.html`” and “`scan.pdf`”. __Logger names can be anything you want, and indicate the area of an application in which a logged message originates.__
+
+__Logged messages also have ''levels of importance'' associated with them. The ''default levels'' provided are `DEBUG`, `INFO`, `WARNING`, `ERROR` and `CRITICAL`. As a convenience, you indicate the importance of a logged message by calling an appropriate method of `Logger`. The methods are `debug()`, `info()`, `warning()`, `error()` and `critical()`, which mirror the default levels. You are not constrained to use these levels: you can specify your own and use a more general `Logger` method, `log()`, which takes an explicit level argument.__
+
+=== 15.7.1. Logging tutorial ===
+
+The key benefit of having the logging API provided by a standard library module is that all Python modules can participate in logging, so your application log can include messages from third-party modules.
+
+__It is, of course, possible to log messages with different ''verbosity levels'' or to different ''destinations''. (指設定在 Handler 上面的 Verbosity Level 而言) Support for writing log messages to files, HTTP GET/POST locations, email via SMTP, generic sockets, or OS-specific logging mechanisms are all supported by the standard module.__ You can also create your own log destination class if you have special requirements not met by any of the built-in classes.
+
+==== 15.7.1.1. Simple examples ====
+
+Most applications are probably going to want to log to a file, so let’s start with that case. __Using the `basicConfig()` function, we can set up the ''default handler'' so that debug messages are written to a file__ (in the example, we assume that you have the appropriate permissions to create a file called `example.log` in the current directory):
+
+ {{{
+import logging
+LOG_FILENAME = 'example.log'
+logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG)
+
+logging.debug('This message should go to the log file') # 並非針對特定 Logger
+ }}}
+
+And now if we open the file and look at what we have, we should find the log message:
+
+ {{{
+DEBUG:root:This message should go to the log file
+ }}}
+
+If you run the script repeatedly, the additional log messages are appended to the file. __To create a new file each time, you can pass a `filemode` argument to `basicConfig()` with a value of `'w'`. (覆寫原來的舊檔案而言) Rather than managing the file size yourself, though, it is simpler to use a `RotatingFileHandler`__:
+
+ {{{
+import glob
+import logging
+import logging.handlers
+
+LOG_FILENAME = 'logging_rotatingfile_example.out'
+
+# Set up a specific logger with our desired output level
+my_logger = logging.getLogger('MyLogger')
+my_logger.setLevel(logging.DEBUG)
+
+# Add the log message handler to the logger
+handler = logging.handlers.RotatingFileHandler(
+              LOG_FILENAME, maxBytes=20, backupCount=5)
+
+my_logger.addHandler(handler)
+
+# Log some messages
+for i in range(20):
+    my_logger.debug('i = %d' % i)
+
+# See what files are created
+logfiles = glob.glob('%s*' % LOG_FILENAME)
+
+for filename in logfiles:
+    print filename
+ }}}
+
+The result should be 6 separate files, each with part of the log history for the application:
+
+ {{{
+logging_rotatingfile_example.out
+logging_rotatingfile_example.out.1
+logging_rotatingfile_example.out.2
+logging_rotatingfile_example.out.3
+logging_rotatingfile_example.out.4
+logging_rotatingfile_example.out.5
+ }}}
+
+__The most current file is always `logging_rotatingfile_example.out`, and each time it reaches the size limit it is renamed with the suffix `.1`. Each of the existing backup files is renamed to increment the suffix (`.1` becomes `.2`, etc.) and the `.6` file is erased. (因為 `backupCount` 指定最多保留 5 個 Backup Files)__
+
+Obviously this example sets the log length much much too small as an extreme example. You would want to set `maxBytes` to an appropriate value.
+
+Another useful feature of the logging API is the ability to produce different messages at different log levels. __This allows you to instrument your code with debug messages, for example, but turning the log level down so that those debug messages are not written for your production system. (CLI 常見的做法是提出一個 `-v` 或 `--verbose` 的參數, 動態將 Root Logger 的 Verbosity Level 調整為 `DEBUG`)__ The default levels are `NOTSET`, `DEBUG`, `INFO`, `WARNING`, `ERROR` and `CRITICAL`.
+
+__'''The logger, handler, and log message call each specify a level. The log message is only emitted if the handler and logger are configured to emit messages of that level or lower.'''__ For example, if a message is `CRITICAL`, and the logger is set to `ERROR`, the message is emitted. If a message is a `WARNING`, and the logger is set to produce only `ERROR`s, the message is not emitted:
+
+ {{{
+import logging
+import sys
+
+LEVELS = {'debug': logging.DEBUG,
+          'info': logging.INFO,
+          'warning': logging.WARNING,
+          'error': logging.ERROR,
+          'critical': logging.CRITICAL}
+
+if len(sys.argv) > 1:
+    level_name = sys.argv[1]
+    level = LEVELS.get(level_name, logging.NOTSET)
+    logging.basicConfig(level=level)
+
+logging.debug('This is a debug message')
+logging.info('This is an info message')
+logging.warning('This is a warning message')
+logging.error('This is an error message')
+logging.critical('This is a critical error message')
+ }}}
+
+Run the script with an argument like ‘`debug`’ or ‘`warning`’ to see which messages show up at different levels:
+
+ {{{
+$ python logging_level_example.py debug
+DEBUG:root:This is a debug message
+INFO:root:This is an info message
+WARNING:root:This is a warning message
+ERROR:root:This is an error message
+CRITICAL:root:This is a critical error message
+
+$ python logging_level_example.py info
+INFO:root:This is an info message
+WARNING:root:This is a warning message
+ERROR:root:This is an error message
+CRITICAL:root:This is a critical error message
+ }}}
+
+You will notice that these log messages all have `root` embedded in them. __The `logging` module supports a hierarchy of loggers with different names. An easy way to tell where a specific log message comes from is to use a separate logger object for each of your modules. '''Each new logger “inherits” the configuration of its parent, and log messages sent to a logger include the name of that logger.'''__ Optionally, each logger can be configured differently, so that messages from different modules are handled in different ways. Let’s look at a simple example of how to log from different modules so it is easy to trace the source of the message:
+
+ {{{
+import logging
+
+logging.basicConfig(level=logging.WARNING)
+
+logger1 = logging.getLogger('package1.module1')
+logger2 = logging.getLogger('package2.module2')
+
+logger1.warning('This message comes from one module')
+logger2.warning('And this message comes from another module')
+ }}}
+
+And the output:
+
+ {{{
+$ python logging_modules_example.py
+WARNING:package1.module1:This message comes from one module
+WARNING:package2.module2:And this message comes from another module
+ }}}
+
+There are many more options for configuring logging, including different log message formatting options, __having messages delivered to multiple destinations, and '''changing the configuration of a long-running application on the fly using a socket interface.[?]'''__ All of these options are covered in depth in the library module documentation.
+
+==== 15.7.1.2. Loggers ====
+
+__The `logging` library takes a modular approach and offers the several categories of components: loggers, handlers, filters, and formatters. Loggers expose the interface that application code directly uses. Handlers send the log records to the appropriate destination. Filters provide a finer grained facility for determining which log records to send on to a handler. Formatters specify the layout of the resultant log record. (設定在 Handlers 身上)__
+
+`Logger` objects have a threefold job. __First, they expose several methods to application code so that applications can log messages at runtime. Second, logger objects determine which log messages to act upon based upon ''severity'' (the default filtering facility) or filter objects. Third, logger objects pass along relevant log messages to all interested log handlers.__
+
+The most widely used methods on logger objects fall into two categories: configuration and message sending.
+
+ * __`Logger.setLevel()` specifies the ''lowest-severity'' log message a logger will handle,__ where debug is the lowest built-in severity level and critical is the highest built-in severity. For example, if the severity level is info, the logger will handle only info, warning, error, and critical messages and will ignore debug messages.
+
+ * `Logger.addFilter()` and `Logger.removeFilter()` add and remove filter objects from the logger object. __This tutorial does not address filters.__
+
+With the logger object configured, the following methods create log messages:
+
+ * `Logger.debug()`, `Logger.info()`, `Logger.warning()`, `Logger.error()`, and `Logger.critical()` all create ''log records'' with a message and a level that corresponds to their respective method names. __The message is actually a ''format string'', which may contain the standard string substitution syntax of `%s`, `%d`, `%f`, and so on. The rest of their arguments is a list of objects that correspond with the substitution fields in the message. With regard to `**kwargs`, the logging methods care only about a keyword of `exc_info` and '''use it to determine whether to log exception information.'''__
+
+ * __`Logger.exception()` creates a log message similar to `Logger.error()`. The difference is that `Logger.exception()` dumps a stack trace along with it. '''Call this method only from an exception handler.'''__
+
+ * `Logger.log()` takes a log level as an explicit argument. This is a little more verbose for logging messages than using the log level convenience methods listed above, __but this is how to log at ''custom log levels''.__
+
+`getLogger()` returns a reference to a logger instance with the specified name if it is provided, or `root` if not. The names are period-separated hierarchical structures. __Multiple calls to `getLogger()` with the same name will return a reference to the same logger object.__ Loggers that are further down in the hierarchical list are children of loggers higher up in the list. For example, given a logger with a name of `foo`, loggers with names of `foo.bar`, `foo.bar.baz`, and `foo.bam` are all descendants of `foo`. __'''Child loggers ''propagate'' messages up to the handlers associated with their ancestor loggers.''' Because of this, it is unnecessary to define and configure handlers for all the loggers an application uses. It is sufficient to configure handlers for a top-level logger and create child loggers as needed.__
+
+==== 15.7.1.3. Handlers ====
+
+Handler objects are responsible for dispatching the appropriate log messages (based on the log messages’ severity) to the handler’s specified destination. __Logger objects can add zero or more handler objects to themselves with an `addHandler()` method. As an example scenario, an application may want to send all log messages to a log file, all log messages of error or higher to stdout, and all messages of critical to an email address. This scenario requires three individual handlers where each handler is responsible for sending messages of a specific severity to a specific location.__
+
+The standard library includes quite a few handler types; this tutorial uses only `StreamHandler` and `FileHandler` in its examples.
+
+There are very few methods in a handler for application developers to concern themselves with. The only handler methods that seem relevant for application developers who are using the built-in handler objects (that is, not creating custom handlers) are the following configuration methods:
+
+ * The `Handler.setLevel()` method, just as in logger objects, specifies the lowest severity that will be dispatched to the appropriate destination. __Why are there two `setLevel()` methods? The level set in the logger determines which severity of messages it will pass to its handlers. The level set in each handler determines which messages that handler will send on.__
+
+ * `setFormatter()` selects a `Formatter` object for this handler to use.
+
+ * `addFilter()` and `removeFilter()` respectively configure and deconfigure filter objects on handlers.
+
+Application code should not directly instantiate and use instances of `Handler`. Instead, the `Handler` class is a base class that defines the interface that all handlers should have and establishes some default behavior that child classes can use (or override).
+
+==== 15.7.1.4. Formatters ====
+
+:::
+
+=== 15.7.13. Optimization ===
+
+__Formatting of message arguments is deferred until it cannot be avoided. However, '''computing the arguments passed to the logging method can also be expensive''', and you may want to avoid doing it if the logger will just throw away your event. To decide what to do, you can call the `isEnabledFor()` method which takes a `level` argument and returns true if the event would be created by the `Logger` for that level of call.__ You can write code like this:
+
+ {{{
+if logger.isEnabledFor(logging.DEBUG):
+    logger.debug("Message with %s, %s", expensive_func1(),
+                                        expensive_func2())
+ }}}
+
+so that if the logger’s threshold is set above `DEBUG`, the calls to `expensive_func1()` and `expensive_func2()` are never made.
+
+__There are other optimizations which can be made for specific applications which need more precise control over what logging information is collected.__ Here’s a list of things you can do to avoid processing during logging which you don’t need:
+
+|| What you don’t want to collect || How to avoid collecting it ||
+|| Information about where calls were made from. || Set `logging._srcfile` to `None`. ||
+|| Threading information. || Set `logging.logThreads` to `0`. ||
+|| Process information. || Set `logging.logProcesses` to `0`. ||
+
+Also note that the core logging module only includes the basic handlers. __If you don’t import `logging.handlers` and `logging.config`, they won’t take up any memory. (拆成其他 Modules, 原來還有 Memory 的考量...)__
+
+=== 15.7.14. Handler Objects ===
+
+:::
+
+== 15.8. getpass — Portable password input ==
+http://docs.python.org/library/getpass.html @2010/08/03
+
+The `getpass` module provides two functions:
+
+'''`getpass.getpass([prompt[, stream]])`'''
+
+__Prompt the user for a password without echoing. The user is prompted using the string prompt, which defaults to `'Password: '`.__ On Unix, the prompt is written to the file-like object `stream`[?]. `stream` defaults to the controlling terminal (`/dev/tty`) or if that is unavailable to `sys.stderr` (this argument is ignored on Windows).
+
+__If ''echo free'' input is unavailable `getpass()` falls back to printing a warning message to stream and reading from `sys.stdin` and issuing a `GetPassWarning`.__
+
+Availability: Macintosh, Unix, Windows.
+
+Changed in version 2.5: The `stream` parameter was added.
+
+Changed in version 2.6: On Unix it defaults to using `/dev/tty` before falling back to `sys.stdin` and `sys.stderr`.
+
+Note: If you call `getpass` from within IDLE, the input may be done in the terminal you launched IDLE from rather than the idle window itself.
+
+'''exception `getpass.GetPassWarning`'''
+
+A `UserWarning` subclass issued when password input may be echoed.
+
+'''`getpass.getuser()`'''
+
+__Return the “login name” of the user.__ Availability: Unix, Windows.
+
+__This function checks the environment variables `LOGNAME`, `USER`, `LNAME` and `USERNAME`, in order, and returns the value of the first one which is set to a non-empty string. If none are set, the login name from the ''password database'' is returned on systems which support the `pwd` module, otherwise, an exception is raised.__
+
+== 15.14. platform — Access to underlying platform’s identifying data ==
+http://docs.python.org/library/platform.html @2010/08/03
+
+New in version 2.3.
+
+Note: Specific platforms listed alphabetically, with Linux included in the Unix section.
+
+=== 15.14.1. Cross Platform ===
+
+'''`platform.architecture(executable=sys.executable, bits='', linkage='')`'''
+
+__Queries the given executable (defaults to the Python interpreter binary) for various architecture information.__
+
+__Returns a tuple `(bits, linkage)` which contain information about the bit architecture and the linkage format used for the executable. Both values are returned as strings.__
+
+Values that cannot be determined are returned as given by the parameter presets. If `bits` is given as `''`, the `sizeof(pointer)()` (or `sizeof(long)` on Python version < 1.5.2) is used as indicator for the supported pointer size.
+
+The function relies on the system’s `file` command to do the actual work. This is available on most if not all Unix platforms and some non-Unix platforms and then only if the executable points to the Python interpreter. Reasonable defaults are used when the above needs are not met.[?]
+
+
+__Queries the given executable (defaults to the Python interpreter binary) for various architecture information.__
+
+__Returns a tuple `(bits, linkage)` which contain information about the bit architecture and the linkage format used for the executable. Both values are returned as strings.__
+
+__Values that cannot be determined are returned as given by the parameter presets.__ If bits is given as `''`, the `sizeof(pointer)()` (or `sizeof(long)()` on Python version < 1.5.2) is used as indicator for the supported pointer size.
+
+__The function relies on the system’s file command to do the actual work. This is available on most if not all Unix platforms and some non-Unix platforms and then only if the executable points to the Python interpreter. Reasonable defaults are used when the above needs are not met.__
+
+Note: __On Mac OS X (and perhaps other platforms), executable files may be universal files containing multiple architectures. To get at the “64-bitness” of the current interpreter, it is more reliable to query the `sys.maxsize` attribute:__
+
+ {{{
+is_64bits = sys.maxsize > 2**32
+ }}}
+
+:::
+
+'''`system()`'''
+
+__Returns the system/OS name, e.g. `'Linux'`, `'Windows'`, or `'Java'`. (什麼時候會傳回 Java?) An empty string is returned if the value cannot be determined.__
+
+:::
+
+'''`uname()`'''
+
+__Fairly portable uname interface. Returns a tuple of strings `(system, node, release, version, machine, processor)` identifying the underlying platform.__
+
+__Note that unlike the `os.uname()` function this also returns possible processor information as additional tuple entry. (比 `os.uname()` 多了一個 `processor` 的資訊)__
+
+__Entries which cannot be determined are set to `''`.__
+
+:::
+
+

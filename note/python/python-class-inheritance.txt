@@ -1,0 +1,77 @@
+= [Python] Class Inheritance =
+
+--------------------------------------------------------------------------------
+>>> class A(object):
+...     def foo(self): return 'A.foo()'
+... 
+>>> class B(object):
+...     def foo(self): return 'B.foo()'
+... 
+>>> class AA(A):
+...     def foo(self): return 'AA.foo()'
+... 
+>>> class C(AA, B):
+...     def foo(self):
+...         return super(C, self).foo() <1>
+... 
+>>> class D(B, AA):
+...     def foo(self):
+...         return super(D, self).foo()
+... 
+>>>
+>>> print C.__mro__ <2>
+(<class '__main__.C'>, <class '__main__.AA'>, <class '__main__.A'>, <class '__main__.B'>, <type 'object'>)
+>>> print D.__mro__
+(<class '__main__.D'>, <class '__main__.B'>, <class '__main__.AA'>, <class '__main__.A'>, <type 'object'>)
+>>>
+>>> c = C(); c.foo() <3>
+'AA.foo()'
+>>> d = D(); d.foo()
+'B.foo()'
+>>> 
+>>> type(c).__mro__
+(<class '__main__.C'>, <class '__main__.AA'>, <class '__main__.A'>, <class '__main__.B'>, <type 'object'>)
+>>> print super(A, c).foo() <4>
+B.foo()
+>>>
+>>> type(d).__mro__
+(<class '__main__.D'>, <class '__main__.B'>, <class '__main__.AA'>, <class '__main__.A'>, <type 'object'>)
+>>> print super(A, d).foo() <4>
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+AttributeError: 'super' object has no attribute 'foo'
+--------------------------------------------------------------------------------
+<1> 透過 `super()` 可以存取到上層被覆寫的方法，但只能用在 link:python-class-new.html[new-style class]。
+<2> `__mro__` 記錄著（多重）繼承關係扁平化的結果，也就是 `super()` 做 method resolution 的順序。
+<3> 這也就是為什麼 `c.foo()` 會呼叫到 `AA.foo()`，因為 `C.__mro__` 中 `<class '__main__.C'>` 往下是 `<class '__main__.AA'>`；為什麼 `d.foo()` 會呼叫到 `B.foo()`，因為 `D.__mro__` 中 `<class '__main__.D'>` 往下是 `<class '__main__.B'>`。
+<4> 事實上 `super()` 不一定要用在 method 裡。`super(A, c)` 會從 `type(c).__mro__` 中的 `<class '__main__.A'>` 往下找到 `<class '__main__.B'>`，雖然 `A` 並非繼承自 `B`；`super(A, d)` 會從 `type(d).__mro__` 中的 `<class '__main__.A'>` 往下找到 `<type 'object'>`。
+
+透過這一段實驗，官方文件http://docs.python.org/library/functions.html#super[關於 `super()` 的說明]就比較容易懂了。
+
+________________________________________________________________________________
+Return a proxy object that delegates method calls to a parent or sibling class of type. This is useful for accessing inherited methods that have been overridden in a class. The search order is same as that used by getattr() except that the type itself is skipped.
+
+The \_\_mro__ attribute of the type lists the method resolution search order used by both getattr() and super(). The attribute is dynamic and can change whenever the inheritance hierarchy is updated.
+________________________________________________________________________________
+
+== 延伸閱讀 ==
+
+ * link:python-class.html[Classes]
+ * link:python-class-new.html[New-style Classes]
+
+== 參考資料 ==
+
+.文件
+--
+ * http://docs.python.org/tutorial/classes.html#inheritance[Classes > Inheritance]
+ * http://docs.python.org/library/functions.html#super[Built-in Functions > super()]
+ * http://rhettinger.wordpress.com/2011/05/26/super-considered-super/[Python’s super() considered super! « Deep Thoughts by Raymond Hettinger] (2011-05-26)
+   ** http://code.activestate.com/recipes/577721-how-to-use-super-effectively-python-27-version/[How to use super() effectively -- Python 2.7 version « Python recipes « ActiveState Code] (2011-05-26)
+   ** http://code.activestate.com/recipes/577720-how-to-use-super-effectively/[How to use super() effectively « Python recipes « ActiveState Code] (2011-05-26)
+--
+
+.其他文件
+--
+ * http://stackoverflow.com/questions/3694371/how-do-i-initialize-the-base-super-class-in-python[How do I initialize the base (super) class in Python? - Stack Overflow] (2010-09-12) - `super(Y, self)`
+--
+

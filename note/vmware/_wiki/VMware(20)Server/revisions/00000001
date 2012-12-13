@@ -1,0 +1,94 @@
+= VMware Server =
+<<TableOfContents>>
+
+'''關聯'''
+
+'''網站/資源'''
+
+ * http://www.vmware.com/products/server/[Official Home]
+   * http://www.vmware.com/support/pubs/server_pubs.html[VMware Server Documentation]
+   * http://communities.vmware.com/community/vmtn/server[VMware Server Forum]
+
+'''工具/方案'''
+
+'''應用領域/實例'''
+
+'''書籍'''
+
+'''文件/教程'''
+
+ * http://www.vmware.com/pdf/vmserver2.pdf[VMware Server User's Guide]
+ * http://www.vmware.com/pdf/GuestOS_guide.pdf[Guest Operating System Installation Guide] - 可以看出所有支援的 Guest OS
+
+'''文章/新聞/討論'''
+
+ * http://www.ubuntugeek.com/how-to-install-vmware-server-2-0-x-in-ubuntu-9-10-karmic.html[How to install vmware server 2.0.x in Ubuntu 9.10 (Karmic) - Ubuntu Geek] (2009-11-04)
+
+'''關鍵字'''
+
+== 學習指引 ==
+
+== 常見問題 ==
+
+=== Remote Console 下的方向鍵沒有作用 ===
+
+2010-03-18, 在 Firefox 下搭配 VMware Remote Console Plug-in 連線 VM 時, 發現方向鍵沒有作用.
+
+ {{{
+$ cd ~/.vmware
+echo 'xkeymap.nokeycodeMap="TRUE"' > a
+ }}}
+
+然後重新啟動 Remote Console 即可.
+
+'''參考資料'''
+
+ * http://communities.vmware.com/thread/198779[VMware Communities: Looking for Remote Console plugin ...] (2009-03-10)
+
+=== 存取 VI Web Access 時, 抬頭出現 Loading..., 但畫面一片空白 ===
+
+用 Firefox 存取 VI Web Access 時, 抬頭出現 Loading..., 但畫面一片空白. 同時 Error Console 固定會出現 "vmtn is not defined" 的錯誤.
+
+大概都跟 Browser 的快取有關, 因此有人建議進入 Edit > Preferences > Advanced > Network 將 Offline Storage 清除. 有的人甚至建議重新啟動伺服端的管理介面 `/etc/init.d/vmware-mgmt restart`, 然後猛按 Ctrl+Shift+R 即可.
+
+'''參考資料'''
+
+ * (./) http://serverfault.com/questions/62011/vmware-server-2-0-in-linux-loads-a-blank-screen-at-the-login-page[VMware Server 2.0 in Linux loads a blank screen at the login page - Server Fault] (2009-09-03)
+
+=== Guest OS 時間太快或太慢 ===
+
+肇因於 Host 中 Power Management Features 會自動調整 CPU Speed, 導致 Guest 誤判一些數據. 解決方法就是進 BIOS 將所有會自動調節 CPU 時脈的 Features (例如 Intel !SpeedStep 或 AMD PowerNow / Cool'n'Quiet) 停用.
+
+例如 GA-EP43T-UD3L 要關掉的有 Advanced BIOS Features:
+
+ * CPU Enhanced Halt (C1E)
+ * C2/C2E State Support
+ * CPU EIST Function
+
+'''參考資料'''
+
+ * http://kb.vmware.com/kb/708[VMware KB: Locking SpeedStep, PowerNow, or Cool'n'Quiet on the Host to a Constant Speed]
+ * http://kb.vmware.com/kb/1591[Host Power Management Causes Problems with Guest Timekeeping on Linux Hosts]
+ * http://kb.vmware.com/kb/1227[Host Power Management Causes Problems with Guest Timekeeping (Windows Hosts)]
+ * http://www.vmware.com/pdf/vmware_timekeeping.pdf[Timekeeping in VMware Virtual Machines]
+
+=== DetailsInaccessibleDatastore ===
+
+ {{{
+DetailsInaccessibleDatastore: Datastore 'standard /' is not accessible.
+ }}}
+
+2010-04-19 發現 Datastore 的大小 (Capacity/Available) 不太對 (但 `/etc/vmware/hostd/datastores.xml` 的設定是沒問題的), 想在上面增加 VM 時就會出現上面的錯誤. 記得之前曾將 Partition 卸載, 可能是因為這樣造成內部的快取指向 Root Partition 所造成 (上述的 Capacity/Available 跟 Root Partition 一致).
+
+後來透過 VI Web Access 將 Datastores 刪掉再重建即可, 不會影響現有的 VMs.
+
+2010-04-21 遇到更糟的狀況, 連現有的 VMs 都變成 Inaccessible. 還好重新開機就好了 (Datastores 不用重建)
+
+2010-06-05 又遇到 Datastore 大小不一致的狀況, 結果在右方按 Refresh Datastore 就好了!!
+
+== 隨手記 ==
+
+== 修訂記錄 ==
+
+|| 版次 || 日期 || 記錄 ||
+|| 1.0 || <<Date(2010-03-15T06:14:17Z)>> || 初稿 ||

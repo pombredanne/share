@@ -1,0 +1,650 @@
+= VMware =
+<<TableOfContents>>
+
+== Overview ==
+
+== How To Install VMware Server On Debian 4.0 (Etch) ==
+http://howtoforge.com/debian_etch_vmware_server_howto (04/16/2007)
+
+This tutorial provides step-by-step instructions about how to install the free VMware Server (version 1.0.2) on a Debian Etch system. (@2008/04/28 拿 VMware Server 1.0.5 按同樣的步驟來安裝也是 OK 的, 過程非常的順利)
+
+With VMware Server you can create and run guest operating systems ("virtual machines") such as Linux, Windows, FreeBSD, etc. under a host operating system. This has the benefit that you can run multiple operating systems on the same hardware which saves a lot of money, and you can move virtual machines from one VMware Server to the next one (or to a system that has the VMware Player which is also free). In this article we use Debian Etch (4.0) as the host operating system.
+
+I want to say first that this is not the only way of setting up such a system. There are many ways of achieving this goal but this is the way I take. I do not issue any guarantee that this will work for you!
+
+=== Preliminary Note ===
+
+I assume you have already set up a basic Debian Etch system. You can set up your system as described on the first two pages of this tutorial: http://howtoforge.com/perfect_setup_debian_sarge[The Perfect Setup - Debian Etch (4.0)].
+
+I use 192.168.0.100 as the IP address and `server1.example.com` as the hostname of my Debian Etch system in this tutorial. If your Debian Etch system does not have a static IP address you should now change its network configuration so that it will have a static IP address in the future: 
+
+ {{{
+vi /etc/network/interfaces
+ }}}
+
+ {{{
+# /etc/network/interfaces -- configuration file for ifup(8), ifdown(8)
+
+# The loopback interface
+auto lo
+iface lo inet loopback
+
+# The first network card - this entry was created during the Debian installation
+# (network, broadcast and gateway are optional)
+auto eth0
+iface eth0 inet static
+        address 192.168.0.100
+        netmask 255.255.255.0
+        network 192.168.0.0
+        broadcast 192.168.0.255
+        gateway 192.168.0.1
+ }}}
+ 
+If you use a different gateway than 192.168.0.1, change the gateway IP address in `/etc/network/interfaces`.
+
+Then restart your network:
+
+ {{{
+/etc/init.d/networking restart
+ }}}
+ 
+Edit `/etc/resolv.conf` and add some nameservers:
+
+ {{{
+vi /etc/resolv.conf
+ }}}
+ 
+ {{{
+search server
+nameserver 145.253.2.75
+nameserver 193.174.32.18
+nameserver 194.25.0.60
+ }}}
+ 
+Edit `/etc/hosts` and add your new IP address:
+
+ {{{
+vi /etc/hosts
+ }}}
+ 
+ {{{
+127.0.0.1       localhost.localdomain   localhost
+192.168.0.100   server1.example.com     server1
+
+# The following lines are desirable for IPv6 capable hosts
+::1     ip6-localhost ip6-loopback
+fe00::0 ip6-localnet
+ff00::0 ip6-mcastprefix
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+ff02::3 ip6-allhosts
+ }}}
+
+=== Installing Required Packages ===
+
+First we update our package database:
+
+ {{{
+apt-get update
+ }}}
+ 
+Now we install the packages required by VMware on our Debian Etch system by running (這些套件是怎麼推敲出來的? 如果沒有事先安裝, 會在過程中被提示嗎[?])
+
+ {{{
+apt-get install linux-headers-`uname -r` libx11-6 libx11-dev x-window-system-core x-window-system xspecs libxtst6 psmisc build-essential
+ }}}
+ 
+You will be asked a few questions to which you can answer as follows:
+
+ {{{
+Please keep only the resolutions you would like the X server to use. Removing all of them is the same as removing none, since in both cases the X server will attempt to use the highest possible resolution.
+
+Video modes to be used by the X server:
+
+<--Accept the default values
+ }}}
+ 
+__The resolution values are not really important because we don't want to use the desktop on our Debian Etch system. We will connect to the VMware Server from our workstation later on which can be a Windows or Linux system which has the VMware Server client package installed. (因為安裝過程中, 會涉及 "What directory contains your desktop menu entry files?" 的問答, 所以即便用不到 X Window, 還是要安裝最基礎的元件)__
+
+Next we create the directory `/var/vm` where we want to install our virtual machines later. (方便未來將 `/var/vm` 往外掛載到獨立的 partition) The virtual machines require much disk space, make sure you have enough free space on your `/var` partition for the virtual machines.
+
+ {{{
+mkdir /var/vm 
+ }}}
+ 
+=== Getting VMware Server ===
+
+The VMware server can be downloaded for free from the VMware website: http://www.vmware.com/download/server/
+To run the VMware Server software you need a (free) serial number, that can be requested by clicking on the "Register now" button on the download page.
+
+=== Downloading The Software ===
+
+To setup VMWare Server on Debian Etch, we need the following packages from the VMware downloads page:
+
+ * VMware Server for linux (Binary `tar.gz`; http://download3.vmware.com/software/vmserver/VMware-server-1.0.5-80187.tar.gz)
+ * Management Interface (Binary `tar.gz`; http://download3.vmware.com/software/vmserver/VMware-mui-1.0.5-80187.tar.gz)
+
+We want to download the packages to our `/tmp` directory, therefore we go there:
+
+ {{{
+cd /tmp
+ }}}
+ 
+For downloading the software to your server, I recommend to use the Linux commandline program `wget`. The `wget` syntax is as follows:
+
+ {{{
+wget [URL of the VMware Server for linux binary tar.gz package]
+wget [URL of the Management Interface binary tar.gz package]
+ }}}
+ 
+Unpacking the VMware-server `tar.gz`:
+
+ {{{
+tar xvfz VMware-server-*.tar.gz
+ }}}
+ 
+Running the installer script:
+
+ {{{
+cd vmware-server-distrib
+./vmware-install.pl
+ }}}
+ 
+The installer asks you a few questions. Most of the time you can accept the default value: (過程中唯一有變更的就是 "In which directory do you want to keep your virtual machine files?" 的選項)
+ 
+ {{{
+Creating a new installer database using the tar3 format.
+
+Installing the content of the package.
+
+In which directory do you want to install the binary files?
+[/usr/bin] <-- /usr/bin
+
+What is the directory that contains the init directories (rc0.d/ to rc6.d/)?
+[/etc] <-- /etc
+
+What is the directory that contains the init scripts?
+[/etc/init.d] <-- /etc/init.d
+
+In which directory do you want to install the daemon files?
+[/usr/sbin] <-- /usr/sbin
+
+In which directory do you want to install the library files?
+[/usr/lib/vmware] <-- /usr/lib/vmware
+
+The path "/usr/lib/vmware" does not exist currently. This program is going to
+create it, including needed parent directories. Is this what you want?
+[yes] <-- yes
+
+In which directory do you want to install the manual files?
+[/usr/share/man] <-- /usr/share/man
+
+In which directory do you want to install the documentation files?
+[/usr/share/doc/vmware] <-- /usr/share/doc/vmware
+
+The path "/usr/share/doc/vmware" does not exist currently. This program is
+going to create it, including needed parent directories. Is this what you want?
+[yes] <-- yes
+
+The installation of VMware Server 1.0.2 build-39867 for Linux completed
+successfully. You can decide to remove this software from your system at any
+time by invoking the following command: "/usr/bin/vmware-uninstall.pl".
+
+Before running VMware Server for the first time, you need to configure it by
+invoking the following command: "/usr/bin/vmware-config.pl". Do you want this
+program to invoke the command for you now? [yes] <-- yes
+
+Making sure services for VMware Server are stopped.
+
+Stopping VMware services:
+Virtual machine monitor done
+
+You must read and accept the End User License Agreement to continue.
+Press enter to display it. <-- [ENTER]
+
+..... snip [LICENCE TEXT] ......
+
+Do you accept? (yes/no) <-- yes
+
+Configuring fallback GTK+ 2.4 libraries.
+
+In which directory do you want to install the mime type icons?
+[/usr/share/icons] <-- /usr/share/icons
+
+The path "/usr/share/icons" does not exist currently. This program is going to
+create it, including needed parent directories. Is this what you want?
+[yes] <-- yes
+
+What directory contains your desktop menu entry files? These files have a
+.desktop file extension. [/usr/share/applications] <-- /usr/share/applications
+
+In which directory do you want to install the application's icon?
+[/usr/share/pixmaps] <-- /usr/share/pixmaps
+
+Trying to find a suitable vmmon module for your running kernel.
+
+None of the pre-built vmmon modules for VMware Server is suitable for your
+running kernel. Do you want this program to try to build the vmmon module for
+your system (you need to have a C compiler installed on your system)? [yes] <-- yes
+
+Using compiler "/usr/bin/gcc". Use environment variable CC to override.
+
+What is the location of the directory of C header files that match your running
+kernel? [/lib/modules/2.6.18-4-486/build/include]<-- /lib/modules/2.6.8-2-386/build/include
+
+[...]
+
+Do you want networking for your virtual machines? (yes/no/help) [yes] <-- yes
+
+Configuring a bridged network for vmnet0.
+
+The following bridged networks have been defined:
+
+. vmnet0 is bridged to eth0
+
+Do you wish to configure another bridged network? (yes/no) [no] <-- no
+
+Do you want to be able to use NAT networking in your virtual machines? (yes/no)
+[yes] <-- yes
+
+Configuring a NAT network for vmnet8.
+
+Do you want this program to probe for an unused private subnet? (yes/no/help)
+[yes] <-- yes
+
+Probing for an unused private subnet (this can take some time)...
+
+The subnet 172.16.191.0/255.255.255.0 appears to be unused.
+
+The following NAT networks have been defined:
+
+. vmnet8 is a NAT network on private subnet 172.16.191.0.
+
+Do you wish to configure another NAT network? (yes/no) [no] <-- no
+
+Do you want to be able to use host-only networking in your virtual machines?
+[yes] <-- yes
+
+Configuring a host-only network for vmnet1.
+
+Do you want this program to probe for an unused private subnet? (yes/no/help)
+[yes] <-- yes
+
+Probing for an unused private subnet (this can take some time)...
+
+The subnet 172.16.98.0/255.255.255.0 appears to be unused.
+
+The following host-only networks have been defined:
+
+. vmnet1 is a host-only network on private subnet 172.16.98.0.
+
+Do you wish to configure another host-only network? (yes/no) [no] <-- no
+
+[...]
+
+Please specify a port for remote console connections to use [902] <-- 902
+
+Restarting internet superserver: inetd.
+Configuring the VMware VmPerl Scripting API.
+
+Building the VMware VmPerl Scripting API.
+
+Using compiler "/usr/bin/gcc". Use environment variable CC to override.
+
+Installing the VMware VmPerl Scripting API.
+
+The installation of the VMware VmPerl Scripting API succeeded.
+
+Generating SSL Server Certificate
+
+In which directory do you want to keep your virtual machine files?
+[/var/lib/vmware/Virtual Machines] <-- /var/vm
+
+Please enter your 20-character serial number.
+
+Type XXXXX-XXXXX-XXXXX-XXXXX or 'Enter' to cancel: <-- your VMware Server serial number
+
+Starting VMware services:
+Virtual machine monitor done
+Virtual ethernet done
+Bridged networking on /dev/vmnet0 done
+Host-only networking on /dev/vmnet1 (background) done
+Host-only networking on /dev/vmnet8 (background) done
+NAT service on /dev/vmnet8 done
+ 
+The configuration of VMware Server 1.0.2 build-39867 for Linux for this running
+kernel completed successfully.
+ }}}
+
+That's it, the VMware Server is installed on our Debian Etch system. On to the next step... 
+
+=== Installing The VMware Management Interface ===
+
+The VMware Management Interface is a Web-based management tool that allows you to
+
+ * monitor the state of virtual machines and the VMware Server host on which they are running.
+ * control (power on, suspend, resume, reset and power off) the virtual machines on that host.
+ * view details about each virtual machine, including system summary, hardware information, any connected users and a log of recent events.
+
+Please note: it cannot be used to create virtual machines. To do this, you must install the VMWare console (available for Windows and Linux) on a client PC.
+
+ {{{
+cd /tmp
+tar xvfz VMware-mui-*.tar.gz
+cd vmware-mui-distrib
+./vmware-install.pl
+ }}}
+ 
+Again, you are asked a few questions. Most of the time you can accept the default values:
+
+ {{{
+Creating a new installer database using the tar3 format.
+
+You must read and accept the End User License Agreement to continue.
+Press enter to display it. <-- [ENTER]
+
+... license text ...
+
+Do you accept? (yes/no) <-- yes
+
+Thank you.
+
+Installing the content of the package.
+
+In which directory do you want to install the binary files?
+[/usr/bin] <-- /usr/bin
+
+What is the directory that contains the init directories (rc0.d/ to rc6.d/)?
+[/etc] <-- /etc
+
+What is the directory that contains the init scripts?
+[/etc/init.d] <-- /etc/init.d
+
+In which directory do you want to install the VMware Management Interface
+files? [/usr/lib/vmware-mui] <-- /usr/lib/vmware-mui
+
+The path "/usr/lib/vmware-mui" does not exist currently. This program is going
+to create it, including needed parent directories. Is this what you want?
+[yes] <-- yes
+
+In which directory would you like to install the documentation files?
+[/usr/lib/vmware-mui/doc] <-- /usr/lib/vmware-mui/doc
+
+The path "/usr/lib/vmware-mui/doc" does not exist currently. This program is
+going to create it, including needed parent directories. Is this what you want?
+[yes] <-- yes
+
+The installation of VMware Management Interface 1.0.1 build-29996 for Linux
+completed successfully. You can decide to remove this software from your system
+at any time by invoking the following command:
+"/usr/bin/vmware-uninstall-mui.pl".
+
+Before running VMware Management Interface for the first time, you need to
+configure it by invoking the following command:
+"/usr/bin/vmware-config-mui.pl". Do you want this program to invoke the command
+for you now? [yes] <-- yes
+
+Configuring httpd.conf to run Apache as:
+User: www-data and Group: nogroup
+
+Set the number of minutes before a http session times out. (This is the length
+of time before someone connecting to VMware Management Interface will be logged
+out) [60] <-- 60
+
+Generating SSL Server Certificate
+
+Starting httpd.vmware: done
+The configuration of VMware Management Interface completed successfully. 
+ }}}
+ 
+The VMware Management interface is now installed on your system.
+
+You will now be able to login the the VMware management interface with the URL:
+
+ {{{
+https://192.168.0.100:8333/
+ }}}
+ 
+To login use the username `root` and the password of your root system user.
+
+This interface shows status information of the installed VM instances and you are able to start and stop VM instances:
+
+{{attachment:1.png}}
+
+{{attachment:2.png}}
+
+{{attachment:3.png}} 
+
+To create new VM instances, use the VMware Server client package which is availabe as Linux and Windows GUI application.
+
+There are many ready-to-run appliances for the VMware server available, for example the http://www.ispconfig.org/[ISPConfig] webhosting appliance based on the HowtoForge http://howtoforge.com/perfect_setup_debian_sarge[Perfect Setup for Debian 3.1]:
+
+http://www.vmware.com/vmtn/appliances/directory/342
+
+Many other appliances can be found in the VMWare Appliances directory:
+
+http://www.vmware.com/vmtn/appliances/
+
+=== Creating A Virtual Machine ===
+
+We use the VMWare Server client package for Linux or Windows to create a new virtual machine on our VMware server. You can download the appropriate package for your workstation operating system (Windows/Linux) on http://www.vmware.com/download/server. I'm using Windows on my workstation. To install the Windows package, just download the VMWare Server client for Windows package (it it a zip file), unzip it, and run the `VMware-console.exe` file. Afterwards, just start the VMware Server console. It detects all available VMware Servers in your network; select the one to which you want to connect (in our case it's our Debian Etch system with the IP address 192.168.0.100):
+
+{{attachment:4.png}}
+
+Login to your server with the IP address or hostname, the user `root` and the root password. (這真是太神奇, 跟管理 localhost 完全沒有兩樣, 只不過存取的檔案資料也都是遠端的, 不要弄錯了. 可以善用 NFS 與搖控端做檔案的分享)
+
+{{attachment:5.png}}
+
+Click on New Virtual Machine and follow the whizard. The wizard asks you to select:
+
+ * Operating system (Linux, Windows, Novell Netware, Solaris or other operating system)
+ * Operating system version
+ * Location and virtual machine name. The folder `/var/vm` that we created in the setup is preselected.
+ * Networking: If you want the virtual machine to be part of the same network than the server itself, select bridged networking. If you want to use a virtual NAT, select Network address translation.
+ * Enter the size of your virtual harddisk. I recommend to disable the option that creates the virtual harddisk in full size instantly, the harddisk will then grow with the data that you store inside up to the max. size you selected.
+ * After you finished the VM creation wizard, put the boot disk of the operating system you want to install in the CD / DVD drive of your server and start the VM. (可以透過 NFS 將搖控端的 CD/DVD drive 整個分享出去)
+
+All trademarks belong to their respective owners. We thank VMware Inc. for the permission to write this Howto.
+
+=== Links ===
+
+ * VMware Server: http://www.vmware.com/products/server
+ * Debian: http://www.debian.org
+ * VMware Appliance Directory http://www.vmware.com/vmtn/appliances/
+
+上面 "How To Install VMware Server On Debian 4.0 (Etch)" 的做法在 Ubnutn 8.04 並不順利, 過程中會發生 "Unable to build the vmmon module" 的錯誤而中斷. (即便是安裝了 `ia32-libs` 套件也一樣) http://www.vmware.com/support/reference/linux/prebuilt_modules_linux.html[Installing VMware Products on Unsupported Linux Distributions] 是這麼說的:
+
+ We encourage you to refer to the list of Linux distributions and kernel versions that are supported hosts for your VMware product. See the http://www.vmware.com/support/server/doc/releasenotes_server.html[release notes] and system requirements section of the product documentation. You may or may not be able to install your VMware product on an unsupported distribution.
+ 
+ If you are running a supported Linux distribution and `vmware-config.pl` generates an error message saying there are no prebuilt modules that match your running kernel and fails to compile, please file a support request. With the Kernel version (2.6.22.1-33), you may also try the following, unsupported "any-any" patch from Petr Vandrovec. It is available for download at http://knihovny.cvut.cz/ftp/pub/vmware/vmware-any-any-update115.tar.gz.
+
+ If you are running an unsupported distribution or using an unsupported kernel version and are not able to compile modules or install your VMware product, we encourage you to explore http://www.vmware.com/community/index.jspa[the VMware community support forums]. There are regular discussions on the forums about the latest development kernels and workarounds for building VMware product modules.
+
+== Installing Vmware server 1.0.5 on ubuntu 8.04 lts (Sunday, April 20, 2008) ==
+http://digitalbs.org/Site/Blog/Entries/2008/4/20_Installing_Vmware_server_1.0.5_on_ubuntu_8.04_lts.html
+
+Here is a quick walk-through for installing Vmware Server 1.0.5 on the Desktop version of Ubuntu 8.04 LTS, read through this before you start and you'll save yourself some minor headaches. To begin, download the following packages -
+
+ * http://www.vmware.com/products/server/[Vmware Server 1.0.5]
+ * http://groups.google.com/group/vmkernelnewbies/files[vmware-any-any-update116]
+
+Then, add the linux packages you'll need for installation - (實驗確認其實只要 `build-essential` 套件即可)
+
+ * `$ sudo apt-get install xinetd`
+ * `$ sudo apt-get install build-essential`
+ * `$ sudo apt-get install linux-headers-generic` (you may or may not need this command, run it anyway to be sure)
+ * Now untar and start the installation of Vmware Server - `$ tar -zxf VMware-server-1.0.5-80187.tar.gz`
+ * `$ cd vmware-server-distrib`
+ * `$ sudo ./vmware-install.pl`
+
+When the `vmware-install` script prompts you asking if you would like to invoke and run `vmware-config.pl` answer no and exit the script. Now untar the `vmware-any-any` package and run the install script - (過程中會更新 `/usr/bin/vmware-config.pl`, 因此再問到是否要執行 `vmware-config.pl` 時要回答 yes)
+
+__`apt-get install ia32-libs` (This package contains runtime libraries for the ia32/i386 architecture, configured for use on an amd64 or ia64 Debian system running a 64-bit kernel; 否則在 64 位元的環境下, 安裝過程中會遇到 "sh: /usr/bin/vmware-ping: not found" 的錯誤__
+
+ {{{
+$ tar -zxf vmware-any-any-update116.tar.gz
+$ cd vmware-any-any-update116
+$ gcc -o update update.c
+$ sudo ./runme.pl
+ }}}
+ 
+這個時候如果直接執行 `vmware`, 會得到下面的錯誤:
+ 
+ {{{
+/usr/lib/vmware/bin/vmware: /usr/lib/vmware/lib/libgcc_s.so.1/libgcc_s.so.1: version `GCC_3.4' not found (required by /usr/lib32/libcairo.so.2)
+/usr/lib/vmware/bin/vmware: /usr/lib/vmware/lib/libgcc_s.so.1/libgcc_s.so.1: version `GCC_4.2.0' not found (required by /usr/lib32/libstdc++.so.6)
+/usr/lib/vmware/bin/vmware: /usr/lib/vmware/lib/libgcc_s.so.1/libgcc_s.so.1: version `GCC_3.4' not found (required by /usr/lib32/libcairo.so.2)
+/usr/lib/vmware/bin/vmware: /usr/lib/vmware/lib/libgcc_s.so.1/libgcc_s.so.1: version `GCC_4.2.0' not found (required by /usr/lib32/libstdc++.so.6)
+/usr/lib/vmware/bin/vmware: /usr/lib/vmware/lib/libgcc_s.so.1/libgcc_s.so.1: version `GCC_3.4' not found (required by /usr/lib32/libcairo.so.2)
+/usr/lib/vmware/bin/vmware: /usr/lib/vmware/lib/libgcc_s.so.1/libgcc_s.so.1: version `GCC_4.2.0' not found (required by /usr/lib32/libstdc++.so.6)
+ }}}
+
+Let the installation complete then do the following - (注意最後面的 "/", 因為那真的是個資料夾)
+
+ {{{
+$ sudo cp /lib/libgcc_s.so.1 /usr/lib/vmware/lib/libgcc_s.so.1/
+$ sudo cp /usr/lib/libpng12.so.0 /usr/lib/vmware/lib/libpng12.so.0/
+ }}}
+ 
+Thats it, you should have a working Vmware Server installation, hope this helps!
+
+__接下下可以按照 "How To Install VMware Server On Debian 4.0 (Etch)" 所提的方式安裝 Management Interface. 過程中若遇到 "Starting httpd.vmware:-ne failed" 的錯誤, 按 https://wiki.ubuntu.com/HardyReleaseNotes[release notes] 的說法 - To improve overall system performance, the /bin/sh shell in Ubuntu 6.10 and later is dash, rather than bash as it was in Ubuntu 6.06 LTS. This may cause compatibility problems for local shell scripts. Please see DashAsBinSh for more information. 可以暫時用 `sudo ln -s -f /bin/bash /bin/sh` 來解決, 之後要記得轉回去...__
+
+== Issues ==
+
+== Recovering VMware snapshot after parent changed ==
+
+ {{{
+The disk "/var/vm/VMware/SmartBPM (Backup)/Windows XP Professional (Clean)-000001.vmdk" has internal consistency errors that may be caused by partial corruption of the disk file.  It is recommended that you restore a backup of this virtual machine. If you do not have a backup, VMware Server can repair the disk, but there is a possibility that the data on the disk may be corrupt and affect the stability of the guest.
+Do you wish to repair the disk and continue?
+ }}}
+
+=== USB Devices Are Not Available on Some Linux hosts, the VM > Removable Devices > USB Devices Menu Is Empty ===
+http://kb.vmware.com/kb/3862823
+
+'''Products'''
+	
+ * VMware GSX Server
+ * VMware Server
+ * VMware Workstation
+
+'''Details'''
+	
+__Some recently released Linux distributions are not mounting USBFS to `/proc/bus/usb`. The virtual machine's USB back end uses this to detect USB devices that are attached to the host. '''(插拔的當下都能即時被偵測到, 不用重新啟動 VM; 實驗確認, USB 與 Bluetooth 連線都可以透過這個方式讓 guest 存取到)'''__
+
+當然手動增加 USB Controller 的動作是不能少的: (VM > Settings > Add... > USB Controller)
+
+ This wizard will guide you through the steps of adding new hardware to your virtual machine. Add an usb controller.
+
+ The 2 port USB controller is enabled. Use the Devices menu to connect or disconnect USB devices. To disable the USB controller, remove it from the list of available hardware by clicking Remove. To connect a USB device to a virtual machine, first power on the virtual machine and then select the device in the VM > Removable Devices > USB Devices menu.
+
+'''Solution'''
+	
+To work around this issue, mount USBFS to `/proc/bus/usb`.
+
+To do this while the host is running, execute the following command as root:
+
+ {{{
+mount -t usbfs none /proc/bus/usb
+ }}}
+ 
+You need to power cycle the virtual machines after the `mount` command to have access to available USB devices.
+
+To configure the host to mount USBFS automatically on bootup, add the following line in the `/etc/fstab` file:
+
+ {{{
+usbfs  /proc/bus/usb  usbfs  auto  0  0
+ }}}
+ 
+If this line is already present in `/etc/fstab`, it likely has the `noauto` option set in the options column (4th column). Change this to `auto`.
+
+Some of the Linux distributions that are known not to mount USBFS by default include:
+
+ * Ubuntu Linux 6.06
+ * SUSE Linux 10.1
+ * SUSE Enterprise Linux Server 10
+ * Mandriva Linux 2006
+ * SLES9 SP3 64 bit
+
+Note: This issue affects these operating systems only when they are used as a host for VMware virtual machines. These operating systems, when used as guests, do not exhibit(呈現) this problem.
+
+=== Configuration file was created by a VMware product with more features than this version ===
+
+ {{{
+Unable to add virtual machine "...vmx" to the inventory:
+Configuration file was created by a VMware product with more features than this version.
+ }}}
+
+VMware Server 1.x 無法讀取 VMware Workstation 6 的 `.vmdk`, 那是因為 "Workstation 6 introduced some new
+features, which are incompatible with older versions."
+
+參考 http://openideas.info/phpbb//viewtopic.php?t=940, 可以用 http://www.vmware.com/download/vmimporter/[VMware Virtual Machine Importer] 將 VM 降級成 VMware Workstation 5 的格式 (也就是 VMware Server 1.x 所用的格式)
+
+記得要安裝新版的 VMware Tools, 若重新啟動後發生藍色死亡畫面, 可以選擇 "以最後一次良好的設定啟動" (也或許是硬體有重新掃描過?).
+
+=== Failed to switch to full screen SVGA mode. ===
+
+ {{{
+Unable to find an appropriate host video mode.
+Adding the guest mode to the 'display' subsection of the 'screen' section of your /etc/X11/XF86Config and restarting X is likely to help.
+
+Failed to switch to full screen SVGA mode.
+ }}}
+ 
+按這裡 http://www.ubuntugeek.com/how-to-set-vmware-resolution-fullscreen-as-your-ubuntu-desktop.html[How to Set VMWare resolution fullscreen as your Ubuntu desktop] 的說法:
+
+We have already discussed how to install VMware server in ubuntu gutsy .If you want to use your vmware same as your ubuntu desktop resolution follow this simple procedure.
+
+First you need to open VMWare, don’t boot any guest OS.
+
+Now go to “View” and select “Autofit window” and “Autofit Guest” and Close VMWare.
+
+Open terminal window enter the following command and press enter
+
+ {{{
+gedit ~/.vmware/preferences
+ }}}
+ 
+You need to change the following line
+
+ {{{
+pref.autoFitFullScreen = “fitHostToGuest”
+ }}}
+ 
+to
+
+ {{{
+pref.autoFitFullScreen = “fitGuestToHost”
+ }}}
+ 
+save and exit the file .Open VMWare, start your virtual machine, put it full screen. When you get to Windows, it will probably say that it can’t set the resolution. On Windows, go to the monitor properties and you should be able to set the desired resolution.
+
+== Resource ==
+
+=== Reference ===
+
+=== Attachments ===
+
+|| Filename || Description ||
+||  ||  ||
+
+=== Links ===
+
+=== Search ===
+
+== Scratch ==
+
+ * VMware 6 Workstation 新增了 Integrated Virtual Debuggers - Eclipse IDE PlugIn, 難怪安裝時提到 Microsoft Visual Studio 及 Eclipse 要暫時關掉.
+ * 搞懂 VMware Virtual Networks 要怎麼做設定 (2007/05/11 17:27)
+ * 6.0.2 -> DUMA4-DMHFP-D2M4G-4PXZL
+ * 在 VM > Settings -> Options 下有個 Shared Folders 的設定, 可以讓 Guest 直接分享 Host 的資料夾.
+   * 它有個 Enabled untile next power off or suspend 方式可選用 (restart 不算, 還算方便), 比較安全
+   * 共享之後, 可以在 My Network Places > Entire Network > VMware Shared Folders 下取用到
+ * 只要視窗 active, 就可以攔截微軟國旗的組合鍵, 用起來還滿方便的.
+ * VM Setting 裡, 可以針對 Disk 做 defragement 的動作, 重整後的存取效能會好一些
+ * View > Autofit Guest 的功能, 會隨 VMware 的視窗大小, 自動調整 Guest 的桌面大小 (切換很快, 幾乎感覺不到), 使能夠在非全螢幕的模式下, 畫面不會出現捲軸, 使用起來比較方便.
+ * VMware 對 Guest OS 分享到 Host CPU 運算時間的控制做得很好,
+ * 只要勾選 http://archive.canonical.com/ubuntu gutsy partner 的 souce list, 就可以直接安裝 VMware Server (網路支援比 VirtualBox 完整, 但不支援 share folder)
+ * You may not power on a virtual machine in a virtual machine.
+ * __'''由於安裝過程有針對當下的核心做編譯, 日後只要 kernel 有昇級, 只要重新跑一次 `vmware-config.pl` 即可.'''__
+ * 今天 (2009-07-15) 在 Ubuntu 8.04 x64 上安裝 VMware Server 2.0.1 (下載 core application 那一份), 安裝過程中如果以 root 為管理使用者的話, 要額外透過 `sudo passwd root` 給定密碼才行, 否則 http://xxx:8222 存取時會呈現一片空白; 不過隔天發現其實那是瀏覽器快取的問題, 好像每次都要將瀏覽器的快取清空才行, 相較之下 IE 下的 plug-in 問題好像比較少? 至少方向鍵還可以用...

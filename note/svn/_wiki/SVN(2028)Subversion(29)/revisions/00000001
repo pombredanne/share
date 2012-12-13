@@ -1,0 +1,884 @@
+= SVN(Subversion) =
+<<TableOfContents>>
+
+== Overview ==
+
+== Getting Started ==
+
+=== Installing from a Zip or Installer File under Windows ===
+
+Of all the ways of getting a Subversion client, this is the easiest. Download a Zip (`*.zip`) or self-extracting installer (`*-setup.exe`; 除了自動解壓縮的功能外, 另外會自動設定 `PATH` 環境變數, 整合 Apache 等...不知道為什麼 svn 1.4.4 沒有提供 `*-setup.exe` 的版本) file from: `http://subversion.tigris.org/servlets/ProjectDocumentList?folderID=91`.
+
+For a Zip file, run your unzipping utility and extract the DLLs and EXEs to a directory of your choice. Included in the download is the SVN       client, the SVNADMIN administration tool, and the SVNLOOK reporting tool.
+
+Note that if you need support for non-English locales you'll have to set the `APR_ICONV_PATH` environment variable to the path of the `iconv` directory in the folder that contains the Subversion install.
+
+You may also want to add the `bin` directory in the Subversion folder to your `PATH` environment variable so as to not have to use the full       path when running Subversion commands.
+
+To test the installation, open a DOS box, change to the directory you installed the executables into, and run:
+
+ {{{
+C:\test>svn co http://svn.collab.net/repos/svn/trunk svn
+ }}}
+
+This will get the latest Subversion sources and put them into the "`svn`" subdirectory.
+
+If using a self-extracting `.exe` file, just run it instead of unzipping it, to install Subversion.
+
+== Runtime Configuration Area ==
+
+Subversion provides many optional behaviors that can be controlled by the user. Many of these options are of the kind that a user would wish to apply to all Subversion operations. So, rather than forcing users to remember command-line arguments for specifying these options, and to use them for each and every operation they perform, Subversion uses configuration files, segregated(分離出來) into a Subversion configuration area(為何會有 "area" 的說法[?]).
+
+The Subversion ''configuration area'' is a two-tiered hierarchy(分層結構) of option names and their values. Usually, this boils down(壓縮) to a special directory that contains ''configuration files'' (the first tier), which are just text files in standard INI format (with "sections" providing the second tier). These files can be easily edited using your favorite text editor (such as Emacs or vi), and contain directives read by the client to determine which of several optional behaviors the user prefers.
+
+=== Configuration Area Layout ===
+
+The first time that the `svn` command-line client is executed, it creates a ''per-user configuration area''. On Unix-like systems, this area appears as a directory named `.subversion` in the user's home directory. On Win32 systems, Subversion creates a folder named `Subversion`, typically inside the Application Data area of the user's profile directory (which, by the way, is usually a hidden directory). However, on this platform the exact location differs from system to system, and is dictated(控制) by the Windows registry. We will refer to the per-user configuration area using its Unix name, `.subversion`. [...]
+
+== svn:ignore ==
+
+The `svn:ignore` property contains a list of file patterns which certain Subversion operations will ignore. Perhaps the most commonly used special property, it works in conjunction with the `global-ignores` run-time configuration option to filter unversioned files and directories out of commands `svn status`, `svn add`, and `svn import`.
+
+The rationale(原理) behind the `svn:ignore` property is easily explained. Subversion does not assume that every file or subdirectory in a working copy directory is intended for version control. Resources must be explicitly placed under Subversion's management using the `svn add` or `svn import` commands. As a result, there are often many resources in a working copy that are not versioned.
+
+Now, the `svn status` command displays as part of its output every unversioned file or subdirectory in a working copy that is not already filtered out by the `global-ignores` option (or its built-in default value). This is done so that users can see if perhaps they've forgotten to add a resource to version control.
+
+But Subversion cannot possibly guess the names of every resource that should be ignored. Also, quite often there are things that should be ignored in every working copy of a particular repository(怎麼一次套用到整個 repository[?]). __To force every user of that repository to add patterns for those resources to their run-time configuration areas would be not just a burden(重擔), but has the potential to clash with(不調和) the configuration needs of other working copies that the user has checked out.__
+
+The solution is to store ignore patterns that are unique to the resources likely to appear in a given directory with the directory itself. For this purpose, the `svn:ignore` property is the solution. Its value is a multi-line collection of file patterns, one pattern per line. __The property is set on the directory in which you wish the patterns to be applied(strictly for that directory—they do not carry recursively into subdirectories).__
+
+The list of patterns to ignore is also used by `svn add` and `svn import`. Both of these operations involve asking Subversion to begin managing some set of files and directories. Rather than force the user to pick and choose which files in a tree she wishes to start versioning, Subversion uses the ignore patterns to determine which files should not be swept into(帶進) the version control system as part of a larger recursive addition or import operation.
+
+由於 configuration area 裡可以組態 `global-ignores`, 但組態檔是存放在 home directory(或 Windows registry), 所以會影響到所有的 repository, 也沒有辦法可攜到另一個 client; 在實務上不是太實用, 有沒有直接設定在 repository 裡, 但效力可及於底下所有資料夾的組態方式, 可能要寫 script 達成吧[?]
+
+在 configuration 裡可以組態 `auto-props`(controls the Subversion client's ability to automatically set properties on files when they are added or imported), 但只適用在 added/imported, 與 `svn:ignore` 不想讓檔案的進 repository 的概念是相衝突的.
+
+== Basics ==
+
+=== Move/Rename ===
+
+{{{
+svn [-m message] move SRC DST
+}}}
+
+當 `SRC` 與 `DST` 都是 URL 時, 就能達成 server-side move 的功能, 由於是直接將異動寫回 repository, 所以要搭配 `-m` 參數使用; __它的好處是不用費時取出 working copy, 但缺點是每一個 commit 都只能做單一個檔案或目錄的搬移. 因此需要大幅變動 repository layout 時, 建議先取出 working copy 後, 下達一連串的 `svn move` 後再整個做一次 commit__.
+
+=== Repository Layout ===
+
+Switching from one layout to another is just a matter of issuing a series of server-side moves; if you don't like the way things are organized in the repository, just juggle(耍弄) the directories around.
+
+目前建議採用的 layout 如下:
+
+{{{
+|- project     <= 這裡存放開發端內部文件, 客戶不能看
+|- docs        <= 這裡存放客戶可以看的文件
+|- source      <= 這裡存放原始碼, 視情況開放給客戶
+   |- branches
+   |- tags
+   |- trunk
+}}}
+
+資料夾要相互引用的部份, 可以靠 external definition 來達成, 但要注意 nested working copy 間的 revision 並不會連動.
+
+=== External Definitions ===
+
+實驗結果發現, 透過 TotoriseSVN 做 commit 時, 並不需要對每個 external 分別做一次, update 指令也是; 不過 external 沒有定義 revision 時, 則求遠指向 HEAD revision, 例如 HEAD 是 27, 當 checkout r26 時, 會造成 master 與 detail 不同的情形
+
+== Cheap Copies ==
+
+__'''Subversion's repository has a special design. When you copy a directory, you don't need to worry about the repository growing huge — Subversion doesn't actually duplicate any data. Instead, it creates a new directory entry that points to an existing tree.''' If you're a Unix user, this is the same concept as a hard-link. From there, the copy is said to be "lazy". That is, if you commit a change to one file within the copied directory, then only that file changes — the rest of the files continue to exist as links to the original files in the original directory.__
+
+__This is why you'll often hear Subversion users talk about "cheap copies". It doesn't matter how large the directory is — it takes a very tiny, constant amount of time to make a copy of it. In fact, '''this feature is the basis of how commits work in Subversion: each revision is a "cheap copy" of the previous revision, with a few items lazily changed within.'''__
+
+__Of course, these internal mechanics of copying and sharing data are hidden from the user, who simply sees copies of trees. '''The main point here is that copies are cheap, both in time and space. Make branches as often as you want.'''__
+
+== Branching and Merging ==
+
+Branching, tagging, and merging are concepts common to almost all version control systems. Branching is a fundamental part of version control.
+
+Suppose it's your job to maintain a document for a division(部門) in your company, a handbook(手冊) of some sort. One day a different division asks you for the same handbook, but with a few parts "tweaked" for them, since they do things slightly differently.
+
+What do you do in this situation? You do the obvious thing: you make a second copy of your document, and begin maintaining the two copies separately. As each department asks you to make small changes, you incorporate(合併) them into one copy or the other.
+
+You often want to make the same change to both copies (每個衍生出來的版本都要分開修改一次而言). For example, if you discover a typo in the first copy, it's very likely that the same typo exists in the second copy. The two documents are almost the same, after all(畢竟); they only differ in small, specific ways.
+
+__This is the basic concept of a branch — namely(就是), a line of development that exists independently of another line, yet still shares a common history if you look far enough back in time. '''A branch always begins life as a copy of something, and moves on from there, generating its own history. (在實務上, Subversion 以 "copy" 這個直覺的操作來實現 branching)'''__
+
+{{attachment:branch.png}}
+
+__Subversion has commands to help you maintain parallel branches of your files and directories. '''It allows you to create branches by copying your data, and remembers that the copies are related to one another.''' It also helps you duplicate changes from one branch to another (其中的 "duplicate" 在實務上如何達成[?]). Finally, it can make portions of your working copy reflect(反應到) different branches, so that you can "mix and match" different lines of development in your daily work (其中 "mix and match" 指的是什麼? 混搭[?]).__
+
+=== Using Branches ===
+
+At this point, you should understand how each commit creates an entire new filesystem tree (called a "revision") in the repository.
+
+Remember that you and your collaborator, Sally, are sharing a repository that contains two projects, ''paint'' and ''calc''. Notice that each project directory now contains subdirectories named `trunk` and `branches`. The reason for this will soon become clear.
+
+{{attachment:branch2.png}}
+
+Assume that Sally and you both have working copies of the "calc" project. Specifically, you each have a working copy of `/calc/trunk`. All the files for the project are in this subdirectory rather than in `/calc` itself, because your team has decided that `/calc/trunk` is where the "main line" of development is going to take place.
+
+Let's say that you've been given the task of performing a radical(徹底的) reorganization of the project. It will take a long time to write, and will affect all the files in the project. The problem here is that you don't want to interfere with(干擾) Sally, who is in the process of fixing small bugs here and there(到處). __She's depending on the fact that the latest version of the project (in `/calc/trunk`) is always usable.__ If you start committing your changes bit-by-bit, you'll surely break things for Sally.
+
+One strategy is to crawl into a hole[?]: you and Sally can stop sharing information for a week or two. That is, start gutting[?] and reorganizing all the files in your working copy, but don't commit or update until you're completely finished with the task. There are a number of problems with this, though. First, it's not very safe. Most people like to save their work to the repository frequently, should something bad accidentally happen to their working copy. Second, it's not very flexible. If you do your work on different computers (perhaps you have a working copy of `/calc/trunk` on two different machines), you'll need to manually copy your changes back and forth, or just do all the work on a single computer. By that same token(同樣地), __it's difficult to share your changes-in-progress with anyone else. A common software development "best practice" is to allow your peers to review your work as you go. '''If nobody sees your intermediate commits, you lose potential feedback.'''__ Finally, when you're finished with all your changes, you might find it very difficult to re-merge your final work with the rest of the company's main body of code. Sally (or others) may have made many other changes in the repository that are difficult to incorporate into your working copy—especially if you run svn update after weeks of isolation.
+
+The better solution is to create your own branch, or line of development, in the repository. This allows you to save your half-broken work frequently without interfering with others, yet you can still selectively share information with your collaborators (後段 selectively share 是怎麼辦到的[?]).
+
+==== Creating a Branch ====
+
+__Creating a branch is very simple — you make a copy of the project in the repository using the `svn copy` command. Subversion is not only able to copy single files, but whole directories as well. In this case, you want to make a copy of the `/calc/trunk` directory. '''Where should the new copy live? Wherever you wish — it's a matter of project policy.''' Let's say that your team has a policy of creating branches in the `/calc/branches`  area of the repository, and you want to name your branch `my-calc-branch`. You'll want to create a new directory, `/calc/branches/my-calc-branch`, '''which begins its life as a copy of `/calc/trunk`'''.__
+
+There are two different ways to make a copy. We'll demonstrate the messy(麻煩的) way first, just to make the concept clear. To begin, check out a working copy of the project's root directory, `/calc`:
+
+ {{{
+$ svn checkout http://svn.example.com/repos/calc bigwc
+A  bigwc/trunk/
+A  bigwc/trunk/Makefile
+A  bigwc/trunk/integer.c
+A  bigwc/trunk/button.c
+A  bigwc/branches/
+Checked out revision 340.
+ }}}
+
+Making a copy is now simply a matter of passing two working-copy paths to the `svn copy` command: (將整個 trunk 目錄複製到 `branches` 下, 並給定一個有意義的名稱)
+
+ {{{
+$ cd bigwc
+$ svn copy trunk branches/my-calc-branch
+$ svn status
+A  +   branches/my-calc-branch
+ }}}
+
+In this case, the `svn copy` command recursively copies the trunk working directory to a new working directory, `branches/my-calc-branch`. As you can see from the `svn status` command, the new directory is now scheduled for addition to the repository. __But also notice the "`+`" sign next to the letter `A`. This indicates that the scheduled addition is a copy of something, not something new. When you commit your changes, Subversion will create `/calc/branches/my-calc-branch` in the repository by copying `/calc/trunk`, rather than resending all of the working copy data over the network__:
+
+ {{{
+$ svn commit -m "Creating a private branch of /calc/trunk."
+Adding         branches/my-calc-branch
+Committed revision 341.
+ }}}
+
+And now the easier method of creating a branch, which we should have told you about in the first place: `svn copy` is able to operate directly on two URLs. (直接在伺服端完成複製的動作; Subversion does not support cross-repository copying. When using URLs with `svn copy` or `svn move`, you can only copy items within the same repository)
+
+ {{{
+$ svn copy http://svn.example.com/repos/calc/trunk \
+           http://svn.example.com/repos/calc/branches/my-calc-branch \
+      -m "Creating a private branch of /calc/trunk."
+
+Committed revision 341.
+ }}}
+
+__There's really no difference between these two methods. Both procedures create a new directory in revision 341, and the new directory is a copy of `/calc/trunk`. Notice that the second method, however, performs an immediate commit. It's an easier procedure, because it doesn't require you to check out a large mirror of the repository (因此在實務上, 要建立 branch 多半會採用第二個方法). In fact, this technique doesn't even require you to have a working copy at all.__
+
+{{attachment:branch3.png}}
+
+==== Working with Your Branch ====
+
+Now that you've created a branch of the project, you can check out a new working copy to start using it: (The `svn switch` command is an alternate way of creating a working copy of a branch)
+
+ {{{
+$ svn checkout http://svn.example.com/repos/calc/branches/my-calc-branch
+A  my-calc-branch/Makefile
+A  my-calc-branch/integer.c
+A  my-calc-branch/button.c
+Checked out revision 341.
+ }}}
+
+There's nothing special about this working copy; it simply mirrors a different directory in the repository. When you commit changes, however, Sally won't ever see them when she updates. Her working copy is of `/calc/trunk`.
+
+Let's pretend(假設) that a week goes by, and the following commits happen:
+
+ * You make a change to `/calc/branches/my-calc-branch/button.c`, which creates revision 342.
+ * You make a change to `/calc/branches/my-calc-branch/integer.c`, which creates revision 343.
+ * Sally makes a change to `/calc/trunk/integer.c`, which creates revision 344.
+
+There are now two independent lines of development, shown in the following figure "The branching of one file's history", happening on `integer.c`.
+
+{{attachment:branch4.png}}
+
+Things get interesting when you look at the history of changes made to your copy of `integer.c`:
+
+ {{{
+$ pwd
+/home/user/my-calc-branch
+
+$ svn log --verbose integer.c
+------------------------------------------------------------------------
+r343 | user | 2002-11-07 15:27:56 -0600 (Thu, 07 Nov 2002) | 2 lines
+Changed paths:
+   M /calc/branches/my-calc-branch/integer.c
+
+* integer.c:  frozzled the wazjub.
+
+------------------------------------------------------------------------
+r341 | user | 2002-11-03 15:27:56 -0600 (Thu, 07 Nov 2002) | 2 lines
+Changed paths:
+   A /calc/branches/my-calc-branch (from /calc/trunk:340)
+
+Creating a private branch of /calc/trunk.
+
+------------------------------------------------------------------------
+r303 | sally | 2002-10-29 21:14:35 -0600 (Tue, 29 Oct 2002) | 2 lines
+Changed paths:
+   M /calc/trunk/integer.c
+
+* integer.c:  changed a docstring.
+
+------------------------------------------------------------------------
+r98 | sally | 2002-02-22 15:35:29 -0600 (Fri, 22 Feb 2002) | 2 lines
+Changed paths:
+   M /calc/trunk/integer.c
+
+* integer.c:  adding this file to the project.
+
+------------------------------------------------------------------------
+ }}}
+
+Notice that Subversion is tracing the history of your branch's `integer.c` all the way back through time, even traversing(跨過) the point where it was copied. It shows the creation of the branch as an event in the history, because `integer.c` was implicitly copied when all of `/calc/trunk/` was copied. Now look what happens when Sally runs the same command on her copy of the file:
+
+ {{{
+$ pwd
+/home/sally/calc
+
+$ svn log --verbose integer.c
+------------------------------------------------------------------------
+r344 | sally | 2002-11-07 15:27:56 -0600 (Thu, 07 Nov 2002) | 2 lines
+Changed paths:
+   M /calc/trunk/integer.c
+
+* integer.c:  fix a bunch of spelling errors.
+
+------------------------------------------------------------------------
+r303 | sally | 2002-10-29 21:14:35 -0600 (Tue, 29 Oct 2002) | 2 lines
+Changed paths:
+   M /calc/trunk/integer.c
+
+* integer.c:  changed a docstring.
+
+------------------------------------------------------------------------
+r98 | sally | 2002-02-22 15:35:29 -0600 (Fri, 22 Feb 2002) | 2 lines
+Changed paths:
+   M /calc/trunk/integer.c
+
+* integer.c:  adding this file to the project.
+
+------------------------------------------------------------------------
+ }}}
+
+Sally sees her own revision 344 change, but not the change you made in revision 343 (不同 lines of developement 間共用一個 revision number). As far as(就...而言) Subversion is concerned, these two commits affected different files in different repository locations. However, Subversion does show that the two files share a common history. Before the branch-copy was made in revision 341(注意 Sally 看不到 341 分出的這個動作), they used to be the same file. That's why you and Sally both see the changes made in revisions 303 and 98.
+
+==== The Key Concepts Behind Branches ====
+
+There are two important lessons that you should remember from this section.
+
+ * __'''Unlike many other version control systems, Subversion's branches exist as normal filesystem directories in the repository, not in an extra dimension. These directories just happen to carry some extra historical information.'''__
+ * __'''Subversion has no internal concept of a branch—only copies. When you copy a directory, the resulting directory is only a "branch" because you attach that meaning to it. You may think of the directory differently, or treat it differently, but to Subversion it's just an ordinary directory that happens to have been created by copying.'''__
+
+=== Copying Changes Between Branches ===
+
+Now you and Sally are working on parallel branches of the project: you're working on a private branch(為何會有 "private" 的說法[?]), and Sally is working on the trunk, or main line of development.
+
+__For projects that have a large number of contributors, it's common for most people to have working copies of the trunk. '''Whenever someone needs to make a long-running change that is likely to disrupt(弄亂) the trunk, a standard procedure is to create a private branch and commit changes there until all the work is complete.'''__
+
+So, the good news is that you and Sally aren't interfering with each other. The bad news is that it's very easy to drift(漂移) too far apart. Remember that one of the problems with the "crawl in a hole" strategy is that by the time you're finished with your branch, it may be near-impossible to merge your changes back into the trunk without a huge number of conflicts.
+
+__Instead, you and Sally might continue to share changes as you work. It's up to you to decide which changes are worth sharing; Subversion gives you the ability to selectively "copy" changes between branches. And when you're completely finished with your branch, your entire set of branch changes can be copied back into the trunk.__
+
+==== Copying Specific Changes ====
+
+In the previous section, we mentioned that both you and Sally made changes to `integer.c` on different branches. If you look at Sally's log message for revision 344, you can see that she fixed some spelling errors. No doubt(無疑地), your copy of the same file still has the same spelling errors. __It's likely that your future changes to this file will be affecting the same areas that have the spelling errors, so you're in for(必定遭到) some potential conflicts when you merge your branch someday. '''It's better, then, to receive Sally's change now, before you start working too heavily in the same places.'''__
+
+It's time to use the `svn merge` command. This command, it turns out(結果是), is a very close cousin(近親) to the `svn diff` command. Both commands are able to compare any two objects in the repository and describe the differences. For example, you can ask `svn diff` to show you the exact change made by Sally in revision 344: (這裡在比對的不是兩條 line of developement, 而是 main line 自己 343-344 之間所發生的變動)
+
+ {{{
+$ svn diff -r 343:344 http://svn.example.com/repos/calc/trunk
+
+Index: integer.c
+===================================================================
+--- integer.c  (revision 343)
++++ integer.c  (revision 344)
+@@ -147,7 +147,7 @@
+     case 6:  sprintf(info->operating_system, "HPFS (OS/2 or NT)"); break;
+     case 7:  sprintf(info->operating_system, "Macintosh"); break;
+     case 8:  sprintf(info->operating_system, "Z-System"); break;
+-    case 9:  sprintf(info->operating_system, "CPM"); break;
++    case 9:  sprintf(info->operating_system, "CP/M"); break;
+     case 10:  sprintf(info->operating_system, "TOPS-20"); break;
+     case 11:  sprintf(info->operating_system, "NTFS (Windows NT)"); break;
+     case 12:  sprintf(info->operating_system, "QDOS"); break;
+@@ -164,7 +164,7 @@
+     low = (unsigned short) read_byte(gzfile);  /* read LSB */
+     high = (unsigned short) read_byte(gzfile); /* read MSB */
+     high = high << 8;  /* interpret MSB correctly */
+-    total = low + high; /* add them togethe for correct total */
++    total = low + high; /* add them together for correct total */
+
+     info->extra_header = (unsigned char *) my_malloc(total);
+     fread(info->extra_header, total, 1, gzfile);
+@@ -241,7 +241,7 @@
+      Store the offset with ftell() ! */
+
+   if ((info->data_offset = ftell(gzfile))== -1) {
+-    printf("error: ftell() retturned -1.\n");
++    printf("error: ftell() returned -1.\n");
+     exit(1);
+   }
+
+@@ -249,7 +249,7 @@
+   printf("I believe start of compressed data is %u\n", info->data_offset);
+   #endif
+
+-  /* Set postion eight bytes from the end of the file. */
++  /* Set position eight bytes from the end of the file. */
+
+   if (fseek(gzfile, -8, SEEK_END)) {
+     printf("error: fseek() returned non-zero\n");
+ }}}
+
+The `svn merge` command is almost exactly the same. Instead of printing the differences to your terminal, however, it applies them directly to your working copy as local modifications: (因此 `svn diff` 可以在 working copy 外使用, 但 `svn merge` 則要在 working copy 下使用, 才能套用差異)
+
+ {{{
+$ svn merge -r 343:344 http://svn.example.com/repos/calc/trunk
+U  integer.c
+
+$ svn status
+M  integer.c
+ }}}
+
+The output of `svn merge` shows that your copy of `integer.c` was patched. It now contains Sally's change — the change has been "copied" from the trunk to your working copy of your private branch, and now exists as a local modification. At this point, it's up to you to review the local modification and make sure it works correctly.
+
+In another scenario, it's possible that things may not have gone so well, and that `integer.c` may have entered a conflicted state. You might need to resolve the conflict using standard procedures, or if you decide that the merge was a bad idea altogether, simply give up and `svn revert` the local change.
+
+__But assuming that you've reviewed the merged change, you can `svn commit` the change as usual. At that point, the change has been merged into your repository branch. '''In version control terminology, this act of copying changes between branches is commonly called ''porting changes''. When you commit the local modification, make sure your log message mentions that you're porting a specific change from one branch to another. This is a very important "best practice" to follow.'''__ For example:
+
+ {{{
+$ svn commit -m "integer.c: ported r344 (spelling fixes) from trunk."
+Sending        integer.c
+Transmitting file data .
+Committed revision 360.
+ }}}
+
+A word of warning: while `svn diff` and `svn merge` are very similar in concept, they do have different syntax in many cases. For example, `svn merge` requires a working-copy path as a target(最後一個參數), i.e. a place where it should apply the tree-changes. If the target isn't specified, it assumes you are trying to perform one of the following common operations:
+
+ * You want to merge directory changes into your current working directory.
+ * You want to merge the changes in a specific file into a file by the same name which exists in your current working directory.
+
+If you are merging a directory and haven't specified a target path, `svn merge` assumes the first case above and tries to apply the changes into your current directory. If you are merging a file, and that file (or a file by the same name) exists in your current working directory, `svn merge` assumes the second case and tries to apply the changes to a local file with the same name.
+
+If you want changes applied somewhere else, you'll need to say so. For example, if you're sitting in the parent directory of your working copy, you'll have to specify the target directory to receive the changes:
+
+ {{{
+$ svn merge -r 343:344 http://svn.example.com/repos/calc/trunk my-calc-branch
+U   my-calc-branch/integer.c
+ }}}
+
+==== The Key Concept Behind Merging ====
+
+You've now seen an example of the `svn merge` command, and you're about to see several more. If you're feeling confused about exactly how merging works, you're not alone. Many users (especially those new to version control) are initially perplexed(困惑的) about the proper syntax of the command, and about how and when the feature should be used. But fear not, this command is actually much simpler than you think! There's a very easy technique for understanding exactly how `svn merge` behaves.
+
+__The main source of confusion is the name of the command. The term "merge" somehow denotes(意味) that branches are combined together, or that there's some sort of mysterious(神秘的) blending of(摻合) data going on. That's not the case. '''A better name for the command might have been `svn diff-and-apply`, because that's all that happens: two repository trees are compared, and the differences are applied to a working copy.'''__
+
+The command takes three arguments:
+
+ 1. An initial repository tree (often called the left side of the comparison),
+ 2. A final repository tree (often called the right side of the comparison),
+ 3. A working copy to accept the differences as local changes (often called the target of the merge).
+
+Once these three arguments are specified, the two trees are compared, and the resulting differences are applied to the target working copy as local modifications. When the command is done, the results are no different than if you had hand-edited the files, or run various `svn add` or `svn delete` commands yourself. If you like the results, you can commit them. If you don't like the results, you can simply `svn revert` all of the changes.
+
+The syntax of `svn merge` allows you to specify the three necessary arguments rather flexibly. Here are some examples:
+
+ {{{
+$ svn merge http://svn.example.com/repos/branch1@150 \
+            http://svn.example.com/repos/branch2@212 \
+            my-working-copy
+
+$ svn merge -r 100:200 http://svn.example.com/repos/trunk my-working-copy
+
+$ svn merge -r 100:200 http://svn.example.com/repos/trunk
+ }}}
+
+The first syntax lays out all three arguments explicitly, naming each tree in the form `URL@REV` and naming the working copy target. The second syntax can be used as a shorthand for situations when you're comparing two different revisions of the same URL. The last syntax shows how the working-copy argument is optional; if omitted, it defaults to the current directory.
+
+==== Best Practices for Merging ====
+
+===== Tracking Merges Manually =====
+
+Merging changes sounds simple enough, but in practice it can become a headache. The problem is that if you repeatedly merge changes from one branch to another, you might accidentally merge the same change twice. When this happens, sometimes things will work fine. When patching a file, Subversion typically notices if the file already has the change, and does nothing. But if the already-existing change has been modified in any way, you'll get a conflict[?].
+
+__Ideally, your version control system should prevent the double-application of changes to a branch. It should automatically remember which changes a branch has already received, and be able to list them for you. It should use this information to help automate merges as much as possible.__
+
+Unfortunately, Subversion is not such a system; it does not yet record any information about merge operations. When you commit local modifications, the repository has no idea whether those changes came from running `svn merge`, or from just hand-editing the files.
+
+__What does this mean to you, the user? It means that until the day Subversion grows this feature, you'll have to track merge information yourself. The best place to do this is in the commit log-message. As demonstrated in the earlier example, it's recommended that your log-message mention a specific revision number (or range of revisions) that are being merged into your branch. Later on, you can run `svn log` to review which changes your branch already contains. This will allow you to carefully construct a subsequent `svn merge` command that won't be redundant(多餘的) with previously ported changes. (顯然這個功能是非常必要的, 還好已經在開發中了...)__
+
+===== Previewing Merges =====
+
+__Because merging only results in local modifications, it's not usually a high-risk operation. If you get the merge wrong the first time, simply `svn revert` the changes and try again. '''It's possible, however, that your working copy might already have local modifications. The changes applied by a merge will be mixed with your pre-existing ones, and running `svn revert` is no longer an option. The two sets of changes may be impossible to separate. (因為比對 initial repository tree 與 final repository tree 後才套用到 working copy, 若 initial repository tree 與 working copy 不一致, 就會產生 apply non-cleanly 的問題, 所以 `svn merge` 前最好先將 local edits 處理掉; `svn update` 並沒有這樣的問題, 因為它比對的是 working copy 與 specific revision 的差異)'''__
+
+In cases like this, people take comfort(得到安慰) in being able to predict or examine merges before they happen. One simple way to do that is to run `svn diff` with the same arguments you plan to pass to `svn merge` (透過 `svn diff` 好像不能將比對出來的差異 "暫時" 套用, 差異比較目標不可同時包含工作複本路徑與 URL[?]), as we already showed in our first example of merging. Another method of previewing is to pass the `--dry-run` option to the merge command:
+
+ {{{
+$ svn merge --dry-run -r 343:344 http://svn.example.com/repos/calc/trunk
+U  integer.c
+
+$ svn status
+#  nothing printed, working copy is still unchanged.
+ }}}
+
+The `--dry-run` option doesn't actually apply any local changes to the working copy. It only shows status codes that would be printed in a real merge. It's useful for getting a "high level" preview of the potential merge(直接看出 merge 後有沒有衝突), for those times when running `svn diff` gives too much detail.
+
+===== Merge Conflicts =====
+
+Just like the `svn update` command, `svn merge` applies changes to your working copy. And therefore it's also capable of creating conflicts. The conflicts produced by `svn merge`, however, are sometimes different, and this section explains those differences.
+
+To begin with, assume that your working copy has no local edits. __When you `svn update` to a particular revision, the changes sent by the server will always apply "cleanly" to your working copy. The server produces the delta(相對差異) by comparing two trees: a virtual snapshot of your working copy, and the revision tree you're interested in. Because the left-hand side of the comparison is exactly equal to what you already have(有考慮到 local edits), the delta is guaranteed to correctly convert your working copy into the right-hand tree.__
+
+__But `svn merge` has no such guarantees and can be much more chaotic(混亂的): '''the user can ask the server to compare any two trees at all, even ones that are unrelated to the working copy!''' This means there's large potential for human error. Users will sometimes compare the wrong two trees, creating a delta that doesn't apply cleanly. `svn merge` will do its best to apply as much of the delta as possible, but some parts may be impossible.__ Just like the Unix `patch` command sometimes complains about "failed hunks", `svn merge` will complain about "skipped targets": [?]
+
+ {{{
+$ svn merge -r 1288:1351 http://svn.example.com/repos/branch
+U  foo.c
+U  bar.c
+Skipped missing target: 'baz.c'
+U  glub.c
+C  glorb.h
+
+$
+ }}}
+
+In the previous example it might be the case that `baz.c` exists in both snapshots of the branch being compared, and the resulting delta wants to change the file's contents, but the file doesn't exist in the working copy. Whatever the case, the "skipped" message means that the user is most likely comparing the wrong two trees; they're the classic sign of driver error. When this happens, it's easy to recursively revert all the changes created by the merge (`svn revert --recursive`), delete any unversioned files or directories left behind after the revert, and re-run `svn merge` with different arguments. (其中 "unversioned files or directories" 是因為 `svn merge` 的結果有 "as a local modification" 的特性, 原先 working copy 沒有納入版控的檔案或目錄都會被視為 unversioned)
+
+Also notice that the previous example shows a conflict happening on `glorb.h`. __We already stated that the working copy has no local edits: how can a conflict possibly happen? Again, because the user can use `svn merge` to define and apply any old delta to the working copy(指 initial repository 與 working copy 不一致, 所以比對出來的差異並非相對於 working copy 而言), that delta may contain textual changes that don't cleanly apply to a working file, even if the file has no local modifications.__
+
+__Another small difference between `svn update` and `svn merge` are the names of the full-text files created when a conflict happens. `svn update` produces files named `filename.mine`, `filename.rOLDREV`, and `filename.rNEWREV`. When `svn merge` produces a conflict, though, it creates three files named `filename.working`, `filename.left`, and `filename.right`. In this case, the terms "left" and "right" are describing which side of the double-tree comparison the file came from (其中 left 對應 initial repository tree, 而 right 對應 final repository tree). In any case, these differing names will help you distinguish between conflicts that happened as a result of an update versus ones that happened as a result of a merge. (這種區別在實務上有什麼幫助嗎? 或許在 `svn update` 與 `svn merge` 同時發生時[?])__
+
+===== Noticing or Ignoring Ancestry =====
+
+When conversing with(與…談話) a Subversion developer, you might very likely hear reference to the term ancestry(血統). This word is used to describe the relationship between two objects in a repository: if they're related to each other, then one object is said to be an ancestor of the other.
+
+__For example, suppose you commit revision 100, which includes a change to a file `foo.c`. Then `foo.c@99` is an "ancestor" of `foo.c@100`. On the other hand, suppose you commit the deletion of `foo.c` in revision 101, and then add a new file by the same name in revision 102. In this case, `foo.c@99` and `foo.c@102` may appear to be related (they have the same path), but in fact are completely different objects in the repository. '''They share no history or "ancestry".'''__
+
+__The reason for bringing this up is to point out an important difference between `svn diff` and `svn merge`. The former command ignores ancestry, while the latter command is quite sensitive to it. For example, '''if you asked `svn diff` to compare revisions 99 and 102 of `foo.c`, you would see line-based diffs; the diff command is blindly(盲目地) comparing two paths. But if you asked `svn merge` to compare the same two objects, it would notice that they're unrelated and first attempt to delete the old file, then add the new file;'''__ the output would indicate a deletion followed by an add:
+
+ {{{
+D  foo.c
+A  foo.c
+ }}}
+
+Most merges involve comparing trees that are ancestrally related to one another, and therefore `svn merge` defaults to this behavior. Occasionally, however, you may want the merge command to compare two unrelated trees. For example, you may have imported two source-code trees representing different vendor releases of a software project[?]. If you asked `svn merge` to compare the two trees, you'd see the entire first tree being deleted, followed by an add of the entire second tree!
+
+In these situations, you'll want `svn merge` to do a path-based comparison only, ignoring any relations between files and directories. Add the `--ignore-ancestry` option to your merge command, and it will behave just like `svn diff`. (And conversely(相反地), the `--notice-ancestry` option will cause `svn diff` to behave like the merge command.)
+
+===== Merges and Moves =====
+
+__A common desire is to "refactor" source code, especially in Java-based software projects. Files and directories are shuffled around(重新洗牌) and renamed, often causing great disruption to everyone working on the project.__ Sounds like a perfect case to use a branch, doesn't it? Just create a branch, shuffle things around, then merge the branch back to the trunk, right?
+
+Alas(唉), this scenario doesn't work so well right now, and is considered one of Subversion's current weak spots(缺點). The problem is that Subversion's move and copy commands aren't as robust as they should be (不夠 robust 指的是什麼[?]).
+
+__When you use `svn copy` to duplicate a file, the repository remembers where the new file came from, but it fails to transmit that information to the client which is running `svn update` or `svn merge`[?]. Instead of telling the client, "Copy that file you have over there to this new location", it instead just sends down an entirely new file. This can lead to problems, especially because the same thing happens with renamed files. '''A lesser-known fact about Subversion is that it lacks "true renames" — the `svn move` command is nothing more than(不過是...) an aggregation of `svn copy` and `svn delete` (真是糟糕!!).'''__
+
+For example, suppose that while working on your private branch, you rename `integer.c` to `whole.c`. Effectively you've created a new file in your branch that is a copy of the original file, and deleted the original file. Meanwhile(同時), back on trunk, Sally has committed some improvements to `integer.c`. Now you decide to merge your branch to the trunk:
+
+ {{{
+$ cd calc/trunk
+
+$ svn merge -r 341:405 http://svn.example.com/repos/calc/branches/my-calc-branch
+D   integer.c
+A   whole.c
+ }}}
+
+This doesn't look so bad at first glance, but it's also probably not what you or Sally expected. The merge operation has deleted the latest version of `integer.c` file (the one containing Sally's latest changes), and blindly added your new `whole.c` file — which is a duplicate of the older version of `integer.c`. The net effect is that merging your "rename" to the branch has removed Sally's recent changes from the latest revision!
+
+__This isn't true data-loss; Sally's changes are still in the repository's history, but it may not be immediately obvious that this has happened. Moral of the story(這個故事告訴我們...): '''until Subversion improves, be very careful about merging copies and renames from one branch to another. (善用 `svn merge --ignore-ancestry` 是一個好方法)'''__
+
+=== Common Use-Cases ===
+
+[...]
+
+=== Switching a Working Copy ===
+
+[...]
+
+=== Tags ===
+
+__Another common version control concept is a tag. A tag is just a "snapshot" of a project in time. In Subversion, this idea already seems to be everywhere. Each repository revision is exactly that — a snapshot of the filesystem after each commit. (只是沒有個別命名而已)__
+
+However, people often want to give more human-friendly names to tags, like release-1.0. And they want to make snapshots of smaller subdirectories of the filesystem. After all, it's not so easy to remember that release-1.0 of a piece of software is a particular subdirectory of revision 4822.
+
+==== Creating a Simple Tag ====
+
+Once again, `svn copy` comes to the rescue. (同 branch 也是用 `svn copy` 來實現) If you want to create a snapshot of `/calc/trunk` exactly as it looks in the HEAD revision, then make a copy of it:
+
+ {{{
+$ svn copy http://svn.example.com/repos/calc/trunk \
+           http://svn.example.com/repos/calc/tags/release-1.0 \
+      -m "Tagging the 1.0 release of the 'calc' project."
+
+Committed revision 351.
+ }}}
+
+This example assumes that a `/calc/tags` directory already exists. After the copy completes, the new `release-1.0` directory is forever a snapshot of how the project looked in the HEAD revision at the time you made the copy. Of course you might want to be more precise about exactly which revision you copy, in case somebody else may have committed changes to the project when you weren't looking. So if you know that revision 350 of `/calc/trunk` is exactly the snapshot you want, you can specify it by passing `-r 350` to the `svn copy` command.
+
+__But wait a moment: isn't this tag-creation procedure the same procedure we used to create a branch? Yes, in fact, it is. In Subversion, there's no difference between a tag and a branch. Both are just ordinary directories that are created by copying. Just as with branches, the only reason a copied directory is a "tag" is because humans have decided to treat it that way: '''as long as(只要) nobody ever commits to the directory, it forever remains a snapshot. If people start committing to it, it becomes a branch.'''__
+
+__If you are administering a repository, there are two approaches you can take to managing tags. The first approach is "hands off(放手不管的)": as a matter of project policy, decide where your tags will live, and make sure all users know how to treat the directories they copy in there. (That is, make sure they know not to commit to them.) The second approach is more paranoid(多疑的): you can use one of the access-control scripts provided with Subversion to prevent anyone from doing anything but creating new copies in the tags-area. The paranoid approach, however, isn't usually necessary. If a user accidentally commits a change to a tag-directory, you can simply undo the change as discussed in the previous section(已經 commit 者還可以 undo[?]). This is version control, after all.__
+
+==== Creating a Complex Tag ====
+
+Sometimes you may want your "snapshot" to be more complicated than a single directory at a single revision.
+
+For example, pretend(假設) your project is much larger than our calc example: suppose it contains a number of subdirectories and many more files. In the course of your work, you may decide that you need to create a working copy that is designed to have specific features and bug fixes. You can accomplish this by selectively backdating(回溯[?]) files or directories to particular revisions (using `svn update -r` liberally(自由地)), or by switching files and directories to particular branches (making use of `svn switch`). When you're done, your working copy is a hodgepodge(雜燴) of repository locations from different revisions. But after testing, you know it's the precise combination of data you need.[?]
+
+Time to make a snapshot. Copying one URL to another won't work here. In this case, you want to make a snapshot of your exact working copy arrangement and store it in the repository. Luckily, `svn copy` actually has four different uses, including the ability to copy a working-copy tree to the repository:
+
+ {{{
+$ ls
+my-working-copy/
+
+$ svn copy my-working-copy http://svn.example.com/repos/calc/tags/mytag
+
+Committed revision 352.
+ }}}
+
+Now there is a new directory in the repository, `/calc/tags/mytag`, which is an exact snapshot of your working copy—mixed revisions, URLs, and all.
+
+__Other users have found interesting uses for this feature. Sometimes there are situations where you have a bunch of local changes made to your working copy, and you'd like a collaborator to see them. Instead of running `svn diff` and sending a patch file (which won't capture tree changes, symlink[?] changes or changes in properties), you can instead use `svn copy` to "upload" your working copy to a private area of the repository. Your collaborator can then either checkout a verbatim(一字不差的) copy of your working copy, or use `svn merge` to receive your exact changes.__
+
+=== Branch Maintenance ===
+
+__You may have noticed by now that Subversion is extremely flexible. Because it implements branches and tags with the same underlying mechanism (directory copies), and because branches and tags appear in normal filesystem space, many people find Subversion intimidating(嚇人的). It's almost too flexible. (太有彈性, 以致於讓人不知所措...)__ In this section, we'll offer some suggestions for arranging and managing your data over time.
+
+==== Repository Layout ====
+
+There are some standard, recommended ways to organize a repository. Most people create a `trunk` directory to hold the "main line" of development, a `branches` directory to contain branch copies, and a `tags` directory to contain tag copies. If a repository holds only one project, then often people create these top-level directories:
+
+ {{{
+/trunk
+/branches
+/tags
+ }}}
+
+__'''If a repository contains multiple projects, admins typically index their layout by project'''__:
+
+ {{{
+/paint/trunk
+/paint/branches
+/paint/tags
+/calc/trunk
+/calc/branches
+/calc/tags
+ }}}
+
+Of course, you're free to ignore these common layouts. You can create any sort of variation, whatever works best for you or your team. Remember that whatever you choose, it's not a permanent commitment. You can reorganize your repository at any time. Because branches and tags are ordinary directories, the `svn move` command can move or rename them however you wish. Switching from one layout to another is just a matter of issuing a series of server-side moves; if you don't like the way things are organized in the repository, just juggle(耍弄) the directories around.
+
+Remember, though, that while moving directories may be easy to do, you need to be considerate of your users as well. Your juggling can be disorienting(使混亂) to users with existing working copies. If a user has a working copy of a particular repository directory, your `svn move` operation might remove the path from the latest revision. When the user next runs `svn update`, she will be told that her working copy represents a path that no longer exists, and the user will be forced to `svn switch` to the new location.
+
+==== Data Lifetimes ====
+
+Another nice feature of Subversion's model is that branches and tags can have finite(有限的) lifetimes, just like any other versioned item. For example, suppose you eventually finish all your work on your personal branch of the calc project. After merging all of your changes back into `/calc/trunk`, there's no need for your private branch directory to stick around anymore:
+
+ {{{
+$ svn delete http://svn.example.com/repos/calc/branches/my-calc-branch \
+             -m "Removing obsolete branch of calc project."
+
+Committed revision 375.
+ }}}
+
+And now your branch is gone. Of course it's not really gone: the directory is simply missing from the HEAD revision, no longer distracting(分散注意力) anyone. If you use `svn checkout`, `svn switch`, or `svn list` to examine an earlier revision, you'll still be able to see your old branch.
+
+If browsing your deleted directory isn't enough, you can always bring it back. Resurrecting(恢復) data is very easy in Subversion. If there's a deleted directory (or file) that you'd like to bring back into HEAD, simply use `svn copy -r` to copy it from the old revision:
+
+ {{{
+$ svn copy -r 374 http://svn.example.com/repos/calc/branches/my-calc-branch \
+                  http://svn.example.com/repos/calc/branches/my-calc-branch
+
+Committed revision 376.
+ }}}
+
+In our example, your personal branch had a relatively short lifetime: you may have created it to fix a bug or implement a new feature. When your task is done, so is the branch. __In software development, though, it's also common to have two "main" branches running side-by-side for very long periods. For example, suppose it's time to release a stable version of the calc project to the public, and '''you know it's going to take a couple of months to shake bugs out of the software(把蟲子搖出來). You don't want people to add new features to the project, but you don't want to tell all developers to stop programming either.''' So instead, you create a "stable" branch of the software that won't change much__:
+
+ {{{
+$ svn copy http://svn.example.com/repos/calc/trunk \
+         http://svn.example.com/repos/calc/branches/stable-1.0 \
+         -m "Creating stable branch of calc project."
+
+Committed revision 377.
+ }}}
+
+__And now developers are free to continue adding cutting-edge (or experimental) features to `/calc/trunk`, and you can declare a project policy that only bug fixes are to be committed to `/calc/branches/stable-1.0`. '''That is, as people continue to work on the trunk, a human selectively ports bug fixes over to the stable branch. Even after the stable branch has shipped, you'll probably continue to maintain the branch for a long time—that is, as long as you continue to support that release for customers.'''__
+
+=== Vendor branches[?] ===
+
+As is especially the case when developing software, the data that you maintain under version control is often closely related to, or perhaps dependent upon, someone else(其他人)'s data. Generally, the needs of your project will dictate(控制) that you stay as up-to-date as possible with the data provided by that external entity without sacrificing(犧牲) the stability of your own project. This scenario plays itself out all the time — anywhere that the information generated by one group of people has a direct effect on that which is generated by another group.[?]
+
+For example, software developers might be working on an application which makes use of a third-party library. Subversion has just such a relationship with the Apache Portable Runtime library. The Subversion source code depends on the APR library for all its portability needs. In earlier stages of Subversion's development, the project closely tracked APR's changing API, always sticking to the "bleeding edge" of the library's code churn. Now that both APR and Subversion have matured, Subversion attempts to synchronize with APR's library API only at well-tested, stable release points.
+
+Now, if your project depends on someone else's information, there are several ways that you could attempt to synchronize that information with your own. Most painfully, you could issue oral(口述的[?]) or written instructions to all the contributors of your project, telling them to make sure that they have the specific versions of that third-party information that your project needs. If the third-party information is maintained in a Subversion repository, you could also use Subversion's externals definitions to effectively "pin down"(弄清楚[?]) specific versions of that information to some location in your own working copy directory.
+
+But sometimes you want to maintain custom modifications to third-party data in your own version control system. Returning to the software development example, programmers might need to make modifications to that third-party library for their own purposes. These modifications might include new functionality or bug fixes, maintained internally only until they become part of an official release of the third-party library. Or the changes might never be relayed back to the library maintainers, existing solely as custom tweaks to make the library further suit the needs of the software developers.
+
+Now you face an interesting situation. Your project could house its custom modifications to the third-party data in some disjointed(不連貫的) fashion, such as using patch files or full-fledged alternate versions of files and directories. But these quickly become maintenance headaches, requiring some mechanism by which to apply your custom changes to the third-party data, and necessitating(迫使) regeneration of those changes with each successive version of the third-party data that you track.
+
+The solution to this problem is to use vendor branches. A vendor branch is a directory tree in your own version control system that contains information provided by a third-party entity, or vendor. Each version of the vendor's data that you decide to absorb into your project is called a ''vendor drop''.
+
+Vendor branches provide two key benefits. First, by storing the currently supported vendor drop in your own version control system, the members of your project never need to question whether they have the right version of the vendor's data. They simply receive that correct version as part of their regular working copy updates. Secondly, because the data lives in your own Subversion repository, you can store your custom changes to it in-place — you have no more need of an automated (or worse, manual) method for swapping in your customizations.
+
+[...]
+
+== Issues ==
+
+=== It is not possible to rename a file by changing the case of its name alone. ===
+
+這個問題最早是出現在 TortoiseSVN, 但實驗發現 command line, Eclipse 等環境下也都有這個問題...
+
+{{{
+It is not possible to rename a file by changing the case of its name alone.
+For example, you can't make MyFile.txt become MYFILE.txt.
+Please consult the documentation for a way to work around this limitation.
+}}}
+
+目前已知可解決的方式就是透過 remote renaming 來更名, 可以利用 TortoiseSVN 的 Repo Browser 來做
+
+'''引用自 http://svn.haxx.se/users/archive-2004-06/0952.shtml[Uppercase and lowercase in filenames]:'''
+
+See, I don't need both "`Index.html`" and "`index.html`" at the same location. I simply want to rename "`Index.html`" into "`index.html`". What's the problem? Is it OS which doesn't allow to rename "`Index.html`" into "`index.html`"? Definitely not. So I suggest not to force users to work around this problem, but automate this workaround in Subversion, just so that the users wouldn't have to worry about it at all.
+
+What needs to be done in Subversion to solve this issue? Just a couple of things: (顯然前者是比較好的解法)
+
+ * Force "`svn rename Index.html index.html`" to internally execute just as if we were executing: "`svn rename svn://server/repos/Index.html svn://server/repos/index.html`" (前者是 local renaming, 後者是 remote renaming)
+ * Force "`svn update`" to delete files first, and add files then. This exact order.
+
+These two small things will solve the problem forever. And this is much more likely to be fixed in future versions of Subversion, rather than "case-insensitive" OS will become "case-sensitive". I strongly doubt(懷疑) the last one will ever be the case. :)
+
+=== can't commit, MERGE failed ===
+
+ {{{
+svn: Commit failed (details follow):
+svn: MERGE request failed on '/zappy/source/branches/allinone'
+svn: General svn error from server
+ }}}
+
+這個問題出現在 Apache 2.0.58 / SVN 1.4.3 (之後換成 Apache 2.0.59 還是有這個問題), 可能真如http://ahinea.wordpress.com/2007/03/03/subversion-apache-griefs/[這篇文件]所說的, 是因為 Apache 與 SVN 編譯時所採用的 APR (Apache Portable Runtime) 版本不一致所造成. 實驗發現, 透過 `file:///` 的方式避開 Apache 直接存取 repository 時, 就沒有這個問題了. 這個問題還滿嚴重的, 因為曾經因為這樣而造成內部資料的不一致 (neither a file nor a directory), `svnadmin verify` 可以檢查的出來, 但卻沒有工具可以修復, 最後只好透過 `svnadmin dump/load` 將前面完好的那一段重建.
+
+不過在此同時, 其他 repository 是沒有問題的, 或許這是 repository 使用過後, 檔案間產生特殊的關聯所造成? 遇到這種狀況, 可以試著一次送交一個檔案, 有時候會成功送出. 用 svnserve 來加伺服器是不是就沒有這些問題了? 不過 svnserve 的功能相當受限, 這個方案並不可行.
+
+目前 (2007/06/23) SVN Server 是架在第二層 Apache Server (Apache 2.2.2 -> Apache 2.0.59) 之下, 發現不透過外層 Apache 2.2.2 轉向而直接存取 Apache 2.0.59 時也可以避開這個問題. @2007/06/26 重新啟動後就沒問題了, 如果以後再發生而同樣的方法行不通時就要昇級到 Apache 2.2.4 了...
+
+__'''@2008/01/10 再次確認 "General svn error from server" 的狀況多發生在大批的更新失敗後, 只要重新啟動二層 Apache Service 即可, 或許問題真的出在 "二層的架構上", 若採用多次小批的更新, 應該可以有效地減少這種狀況? 如果是 "file not found" 的錯誤, 也有可能是想新增 folder/file, 但 folder 尚未存在的關係吧? 但怎麼會有這種設計?'''__
+
+=== Commit failed, Base checksum mismatch ===
+
+ {{{
+svn: Commit failed (details follow):
+svn: Base checksum mismatch on '/source/branches/allinone/.classpath':
+   expected:  ce9585438a982f68b17d0a16452fab1d
+     actual:  912f93e55e076b84da1097923b837c17
+ }}}
+
+參考http://jroller.com/dunpanic/entry/subversion_base_checksum_mismatch[這裡]的解法:
+
+ 1. Make a new checkout of the particular tree that I have a problem with. I will call the new working copy `NEW` and the old working copy `CORRUPTED`. I had a problem with only one file, so supposing the file name is `FILENAME`
+ 2. open the `NEW/.svn/entries` file and locate the entry with the file `FILENAME`. Copy the `<entry>` node from the `NEW/.svn/entries` file and overwrite the corresponding entry in `CORRUPTED/.svn/entries`.
+ 3. Copy `NEW/.svn/text-base/FILENAME.svn-base` to `CORRUPTED/.svn/text-base/FILENAME.svn-base`
+ 4. Copy `NEW/FILENAME` to `CORRUPTED/FILENAME`
+ 5. Make the necessary text changes to `CORRUPTED/FILENAME` (this file should now be ok).
+ 6. Commit the file.
+
+問題發生時, 通常不會只有一個檔案有這個問題; 可以將整個 working copy 匯出, 刪掉 corrupted working copy 的內容, 重新 checkout 一次, 然後把剛匯出的 working copy 蓋回來, 最後再重新送交就過了.
+
+=== missing/empty updates ===
+
+@2008/01/07 出現往 repository 的更新, 會導致 revision number 加 1, 但是去看 repository log 時, 卻又看不到最新的異動, 問題出在 "沒有檔案真正被異動到", 因此將 server (包括前端的 apache 全部重開之後), 問題就解決了; 不知道問題會不會又是出在隔了一層 apache? 但奇怪的是, 這個問題只出現在特定 repository 而已, 並非所有 svn server 下的 repositories 都有這個問題...
+
+@2008/01/17 再次出現類似的問題, 但這一次是東西刪不掉 (送交完成後, 再更新時會全部回來), 這次只將前端的 apache 重開就好了. 看來暫時要將前端的 apache 安排定時重開了....
+
+@2008/07/09 在 "http://subversion.tigris.org/issues/long_list.cgi?issuelist=2744[Possible FSFS repository corruption]" 這個 issue 有提到 FSFS 資料庫毀損的問題 - Stop using the ''worker mpm'' and switch to the ''prefork mpm'', if at all possible. Working with a couple of other users, I have found that you can reduce the corruptions to zero with prefork. I'm not sure what the problem is exactly (I'm still unable to reproduce it myself) but this seems to clear up the problem. Of course, it leaves Windows folks hanging out there since prefork is unavailable on that platform.[?]
+
+=== svn: Delta source ended unexpectedly ===
+
+ {{{
+org.tigris.subversion.javahl.ClientException: Incomplete data
+svn: Delta source ended unexpectedly
+ }}}
+
+目前只能將 working copy 清掉重來 (先 export 再將 update 的結果蓋掉也是個不錯的方式)
+
+== Move data from one repository to another ==
+http://blogs.nuxeo.com/sections/blogs/julien_anguenot/2006_04_21_dump-load-svn-repositories-using-svnadmin-svndumpfilter
+
+Let's say I have two subversion repositories. ''repoA'' and ''repoB''. I got a component called ''P'' at the root of ''repoA'' as below:
+
+ {{{
+|- repoA /
+   |- P /
+      |- trunk /
+      |- branches /
+      |- tags /
+ }}}
+
+What I'd like todo is to copy ''P'' from ''repoA'' to ''repoB'' preserving all the history logs for ''P''.
+
+Let's say I started the developement of ''P'' with revision 28000 and my last checkin related to ''P'' is at revision 38000. The revision numbers are important because it will decrease the needed time to dump the actual svn repository. Less revisions to dump means less time needed. (因為 filter 的動作是發生在 `svndumpfilter`, 而非 `svnadmin dump`, 所以儘可能地縮小範圍; 可以從 history log 中界定出來...)
+
+We will use `svnadmin` to do that. Go on the server hosting the subversion repository and dump it this way: (This operation can last a while depending on the size of your repository)
+
+ {{{
+$ svnadmin dump --quiet --revision 28000:38000 /home/svn/repoA > repoA.dump
+ }}}
+
+What we are interested in here is only component ''P''. We need to filter out for ''P'' component. We will use `svndumpfilter` to do that.
+
+ {{{
+$ cat repoA.dump | svndumpfilter include --quiet P > P.dump
+ }}}
+
+Now go on the server hosting ''repoB''. Before that, transfer your `P.dump` to this server. We will use `svnadmin` to load it back
+
+ {{{
+$ svnadmin load --quiet /home/svn/repoB < P.dump
+ }}}
+
+Here we are. You just need to remove ''P'' from ''repoA''
+
+ {{{
+$ svn remove http://svn.foo.com/repoA/P
+ }}}
+
+Of course, what would be really cool, instead of the dump/load operations, would be something like that being possible in between foreign repositories (但實際上並不支援跨 repository 的搬移...)
+
+ {{{
+$ svn move https://svn.foo.com/repoA/P https://svn.foo.com/repoB/
+ }}}
+
+以下是自行實驗將 bazaar repository 下的 `/source/trunk/src/java/com/simplbug/bims` 搬到 test repository.
+
+ {{{
+$ svnadmin dump --quiet --revision 54:83 bazaar > bazaar.dump
+$ type bazaar.dump | svndumpfilter include --quiet /source/trunk/src/java/com/simplbug/bims > bims.dump
+$ svnadmin load test < bims.dump (在這之前 /source/trunk/src/java/com/simplbug 路徑要先建好, 否則會出現 svnadmin: File not found: transaction '67-1', path 'source/trunk/src/java/com/simplbug/bims' 的錯誤, 注意不要建立最後一個 bims 資料夾, 否則會出現 File already exist 的錯誤)
+<<< Started new transaction, based on original revision 54
+...
+------- Committed new rev 72 (loaded from original rev 54) >>>
+...
+------- Committed new rev 101 (loaded from original rev 83) >>>
+ }}}
+
+== What do you mean when you say that repository is 'wedged'? ==
+
+wedged repository:
+
+A Subversion repository consists of two different internal parts, a working compartment(區隔) and a storage compartment. A wedged repository is a repository where the working compartment is unaccessible for some reason, but the storage compartment is intact. Therefore, a wedged repository has not suffered any loss of data, but the working compartment has to be corrected before you can access the repository. See this entry for details how to do that.
+
+corrupted repository:
+
+A corrupted Subversion repository is a repository where the storage compartment has been damaged, and therefore there is some degree of real data loss in the repository.
+
+You might also like to check The Jargon File's definition for 'wedged'.
+
+== Practices ==
+
+ * comment 的寫法同程式的註解, 重點在 "為什麼要這樣做", 而非 "做了什麼"; 因為 "做了什麼" 只要一比對就知道了, 但時間一久, 我們常常會忘記當初為什麼要這樣做
+ * 善用 Team Synchronizing perspective (它預設會將檔案開在 Compare Editor), 將大範圍的修改分批送交, 分別撰寫不同的註解
+ * 原來 svn repo 將 source, doc 拆開的做法不妥, 因為無法一起做 tag, branch...
+ * __'''SVN repository 不是挺穩定, 可以隔一段時間就將 working copy 匯出, 刪除 working copy 後重新取回, 再將匯出的資料蓋回來, 如果這個動作產生了版本上的差異, 就表示 repository 有些狀況外了...'''__
+ * 每次有新的規格書要估價時, 都應該從 trunk 拆出 feature branch (就以規格書的編號為名), 如此就可以進行 API 的規劃及試做 (試做完可以先註解掉, 做為後續開發的參考), 有利於估價的進行 (所有的待實作都會以 TODO 標示, 這些 TODO 可以統一以 branch 的名稱前導, 以利識別). 待簽訂合約後, 就可以依序交付執行 (先實作好 API, 再交給 UI 實作...)
+ * 怎麼樣不會讓加入測試區的順序, 影響功能釋出到正式區的順序:
+
+   {{{
+        BASE --------------+---------+---+---------------------->
+         |                 |         |   |
+         |                 |         |   |
+         |                 |         v   v
+         |                 |F3 ------v---v----->                                  <
+         |                 v|                                                     <    Non-SNAPSHOT dependency
+product -+--+--+------- F2 -+------- F1.1 ----------------------+--> trunk (MAIN) --->--->--->--->---->---->--->--\
+         |  |  |         ^            ^                         |                 < MAIN and feature branches     |
+         |  |  |         |            | merge (easy)            |                 < are all synchorinized         |
+         |  v  |         |            |                         |                 <                               |
+         | F1--|--- @ ---|--- F1.1----+------>                  |                 <                               |
+         |     v    |    |     |                                |                 <                               |
+         |    F2 ---|--- @     |                                |                 <                               |
+         |          |    |     | porting                        | one-way porting                                 |
+         |          |    |     | (difficult, not synchronized)  | (common/bug fixing)                             |
+         |          v    v     v                                v                  (Non-)SNAPSHOT dependency      |
+         \-------- F1 -- F2 - F1.1 -----------------------------v--> TESTING ...>...>...>...>...>...>...>...>..\  |
+                                                                                                               .  |
+                                                                                                               v  |
+                            F3 ---------------->                                  <                            .  |
+                            |                                                     <                            .  |
+library -+--+--+------- F2 -+------- F1.1 ----------------------+--> trunk (MAIN) <<---<---<---<---<---<---<---<--/
+         |  |  |         ^            ^                         .                 < MAIN and feature branches  .
+         |  |  |         |            | merge (easy)            .                 < are all synchorinized      .
+         |  v  |         |            |                         .                 <                            v
+         | F1--|--- @ ---|--- F1.1----+------>                  .                 <                            .
+         |     v    .    |     .                                .                 <                            .
+         |    F2 ---.--- @     .                                .                 <                            v
+         |          .    .     . porting                        . one-way porting                              .
+         |          .    .     . (difficult, not synchronized)  . (common/bug fixing)                          .
+         |          v    v     v                                v                                              v
+         \-------- F1 -- F2 - F1.1 -----------------------------v--> product-TESTING <<...<...<...<...<...<..../
+   }}}
+
+ * Feature branches 固定由 trunk 分出來, 若從 TESTING 分出, 若分出的時間點之前有部份功能不要, 就抽不離了...
+ * __現在主產品的問題已經不大, 問題在於其他會被共用的 library (跟 module 不同) 怎麼控管? 上面這張圖, 因為 product-TESTING 的存在而變得好複雜, 除非該 library 是為特定 product (或客戶)訂製的版本, 才有必要分出 product-TESTING? 否則通常而言,'''library 的開發成果, 即便後來不被原先的產品採用, 對 library 而言都是往前推進了, 沒道理花了時間又要把成果丟掉. 這是判斷是否要分出 product-TESTING 的重要依據, 如果不會影響放到正式區的功能 (尤其是看得到的部份, 這或許就是 feature branches 之所以被稱做 "feature" 的原因吧?), 就直接釋出吧.'''__
+ * 專案一開始不會刻意分出 TESTING, 而是正式上線之後, 才會分出來.
+ * __'''若有採用 feature branches, 那麼修改就不該直接發生在 trunk (除非有把握在完成修改之前, 不會發生其他 feature branches 要併回 trunk 受阻的問題; 因為 merge 只不過是 local modification 而已).'''__
+ * 估價 -> 開發 -> 測試 -> 上線
+   * 同時從 trunk 分出多個 feature branches 在開發時, 如果想要做 refactoring (包括檔案內容上下移動、底層相依性的調整、或者其他分支必定會想要的修改), 可以再從 trunk 分出一個 refactoring branch (屬於 feature branch 的一種), 待架構調整完成之後就可以併回 trunk, 再 porting 到其他 feature branches, 但切記別在一般 feature branches 做 refactoring 的工作...
+   * 例如 Bazaar 專案同時有多份規格書在進行時, 每份規格書都需要 API (尤其是指 Domain Model) 增加一些功能, 或是做一些調整. 這些規格書開發完成後, 要經過一段時間的測試, 之後才會併回正式區, 如果將 API 調整的工作放在某份規格書的開發裡頭, 其他規格書的開發若有用到相同的功能, 就必須要等到測試完成才行, 這樣的規劃很不合理.
+   *__'''因此建議開一個 API 的分支, 用來開發 "其他規格書可能會用到, 即便該規格書最後可能不被採納也想要保留的功能", 與其他 Library 的做法一致. (平常就可以分出一支 APIMigration 的分支, 裡頭專門在做 API 的調整, 不適用的 API 則暫時標示為 deprecated, 避免要修改的地方一直往外擴散)'''__
+   * 例如 MG-bu-08-0006 估價時, 可以從 TRUNK 分出 /branches/MG-bu-08-0006, 做一些 API 的調整之後, 據以估出未來實作面大約會耗用的時數. 決定開始開發前, 可以從 TRUNK 重新分一支 /branches/MG-bu-08-0006-API, 然後將估價時對 /branches/MG-bu-08-0006 所做的調整 porting 到 /branches/MG-bu-08-0006-API 來 (排除那些只適用於 MG-bu-08-0006 的部份). 在 API 分支上面所做的開發, 會持續往 feature branch 做 porting. 待 API 完成之後, 就可以將 API merge 回 trunk. 等 feature branch 測試完成要回 TRUNK 前, synchronize 的動作要避開 API 實作的部份重複套用即可.
+   * @2008/12/01 發現, 何不直接將這些 API 直接做在 trunk 就好, 除非整個 API 的修改需要一些時間才能完成...
+
+== Practices ==
+
+== Resource ==
+
+=== Reference ===
+
+=== Attachments ===
+
+|| Filename || Description ||
+|| [[File:/SVN/svn-1.4.2-setup.exe|svn-1.4.2-setup.exe]] || SVN 1.4.2 Setup ||
+
+=== Links ===
+
+=== Search ===
+
+== Scratch ==
+
+ * __'''其實 merge 與 porting 兩者的比對方式是一樣的 - 如何從 from 變成 to, 差別只在於比對的對象不同而已__'''
+ * 當我們從 branch 往 trunk 做 merge 時, 可能會 "將 branch 的修改, 針對 trunk 做調整", 如果該 branch 還沒有要 close 掉, 那這些調整要 synchronize 到 branch 嗎?
+   * __'''答案是不用 - 因為兩邊所修改的東西在 "語意上" 是一樣的, 要把這些 "只適用於 trunk 的調整" porting 回 branch 也說不過去.__
+   * 由 branch 往 trunk 做 merge 的動作通常只能做一次, 否則下一次再 merge 時, 花時間調整過的部份就會不見, 又要重來了... 也就是說, 如果一個 maintain branch 要持續將修改套用到 trunk, 就要採用 porting 而非 merge. 當然由 trunk 往 branches 持續做 sychronization 的工作還是不能少.
+   * __'''重點在於做 merge 或 porting 時, 不要做除了 "因為不適用而調整" 以外的工作, 否則這些跟 merge/porting 無關的修改, 就沒有機會再分享到其他分支, 硬把 merge/porting 的 revision 重新再套回一次, 更會造成一堆 skips 或 conflicts...'''__
+ * 每次的 commit 要切得多細呢? 感覺自己完成一個小步驟時就可以 commit 了, 因為在那當下我們很清楚自己完成了什麼. 為什麼我們寫不出 comment? 因為積了太多的東西.
+ * __'''task 要切很細, 因為在實務上不可以同時開發兩個 task, 這會使得後續的 commit 背後所對應的修改目的變得模糊!!'''__
+ * 將 svn 拿來做檔案伺服器時, 可以定期將整個 repository 匯出後再重建, 如此多餘的資料就不會佔用空間. 雖然版本控制不那麼重要, 但至少可以解決同時編輯檔案, 避免拿到舊版的問題, 至少至少它都比單純的 FTP 來得穩定. 因此若不想因重建而遺失舊版, 要手動複製出不同版本並做上標示. 若有安全上的考量, 可能要搭配其他檔案加密產品, 對個別檔案做加密動作
+ * 一個 working copy 對應 server 端的位置改變時(但在同一個 repository), 只要在 working copy 下 switch 指令即可; 若是不同 repository, 才用 relocate 指令.
+ * 如果還到 A 更名成 B, 然後因加工 B 又產生回 A 時, A 會被標示為已刪除. 此時可以先將 A 最新的內容保留下來, 將 A 被刪除的動作 revert, 最後將 A 的內容改掉.
+ * 研究 SVN 檔案 Lock 的機制要怎麼用, 才能避免同時編輯一個檔案? (2007/06/06)
+ * 要編輯 tags/ 下的某個版本時, 應該要先複製一份到 branches/ 下, 才能往下修正; 要如何才能限定 tags/ 不能被編輯呢?
+ * 之前透過 Branch/Tag.. 功能做 Tag 時, 發現即使 Tag 已經存在, 後續的修改還是可以 Tag 到同一個資料夾; 有時版本發行之後才忘了改什麼東西, 但又無關功能面的修改, 就可以利用這個效果... (實驗發現, trunk 重複 branch/tag 到 tags/0.1.1 時, 0.1.1 的資料夾下面會出現 trunk 子資料夾, 要小心!!)
+ * 要避開 merge conflicts
+   * 別在 branch 做 refactor 的動作, 尤其是刪檔案、調整程式碼區塊的上下位置等
+   * 當 abc.txt 產生衝突時, 用 navigator 做 abc.txt.working 及 abc.txt.merge-right.rxxx 的比對 (compare with each other), 會比直接處理 abc.txt 裡一堆 >>>> <<<< 的符號來得方便. (不過這只適用於想要套用 rxxx 以前所有的異動時, 如果只想套用 rxxx 該次的異動, 也只好乖乖地從 >>>> <<<< 符號中逐一排除狀況, 切記這兩者在 "語意" 是相當不同的!!)
+   * from/to revision 的 diff 會套到 merge 的標的, 所以過程中的 A(dd), D(elete) 等動作都會重新在 merge target 重新套用一次, 但檔案內容的部份, 只會直接比對 from 與 to 兩支檔案, 過程就直接略過了, 其實這麼做很合理
+ * 開發分支 (feature branch, 例如 "MG-bz-08-0007")
+   * 將 feature 加以編號 (仿 wiki 方式命名更具可讀性) , 就有機會同時開發多個功能, 誰先開發完成就先回主幹. (會從 trunk 分出來再開發, 最主要就是怕 feature 之間相互耽擱) 這對一直有新想法出現的 simpllibs-core 很有幫助; 如果是直接在 turnk 上做開發, 那麼同時只能有一個 feature 在完成中, 如果暫時完成不了前面一個, 又急著要後一個功能就麻煩了...
+   * 必須要合併到主線後才能釋出 (維持 "同一層級的版號, 數字比較大的版本必定包含數字比較小的版本的功能", 否則 change log 會變得難以撰寫跟判讀), 可以先做一次 tag, 待需要做進一步的 maintain 時再延伸出 release branch.
+   * 可以往外再做一次分支 (relase branch, 例如 "1.2") 然後才發行測試. 如此測試期間所要修改或追加的功能才能馬上釋出 (即時回饋), 而不被主線後續的開發所影響.
+
+   |- branches
+      |- 1.0
+      |- 1.1
+      |- feature/
+         |- 0001_pagination
+         |- 0002_xxx_support
+   |- tag
+      |- 1.0
+      |- 1.0.1
+      |- 1.1
+      |- 1.1.1
+      |- 1.1.2
+

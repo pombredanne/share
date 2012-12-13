@@ -1,0 +1,124 @@
+= Python / Learning Python, Fourth Edition - Part VI. Classes and OOP =
+<<TableOfContents>>
+
+= Chapter 31. Advanced Class Topics =
+
+:::
+
+== New-Style Class Extensions ==
+
+:::
+
+=== Class Properties ===
+
+__A mechanism known as properties provides another way for new-style classes to define ''automatically called methods for access or assignment to instance attributes''. At least for specific attributes, this feature is an alternative to many current uses of the `__getattr__` and `__setattr__` overloading methods we studied in Chapter 29. Properties have a similar effect to these two methods, but they incur an extra method call for any accesses to names that require ''dynamic computation''.__ Properties (and slots) are based on a new notion of ''attribute descriptors'', which is too advanced for us to cover here.
+
+In short, a property is a type of object assigned to a class attribute name. __A property is ''generated'' by calling the `property` built-in with three methods (handlers for get, set, and delete operations), as well as a docstring (當成第 4 個參數傳進去); if any argument is passed as `None` or omitted, that operation is not supported. Properties are typically assigned at the top level of a `class` statement [e.g., `name = property(...)`]. When thus assigned, accesses to the class attribute itself (e.g., `obj.name`) are automatically ''routed'' to one of the accessor methods passed into the property.__ For example, the `__getattr__` method allows classes to intercept undefined attribute references:
+
+ {{{
+>>> class classic:
+...     def __getattr__(self, name):
+...         if name == 'age':
+...             return 40
+...         else:
+...             raise AttributeError
+...
+>>> x = classic()
+>>> x.age # Runs __getattr__
+40
+>>> x.name # Runs __getattr__
+AttributeError
+ }}}
+
+Here is the same example, coded with properties instead (note that properties are available for all classes but require the new-style object derivation in 2.6 to work properly for intercepting attribute assignments):
+
+ {{{
+>>> class newprops(object):
+...     def getage(self):
+...         return 40
+...     age = property(getage, None, None, None) # get, set, del, docs
+...
+>>> x = newprops()
+>>> x.age # Runs getage
+40
+>>> x.name # Normal fetch
+AttributeError: newprops instance has no attribute 'name'
+ }}}
+
+For some coding tasks, properties can be less complex and quicker to run than the traditional techniques. For example, when we add attribute assignment support, properties become more attractive—there’s less code to type, and no extra method calls are incurred for assignments to attributes we don’t wish to compute dynamically:
+
+ {{{
+>>> class newprops(object):
+...     def getage(self):
+...         return 40
+...     def setage(self, value):
+...         print('set age:', value)
+...         self._age = value
+...     age = property(getage, setage, None, None)
+...
+>>> x = newprops()
+>>> x.age # Runs getage
+40
+>>> x.age = 42 # Runs setage
+set age: 42
+>>> x._age # Normal fetch; no getage call
+42
+>>> x.job = 'trainer' # Normal assign; no setage call
+>>> x.job # Normal fetch; no getage call
+'trainer'
+ }}}
+
+The equivalent classic class incurs extra method calls for assignments to attributes not being managed and needs to route attribute assignments through the ''attribute dictionary'' (or, for new-style classes, to the object superclass’s `__setattr__`) to avoid loops:
+
+ {{{
+>>> class classic:
+...     def __getattr__(self, name): # On undefined reference
+...         if name == 'age':
+...             return 40
+...         else:
+...             raise AttributeError
+...     def __setattr__(self, name, value): # On all assignments
+...         print('set:', name, value)
+...         if name == 'age':
+...             self.__dict__['_age'] = value
+...         else:
+...             self.__dict__[name] = value
+...
+>>> x = classic()
+>>> x.age # Runs __getattr__
+40
+>>> x.age = 41 # Runs __setattr__
+set: age 41
+>>> x._age # Defined: no __getattr__ call
+41
+>>> x.job = 'trainer' # Runs __setattr__ again
+>>> x.job # Defined: no __getattr__ call
+ }}}
+
+Properties seem like a win for this simple example. __However, some applications of `__getattr__` and `__setattr__` may still require more dynamic or generic interfaces than properties directly provide. For example, in many cases, the set of attributes to be supported cannot be determined when the class is coded, and may not even exist in any tangible form (e.g., when delegating arbitrary method references to a wrapped/ embedded object generically). In such cases, a generic `__getattr__` or a `__setattr__` attribute handler with a passed-in attribute name may be preferable. Because such generic handlers can also handle simpler cases, properties are often an ''optional extension''.__
+
+For more details on both options, stay tuned for Chapter 37 in the final part of this book. As we’ll see there, it’s also possible to code properties using ''function decorator'' syntax, a topic introduced later in this chapter.
+
+
+:::
+
+== Static and Class Methods ==
+
+__As of Python 2.2, it is possible to define two kinds of methods within a class that can be called without an instance: ''static methods'' work roughly like simple instance-less functions inside a class, and ''class methods'' are passed a class instead of an instance.__ Although this feature was added in conjunction with the ''new-style classes'' discussed in the prior sections, static and class methods work for ''classic classes'' too.
+
+__To enable these method modes, special built-in functions called `staticmethod` and `classmethod` must be called within the class, or invoked with the ''decoration syntax''__ we’ll meet later in this chapter. In Python 3.0, instance-less methods called only through a class name do not require a `staticmethod` declaration, but such methods called through instances do.
+
+=== Why the Special Methods? ===
+
+As we’ve learned, a class method is normally passed an instance object in its first argument, to serve as the ''implied subject'' of the method call. Today, though, there are two ways to modify this model. Before I explain what they are, I should explain why this might matter to you.
+
+Sometimes, programs need to process data associated with classes instead of instances. Consider keeping track of the number of instances created from a class, or maintaining a list of all of a class’s instances that are currently in memory. This type of information and its processing are associated with the class rather than its instances. That is, the information is usually stored on the class itself and processed in the absence of any instance.
+
+__For such tasks, simple functions coded outside a class can often suffice—because they can access class attributes through the class name, they have access to class data and never require access to an instance. However, to better associate such code with a class, and to allow such processing to be customized with inheritance as usual, it would be better to code these types of functions inside the class itself. To make this work, we need methods in a class that are not passed, and do not expect, a `self` instance argument.__
+
+__Python supports such goals with the notion of static methods—simple functions with no `self` argument that are nested in a class and are designed to work on class attributes instead of instance attributes. Static methods never receive an automatic `self` argument, whether called through a class or an instance.__ They usually keep track of information that spans all instances, rather than providing behavior for instances.
+
+__Although less commonly used, Python also supports the notion of class methods— methods of a class that are passed a class object in their first argument instead of an instance, regardless of whether they are called through an instance or a class.__ Such methods can access class data through their `self` class argument even if called through an instance. Normal methods (now known in formal circles as ''instance methods'') still receive a subject instance when called; static and class methods do not.
+
+
+

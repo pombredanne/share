@@ -1,0 +1,153 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>從 CLI 執行 Sikuli Script</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="cli.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>從 CLI 執行 Sikuli Script</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">
+<div class="title">延伸閱讀</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="cli-exit.html">如何偵測 Sikuli Script 執行過程中有發生錯誤？</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>過程中會用到 <code>sikuli-script.jar</code>：</p></div>
+<div class="listingblock">
+<div class="title"><code>sikuli-script.jar/META-INF/MANIFEST.MF</code></div>
+<div class="content">
+<pre><code>Manifest-Version: 1.0
+Created-By: 1.6.0_18 (Sun Microsystems Inc.)
+Main-Class: org.sikuli.script.SikuliScript</code></pre>
+</div></div>
+<div class="paragraph"><p>首先營造出可以叫用 Sikuli 的 Jython 環境：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ jython -J-cp $SIKULI_HOME/sikuli-script.jar -Dpython.path=$SIKULI_HOME/sikuli-script.jar/Lib <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+Jython 2.5.2 (Release_2_5_2:7206, Mar 2 2011, 23:12:06)
+[OpenJDK 64-Bit Server VM (Sun Microsystems Inc.)] on java1.6.0_20
+Type "help", "copyright", "credits" or "license" for more information.
+&gt;&gt;&gt; from sikuli.Sikuli import *
+[info] Sikuli vision engine loaded.
+[info] Mac OS X utilities loaded. <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+[info] VDictProxy loaded.
+&gt;&gt;&gt;</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+<code>-Dpython.path</code> 一定要加，否則會出現 <code>ImportError: No module named sikuli</code> 的錯誤。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+Mac OS X 會多這一行輸出。這是否代表著 Sikuli 一定要在本機上裝過，光有 <code>sikuli-script.jar</code> 是不夠的??
+</td></tr>
+</table></div>
+<div class="paragraph"><p>但 <code>sikuli-script.jar</code> 內含 Jython，也可以是這樣：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ java -cp $SIKULI_HOME/sikuli-script.jar org.python.util.jython
+Jython 2.5.2 (Release_2_5_2:7206, Mar 2 2011, 23:12:06)
+[OpenJDK 64-Bit Server VM (Sun Microsystems Inc.)] on java1.6.0_20
+Type "help", "copyright", "credits" or "license" for more information.
+&gt;&gt;&gt; from sikuli.Sikuli import *
+[info] Sikuli vision engine loaded.
+[info] VDictProxy loaded.
+&gt;&gt;&gt;</code></pre>
+</div></div>
+<div class="paragraph"><p>要從 CLI 執行 Sikuli Script，最簡單的做法：</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>java -jar $SIKULI_HOME/sikuli-script.jar path-to-your-script/script.sikuli</code></pre>
+</div></div>
+<div class="paragraph"><p>但 <code>java -jar</code> 不吃 <code>-cp</code> 或 <code>CLASSPATH</code> 的設定，如果有需要可以改用：</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>java -cp $SIKULI_HOME/sikuli-script.jar org.sikuli.script.SikuliScript path-to-your-script/script.sikuli</code></pre>
+</div></div>
+<div class="paragraph"><p>或</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>java -cp $SIKULI_HOME/sikuli-script.jar org.python.util.jython script.sikuli/script.sikuli/script.py</code></pre>
+</div></div>
+<div class="paragraph"><p>不過最後一個直接執行 <code>script.py</code> 的做法，必須額外加上 <code>from sikuli.Sikuli import *</code>，而且要透過 <code>addImagePath()</code> 來設定圖檔的位置，反而讓事情變得複雜，因此不建議使用。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://sikuli.org/docx/faq/010-command-line.html">How to run Sikuli from Command Line — Sikuli X 1.0 documentation</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:10:29 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

@@ -1,0 +1,170 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>Python Object Serialization</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="python-object-serialization.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>Python Object Serialization</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">由於 module 是 singleton，如果只是想要在同一個 process 裡交換資訊，module 是一個可以考慮的方式。</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_在_python_跟_jython_間交換資料">在 Python 跟 Jython 間交換資料</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="title"><code>examples/pickle/pypickle.py</code></div>
+<div class="content">
+<pre><code>import pickle
+
+data = [1, '2', [3, 4, 5]]
+pickle.dump(data, open('data.pickle', 'w'))</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="title"><code>examples/pickle/jypickle.py</code></div>
+<div class="content">
+<pre><code>import pickle
+
+data = pickle.load(open('data.pickle'))
+print data</code></pre>
+</div></div>
+<div class="paragraph"><p>實驗證實，在 Python 2.6 跟 Jython 2.5 是可以交換 pickled object 的。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ python pypickle
+$ cat data.pickle
+(lp0
+I1
+aS'2'
+p1
+a(lp2
+I3
+aI4
+aI5
+$ jython jypickle.py
+[1, '2', [3, 4, 5]]</code></pre>
+</div></div>
+<div class="paragraph"><p>執行期，也可以透過暫存檔在 Python 與 Jython 之間交換資料：</p></div>
+<div class="listingblock">
+<div class="title"><code>examples/pickle/pycaller.py</code></div>
+<div class="content">
+<pre><code>import pickle, tempfile
+import os, subprocess
+
+data = [1, '2', [3, 4, 5]]
+tmp = tempfile.NamedTemporaryFile(suffix='.pickle', delete=False) <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+pickle.dump(data, tmp)
+tmp.close() <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+
+os.environ['PYTHON_PARAMS'] = tmp.name <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+subprocess.call(['jython', 'jycalle.py'])
+os.remove(tmp.name)</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+暫存檔不要自動刪除。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+關掉暫存檔才能讓另一個 process (<code>jython</code>) 開啟。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+透過環境變數來交換暫存檔的位置。
+</td></tr>
+</table></div>
+<div class="listingblock">
+<div class="title"><code>examples/pickle/jycalle.py</code></div>
+<div class="content">
+<pre><code>import os, pickle
+
+print 'File for PYTHON_PARAMS is:', os.environ['PYTHON_PARAMS']
+data = pickle.load(open(os.environ['PYTHON_PARAMS'], 'rb'))
+print 'Params:', data</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://en.wikipedia.org/wiki/Serialization#Python">Serialization - Wikipedia, the free encyclopedia</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://docs.python.org/library/pickle.html">pickle — Python object serialization</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://docs.python.org/library/marshal.html">marshal — Internal Python object serialization</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:09:36 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

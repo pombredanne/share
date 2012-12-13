@@ -1,0 +1,367 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>User Account Control (UAC)</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="uac.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>User Account Control (UAC)</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>UAC 首次在 Windows Vista 及 Windows Server 2008 提出。當某支應用程式發生系統管理相關的操作時（例如試圖要對 HKLM 或 <code>C:\Windows</code> 進行寫入時），UAC 視窗就會跳出來確認是否允許該程式對系統產生異動（也就是讓程式取得 administrator privileges）。這個動作我們稱做 <em>elevate</em>，獲得授權的程式則稱做 <em>elevated application</em>。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">
+<div class="paragraph"><p>可以寫一支簡單的 batch 檔，試著將檔案複製到 <code>C:\Windows</code>，就會遭到 UAC 阻擋：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>C:\tmp&gt;type test_uac.bat
+copy test_uac.txt C:\Windows
+C:\tmp&gt;type test_uac.txt
+nothing
+
+C:\tmp&gt;test_uac.bat
+
+C:\tmp&gt;copy test_uac.txt C:\Windows
+Access is denied.
+        0 file(s) copied.</code></pre>
+</div></div>
+</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>即便當下的使用者已經是 Administrator（或屬於 Administrator 群組的一員），也會被提示要再確認一次，如果沒有回答 Yes 的話，Administrator 執行的程式也拿不到 administrator privileges。</p></div>
+<div class="paragraph"><p>UAC 的設定可以從 Control Panel &gt; User Accounts and Family Safety &gt; User Accounts &gt; Change User Account Control settings 做調整：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+Always notify me when
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+Apps try to install software or make changes to my computer
+</p>
+</li>
+<li>
+<p>
+I make changes to Windows settings
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+Notify me only when apps try to make changes to my computer (default)
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+Don&#8217;t notify me when I make changes to Windows settings
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+Notify me only when apps try to make changes to my computer (do not dim my desktop)
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+Don&#8217;t notify me when I make changes to Windows settings
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+Never notify me when:
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+Apps try to install software or make changes to my computer
+</p>
+</li>
+<li>
+<p>
+I make changes to Windows settings
+</p>
+</li>
+</ul></div>
+</li>
+</ul></div>
+<div class="paragraph"><p>這些選項的差別在於 "App" 或 "使用者自己" 對系統產生異動時，要不要提示&#8230;</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://windows7themes.net/how-to-disable-uac-in-windows-8.html">How to disable UAC in Windows 8</a> (2011-09-20)
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">
+<div class="title">UAC 對話框顯示時，可以繼續其他畫面的操作</div>
+<div class="paragraph"><p>預設該對話框（UAC elevation dialog）會顯示在 secure desktop，使用者被迫要回答 Yes/No 才能進行其他的操作。</p></div>
+<div class="paragraph"><p>如果希望 UAC 對話框尚未關閉之前，可以進行其他的操作，但又不想降低 UAC level，可以考慮讓 UAC 對話框不要顯示在 secure deskto，對於想要截 UAC 對話框的圖，或是搭配 GUI automation 點選 Yes，尤其方便。</p></div>
+<div class="paragraph"><p>從 Security Policy Editor 可以看到 UAC 相關的設定：</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+開啟 Local Security Policy Editor。可以在命令列執行 <code>secpol.msc</code> 或者從 Control Panel &gt; System and Security &gt; Administrative Tools &gt; Local Security Policy 開啟。
+</p>
+<div class="paragraph"><p><span class="image">
+<img src="uac/local_security_policy.png" alt="uac/local_security_policy.png" />
+</span></p></div>
+</li>
+<li>
+<p>
+點選 Local Policies &gt; Security Options，捲到最下面就可以看到 UAC 相關的設定。（名稱都以 "User Account Control: " 開頭）
+</p>
+</li>
+<li>
+<p>
+將 User Access Control: Switch to the secure desktop when prompting for elevation 改為 Disabled。
+</p>
+</li>
+</ol></div>
+<div class="paragraph"><p>又或者直接從 registry 下手去改更快：</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System</code></pre>
+</div></div>
+<div class="paragraph"><p>將 <code>PromptOnSecureDesktop</code> 從 <code>1</code> 改為 <code>0</code> 即可。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">事實上，這個設定在 Windows 7 下也可以直接透過 Control Panel &gt; User Accounts &gt; User Accounts &gt; Change User Account Control settings 來修改。預設是 Notify me only when programs try to make changes to my computer，改成 Notify me only when programs try to make changes to my computer (do not dim my desktop) 即可。</td>
+</tr></table>
+</div>
+<div class="openblock">
+<div class="title">參考資料</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.winhelponline.com/blog/capture-screenshot-uac-elevation-dialog/">How To Capture a Screenshot of the User Account Control Elevation Dialog - The Winhelponline Blog</a> (2008-10-15) -
+</p>
+</li>
+<li>
+<p>
+<a href="http://support.microsoft.com/kb/975788">Guided Help: Turn off the secure desktop in Windows 7</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>所謂 UAC compatible 程式，會帶有 <em>application manifest</em> 告訴系統執行該程式需要哪些權限，所以 UAC 對話框就會跳出來。但 legacy application 並不會帶有 application manifest，雖然 UAC 會利用一些方法來偵測執行這些非 UAC compatible 的程式需不需要 administrator privilege（例如檔名是 <code>setup.exe</code> 或者程式是知名的 packager 包裝出來等），但如果這些判斷都失敗的話，程式就會因為沒有拿到 administrator privilege，某些動作就會因權限不足或存取被拒而失敗。</p></div>
+<div class="paragraph"><p>遇到這類問題時，最簡單的方式就是透過 Run as administrator 執行 Command Prompt（系統內建的程式，當然是 UAC compatible），然後再執行 legacy administration tools。</p></div>
+<div class="paragraph"><p><span class="image">
+<img src="uac/cmd_run_as_admin.png" alt="uac/cmd_run_as_admin.png" />
+</span></p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://en.wikipedia.org/wiki/User_Account_Control">User Account Control - Wikipedia, the free encyclopedia</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.autoitscript.com/autoit3/docs/intro/autoit_on_vista.htm">AutoIt on Windows Vista</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.winsupersite.com/article/win7/windows-7-feature-focus-user-account-control">Windows 7 Feature Focus: User Account Control</a> (2010-10-06)
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.petri.co.il/disable-uac-in-windows-7.htm">Disable UAC in Windows 7</a> (2009-12-08)
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.petri.co.il/disable_uac_in_windows_vista.htm">Disable User Account Control in Windows Vista</a> (2009-01-08)
+</p>
+</li>
+<li>
+<p>
+<a href="http://4sysops.com/archives/vista-user-account-control-uac-traps-part-2-elevated-applications/">Vista User Account Control (UAC) traps part 2: elevated applications - 4sysops</a> (2006-12-21)
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_run_as_administrator">Run as Administrator ===</h2>
+<div class="sectionbody">
+<div class="paragraph"><p><code>RUNAS</code> 這個指令在 Windows XP 就有了，但跟點右鍵選取 Run as administrator 的作用好像不太一樣，還是會被問密碼：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>C:\&gt;runas /username:%COMPUTERNAME%\Administrator cmd.exe
+Enter the password for xxx\Administrator: ^C</code></pre>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">這個功能跟 UAC 息息相關，只要 UAC 沒有關掉，Run as administrator 就會出現 UAC elevation dialog。但就算 Control Panel &gt; User Accounts &gt; User Accounts &gt; Change User Account Control settings 調整為 Never notify me（等同 UAC 對話框跳出來時，自動按 Yes 的意思），如果程式沒有明確做 Run as administrator 的動作，該程式還是無法取得 administrator privilege。</td>
+</tr></table>
+</div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://superuser.com/questions/355430/why-is-run-this-program-as-an-administrator-disabled">windows - Why is "run this program as an administrator" disabled? - Super User</a> (2011-11-09) - <code>.bat</code> 不能勾選 "Run this program as an administrator"，但只要建立一個 shortcut，就可以對從 Properties &gt; Shortcut &gt; Advanced&#8230; 裡勾選 "Run this program as an administrator" (同一時間，Compatibility 裡的那個項目還是灰掉不能勾)
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.vistaclues.com/always-run-a-command-prompt-as-administrator/">Always run a command prompt as Administrator : Windows Vista and Windows 7 Help</a> (2010-12-15)
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.vistaclues.com/always-run-an-application-as-an-administrator/">Always run an application as an administrator : Windows Vista and Windows 7 Help</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://blogs.technet.com/b/elevationpowertoys/">Elevation PowerToys for Windows - Site Home - TechNet Blogs</a> (2010-10)
+</p>
+</li>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/130763/request-uac-elevation-from-within-a-python-script">windows - Request UAC elevation from within a Python script? - Stack Overflow</a> (2008-09-25)
+</p>
+</li>
+<li>
+<p>
+<a href="http://technet.microsoft.com/en-us/magazine/2008.06.elevation.aspx">Free Elevation PowerToys for working with User Account Control</a> (2008-06) - 內含 <code>elevate.cmd</code> 在 Windows 7 下也以使用。
+</p>
+</li>
+<li>
+<p>
+<a href="http://jpassing.com/2007/12/08/launch-elevated-processes-from-the-command-line/">Launch elevated processes from the command line « Johannes Passing&#8217;s Blog</a> (2007-12-08)
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.intelliadmin.com/index.php/2007/09/elevate-processes-from-the-command-prompt-in-vista/">Elevate processes from the command prompt in Vista | Remote Administration For Windows</a> (2007-09-21) - 提到 <code>RUNAS</code> 也拿不到 administrator privilege，
+</p>
+</li>
+<li>
+<p>
+<a href="http://4sysops.com/archives/vista%E2%80%99s-uac-8-ways-how-to-elevate-an-application-to-run-it-with-administrator-rights/">Vista’s UAC: 7 ways how to elevate an application to run it with Administrator rights - 4sysops</a> (2006-12-27)
+</p>
+</li>
+<li>
+<p>
+<a href="http://ss64.com/nt/runas.html">Runas - Run under a different user account</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.microsoft.com/resources/documentation/windows/xp/all/proddocs/en-us/runas.mspx?mfr=true">Microsoft Windows XP - Runas</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:14:17 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

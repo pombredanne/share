@@ -1,0 +1,205 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[monkeyrunner] Jython 執行環境</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="monkeyrunner-jython.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>[monkeyrunner] Jython 執行環境</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre><code>$ pwd; ls
+/tmp/mr
+dummy.py
+$ monkeyrunner
+[OpenJDK 64-Bit Server VM (Sun Microsystems Inc.)] on java1.6.0_20
+&gt;&gt;&gt; import sys
+&gt;&gt;&gt; sys.path
+['/path/to/android_home/tools/lib/monkeyrunner.jar', '/path/to/android_home/tools/lib/Lib', '/path/to/android_home/tools/lib/jython.jar/Lib', '__classpath__', '__pyclasspath__/'] <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+&gt;&gt;&gt;
+&gt;&gt;&gt; import dummy
+Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+ImportError: No module named dummy
+&gt;&gt;&gt;
+&gt;&gt;&gt; sys.path.append(os.getcwd()) <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+&gt;&gt;&gt; import dummy
+&gt;&gt;&gt; dummy.__file__
+'/tmp/mr/dummy.py'</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+預設的 module search path 並不包含 current working directory。把 CWD 加到 <code>sys.path</code> 就可以了。
+</td></tr>
+</table></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_從_jython_帶出_monkeyrunner_的執行環境">從 Jython 帶出 monkeyrunner 的執行環境</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>觀察 <code>monkeyrunner</code> 的寫法：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>...
+# need to use "java.ext.dirs" because "-jar" causes classpath to be ignored
+# might need more memory, e.g. -Xmx128M
+exec java -Xmx128M $os_opts $java_debug -Djava.ext.dirs="$frameworkdir:$swtpath" -Djava.library.path="$libdir" -Dcom.android.monkeyrunner.bindir="$progdir" -jar "$jarpath" "$@"</code></pre>
+</div></div>
+<div class="paragraph"><p>執行結果：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ java -Xmx128M -Djava.ext.dirs=$ANDROID_HOME/tools/lib:$ANDROID_HOME/tools/lib/x86_64 -Djava.library.path=$ANDROID_HOME/tools/lib -Dcom.android.monkeyrunner.bindir=$ANDROID_HOME/tools -jar $ANDROID_HOME/tools/lib/monkeyrunner.jar
+Jython 2.5.0 (Release_2_5_0:6476, Jun 16 2009, 13:33:26) <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+[OpenJDK 64-Bit Server VM (Sun Microsystems Inc.)] on java1.6.0_20
+&gt;&gt;&gt; from com.android.monkeyrunner import MonkeyRunner, MonkeyDevice
+&gt;&gt;&gt; device = MonkeyRunner.waitForConnection()
+&gt;&gt;&gt;</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+monkeyrunner 預設搭配 SDK 內附的 Jython 2.5.0。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>其中 <code>monkeyrunner.jar/META-INF/MANIFEST.MF</code> 的內容如下：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>Manifest-Version: 1.0
+Created-By: 1.6.0_26 (Sun Microsystems Inc.)
+Main-Class: com.android.monkeyrunner.MonkeyRunnerStarter</code></pre>
+</div></div>
+<div class="paragraph"><p>把 <code>-jar monkeyrunner.jar</code> 換成 <code>org.python.util.jython</code>，沒有先跑過 <a href="http://www.java2s.com/Open-Source/Android/android-core/platform-sdk/com/android/monkeyrunner/MonkeyRunnerStarter.java.htm"><code>MonkeyRunnerStarter</code></a>，就會遇到 <code>NullPointerError</code>；但只要執行過 <code>MonkeyRunnerStarter</code> 就可以了：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ java -Xmx128M -Djava.ext.dirs=$ANDROID_HOME/tools/lib:$ANDROID_HOME/tools/lib/x86_64 -Djava.library.path=$ANDROID_HOME/tools/lib -Dcom.android.monkeyrunner.bindir=$ANDROID_HOME/tools org.python.util.jython
+Jython 2.5.0 (Release_2_5_0:6476, Jun 16 2009, 13:33:26)
+[OpenJDK 64-Bit Server VM (Sun Microsystems Inc.)] on java1.6.0_20
+Type "help", "copyright", "credits" or "license" for more information.
+&gt;&gt;&gt; from com.android.monkeyrunner import MonkeyRunner, MonkeyDevice
+&gt;&gt;&gt; device = MonkeyRunner.waitForConnection()
+Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+        at com.android.monkeyrunner.MonkeyRunner.waitForConnection(MonkeyRunner.java:75)
+        at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+        at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57)
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+        at java.lang.reflect.Method.invoke(Method.java:616)
+
+java.lang.NullPointerException: java.lang.NullPointerException
+&gt;&gt;&gt;
+&gt;&gt;&gt; from com.android.monkeyrunner import MonkeyRunnerStarter
+&gt;&gt;&gt; MonkeyRunnerStarter.main([])
+Jython 2.5.0 (Release_2_5_0:6476, Jun 16 2009, 13:33:26) <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+[OpenJDK 64-Bit Server VM (Sun Microsystems Inc.)] on java1.6.0_20
+&gt;&gt;&gt; from com.android.monkeyrunner import MonkeyRunner, MonkeyDevice
+&gt;&gt;&gt; device = MonkeyRunner.waitForConnection()
+&gt;&gt;&gt;</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+<code>MonkeyRunnerStart</code> 執行過後會自動帶出 Jython Interpreter。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>直接拿 <code>MonkeyRunnerStarter</code> 來當 main class，換上標準的 Jython，只引入必要的 Jar 檔：（按 <a href="https://github.com/sikuli/sikuli/blob/develop/extensions/android-robot/src/main/java/org/sikuli/script/android/AndroidScreen.java">android-robot</a> 的做法，monkeyrunner 只用到 4 個 <code>.jar</code> 檔 - <code>guavalib.jar</code>、<code>sdklib.jar</code>、<code>ddmlib.jar</code> 還有 <code>chimpchat.jar</code>）</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ java -Xmx128M -cp $JYTHON_HOME/jython.jar:$ANDROID_HOME/tools/lib/monkeyrunner.jar:$ANDROID_HOME/tools/lib/guavalib.jar:$ANDROID_HOME/tools/lib/sdklib.jar:$ANDROID_HOME/tools/lib/ddmlib.jar:$ANDROID_HOME/tools/lib/chimpchat.jar -Djava.library.path=$ANDROID_HOME/tools/lib -Dcom.android.monkeyrunner.bindir=$ANDROID_HOME/tools com.android.monkeyrunner.MonkeyRunnerStarter
+Jython 2.5.2 (Release_2_5_2:7206, Mar 2 2011, 23:12:06) <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+[OpenJDK 64-Bit Server VM (Sun Microsystems Inc.)] on java1.6.0_20
+&gt;&gt;&gt; from com.android.monkeyrunner import MonkeyRunner, MonkeyDevice
+&gt;&gt;&gt; device = MonkeyRunner.waitForConnection()
+&gt;&gt;&gt;</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+叫用到標準的 Jython Interpreter，版本是 2.5.2。這個時候可以吃 <code>JYTHONPATH</code> 或 <code>-Dpython.path</code> 的設定嗎?
+</td></tr>
+</table></div>
+<div class="paragraph"><p>To get access to monkeyrunner&#8217;s runtime environment, the startup class can implement com.google.common.base.Predicate&lt;PythonInterpreter&gt;.</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_延伸閱讀">延伸閱讀</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="../jython/jython.html">Jython</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://blog.csdn.net/robinzhou/article/details/6790098">monkeyrunner學習淺析-與python的關係 - robinzhou的專欄</a> (2011-09-19)
+</p>
+</li>
+<li>
+<p>
+<a href="http://article.yeeyan.org/view/37503/164523">譯言網 | Monkeyrunner 使用說明</a> (2011-01-09)
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:10:45 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

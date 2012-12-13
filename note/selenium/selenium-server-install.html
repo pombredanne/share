@@ -1,0 +1,219 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>安裝 Selenium Server</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="selenium-server-install.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="selenium.html">Selenium</a> / <a href="selenium-server.html">Server</a> / 安裝</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+確認裝有 JRE 1.5+。
+</p>
+</li>
+<li>
+<p>
+從<a href="http://seleniumhq.org/download/">官網</a>下載 <code>selenium-server-standalone-&lt;version&gt;.jar</code>。
+</p>
+</li>
+<li>
+<p>
+執行下面的指令就可以啟動 Selenium Server：
+</p>
+<div class="literalblock">
+<div class="content">
+<pre><code>java -jar selenium-server-standalone-&lt;version&gt;.jar</code></pre>
+</div></div>
+</li>
+</ol></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">啟動時建議加上 <code>-log &lt;logfile&gt; -browserSideLog</code>，可以將 server/browser 兩端較細的 DEBUG-level log 輸出到 <em>logfile</em>。更多參數的用法可以參考 <code>-help</code> 的輸出。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>用 <a href="selenium-server-interactive-mode.html">Interactive Mode</a> 測試一下能否正常開啟網頁：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ java -jar selenium-server-standalone-&lt;version&gt;.jar -interactive
+cmd=getNewBrowserSession&amp;1=&lt;browser&gt;&amp;2=http://www.google.com <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+cmd=open&amp;1=http://www.google.com <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+這時候只帶出 Selenium Remote Control 視窗。其中 <code>&lt;browser&gt;</code> 可以是 <code>*firefox</code>、<code>*safari</code> 等。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+這個指令才會真正帶出 SUT 的視窗。
+</td></tr>
+</table></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">如果 SUT 視窗沒有帶出來，可以按 Selenium Remote Control 視窗裡的 "Show Log" 鈕查看問題，多半是是因為瀏覽器阻擋彈跳視窗的設定被打開了。之前在 Mac OS X Lion 下的 Safari 5 遇到這個問題，只要取消 Safari &gt; Block Pop-Up Windows 的勾選即可。</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_mac_os_x_leopard_10_5">Mac OS X Leopard 10.5</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>啟動伺服器時出現 UnsupportedClassVersionError: Bad version number in .class file，但查看 <code>java -version</code> 的結果是 1.5.0_16-b06-284。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ java -jar selenium-server-standalone-2.23.1.jar
+Exception in thread "main" java.lang.UnsupportedClassVersionError: Bad version number in .class file
+        at java.lang.ClassLoader.defineClass1(Native Method)
+        at java.lang.ClassLoader.defineClass(ClassLoader.java:675)
+        at java.security.SecureClassLoader.defineClass(SecureClassLoader.java:124)
+        at java.net.URLClassLoader.defineClass(URLClassLoader.java:260)
+        at java.net.URLClassLoader.access$100(URLClassLoader.java:56)
+        at java.net.URLClassLoader$1.run(URLClassLoader.java:195)
+        at java.security.AccessController.doPrivileged(Native Method)
+        at java.net.URLClassLoader.findClass(URLClassLoader.java:188)
+        at java.lang.ClassLoader.loadClass(ClassLoader.java:316)
+        at sun.misc.Launcher$AppClassLoader.loadClass(Launcher.java:280)
+        at java.lang.ClassLoader.loadClass(ClassLoader.java:251)
+        at java.lang.ClassLoader.loadClassInternal(ClassLoader.java:374)</code></pre>
+</div></div>
+<div class="paragraph"><p>進 Utilities &gt; Java &gt; Java Preferences，將預設的 Java 調整成 Java SE 6.0 即可。</p></div>
+<div class="paragraph"><p>緊接著又遇到 sessionID doesn&#8217;t exist; perhaps this session was already stopped?</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>cmd=getNewBrowserSession&amp;1=*safari&amp;2=http://www.google.com
+17:27:21.302 INFO - ---&gt; Requesting http://localhost:4444/selenium-server/driver?cmd=getNewBrowserSession&amp;1=*safari&amp;2=http://www.google.com
+17:27:21.360 INFO - Checking Resource aliases
+17:27:21.362 INFO - Command request: getNewBrowserSession[*safari, http://www.google.com] on session null
+17:27:21.366 INFO - creating new remote session
+17:27:21.385 INFO - Allocated session 794cc8b57a8641ea84b276780c20a121 for http://www.google.com, launching...
+jar:file:/auto/svn/tools/selenium-server-standalone-2.23.1.jar!/core
+17:27:21.511 INFO - Launching Safari to visit 'file:/tmp/customProfileDir794cc8b57a8641ea84b276780c20a121/core/RemoteRunner.html?sessionId=794cc8b57a8641ea84b276780c20a121&amp;multiWindow=true&amp;baseUrl=http%3A%2F%2Fwww.google.com&amp;debugMode=false&amp;driverUrl=http://localhost:4444/selenium-server/driver/' via '/tmp/customProfileDir794cc8b57a8641ea84b276780c20a121/redirect_to_go_to_selenium.htm'...
+cmd=open&amp;1=/
+17:27:33.553 INFO - ---&gt; Requesting http://localhost:4444/selenium-server/driver?cmd=open&amp;1=/&amp;sessionId=
+17:27:33.565 INFO - Command request: open[/, ] on session
+17:27:33.567 ERROR - Exception running 'open 'command on session
+java.lang.RuntimeException: sessionId  doesn't exist; perhaps this session was already stopped?
+        at org.openqa.selenium.server.FrameGroupCommandQueueSet.getQueueSet(FrameGroupCommandQueueSet.java:225)
+        at org.openqa.selenium.server.commands.SeleniumCoreCommand.execute(SeleniumCoreCommand.java:55)
+        at org.openqa.selenium.server.SeleniumDriverResourceHandler.doCommand(SeleniumDriverResourceHandler.java:613)
+        at org.openqa.selenium.server.SeleniumDriverResourceHandler.handleCommandRequest(SeleniumDriverResourceHandler.java:407)
+        at org.openqa.selenium.server.SeleniumDriverResourceHandler.handle(SeleniumDriverResourceHandler.java:151)
+        at org.openqa.jetty.http.HttpContext.handle(HttpContext.java:1526)
+        at org.openqa.jetty.http.HttpContext.handle(HttpContext.java:1479)
+        at org.openqa.jetty.http.HttpServer.service(HttpServer.java:914)
+        at org.openqa.jetty.http.HttpConnection.service(HttpConnection.java:820)
+        at org.openqa.jetty.http.HttpConnection.handleNext(HttpConnection.java:986)
+        at org.openqa.jetty.http.HttpConnection.handle(HttpConnection.java:837)
+        at org.openqa.jetty.http.SocketListener.handleConnection(SocketListener.java:243)
+        at org.openqa.jetty.util.ThreadedServer.handle(ThreadedServer.java:357)
+        at org.openqa.jetty.util.ThreadPool$PoolThread.run(ThreadPool.java:534)
+17:27:33.568 INFO - Got result: ERROR Server Exception: sessionId  doesn't exist; perhaps this session was already stopped? on session</code></pre>
+</div></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://old.nabble.com/Problem,-Selenium-RC&#8212;sessionId&#8212;doesn&#8217;t-exist&#8212;perhaps-this-session-was-already-stopped&#8212;td17633858.html">Old Nabble - Selenium - Users - Problem, Selenium RC -sessionId doesn&#8217;t exist; perhaps this session was already stopped?</a> (2008-06-04) - 少了一開始 <code>cmd=getNewBrowserSession</code> 的動作？但做了也一樣&#8230;
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">網站</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://seleniumhq.org/download/">Downloads</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://selenium.googlecode.com/svn/trunk/java/CHANGELOG">CHANGELOG</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://seleniumhq.org/docs/05_selenium_rc.html#installation">Selenium 1 (Selenium RC) &gt; Installation — Selenium Documentation</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://seleniumhq.org/docs/05_selenium_rc.html#selenium-server-logging">Selenium 1 (Selenium RC) &gt; Selenium Server Logging — Selenium Documentation</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:08:49 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+= link:jython.html[Jython] / 辨識執行環境 =
+:title: [Jython] 辨識執行環境
+
+不過這個做法在 Jython 是行不通的，因為 Jython 是執行在 JVM 上，所以 `os.xxx()` 與 `platform.xxx()` 傳回的都是 JVM 的資訊：
+
+--------------------------------------------------------------------------------
+$ jython
+Jython 2.5.2 (Release_2_5_2:7206, Mar 2 2011, 23:12:06) 
+[OpenJDK 64-Bit Server VM (Sun Microsystems Inc.)] on java1.6.0_20
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import os
+>>> os.uname() <1>
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+AttributeError: 'module' object has no attribute 'uname'
+>>>
+>>> import platform
+>>> platform.uname()
+('Java', 'jeremy-laptop', '1.6.0_20', 'OpenJDK 64-Bit Server VM, 19.0-b09, Sun Microsystems Inc.', '', '')
+>>> platform.system()
+'Java'
+--------------------------------------------------------------------------------
+<1> `os.uname()` 只能用在 Unix-like OS，即便 JVM 底層是 Unix-like OS 也不行。
+
+不過 JVM 面對的是底層的 OS，所以如果想在 Jython 裡知道 OS 相關的資訊，得要透過 JVM 才行。
+
+由於 Jython 面對的是 JVM 而非底層的 OS，所以這裡傳回的都是 JVM 的資訊。
+
+或許在 JRuby 上也有類似的問題吧？
+
+== 參考資料 ==
+
+ * http://stackoverflow.com/questions/1854/python-what-os-am-i-running-on[Python: What OS am I running on? - Stack Overflow] (2008-08-05)
+

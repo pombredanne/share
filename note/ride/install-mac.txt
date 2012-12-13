@@ -1,0 +1,122 @@
+= 在 Mac 上安裝 RIDE =
+
+== Mac OS X ==
+
+ * OSX RIDE needs 32-bit Python.
+ * On the latest OS X versions you should have suitable wxPython version automatically, but unfortunately all RIDE features don't yet work on that platform.
+ * If RIDE is used only to edit test cases, Robot Framework does not need to installed at all. However, the Test runner plugin requires Robot Framework to be separately installed.
+
+Mac OS X 直接內建 Python，至少 Lion 10.7.3 是這樣的：
+
+--------------------------------------------------------------------------------
+$ ls /Library/Python/
+2.3	2.5	2.6	2.7
+--------------------------------------------------------------------------------
+
+ 1. 到https://github.com/robotframework/RIDE/downloads[官網]下載 `robotframework-ride-<version>.tar.gz`，解開後安裝：
++
+--------------------------------------------------------------------------------
+$ sudo python setup.py install
+
+WARNING: Improper use of the sudo command could lead to data loss
+or the deletion of important system files. Please double-check your
+typing when using sudo. Type "man sudo" for more information.
+
+To proceed, enter your password, or type Ctrl-C to abort.
+
+Password:
+---> pavement.install
+---> pavement._prepare_build
+Using version 0.43.3 from VERSION.txt
+running install
+running build
+running build_py
+copying src/robotide/version.py -> build/lib/robotide
+running build_scripts
+running install_lib
+creating /Library/Python/2.7/site-packages/robotide
+...
+running install_egg_info
+running egg_info
+writing src/robotframework_ride.egg-info/PKG-INFO
+writing top-level names to src/robotframework_ride.egg-info/top_level.txt
+writing dependency_links to src/robotframework_ride.egg-info/dependency_links.txt
+reading manifest file 'src/robotframework_ride.egg-info/SOURCES.txt'
+reading manifest template 'MANIFEST.in'
+writing manifest file 'src/robotframework_ride.egg-info/SOURCES.txt'
+Copying src/robotframework_ride.egg-info to /Library/Python/2.7/site-packages/robotframework_ride-0.43.3-py2.7.egg-info
+running install_scripts
+creating /usr/local
+creating /usr/local/bin
+copying build/scripts-2.7/ride.py -> /usr/local/bin
+changing mode of /usr/local/bin/ride.py to 755
+--------------------------------------------------------------------------------
++
+ 2. 安裝 wxPython
+--
+雖然 RIDE 官網說 OS X 可能內建 wxPython，但執行 `ride.py` 的結果是沒有的：
+
+--------------------------------------------------------------------------------
+$ ride.py
+wxPython not found.
+You need to install wxPython 2.8 toolkit with unicode support to run RIDE.
+See http://wxpython.org for more information.
+--------------------------------------------------------------------------------
+
+到 wxPython http://wxpython.org/download.php[官網]下載 `wxPython2.8-osx-unicode-py2.7` (`.dmg`) 安裝。
+
+--------------------------------------------------------------------------------
+$ cat /Library/Python/2.7/site-packages/wxredirect.pth <1>
+import site; site.addsitedir('/usr/local/lib/wxPython-unicode-2.8.12.1/lib/python2.7')
+--------------------------------------------------------------------------------
+<1> wxPython 其實是安裝到 `/usr/local/lib/` 底下，而非 `/Lib/Python/2.7/site-packages`。
+
+--
++
+ 3. 執行 RIDE
++
+--------------------------------------------------------------------------------
+$ ride.py
+Traceback (most recent call last): <1>
+  File "/usr/local/bin/ride.py", line 22, in <module>
+    main(sys.argv[1:])
+  File "/Library/Python/2.7/site-packages/robotide/__init__.py", line 65, in main
+    _run(inpath, not noupdatecheck)
+  File "/Library/Python/2.7/site-packages/robotide/__init__.py", line 77, in _run
+    from robotide.application import RIDE
+  File "/Library/Python/2.7/site-packages/robotide/application/__init__.py", line 15, in <module>
+    from application import RIDE, ChiefController
+  File "/Library/Python/2.7/site-packages/robotide/application/application.py", line 17, in <module>
+    import wx
+  File "/usr/local/lib/wxPython-unicode-2.8.12.1/lib/python2.7/site-packages/wx-2.8-mac-unicode/wx/__init__.py", line 45, in <module>
+    from wx._core import *
+  File "/usr/local/lib/wxPython-unicode-2.8.12.1/lib/python2.7/site-packages/wx-2.8-mac-unicode/wx/_core.py", line 4, in <module>
+    import _core_
+ImportError: /usr/local/lib/wxPython-unicode-2.8.12.1/lib/python2.7/site-packages/wx-2.8-mac-unicode/wx/_core_.so: no appropriate 64-bit architecture (see "man python" for running in 32-bit mode)
+$
+$ export VERSIONER_PYTHON_PREFER_32_BIT=yes
+$ ride.py
+2012-04-17 16:43:50.351 Python[7904:1107] CFURLCreateWithString was passed this invalid URL string: '/System/Library/CoreServices/CommonCocoaPanels.bundle' (a file system path instead of an URL string). The URL created will not work with most file URL functions. CFURLCreateWithFileSystemPath or CFURLCreateWithFileSystemPathRelativeToBase should be used instead. <2>
+--------------------------------------------------------------------------------
+<1> 會遇到 "no appropriate 64-bit architecture" 的錯誤是因為 wxPython 在 Mac 下必須執行在 32-bit mode 下，但 Python 預設是採用 64-bit。透過 `VERSIONER_PYTHON_PREFER_32_BIT=yes` 強迫 Python 跑在 32-bit mode，就可能避開這個問題。
+<2> 不知道為什麼會有這個錯誤，但 RIDE 己經可以正常使用了。
+
+或是直接用 pip 安裝：
+
+--------------------------------------------------------------------------------
+$ sudo pip install robotframework-ride
+Downloading/unpacking robotframework-ride
+  Downloading robotframework-ride-0.43.3.tar.gz (713Kb): 713Kb downloaded
+  Running setup.py egg_info for package robotframework-ride
+Installing collected packages: robotframework-ride
+  Running setup.py install for robotframework-ride
+    ---> pavement.install
+    ---> pavement._prepare_build
+    Using version 0.43.3 from VERSION.txt
+    changing mode of build/scripts-2.7/ride.py from 644 to 755
+    changing mode of /usr/local/bin/ride.py to 755
+Successfully installed robotframework-ride
+Cleaning up...
+--------------------------------------------------------------------------------
+
+

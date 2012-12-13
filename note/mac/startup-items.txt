@@ -1,0 +1,103 @@
+= Mac OS X: 開機時自動執行背景服務 (Startup Items) =
+:icons:
+:blogpost-categories: macosx
+
+TIP: 如果要設定使用者登入時要執行的項目，從 System Preferences > Users & Groups > Login Items 設定即可。
+
+SystemStarter 開機時會掃過 `/System/Library/StartupItems` (系統用) 與 `/Library/StartupItems` (可自訂) 底下所有的 startup item。已知 MySQL 跟 VirtualBox 都是這麼做的。
+
+Startup item 用一個資料夾來表示，例如 `/Library/StartupItems/MyItem`，底下要有兩支檔案：
+
+ * 跟資料夾同名的 start script，其實就是個 shell script (executable)。
+ * `StartupParameters.plist`
+
+.`/Library/StartupItems/MyItem/MyItem` (executable)
+--------------------------------------------------------------------------------
+#!/bin/sh
+. /etc/rc.common <1>
+
+StartService() {
+  echo MyItem start >> /tmp/MyItemService.log <2>
+  ...
+}
+
+StopService() {
+  echo MyItem stop >> /tmp/MyItemService.log
+  ...
+}
+
+RestartService() {
+  StopService
+  StartService
+}
+
+RunService "$1"
+--------------------------------------------------------------------------------
+<1> 主要是取得 `RunService` 的定義，但也間接載入了 `/etc/hostconfig` 裡的開關，可供 startup script 參考。
+<2> 可以用這個簡單的指令來做測試。
+
+`RunService` 其實是定義在 `/etc/rc.common` 裡：
+
+--------------------------------------------------------------------------------
+##
+# Generic action handler
+##
+RunService ()
+{
+    case $1 in
+      start  ) StartService   ;;
+      stop   ) StopService    ;;
+      restart) RestartService ;;
+      *      ) echo "$0: unknown argument: $1";;
+    esac
+}
+--------------------------------------------------------------------------------
+
+所以之後可以透過下面的指令來測試 service：
+
+ /Library/StartupItems/MyItem/MyItem start|stop|restart
+
+.`/Library/StartupItems/MyItem/StartupParameters.plist`
+--------------------------------------------------------------------------------
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist SYSTEM "file://localhost/System/Library/DTDs/PropertyList.dtd">
+<plist version="0.9">
+<dict>
+    <key>Description</key>
+    <string>MyItem</string>
+    <key>Provides</key>
+    <array>
+        <string>MyItem</string>
+    </array>
+    <key>Requires</key>
+    <array>
+        <string>Network</string>
+    </array>
+    <key>OrderPreference</key>
+    <string>Late</string>
+</dict>
+</plist>
+--------------------------------------------------------------------------------
+
+重開機，理當要看到 `/tmp/MyItemService.log` 有一行 "MyItem start"。
+
+所有的 startup items 預設都是以 root 的身份在執行，如果有以其他使用者留份執行的需求，用 link:../unix-like/commands/sudo.html[`sudo`] 會有效果，雖然網路上找不太到類似的資料。例如：
+
+--------------------------------------------------------------------------------
+StartService() {
+  sudo -u somebody echo MyItem start >> /tmp/MyItemService.log
+  ...
+}
+--------------------------------------------------------------------------------
+
+由於執行 `sudo` 的身份是 root，所以過程中不會被要求輸入密碼。
+
+== 參考資料 ==
+
+ * http://docstore.mik.ua/orelly/unix3/mac/ch02_01.htm[Startup (Mac OS X for Unix Geeks)]
+ * http://docstore.mik.ua/orelly/unix3/mac/ch02_02.htm[Adding Startup Items (Mac OS X for Unix Geeks)]
+ * http://dev.mysql.com/doc/refman/5.1/en/macosx-installation-startupitem.html[MySQL :: MySQL 5.1 Reference Manual :: 2.4.3 Installing the MySQL Startup Item] - MySQL 也是安裝到 `/Library/StartupItems` 底下。
+ * http://stackoverflow.com/questions/6752292/running-a-sudo-command-line-in-the-start-of-mac-os-x[osx - Running a sudo command line in the start of Mac OS X - Stack Overflow] (2011-07-19) - 提到 `/Library/StartupItems`、`/etc/rc.common` 與 `launchd`。
+ * http://blog4kevin.sinaapp.com/index.php/archives/406[德馨 » /etc/rc.local on Mac OS X] (2011-06-17) - 修改 `rc.common` 讓它呼叫 `rc.local`。
+ * http://macdevcenter.com/pub/a/mac/2003/10/21/startup.html[Start Me Up: Writing and Understanding OS X StartupItems - O'Reilly Media] (2003-10-21; PDF) - 提到 StartupItems 跟 LoginItems，但如何改變 startup item 的執行身份卻只講一半...
+

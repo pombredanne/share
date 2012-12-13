@@ -1,0 +1,139 @@
+= Spring =
+<<TableOfContents>>
+
+== 隨手記 ==
+
+== 學習指引 ==
+
+ * http://www.apress.com/book/view/1590599217[Apress - Pro Spring 2.5]
+
+ * http://static.springsource.org/spring/docs/2.5.x/reference/index.html[The Spring Framework - Reference Documentation 2.5.x] - 參考手冊, 不適合用來入門
+
+== Maven ==
+
+所有的 dependencies 都可以在 http://repo1.maven.org/maven2/org/springframework/[central repository] 找到, 版本相當完整. 最簡單的就是直接引入 `org.springframework:spring:2.5.6` (JAR 檔直接內含所有模組, 但外部套件則用手動引入, 例如 `javax.mail:mail:1.4`):
+
+ {{{
+<dependency>  <groupId>org.springframework</groupId>
+  <artifactId>spring</artifactId>  <version>2.5.6</version>
+</dependency>
+ }}}
+
+<<Anchor(email)>>
+== Email ==
+
+ {{{
+<dependency>  <groupId>org.springframework</groupId>
+  <artifactId>spring</artifactId>  <version>2.5.6</version>
+</dependency>
+<dependency>
+  <groupId>javax.mail</groupId>
+  <artifactId>mail</artifactId>
+  <version>1.4.1</version>
+  <!-- 採用 Java SE 6 時, 就不需要 JAF
+  <exclusions>
+    <exclusion>
+      <groupId>javax.activation</groupId>
+      <artifactId>activation</artifactId>
+    </exclusion>
+  </exclusions>
+  -->
+</dependency>
+ }}}
+
+`JavaMailSenderImpl` 與 `SimpleMailMessage` 更多的 properties 請參考:
+
+ * http://static.springsource.org/spring/docs/2.5.x/api/org/springframework/mail/javamail/JavaMailSenderImpl.html
+ * http://static.springsource.org/spring/docs/2.5.x/api/org/springframework/mail/SimpleMailMessage.html
+
+ {{{
+<bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
+  <property name="host" value="..." />
+  <property name="username" value="..." />
+  <property name="password" value="..." />
+  <property name="defaultEncoding" value="UTF-8" />
+</bean>
+
+<bean id="template" class="org.springframework.mail.SimpleMailMessage">
+  <property name="from" value="..." />
+  <property name="replyTo" value="..." /> <!-- 有時候會寫 "NOREPLY" -->
+  <property name="subject" value="..." />
+  <property name="text">
+<value><![CDATA[
+Hello!! Today is ${today}
+]]></value>
+  </property>
+</bean>
+ }}}
+
+ {{{
+Resource conf = new ClassPathResource("com/simplbug/eval/spring/context.xml");
+final XmlBeanFactory factory = new XmlBeanFactory(conf);
+
+MimeMessagePreparator preparator = new MimeMessagePreparator() {
+  public void prepare(MimeMessage mimeMessage) throws Exception {
+    // MimeMessage 只能被動由 JavaMailSender 提供, 但仍可以手動將 SimpleMailMessage 的內容抄寫過來
+    SimpleMailMessage template = (SimpleMailMessage)factory.getBean("template");
+    MimeMessageHelper message = new MimeMessageHelper(mimeMessage, true);
+
+    message.setFrom(template.getFrom());
+    message.setTo(template.getTo());
+    message.setReplyTo(template.getReplyTo());
+    message.setSubject(template.getSubject() + " [MIME]");
+    message.setText(template.getText().replace("${today}", new Date().toString()));
+
+    // 不能使用 InputStreamResource, 否則會遇到 "Passed-in Resource contains an open stream" 的錯誤
+    UrlResource file = new UrlResource(getClass().getResource("exam.pdf"));
+    message.addAttachment("Exam.pdf", file); // 中文檔名在會變成亂碼, 在 MimeMessageHelper 傳入 Encoding 也沒用
+  }
+};
+
+JavaMailSender sender = (JavaMailSender)factory.getBean("mailSender");
+sender.send(preparator);
+ }}}
+
+== 常見問題 ==
+
+== 參考資料 ==
+
+'''關聯'''
+
+'''網站'''
+
+ * http://www.springsource.org/[Official Home]
+   * http://static.springsource.org/spring/docs/2.5.x/api/index.html[Spring Framework API 2.5 (Javadoc)]
+ * http://www.springframework.net/[Spring.NET - Application Framework]
+ * http://www.springside.org.cn/[SpringSide 春天的旁边]
+ * http://spring.jactiongroup.net/[SpringFramework 中文论坛]
+ * http://www.springbyexample.org/[Spring by Example]
+
+'''工具/方案'''
+
+ * http://springide.org/blog/[Spring IDE]
+ * http://www.acegisecurity.org/[Acegi Security] - Acegi Security System for Spring
+
+'''應用案例'''
+
+'''書藉'''
+
+ * http://www.apress.com/book/view/1430218452[Apress - Pro Spring 3] (2009-12)
+ * http://www.manning.com/wheeler/[Manning - Spring in Practice] (2009-11)
+ * http://www.apress.com/book/view/1430224991[Apress - Spring Web Recipes: A Problem-Solution Approach] (2009-10)
+ * http://www.apress.com/book/view/1430224975[Apress - Spring Enterprise Recipes: A Problem-Solution Approach] (2009-10)
+ * http://www.apress.com/book/view/1590599217[Apress - Pro Spring 2.5] (2008.08)
+ * http://www.apress.com/book/view/1430210095[Apress - Pro Java EE Spring Patterns: Best Practices and Design Strategies Implementing Java EE Patterns with the Spring Framework] (2008.08)
+ * http://www.apress.com/book/view/1590599799[Apress - Spring Recipes: A Problem-Solution Approach] (2008.06)
+ * http://www.manning.com/walls3/[Manning - Spring in Action, Second Edition] (2007-08)
+
+'''文章/新聞/討論'''
+
+ * http://en.wikipedia.org/wiki/Spring_Framework[Spring Framework - Wikipedia, the free encyclopedia]
+ * http://news.networkmagazine.com.tw/trends/2009/08/11/14560/[VMware為網雲趨勢併購SpringSource - 網路資訊雜誌] (2009-08-11)
+ * http://www.apress.com/book/view/1590595963[Apress - Beginning POJOs: Lightweight Java Web Development Using Plain Old Java Objects in Spring, Hibernate, and Tapestry] (2006.03)
+
+'''關鍵字'''
+
+== 修訂記錄 ==
+
+|| 版次 || 日期 || 記錄 ||
+|| 1.0 || <<Date(2009-05-25T22:42:27Z)>> || 初稿 ||

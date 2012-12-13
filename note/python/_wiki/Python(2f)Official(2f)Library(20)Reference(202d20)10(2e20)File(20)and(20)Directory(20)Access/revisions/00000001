@@ -1,0 +1,183 @@
+= Python / Official / Library Reference - 10. File and Directory Access =
+http://docs.python.org/library/filesys.html 
+<<TableOfContents>>
+
+== 10.1. os.path — Common pathname manipulations ==
+http://docs.python.org/library/os.path.html @2010/09/11
+
+__This module implements some useful functions on ''pathnames''.__ To read or write files see `open()`, and for accessing the filesystem see the `os` module.
+
+Note: __On Windows, many of these functions do not properly support UNC pathnames. `splitunc()` and `ismount()` do handle them correctly.__
+
+Note: __Since different operating systems have different path name conventions, there are several versions of this module in the standard library. '''The `os.path` module is always the path module suitable for the operating system Python is running on,''' and therefore usable for ''local paths''. However, you can also import and use the individual modules if you want to manipulate a path that is always in one of the different formats.__ They all have the same interface:
+
+ * `posixpath` for UNIX-style paths
+ * `ntpath` for Windows paths
+ * `macpath` for old-style MacOS paths
+ * `os2emxpath` for OS/2 EMX paths
+
+'''`os.path.abspath(path)`'''
+
+__Return a normalized absolutized version of the pathname `path`. On most platforms, this is equivalent to `normpath(join(os.getcwd(), path))`.__
+
+New in version 1.5.2.
+
+:::
+
+'''`os.path.dirname(path)`'''
+
+__Return the directory name of pathname `path`. This is the first half of the pair returned by `split(path)`.__
+
+'''`os.path.exists(path)`'''
+
+__Return `True` if `path` refers to an existing path. Returns `False` for broken symbolic links. On some platforms, this function may return `False` if permission is not granted to execute `os.stat()` on the requested file, even if the path physically exists.__
+
+:::
+
+'''`os.path.getsize(path)`'''
+
+__Return the size, in bytes, of `path`. Raise `os.error` if the file does not exist or is inaccessible.__
+
+New in version 1.5.2.
+
+:::
+
+'''`os.path.isabs(path)`'''
+
+__Return `True` if `path` is an absolute pathname. On Unix, that means it begins with a slash, on Windows that it begins with a (back)slash after chopping off a potential drive letter.__
+
+'''`os.path.isfile(path)`'''
+
+__Return `True` if path is an existing regular file.__ This follows symbolic links, so both `islink()` and `isfile()` can be true for the same path.
+
+'''`os.path.isdir(path)`'''
+
+__Return `True` if path is an existing directory.__ This follows symbolic links, so both `islink()` and `isdir()` can be true for the same path.
+
+:::
+
+'''`os.path.join(path1[, path2[, ...]])`'''
+
+__Join one or more ''path components'' intelligently.__ If any component is an absolute path, all previous components (on Windows, including the previous drive letter, if there was one) are thrown away, and joining continues. __The return value is the concatenation of `path1`, and optionally `path2`, etc., with exactly one directory separator (`os.sep`) inserted between components, unless `path2` is empty. Note that on Windows, since there is a current directory for each drive, `os.path.join("c:", "foo")` represents a path relative to the current directory on drive C: (`c:foo`), not `c:\foo`.__
+
+:::
+
+'''`os.path.split(path)`'''
+
+__Split the pathname `path` into a pair, `(head, tail)` where tail is the last pathname component and head is everything leading up to that. The tail part will never contain a slash; if `path` ends in a slash, tail will be empty. If there is no slash in `path`, head will be empty. If `path` is empty, both head and tail are empty. Trailing slashes are stripped from head unless it is the root (one or more slashes only). In nearly all cases, `join(head, tail)` equals `path` (the only exception being when there were multiple slashes separating head from tail).__
+
+:::
+
+== 10.6. tempfile — Generate temporary files and directories ==
+http://docs.python.org/library/tempfile.html @2010/08/25
+
+This module generates temporary files and directories. It works on all supported platforms.
+
+In version 2.3 of Python, this module was overhauled for enhanced security. It now provides three new functions, `NamedTemporaryFile()`, `mkstemp()`, and `mkdtemp()`, which should eliminate all remaining need to use the insecure `mktemp()` function. Temporary file names created by this module no longer contain the process ID; instead a string of six random characters is used.
+
+Also, all the ''user-callable functions'' now take additional arguments which allow direct control over the location and name of temporary files. It is no longer necessary to use the global `tempdir` and `template` variables. __To maintain backward compatibility, the argument order is somewhat odd; it is recommended to use keyword arguments for clarity.__
+
+The module defines the following user-callable functions:
+
+:::
+
+The module uses two global variables that tell it how to construct a temporary name. __They are initialized at the first call to any of the functions above.__ The caller may change them, but this is discouraged; use the appropriate function arguments, instead.
+
+'''`tempfile.tempdir`'''
+
+When set to a value other than `None`, this variable defines the default value for the `dir` argument to all the functions defined in this module.
+
+__If `tempdir` is unset or `None` at any call to any of the above functions, Python searches a standard list of directories and sets `tempdir` to the first one which the calling user can create files in.__ The list is:
+
+1. The directory named by the `TMPDIR` environment variable.
+
+2. The directory named by the `TEMP` environment variable.
+
+3. The directory named by the `TMP` environment variable.
+
+4. A platform-specific location:
+
+   * On RiscOS, the directory named by the `Wimp$ScrapDir` environment variable.
+   * On Windows, the directories `C:\TEMP`, `C:\TMP`, `\TEMP`, and `\TMP`, in that order.
+   * On all other platforms, the directories `/tmp`, `/var/tmp`, and `/usr/tmp`, in that order.
+
+5. __As a last resort, the current working directory.__
+
+'''`tempfile.gettempdir()`'''
+
+Return the directory currently selected to create temporary files in. If `tempdir` is not `None`, this simply returns its contents; otherwise, the search described above is performed, and the result returned.
+
+New in version 2.3.
+
+:::
+
+== 10.7. glob — Unix style pathname pattern expansion ==
+http://docs.python.org/library/glob.html @2010/09/02
+
+__The `glob` module finds all the pathnames matching a specified pattern according to the rules used by the Unix shell. No ''tilde expansion'' is done, but `*`, `?`, and character ranges expressed with `[]` will be correctly matched.__ This is done by using the `os.listdir()` and `fnmatch.fnmatch()` functions in concert, and not by actually invoking a subshell. (For tilde and shell variable expansion, use `os.path.expanduser()` and `os.path.expandvars()`.)
+
+'''`glob.glob(pathname)`'''
+
+__Return a possibly-empty list of path names that match `pathname`, which must be a string containing a ''path specification''. pathname can be either absolute (like `/usr/src/Python-1.5/Makefile`) or relative (like `../../Tools/*/*.gif`), and can contain shell-style wildcards.__ Broken symlinks are included in the results (as in the shell).
+
+'''`glob.iglob(pathname)`'''
+
+Return an iterator which yields the same values as `glob()` without actually storing them all simultaneously.
+
+New in version 2.5.
+
+For example, consider a directory containing only the following files: `1.gif`, `2.txt`, and `card.gif`. `glob()` will produce the following results. Notice how any leading components of the path are preserved.
+
+ {{{
+>>> import glob
+>>> glob.glob('./[0-9].*')
+['./1.gif', './2.txt']
+>>> glob.glob('*.gif')
+['1.gif', 'card.gif']
+>>> glob.glob('?.gif')
+['1.gif']
+ }}}
+
+See also
+
+ * Module `fnmatch` - Shell-style filename (not path) expansion
+
+== 10.8. fnmatch — Unix filename pattern matching ==
+http://docs.python.org/library/fnmatch.html @2011/01/26
+
+:::
+
+'''`fnmatch.translate(pattern)`'''
+
+__Return the shell-style pattern converted to a regular expression.__
+
+__Be aware there is no way to quote meta-characters.__
+
+Example:
+
+ {{{
+>>> import fnmatch, re
+>>>
+>>> regex = fnmatch.translate('*.txt')
+>>> regex
+'.*\\.txt$'
+>>> reobj = re.compile(regex)
+>>> reobj.match('foobar.txt')
+<_sre.SRE_Match object at 0x...>
+ }}}
+
+:::
+
+== 10.10. shutil — High-level file operations ==
+http://docs.python.org/library/shutil.html @2010/09/11
+
+The `shutil` module offers a number of high-level operations on files and collections of files. In particular, functions are provided which support file copying and removal. For operations on individual files, see also the `os` module.
+
+:::
+
+`shutil.copyfile(src, dst)`¶
+
+__Copy the contents (no metadata) of the file named `src` to a file named `dst`. `dst` must be the complete target file name;__ look at `copy()` for a copy that accepts a target directory path. If `src` and `dst` are the same files, `Error` is raised. The destination location must be writable; otherwise, an `IOError` exception will be raised. If `dst` already exists, it will be replaced. Special files such as character or block devices and pipes cannot be copied with this function. __`src` and `dst` are path names given as strings.__
+    
+:::
+

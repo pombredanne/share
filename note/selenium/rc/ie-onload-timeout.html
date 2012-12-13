@@ -1,0 +1,231 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Selenium][RC] IE 等不到 onload()</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="ie-onload-timeout.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="../selenium.html">Selenium</a> / <a href="../selenium-rc.html">RC</a> / IE 等不到 <code>onload()</code></h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>&#8594; <a href="ie-onload-timeout_EN.html">英文版</a></p></div>
+<div class="paragraph"><p>Selenium 在 IE 9 下會 "不定期" 遇到 "Time out after 30000ms" 的錯誤（主要是卡在 <code>wait_for_page_to_load()</code>），這個問題大概在 2011 年中被提出來，不過由於 Selenium 團隊已漸漸把開發重心移往 <a href="../webdriver/webdriver.html">Selenium 2/WebDriver</a>，所以一直沒有被修復，而這一連串的討論也終止於 2012-01-03 專案成員將 priority 調為 LOW&#8230;</p></div>
+<div class="quoteblock">
+<div class="content">
+<div class="paragraph"><p>Comment 13 by project member jmle&#8230;@gmail.com, Jan 3, 2012
+All active development is focused on Selenium 2.0 (the WebDriver APIs).  Updating issue priority accordingly.</p></div>
+<div class="paragraph"><p>Labels: Priority-Low</p></div>
+</div>
+<div class="attribution">
+&#8212; <a href="http://code.google.com/p/selenium/issues/detail?id=1639">Issue 1639 - selenium - Internet Explorer 9 intermittently fails to recognize page loads with waitForPageToLoad call</a>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../../_asciidoc/images/icons/important.png" alt="Important" />
+</td>
+<td class="content">這個事件提醒了我們要加快<a href="../webdriver/migration.html">從 RC 遷移到 WebDriver</a> 的腳步。不過在這之前，還是得解決這個問題才行。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>這個問題在 IE 9 上相對嚴重，因為連 <code>open()</code> 都會卡住，至於 IE 10 則不曾遇到卡在 <code>open()</code> 的狀況。由於影響的層面很大（包括 <a href="../../seleniumlibrary/seleniumlibrary.html">SeleniumLibrary</a>），因此要從底層的 <code>selenium.py</code> 處理。</p></div>
+<div class="listingblock">
+<div class="title"><code>selenium.py</code></div>
+<div class="content"><!-- Generator: GNU source-highlight 3.1.4
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="font-weight: bold"><span style="color: #0000FF">def</span></span> <span style="font-weight: bold"><span style="color: #000000">open</span></span><span style="color: #990000">(</span>self<span style="color: #990000">,</span>url<span style="color: #990000">,</span>ignoreResponseCode<span style="color: #990000">=</span>True<span style="color: #990000">):</span>
+<span style="font-style: italic"><span style="color: #9A1900">    """</span></span>
+<span style="font-style: italic"><span style="color: #9A1900">    Opens an URL in the test frame. This accepts both relative and absolute</span></span>
+<span style="font-style: italic"><span style="color: #9A1900">    URLs.</span></span>
+
+<span style="font-style: italic"><span style="color: #9A1900">    The "open" command waits for the page to load before proceeding,</span></span>
+<span style="font-style: italic"><span style="color: #9A1900">    ie. the "AndWait" suffix is implicit.</span></span>
+<span style="font-style: italic"><span style="color: #9A1900">    ...</span></span>
+<span style="font-style: italic"><span style="color: #9A1900">    """</span></span>
+    self<span style="color: #990000">.</span><span style="font-weight: bold"><span style="color: #000000">do_command</span></span><span style="color: #990000">(</span><span style="color: #FF0000">"open"</span><span style="color: #990000">,</span> <span style="color: #990000">[</span>url<span style="color: #990000">,</span>ignoreResponseCode<span style="color: #990000">])</span>
+
+<span style="font-weight: bold"><span style="color: #0000FF">def</span></span> <span style="font-weight: bold"><span style="color: #000000">wait_for_page_to_load</span></span><span style="color: #990000">(</span>self<span style="color: #990000">,</span>timeout<span style="color: #990000">):</span>
+<span style="font-style: italic"><span style="color: #9A1900">    """</span></span>
+<span style="font-style: italic"><span style="color: #9A1900">    Waits for a new page to load.</span></span>
+
+<span style="font-style: italic"><span style="color: #9A1900">    You can use this command instead of the "AndWait" suffixes, "clickAndWait", "selectAndWait", "typeAndWait" etc.</span></span>
+<span style="font-style: italic"><span style="color: #9A1900">    (which are only available in the JS API).</span></span>
+
+<span style="font-style: italic"><span style="color: #9A1900">    Selenium constantly keeps track of new pages loading, and sets a "newPageLoaded"</span></span>
+<span style="font-style: italic"><span style="color: #9A1900">    flag when it first notices a page load.  Running any other Selenium command after</span></span>
+<span style="font-style: italic"><span style="color: #9A1900">    turns the flag to false.  Hence, if you want to wait for a page to load, you must</span></span>
+<span style="font-style: italic"><span style="color: #9A1900">    wait immediately after a Selenium command that caused a page-load.</span></span>
+<span style="font-style: italic"><span style="color: #9A1900">    ...</span></span>
+<span style="font-style: italic"><span style="color: #9A1900">    """</span></span>
+    self<span style="color: #990000">.</span><span style="font-weight: bold"><span style="color: #000000">do_command</span></span><span style="color: #990000">(</span><span style="color: #FF0000">"waitForPageToLoad"</span><span style="color: #990000">,</span> <span style="color: #990000">[</span>timeout<span style="color: #990000">,])</span></tt></pre></div></div>
+<div class="paragraph"><p>做了一些簡單的實驗確認過：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+呼叫 <code>open()</code> 前將 timeout 設成 0，可以解決 <code>open()</code> 可能卡住的問題。
+</p>
+<div class="listingblock">
+<div class="title"><a href="http://code.google.com/p/selenium/source/browse/trunk/common/src/js/core/scripts/selenium-api.js?r=8162#923"><code>selenium-api.js#923</code></a></div>
+<div class="content"><!-- Generator: GNU source-highlight 3.1.4
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt>Selenium<span style="color: #990000">.</span><span style="font-weight: bold"><span style="color: #0000FF">prototype</span></span><span style="color: #990000">.</span>makePageLoadCondition <span style="color: #990000">=</span> <span style="font-weight: bold"><span style="color: #0000FF">function</span></span><span style="color: #990000">(</span>timeout<span style="color: #990000">)</span> <span style="color: #FF0000">{</span>
+    <span style="font-weight: bold"><span style="color: #0000FF">if</span></span> <span style="color: #990000">(</span>timeout <span style="color: #990000">==</span> <span style="font-weight: bold"><span style="color: #0000FF">null</span></span><span style="color: #990000">)</span> <span style="color: #FF0000">{</span>
+        timeout <span style="color: #990000">=</span> <span style="font-weight: bold"><span style="color: #0000FF">this</span></span><span style="color: #990000">.</span>defaultTimeout<span style="color: #990000">;</span>
+    <span style="color: #FF0000">}</span>
+    <span style="font-style: italic"><span style="color: #9A1900">// if the timeout is zero, we won't wait for the page to load before returning</span></span>
+    <span style="font-weight: bold"><span style="color: #0000FF">if</span></span> <span style="color: #990000">(</span>timeout <span style="color: #990000">==</span> <span style="color: #993399">0</span><span style="color: #990000">)</span> <span style="color: #FF0000">{</span> <span style="font-style: italic"><span style="color: #9A1900">// 內部確實會對 timeout == 0 的狀況做不同的處理</span></span>
+          <span style="font-style: italic"><span style="color: #9A1900">// abort XHR request</span></span>
+          <span style="font-weight: bold"><span style="color: #0000FF">this</span></span><span style="color: #990000">.</span><span style="font-weight: bold"><span style="color: #000000">_abortXhrRequest</span></span><span style="color: #990000">();</span>
+          <span style="font-weight: bold"><span style="color: #0000FF">return</span></span><span style="color: #990000">;</span>
+    <span style="color: #FF0000">}</span>
+    <span style="font-weight: bold"><span style="color: #0000FF">return</span></span> Selenium<span style="color: #990000">.</span><span style="font-weight: bold"><span style="color: #000000">decorateFunctionWithTimeout</span></span><span style="color: #990000">(</span><span style="font-weight: bold"><span style="color: #000000">fnBind</span></span><span style="color: #990000">(</span><span style="font-weight: bold"><span style="color: #0000FF">this</span></span><span style="color: #990000">.</span>_isNewPageLoaded<span style="color: #990000">,</span> <span style="font-weight: bold"><span style="color: #0000FF">this</span></span><span style="color: #990000">),</span> timeout<span style="color: #990000">,</span> <span style="font-weight: bold"><span style="color: #000000">fnBind</span></span><span style="color: #990000">(</span><span style="font-weight: bold"><span style="color: #0000FF">this</span></span><span style="color: #990000">.</span>_abortXhrRequest<span style="color: #990000">,</span> <span style="font-weight: bold"><span style="color: #0000FF">this</span></span><span style="color: #990000">));</span>
+<span style="color: #FF0000">}</span><span style="color: #990000">;</span></tt></pre></div></div>
+</li>
+<li>
+<p>
+檢查 <a href="http://www.w3schools.com/jsref/prop_doc_readystate.asp"><code>document.readyState</code></a> 的值是不是 <code>complete</code> 來斷定頁面是不是載入完成，可信度還滿高的，而且不會有一定得發生 onload 才行。
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>開始動手修改 <code>open()</code> 跟 <code>wait_for_page_to_load()</code>：</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.4
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="font-weight: bold"><span style="color: #0000FF">def</span></span> <span style="font-weight: bold"><span style="color: #000000">open</span></span><span style="color: #990000">(</span>self<span style="color: #990000">):</span>
+    timeout <span style="color: #990000">=</span> self<span style="color: #990000">.</span><span style="font-weight: bold"><span style="color: #000000">get_eval</span></span><span style="color: #990000">(</span><span style="color: #FF0000">'this.defaultTimeout'</span><span style="color: #990000">)</span>
+    self<span style="color: #990000">.</span><span style="font-weight: bold"><span style="color: #000000">set_timeout</span></span><span style="color: #990000">(</span><span style="color: #993399">0</span><span style="color: #990000">)</span> <span style="font-style: italic"><span style="color: #9A1900"># the following 'open' may cause timeout in IE 9+</span></span>
+    self<span style="color: #990000">.</span><span style="font-weight: bold"><span style="color: #000000">do_command</span></span><span style="color: #990000">(</span><span style="color: #FF0000">"open"</span><span style="color: #990000">,</span> <span style="color: #990000">[</span>url<span style="color: #990000">,</span>ignoreResponseCode<span style="color: #990000">])</span>
+    self<span style="color: #990000">.</span><span style="font-weight: bold"><span style="color: #000000">set_timeout</span></span><span style="color: #990000">(</span>timeout<span style="color: #990000">)</span>
+    self<span style="color: #990000">.</span><span style="font-weight: bold"><span style="color: #000000">wait_for_page_to_load</span></span><span style="color: #990000">(</span>timeout<span style="color: #990000">)</span>
+
+<span style="font-weight: bold"><span style="color: #0000FF">def</span></span> <span style="font-weight: bold"><span style="color: #000000">wait_for_page_to_load</span></span><span style="color: #990000">(</span>self<span style="color: #990000">,</span>timeout<span style="color: #990000">):</span>
+    <span style="font-style: italic"><span style="color: #9A1900"># the following command may cause timeout in IE 9+</span></span>
+    <span style="font-style: italic"><span style="color: #9A1900"># self.do_command("waitForPageToLoad", [timeout,])</span></span>
+    <span style="font-weight: bold"><span style="color: #000080">import</span></span> time
+    end <span style="color: #990000">=</span> time<span style="color: #990000">.</span><span style="font-weight: bold"><span style="color: #000000">time</span></span><span style="color: #990000">()</span> <span style="color: #990000">+</span> <span style="font-weight: bold"><span style="color: #000000">int</span></span><span style="color: #990000">(</span><span style="font-weight: bold"><span style="color: #000000">float</span></span><span style="color: #990000">(</span>timeout<span style="color: #990000">)</span> <span style="color: #990000">/</span> <span style="color: #993399">1000</span><span style="color: #990000">)</span>
+    <span style="font-weight: bold"><span style="color: #0000FF">while</span></span> time<span style="color: #990000">.</span><span style="font-weight: bold"><span style="color: #000000">time</span></span><span style="color: #990000">()</span> <span style="color: #990000">&lt;</span> end<span style="color: #990000">:</span>
+        <span style="font-weight: bold"><span style="color: #0000FF">if</span></span> self<span style="color: #990000">.</span><span style="font-weight: bold"><span style="color: #000000">get_eval</span></span><span style="color: #990000">(</span><span style="color: #FF0000">'window.document.readyState'</span><span style="color: #990000">)</span> <span style="color: #990000">==</span> <span style="color: #FF0000">'complete'</span><span style="color: #990000">:</span> <span style="font-weight: bold"><span style="color: #0000FF">return</span></span>
+        time<span style="color: #990000">.</span><span style="font-weight: bold"><span style="color: #000000">sleep</span></span><span style="color: #990000">(</span><span style="color: #993399">2</span><span style="color: #990000">)</span>
+    <span style="font-weight: bold"><span style="color: #0000FF">raise</span></span> <span style="font-weight: bold"><span style="color: #000000">Exception</span></span><span style="color: #990000">(</span><span style="color: #FF0000">'Time out after %sms'</span> <span style="color: #990000">%</span> timeout<span style="color: #990000">)</span></tt></pre></div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_延伸閱讀">延伸閱讀</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="../selenium-rc-javascript.html">執行 JavaScript</a>
+</p>
+</li>
+<li>
+<p>
+<a href="../selenium-rc-default-timeout.html">取得 Default Timeout</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://grokbase.com/t/gg/selenium-users/127rscmeax/html-script-timeouts-using-iexplore-with-ie9">[selenium-users&#93; html script timeouts using iexplore with IE9 - Grokbase</a> (2012-07-24) - 停用 protected mode 跟 pop-up blocker 之後，還是會有 timeout 的問題。
+</p>
+</li>
+<li>
+<p>
+<a href="http://code.google.com/p/selenium/issues/detail?id=2451">Issue 2451 - selenium - waitForPageToLoad() in Internet Explorer 9 ( ie 9 ) - Browser automation framework - Google Project Hosting</a> (2011-09-13) - 不解為什麼已經有人提出 patch，但開發團隊就是不把它整進去？
+</p>
+</li>
+<li>
+<p>
+<a href="http://webthaumaturge.blogspot.tw/2011/08/selenium-ie9-waitforpagetoload-fix.html">webthaumaturge&#8217;s blog: Selenium IE9 WaitForPageToLoad Fix</a> (2011-08-26) - <code>user-extensions.js</code> 的解法，看起來頗為複雜。
+</p>
+</li>
+<li>
+<p>
+<a href="http://code.google.com/p/selenium/issues/detail?id=1639">Issue 1639 - selenium - Internet Explorer 9 intermittently fails to recognize page loads with waitForPageToLoad call - Browser automation framework - Google Project Hosting</a> (2011-05-09) - IE9 "不定時" 會出現偵測不到頁面已經載完的問題，連最單純的 <code>open()</code> 也會出狀況。有人提出 <code>user-extensions.js</code> 的解法。最後 2012-01-03 開發成員回答說目前專攻 Selenium 2 的開發，把 priority 調低。
+</p>
+</li>
+<li>
+<p>
+<a href="http://automation-tipsandtricks.blogspot.tw/2010/12/seleniumopen-times-out-even-after-page.html">Automation - Tips and Tricks: selenium.open times out even after the page has loaded in IE</a> (2010-12-12) - 把 default timeout 設成 0，改用 <code>waitForPageToLoad("50000")</code> 可以解決 <code>open()</code> 也會卡住的問題。
+</p>
+</li>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/3372507/selenium-test-in-internet-explorer-always-times-out">Selenium test in Internet Explorer always times out? - Stack Overflow</a> (2010-07-30) - 在 IE9 上也會，建議換成 <code>waitForVisible()</code>。將 protected mode 關閉也可以？
+</p>
+</li>
+<li>
+<p>
+<a href="http://jira.openqa.org/browse/SRC-552">[#SRC-552</a> waitForPageToLoad does not return on *iexplore browser in Windows XP - OpenQA Bug Tracker] (2008-11-02) - 第一次回報在 IE6 上有狀況（只有 <code>*iexplore</code> 會，但 <code>*iehta</code> 不會？），但有人提到 IE8 也有 "even though the page loads successfully" 的問題。
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-13 14:28:35 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

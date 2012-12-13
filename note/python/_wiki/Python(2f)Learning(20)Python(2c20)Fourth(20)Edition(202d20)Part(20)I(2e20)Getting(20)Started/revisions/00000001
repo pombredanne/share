@@ -1,0 +1,83 @@
+= Python / Learning Python, Fourth Edition - Part I. Getting Started =
+<<TableOfContents>>
+
+=== Comprehensions ===
+
+In addition to sequence operations and list methods, Python includes a more advanced operation known as a ''list comprehension expression'', which turns out to be a powerful way to process structures like our matrix. Suppose, for instance, that we need to extract the second column of our sample matrix. It’s easy to grab rows by simple indexing because the matrix is stored by rows, but it’s almost as easy to get a column with a list comprehension:
+
+ {{{
+>>> col2 = [row[1] for row in M] # Collect the items in column 2
+>>> col2
+[2, 5, 8]
+
+>>> M # The matrix is unchanged
+[[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+ }}}
+
+List comprehensions derive from ''set notation''; __they are a way to build a new list by running an expression on each item in a sequence, one at a time, from left to right. List comprehensions are coded in square brackets (to tip you off to the fact that they make a list) and are composed of an expression and a looping construct that share a variable name (`row`, here).__ The preceding list comprehension means basically what it says: “Give me `row[1]` for each row in matrix `M`, in a new list.” The result is a new list containing column 2 of the matrix.
+
+List comprehensions can be more complex in practice:
+
+ {{{
+>>> [row[1] + 1 for row in M] # Add 1 to each item in column 2
+[3, 6, 9]
+
+>>> [row[1] for row in M if row[1] % 2 == 0] # Filter out odd items
+[2, 8]
+ }}}
+
+The first operation here, for instance, adds 1 to each item as it is collected, and the second uses an `if` clause to filter odd numbers out of the result using the `%` modulus expression (remainder of division). __List comprehensions make new lists of results, '''but they can be used to iterate over any iterable object.'''__ Here, for instance, we use list comprehensions to step over a hardcoded list of coordinates and a string:
+
+ {{{
+>>> diag = [M[i][i] for i in [0, 1, 2]] # Collect a diagonal from matrix
+>>> diag
+[1, 5, 9]
+
+>>> doubles = [c * 2 for c in 'spam'] # Repeat characters in a string
+>>> doubles
+['ss', 'pp', 'aa', 'mm']
+ }}}
+
+List comprehensions, and relatives like the `map` and `filter` built-in functions, are a bit too involved for me to say more about them here. The main point of this brief introduction is to illustrate that Python includes both simple and advanced tools in its arsenal. __List comprehensions are an optional feature, but they tend to be handy in practice and often provide a substantial processing speed advantage.__ They also work on any type that is a sequence in Python, as well as some types that are not. You’ll hear much more about them later in this book.
+
+__As a preview, though, you’ll find that in recent Pythons, comprehension syntax in parentheses can also be used to create ''generators'' that produce results on demand__ (the `sum` built-in, for instance, sums items in a sequence):
+
+ {{{
+>>> G = (sum(row) for row in M) # Create a generator of row sums
+>>> next(G)
+6
+>>> next(G) # Run the iteration protocol
+15
+ }}}
+
+__The `map` built-in can do similar work, by generating the results of running items through a function.__ Wrapping it in `list` forces it to return all its values in Python 3.0: (多 `list()` 這一層好像沒什麼用?)
+
+ {{{
+>>> list(map(sum, M)) # Map sum over items in M
+[6, 15, 24]
+ }}}
+
+__In Python 3.0, comprehension syntax can also be used to create sets and dictionaries:__
+
+ {{{
+>>> {sum(row) for row in M} # Create a set of row sums
+{24, 6, 15}
+
+>>> {i : sum(M[i]) for i in range(3)} # Creates key/value table of row sums
+{0: 6, 1: 15, 2: 24}
+ }}}
+
+In fact, lists, sets, and dictionaries can all be built with comprehensions in 3.0:
+
+ {{{
+>>> [ord(x) for x in 'spaam'] # List of character ordinals
+[115, 112, 97, 97, 109]
+>>> {ord(x) for x in 'spaam'} # Sets remove duplicates
+{112, 97, 115, 109}
+>>> {x: ord(x) for x in 'spaam'} # Dictionary keys are unique
+{'a': 97, 'p': 112, 's': 115, 'm': 109}
+ }}}
+
+To understand objects like generators, sets, and dictionaries, though, we must move ahead.
+
+

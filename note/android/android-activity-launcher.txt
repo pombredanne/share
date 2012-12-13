@@ -1,0 +1,52 @@
+= Android: Launcher Activity =
+
+當 activity 在 link:android-manifest.html[manifest] 裡被註冊成 launcher activity 時，就可以顯示在 link:android-homeapp.html[home screen]。
+
+--------------------------------------------------------------------------------
+<application
+    android:icon="@drawable/ic_launcher"
+    android:label="@string/app_name"
+    android:theme="@style/AppTheme" >
+    <activity
+        android:name=".MainActivity"
+        android:label="@string/title_activity_main" >
+        <intent-filter>
+            <action android:name="android.intent.action.MAIN" />         <1>
+            <category android:name="android.intent.category.LAUNCHER" /> <2>
+        </intent-filter>
+    </activity>
+</application>
+--------------------------------------------------------------------------------
+<1> http://developer.android.com/reference/android/content/Intent.html#ACTION_MAIN[`android.intent.action.MAIN`] 表示這個 activity 可以做為 app 的 main entry point。
+<2> http://developer.android.com/reference/android/content/Intent.html#CATEGORY_LAUNCHER[`android.intent.category.LAUNCHER`] 表示這個 activity 做為一個 launcher，可以顯示在 home screen。
+
+注意 home screen 上顯示的圖示，背後對應的是 app 裡的某個 activity，而非整個 app。http://developer.android.com/guide/topics/manifest/manifest-intro.html#iconlabel[官方文件]提到，home app 在顯示 launcher activity 的圖示時，會採用 `<intent-filter>` 本身的 icon 跟 label，但如果 filter 沒有特別設定時，則採用上層 `<activity>` 或 `<application>` 的設定。
+
+由於 activity 通常都會自訂 label，這也就是為什麼明明在 `<application>` 已經定義過 label，但出現在 home screen 的圖示還是帶者該 activity 的 label：
+
+image::android-activity-launcher/launcher_icon1.png[]
+
+如果想要自訂該 activity 在 home screen 的 label （或 icon），可以在 `<intent-filter>` 自訂：
+
+--------------------------------------------------------------------------------
+<intent-filter
+    android:label="@string/lanucher_name" > <1>
+    <action android:name="android.intent.action.MAIN" />
+    <category android:name="android.intent.category.LAUNCHER" />
+</intent-filter>
+--------------------------------------------------------------------------------
+<1> 這裡不直接用 `@string/app_name` 是因為 application name 可能過長，跟圖示一起顯示在 home screen 時會被截斷。建議另外設定一個名稱，專門給 launcher activity 使用。
+
+image::android-activity-launcher/launcher_icon2.png[]
+
+== 參考資料 ==
+
+.官方文件
+--
+ * http://developer.android.com/guide/topics/manifest/manifest-intro.html#iconlabel[The AndroidManifest.xml File > Icons and Labels | Android Developers]
+ * http://developer.android.com/guide/practices/ui_guidelines/icon_design_launcher.html[Launcher Icons | Android Developers]
+--
+
+ * http://stackoverflow.com/questions/3488664/android-launcher-label-vs-activity-title[Android Launcher label vs. activity title - Stack Overflow] (2010-08-15)
+ * http://stackoverflow.com/questions/8927315/two-launcher-activities[android - Two launcher activities - Stack Overflow] (2012-01-19)
+

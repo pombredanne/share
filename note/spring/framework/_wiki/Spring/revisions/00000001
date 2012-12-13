@@ -1,0 +1,309 @@
+= Spring =
+<<TableOfContents>>
+
+== Overview ==
+http://www.springframework.org/
+
+Welcome to the home of the Spring Framework, the leading full-stack Java/JEE application framework. Led and sustained(維持) by http://www.springsource.com/[SpringSource] (原名為 http://www.interface21.com/[Interface21]), Spring delivers significant benefits for many projects, increasing development productivity and runtime performance while improving ''test coverage'' and application quality.
+
+The Spring Framework is licensed under the terms of the Apache License, Version 2.0.
+
+=== Mission Statement ===
+http://www.springframework.org/about
+
+We believe that:
+
+ * J2EE should be easier to use
+ * __'''It's best to program to interfaces, rather than classes. Spring reduces the complexity cost of using interfaces to zero. (跟 HiveMind 一樣強調 interface 的使用, 甚至連公司名稱都叫 Interface21 ^^)'''__
+ * __JavaBeans offer a great way of configuring applications. (下面有提到 JavaBeans configuration management/framework; 這意謂著什麼? 它有類似於 HiveMind 的組態功能? 或者它用 annotation 而非 XML 來做組態[?])__
+ * __'''OO design is more important than any implementation technology, such as J2EE. (這大概是在講 EJB 造成 Anemic Domain Model 的禍害吧 ^^)'''__
+ * __'''Checked exceptions are overused in Java. A framework shouldn't force you to catch exceptions you're unlikely to be able to recover from. (依 use case 的角度來看, 如果 framework 那麼確定某些 exception 是不可能被處理的, 丟出 unchecked exception 是很合理的)'''__
+ * Testability is essential, and a framework such as Spring should help make your code easier to test.
+
+Our philosophy is summarized in http://www.wrox.com/WileyCDA/WroxTitle/productCd-0764543857.html[Expert One-on-One J2EE Design and Development] by Rod Johnson (天啊!! Spring 的理念竟然寫成了一本書; 其實 Rod Johnson 就是 Interface21 這家公司的 CEO).
+
+We aim that:
+
+ * Spring should be a pleasure to use
+ * __Your application code should not depend on Spring APIs__
+ * Spring should not compete(對抗) with good existing solutions, but should foster(促進) integration. (For example, JDO, Toplink, and Hibernate are great O/R mapping solutions. We don't need to develop another one.)
+
+=== Spring Framework Features ===
+
+Spring is a layered Java/J2EE application framework, based on code published in Expert One-on-One J2EE Design and Development by Rod Johnson (Wrox, 2002; 該不會從這本書的 sample code 發展而來的吧...).
+
+Spring includes:
+
+ * __'''The most complete lightweight container,''' providing centralized, automated configuration and ''wiring'' of your application objects. The container is non-invasive(非侵入性的), capable of assembling a complex system from a set of loosely-coupled components (POJOs) in a consistent and transparent fashion (它有類似於 HiveMind 可以從 classpath 丟進來的 Jar 自動引入的功能嗎[?]). The container brings agility and leverage(充分利用), and improves application testability and scalability by '''allowing software components to be first developed and tested in isolation, then scaled up for deployment in any environment (J2SE or J2EE).'''__
+
+  * '''A common abstraction layer for transaction management,''' allowing for ''pluggable transaction managers'', and making it easy to ''demarcate(界定)'' transactions without dealing with low-level issues. ''Generic strategies'' (後續一直強調 generic/abstraction 等抽象化的概念) for JTA and a single JDBC `DataSource` are included. __In contrast to plain JTA or EJB CMT, Spring's transaction support is not tied to(依賴) J2EE environments.__
+
+  * '''A JDBC abstraction layer''' that offers a meaningful ''exception hierarchy'' (no more pulling vendor codes out of `SQLException`), simplifies error handling, and greatly reduces the amount of code you'll need to write. __You'll never need to write another `finally` block to use JDBC again.__ The JDBC-oriented exceptions comply(依從) to Spring's generic DAO exception hierarchy (這不就與 spring 產生相依了嗎[?]).
+
+  * '''Integration with Toplink, Hibernate, JDO, and iBATIS SQL Maps:''' in terms of ''resource holders'' (抽象化的概念; 可以在不同 ORM 間切換嗎[?]), DAO implementation support, and transaction strategies. __First-class Hibernate support with lots of IoC convenience features, addressing many typical Hibernate integration issues.__ All of these comply to Spring's generic transaction and DAO exception hierarchies.
+
+  * __'''AOP functionality,''' fully integrated into Spring ''configuration management''. '''You can ''AOP-enable'' any object managed by Spring, adding ''aspects'' such as declarative transaction management.''' With Spring, you can have declarative transaction management without EJB... even without JTA, if you're using a single database in Tomcat or another web container without JTA support.__
+
+  * '''A flexible MVC web application framework,''' built on core Spring functionality. This framework is highly configurable via strategy interfaces, and accommodates(適用於) multiple view technologies like JSP, Velocity, Tiles, iText, and POI (連 POI 都被整合進來, 倒是很少見). __Note that a Spring middle tier can easily be combined with a web tier based on any other web MVC framework, like Struts, WebWork, or Tapestry. '''(一般稱做 Spring Web MVC, 但千萬別跟 Spring Web Flow 搞混了; 應該是整合現有的 web framework 吧? 難道同一個程式能夠做到在不同 web framework 間切換嗎[?])'''__
+
+__'''You can use all of Spring's functionality in any J2EE server, and most of it also in ''non-managed'' environments. A central focus of Spring is to allow for reusable business and data access objects that are not tied to specific J2EE services.''' Such objects can be reused across J2EE environments (web or EJB), standalone applications, test environments, etc without any hassle(費力).__
+
+Spring's ''layered architecture'' gives you a lot of flexibility. All its functionality builds on lower levels. So you can e.g. use the ''JavaBeans configuration management'' without using the MVC framework or AOP support. But if you use the web MVC framework or AOP support, you'll find they build on the configuration framework, so you can apply your knowledge about it immediately.
+
+== Introduction to the Spring Framework 2.5 (October 2007) ==
+http://www.theserverside.com/tt/articles/content/IntrotoSpring25/article.html
+
+Since I last revised(修訂) this article in May, 2005, the Spring Framework has continued to grow in popularity, and has become the de facto(實際上的) standard for enterprise Java development. It has progressed from version 1.2 to the present 2.5, and has been adopted in an even wider range of industries and projects. In this article, I'll try to explain what Spring sets out to(企圖極欲) achieve, and how I believe it can help you to develop enterprise Java applications.
+
+=== Why Spring? ===
+
+I believe that Spring is unique, for several reasons:
+
+ * It addresses important areas that other popular frameworks don't. Spring focuses around providing a way to manage your business objects.
+ * Spring is comprehensive and modular. Spring has a layered architecture, meaning that you can choose to use just about any part of it in isolation, yet its architecture is internally consistent. So you get maximum value from your learning curve. You might choose to use Spring only to simplify use of JDBC, for example, or you might choose to use Spring to manage all your business objects. And it's easy to introduce Spring incrementally into existing projects.
+ * __Spring is designed from the ground up to(徹底) help you write code that's easy to test. Spring is an ideal framework for test driven projects.__
+ * __Spring is an increasingly important ''integration technology'', its role recognized by vendors large and small (系統整合商, SI).__
+ * The Spring Framework is the core of the ''Spring Portfolio''(組合, 包含 subprojects 而言), an increasingly complete solution for enterprise Java development, exhibiting(展現) the same consistency of approach developed in the Spring Framework itself.
+
+Spring addresses most infrastructure concerns of typical applications. It also goes places other frameworks don't.
+
+__An open source project since February 2003, Spring has a long heritage(傳統). The open source project started from infrastructure code published with my book, Expert One-on-One J2EE Design and Development, in late 2002. Expert One-on-One J2EE laid out the basic architectural thinking behind Spring. '''However, the core architectural concepts go back to early 2000, and reflect my experience in developing infrastructure for a series of successful commercial projects (有實務基礎的).'''__
+
+There are now almost 40 developers, with the leading contributors devoted(貢獻) full-time to Spring development and support at Interface21. The flourishing(繁榮的) open source community has helped it evolve into far more than could have been achieved by any individual. (相較而言, Tapestry/Hivemind 的開發就顯得比較孤單...)
+
+=== Architectural benefits of Spring ===
+
+Before we get down to specifics, let's look at some of the benefits Spring can bring to a project:
+
+ * Spring can effectively organize your middle tier objects. Spring takes care of plumbing that would be left up to you if you use only Struts or other frameworks geared to(使適合) particular J2EE APIs. And Spring's configuration (滿底層的一個東西? 跟 JavaBeans 有關係[?]) management services can be used in any architectural layer, in whatever runtime environment.
+ * __Spring can eliminate the proliferation(擴散) of Singletons seen on many projects. In my experience, this is a major problem, reducing testability and object orientation.__
+ * Spring eliminates the need to use a variety of custom properties file formats, by handling configuration in a consistent way throughout applications and projects. Ever wondered what magic property keys or system properties a particular class looks for, and had to read the Javadoc or even source code? With Spring you simply look at the class's JavaBean properties or constructor arguments. The use of Inversion of Control and Dependency Injection (discussed below) helps achieve this simplification.
+ * Spring facilitates good programming practice by reducing the cost of programming to interfaces, rather than classes, almost to zero.
+ * Spring is designed so that applications built with it depend on as few of its APIs as possible. Most business objects in Spring applications have no dependency on Spring.
+ * Applications built using Spring are very easy to test. For certain unit testing scenarios, the Spring Framework provides mock objects and testing support classes. Spring also provides unique “integration testing” functionality in the form of the Spring TestContext Framework and legacy JUnit 3.8 support classes that enable you to test your code quickly and easily, even while accessing a staging[?] database.
+ * Spring helps you solve problems with the most lightweight possible infrastructure. Spring provides an alternative to EJB that's appropriate for many applications. For example, Spring can use AOP to deliver declarative transaction management without using an EJB container; even without a JTA implementation, if you only need to work with a single database, or want to avoid two phase commit.
+ * Spring provides a consistent framework for data access, whether using JDBC or an O/R mapping product such as TopLink, Hibernate or a JPA or JDO implementation.
+ * Spring provides a consistent, simple programming model in many areas, making it ideal architectural "glue."(膠水, 整合能力而言) You can see this consistency in the Spring approach to JDBC, JMS, JavaMail, JNDI and many other important APIs.
+
+Spring is essentially a technology dedicated to enabling you to build applications using Plain Old Java Objects (POJOs). It enables you to develop components as POJOs containing only your business logic, while the framework takes care of the many value adds you need to build enterprise applications — even in areas that you may not have considered when initially authoring the application. This goal requires a sophisticated framework, which conceals(隱藏) much complexity from the developer. Because your business logic is abstracted from infrastructure concerns, it’s also likely to enjoy a longer life, improving the return on investment of writing it. Business logic should change at the pace of your business; only if it is abstracted from infrastructure concerns can the impact on your code base of inevitable(不可避免的) infrastructure change (such as choice of application server) be minimized.
+
+Thus Spring can enable you to implement the simplest possible solution to your problems. And that's worth a lot.
+
+=== What does Spring do? ===
+
+Spring provides a lot of functionality. So I'll quickly review each major area in turn.
+
+==== Mission statement ====
+
+Spring's main aim is to make enterprise Java easier to use and promote good programming practice. It does this by enabling a POJO-based programming model that is applicable in a wide range of environments. We believe that Spring provides the ultimate programming model for modern enterprise Java.
+
+Spring does not reinvent the wheel. Thus you'll find no logging packages in Spring, no connection pools, no distributed transaction coordinator. All these things are provided by open source projects (such as Commons Logging, which we use for all our log output, or Commons DBCP), or by your application server or web container. For the same reason, we don't provide an O/R mapping layer. There are good solutions to this problem such as TopLink, Hibernate, JPA and JDO.
+
+__'''Spring does aim to make existing technologies easier to use and does aim to provide a unified, simple yet powerful programming model (= POJO, generic strategies, abstraction layer...).''' For example, although we are not in the business of low-level transaction coordination, we provide an abstraction layer over JTA or any other transaction strategy that is more portable, easier to use and makes code easier to test.__
+
+Spring benefits from internal consistency. All the developers are singing from the same hymn(聖歌) sheet (= expressing the same opinions in public), whose fundamental ideas remain faithful(忠實的) to those of Expert One-on-One J2EE Design and Development (沒想到這本書對 Spring 的發展如此重要, 跟 Tapestry 一樣非常強調 philosophy 的東西). And we've been able to use some central concepts, such as Inversion of Control, across multiple areas.
+
+Spring is portable between application servers and web containers. (Indeed, its core functionality does not require another container.) Of course ensuring portability is always a challenge, but we avoid anything platform-specific or non-standard in the developer's view, and support users on WebLogic, Tomcat, Resin, JBoss, Jetty, Geronimo, WebSphere and other application servers. Spring's non-invasive, POJO approach enables us to take advantage of environment-specific features without sacrificing(犧牲) portability, as in the case of enhanced WebLogic, WebSphere and OC4J (Oracle Containers for Java) transaction management functionality that uses BEA and IBM proprietary APIs under the covers.
+
+==== Inversion of control container ====
+
+The core of Spring is the `org.springframework.beans` package, designed for working with POJOs. This package typically isn't used directly by users, but underpins(支撐) much Spring functionality.
+
+The next higher layer of abstraction is the bean factory. A Spring bean factory is a generic factory that enables configured objects to be retrieved by name, and which can manage relationships (要注入的相依性而言) between objects.
+
+ A word on the term “bean”: very early versions of Spring were intended to configure only JavaBean objects. Since 1.0, Spring has been able to configure just about any Java object, regardless of whether it uses accessor and mutator methods, and in 2.5 it has become still more flexible. Nevertheless(然而) the term “Spring Bean” has remained common parlance(照一般的說法). “Spring-managed object” is a more accurate term, conveying(傳達意思) also the fact that Spring does not merely configure objects, but often continues to manage them at runtime -- for example, to apply enterprise services on every invocation.
+
+Bean factories support three modes of object lifecycle:
+
+ * '''Singleton:''' in this case, there's one shared instance of the object with a particular name, which will be retrieved on lookup. This is the default, and most often used, mode. It's ideal for stateless service objects.
+  * '''Prototype or non-singleton:''' in this case, each retrieval will result in the creation of an independent object. For example, this could be used to allow each caller to have a distinct object reference.
+  * '''Custom object “scopes”'''[?], which typically interact with a store outside the control of the container. Some of these come out of the box, such as request and session (for web applications). Others come with third party products, such as clustered caches. It is easy to define custom scopes in the event that none of those provided out of the box is sufficient, through implementing a simple interface.
+
+Because the Spring container manages relationships between objects, it can add value where necessary through services such as transparent pooling for managed POJOs, and support for hot swapping, where the container introduces a level of indirection that allows the target of a reference to be swapped at runtime without affecting callers and without loss of thread safety. One of the beauties of Dependency Injection (discussed shortly) is that all this is possible transparently, with no API involved.
+
+As `org.springframework.beans.factory.BeanFactory` is a simple interface, it can be implemented in different ways. The `BeanDefinitionReader` interface separates the metadata format from `BeanFactory` implementations themselves, so the generic `BeanFactory` implementations Spring provides can be used with different types of metadata. You could easily implement your own `BeanFactory` or `BeanDefinitionReader`, although few users find a need to. The most commonly used `BeanFactory` definitions are:
+
+ * `XmlBeanFactory`. This parses a simple, intuitive XML structure defining the classes and properties of named objects.
+ * `DefaultListableBeanFactory`: This provides the ability to parse bean definitions in properties files, and create `BeanFactories` programmatically.
+
+Each bean definition can be a POJO (defined by class name and JavaBean initialization properties or constructor arguments), or a `FactoryBean`. The `FactoryBean` interface adds a level of indirection. Typically this is used to create proxied objects using AOP or other approaches: for example, proxies that add declarative transaction management. This is conceptually similar to EJB interception, but works out much simpler in practice, and is more powerful.
+
+`BeanFactories` can optionally participate in a hierarchy, "inheriting" definitions from their ancestors. This enables the sharing of common configuration across a whole application, while individual resources such as controller Servlets also have their own independent set of objects.
+
+This motivation for the use of JavaBeans is described in Chapter 4 of Expert One-on-One J2EE Design and Development, which is available on the ServerSide as a free PDF.
+
+Through its bean factory concept, Spring is an Inversion of Control container. (I don't much like the term container, as it conjures up(使人腦海中浮現出) visions of heavyweight containers such as EJB containers. A Spring `BeanFactory` is a container that can be created in a single line of code, and requires no special deployment steps.) Spring is most closely identified with a flavor of Inversion of Control known as Dependency Injection – a name coined by Martin Fowler, Rod Johnson and the PicoContainer team in late 2003.
+
+The concept behind Inversion of Control is often expressed in the Hollywood Principle: "Don't call me, I'll call you." IoC moves the responsibility for making things happen into the framework, and away from application code. Whereas your code calls a traditional class library, an IoC framework calls your code. Lifecycle callbacks in many APIs, such as the `setSessionContext()` method for session EJBs, demonstrate this approach. (原來在 EJB 早期就有一點 IoC 的概念在裡頭了...)
+
+Dependency Injection is a form of IoC that removes explicit dependence on container APIs. Ordinary Java methods are used to inject dependencies such as collaborating objects or configuration values into application object instances. Where configuration is concerned this means that while in traditional container architectures such as EJB, a component might call the container to say "where's object X, which I need to do my work", with Dependency Injection the container figures out that the component needs an X object, and provides it to it at runtime. The container does this figuring out based on method signatures (usually JavaBean properties or constructors) and, possibly, configuration data such as XML.
+
+__The two major flavors of Dependency Injection are Setter Injection (injection via JavaBean setters); and Constructor Injection (injection via constructor arguments). Spring provides sophisticated support for both, and even allows you to mix the two when configuring the one object. (跟 HiveMind 一樣)__
+
+Dependency Injection has important benefits. For example:
+
+ * Because components don't need to look up collaborators at runtime, they're much simpler to write and maintain. In Spring's version of IoC, components express their dependency on other components via exposing JavaBean setter methods or through constructor arguments. For example, there is no need for JNDI lookups, which require the developer to write code that makes environmental assumptions.
+ * For the same reasons, application code is much easier to test. For example, JavaBean properties are simple, core Java and easy to test: simply write a self-contained JUnit or TestNG test method that creates the object and sets the relevant properties.
+ * A good IoC implementation preserves strong typing. If you need to use a generic factory to look up collaborators, you have to cast the results to the desired type. This isn't a major problem, but it is inelegant. With IoC you express strongly typed dependencies in your code and the framework is responsible for type casts. This means that type mismatches will be raised as errors when the framework configures the application; you don't have to worry about class cast exceptions in your code.
+ * Dependencies are explicit. For example, if an application class tries to load a properties file or connect to a database on instantiation, the environmental assumptions may not be obvious without reading the code (complicating testing and reducing deployment flexibility). With a Dependency Injection approach, dependencies are explicit, and evident(顯而易見的) in constructors or JavaBean properties.
+ * Most business objects don't depend on IoC container APIs. This makes it easy to use legacy code, and easy to use objects either inside or outside the IoC container. For example, Spring users often configure the Jakarta Commons DBCP `DataSource` as a Spring bean: there's no need to write any custom code to do this. We say that an IoC container isn't invasive: using it won't invade(侵犯) your code with dependency on its APIs. Almost any POJO can become a component in a Spring bean factory. __Existing JavaBeans or objects with multi-argument constructors work particularly well, but Spring also provides unique support for instantiating objects from static factory methods or even methods on other objects managed by the IoC container.__
+
+This last point deserves(值得) emphasis. Dependency Injection is unlike traditional container architectures, such as EJB, in this minimization of dependency of application code on a container. This means that your business objects can potentially be run in different Dependency Injection frameworks - or outside any framework - without code changes.
+
+In my experience and that of Spring users, it's hard to overemphasize(過度強調) the benefits that IoC -- and, especially, Dependency Injection -- brings to application code.
+
+Spring `BeanFactories` are very lightweight. Users have successfully used them inside applets, as well as standalone Swing applications. There are no special deployment steps and no detectable(可查覺的) startup time associated with the container itself (although certain objects configured by the container may of course take time to initialize). This ability to instantiate a container almost instantly in any tier of an application can be very valuable. (雖然 Spring 很強調 J2EE 的整合, 但也可以像 HiveMind 一樣, 用在很底層的地方 [...])
+
+The Spring `BeanFactory` concept is used throughout Spring, and is a key reason that Spring is so internally consistent. Spring is also unique among IoC containers in that it uses IoC as a basic concept throughout a full-featured framework.
+
+Most importantly for application developers, one or more `BeanFactories` provide a well-defined layer of business objects. This is analogous to(類似於), but simpler (yet more powerful), than a layer of local session beans. Having a well-defined layer of business objects is very important to a successful architecture.
+
+A Spring `ApplicationContext` is a subinterface of `BeanFactory`, which provides support for:
+
+ * Message lookup, supporting internationalization
+ * An event mechanism, allowing application objects to publish and optionally register to be notified of events
+ * Automatic recognition of special application-specific or generic bean definitions that customize container behavior
+ * Portable file and resource access
+
+==== XmlBeanFactory example ====
+
+Spring users traditionally configure their applications in XML "bean definition" files, although other forms of configuration, including source-level annotations, properties files and Java code, can also be used, and Spring will merge the results of the different configuration sources.
+
+The root of a Spring XML bean definition document is a `<beans>` element. The `<beans>` element contains one or more `<bean>` definitions. We normally specify the `class` and properties of each bean definition. We normally also specify the `id`, which will be the name that we'll use this bean with in our code.
+
+Let's look at a simple example, which configures three application objects with relationships commonly seen in enterprise Java applications:
+
+ * A `DataSource` used to connect to a relational database
+ * A data access object (DAO) that uses the `DataSource`
+ * A business object that uses the DAO in the course of its work
+
+In the following example, we use a `BasicDataSource` from the Jakarta Commons DBCP project. `ComboPooledDataSource` from the C3PO project is also an excellent option. `BasicDataSource`, like many other existing classes, can easily be used in a Spring bean factory, as it offers JavaBean-style configuration. The `close()` method that needs to be called on shutdown can be registered via Spring's "`destroy-method`" attribute, to avoid the need for `BasicDataSource` to implement any Spring interface.
+
+ {{{
+<beans>
+  <bean id="myDataSource"
+      class="org.apache.commons.dbcp.BasicDataSource"
+      destroy-method="close"
+      p:driverClassName="com.mysql.jdbc.Driver"
+      p:url="jdbc:mysql://localhost:3306/mydb"
+      p:username="someone"/>
+ }}}
+
+All the properties of `BasicDataSource` we're interested in are `String`s, so we specify their values using the "`p:`" attribute prefix, a special, non-validated `Spring` namespace that allows the use of bean property names as XML attributes (看起來像是從 HiveMind 的 prefix 學過來的[?]). This shortcut was introduced in Spring 2.0 as a convenient alternative to the "`value`" attribute or `<value>` subelement, which is usable even for values that are problematic in XML attributes. Spring uses the standard JavaBean `PropertyEditor` mechanism to convert `String` representations to other types if necessary.
+
+Now we define the DAO, which has a bean reference to the `DataSource`. Relationships between beans are specified using a combination of the "`p:`" prefix and "`-ref`" suffix, the "`ref`" attribute, or the `<ref>` element:
+
+ {{{
+  <bean id="exampleDataAccessObject"
+      class="example.ExampleDataAccessObject"
+      p:dataSource-ref="myDataSource"/>
+ }}}
+
+The business object has a reference to the DAO, and an int property (`exampleParam`):
+
+ {{{
+  <bean id="exampleBusinessObject"
+      class="example.ExampleBusinessObject"
+      p:dataAccessObject-ref="exampleDataAccessObject"
+      p:exampleParam="10"/>
+</beans>
+ }}}
+
+Relationships between objects are normally set explicitly in configuration, as in this example. We consider this to be a Good Thing in most cases. However, Spring also provides two kinds of what we call "autowire" support, where it figures out the dependencies between beans: ''autowire by type'', and ''autowire by name''
+
+The limitation with autowiring by type is that if there are multiple beans of a particular type it's impossible to work out which instance a dependency of that type should be resolved to. Unsatisfied dependencies are caught when the factory is initialized. (Spring also offers an optional dependency check for explicit configuration, which verifies that all properties have been set. 這點倒是滿方便的, 在 HiveMind 裡要自行撰寫 initialize method)
+
+This limitation in autowiring by type can often be overcome by autowiring by name. When using autowire by name, property names are used instead of types. For example, if a bean expresses a dependency by defining a `setMaster` method, Spring will try to find a bean with the name "`master`" within the `BeanFactory` and inject that bean to satisfy the dependency. While autowire by type works with either constructors or setter methods, autowire by name works automatically only with setter methods: a result of the fact that Java reflection does not expose the names of constructor or other method arguments. Spring 2.5 allows autowiring by name to be used for constructors via the `@Qualifier` parameter annotation. See the “Beyond XML” section below for further details.
+
+We could use the autowire by type feature as follows in the above example, if we didn't want to code these relationships explicitly:
+
+ {{{
+<bean id="exampleBusinessObject"
+    class="example.ExampleBusinessObject"
+    autowire="byType">
+    <property name="exampleParam" value="10" />
+</bean>
+ }}}
+
+With this usage, Spring will work out(判斷) that the `dataSource` property of `exampleBusinessObject` should be set to the implementation of `DataSource` it finds in the present `BeanFactory`. It's an error if there is none, or more than one bean of the required type in the present `BeanFactory`. We still need to set the `exampleParam` property, as it's not a reference.
+
+Autowire support has the advantage of reducing the volume of configuration, especially when used as an `optional` attribute[?] on the root `<beans>` element, which activates autowiring for all beans managed by Spring. It also means that the container learns about application structure using reflection, so if you add an additional constructor argument of JavaBean property, it may be successfully populated without any need to change configuration. The tradeoffs(折衷[?]) around autowiring should be evaluated carefully. (在 Spring 裡頭, autowiring 是被鼓勵的, 在 HiveMind 之下應該也是...)
+
+Externalizing relationships from Java code often has great benefit over hard coding them, as it's possible to change XML files without changing a line of Java code. For example, we could simply change the `myDataSource` bean definition to refer to a different bean class to use an alternative connection pool, or a test data source. We could use JNDI to get a data source from an application server in a single alternative XML stanza(節段), as follows. There would be no impact on Java code or any other bean definitions.
+
+ {{{
+<jee:jndi-lookup id="myDataSource" jndiName="jdbc/myDataSource" />
+ }}}
+
+Now let's look at the Java code for the example business object. Note that there are no Spring dependencies in the code listing below. A Spring IoC container is not invasive: you don't normally need to code awareness of it into application objects.
+
+ {{{
+public class ExampleBusinessObject implements MyBusinessObject {
+
+  private ExampleDataAccessObject dao;
+  private int exampleParam;
+
+  public void setDataAccessObject(ExampleDataAccessObject dao) {
+    this.dao = dao;
+  }
+
+  public void setExampleParam(int exampleParam) {
+    this.exampleParam = exampleParam;
+  }
+
+  public void myBusinessMethod() {
+    // do stuff using dao
+  }
+
+}
+ }}}
+
+Note the property setters, which correspond to the XML references in the bean definition document. These are invoked by Spring before the object is used.
+
+Such application beans do not need to depend on Spring. They don't need to implement any Spring interfaces or extend Spring classes: they just need to observe(遵守) JavaBeans naming conventions. Reusing one outside of a Spring application context is easy, for example in a test environment. Just instantiate it with its default constructor, and set its properties manually, via `setDataSource()` and `setExampleParam()` calls. So long as(只要) you have a no-args constructor, you're free to define other constructors taking multiple properties if you want to support programmatic construction in a single line of code.
+
+Note that the JavaBean properties are not declared on the business interface callers will work with. They're an implementation detail. (難道說上述 `class` 屬性在定義的是 interface[?]) We can easily "plug in" different implementing classes that have different bean properties without affecting connected objects or calling code.
+
+Of course Spring bean factories have many more capabilities than described here, but this should give you a feel for the basic approach. As well as simple properties, and properties for which you have a JavaBeans `PropertyEditor`, Spring can handle lists, maps and `java.util.Properties`. Other advanced container capabilities include:
+
+ * '''Inner beans''', in which a `property` element contains an anonymous bean definition not visible at top-level scope
+ * '''Post processors:''' special bean definitions that customize container runtime behavior. These are simple to implement and provide an easy way of extending what Spring does out of the box.
+ * '''Method Injection'''[?], a form of IoC in which the container implements an abstract method or overrides a concrete method to inject a dependency. This is a more rarely used form of Dependency Injection than Setter or Constructor Injection. However, it can be useful to avoid an explicit container dependency when looking up a new object instance for each invocation, or to allow configuration to vary over time--for example, with the method implementation being backed by a SQL query in one environment and a file system read in another.
+
+Bean factories and application contexts are often associated with a scope defined by an application server or web container, such as:
+
+ * '''A Servlet context'''[?]. In the Spring MVC framework, an application context is defined for each web application containing common objects. Spring provides the ability to instantiate such a context through a listener or Servlet without dependence on the Spring MVC framework, so it can also be used in Struts, WebWork or other web frameworks.
+ * '''A Servlet'''[?]: Each controller Servlet in the Spring MVC framework has its own application context, derived from the root (application-wide) application context. It's also easy to accomplish this with Struts or another MVC framework.
+
+These hooks provided by the Java EE specifications generally avoid the need to use a Singleton to bootstrap a bean factory.
+
+However, Spring can be used standalone, and it's trivial to instantiate a `BeanFactory` programmatically. For example, we could create the bean factory and get a reference to the business object defined above in the following two statements:
+
+ {{{
+XmlBeanFactory bf = new XmlBeanFactory(new ClassPathResource("myFile.xml", getClass()));
+MyBusinessObject mbo = (MyBusinessObject) bf.getBean("exampleBusinessObject");
+ }}}
+
+This code will work outside an application server: it doesn't even depend on Java EE, as the Spring IoC container is pure Java. The Spring Rich Client project (a framework for simplifying the development of Swing applications using Spring) demonstrates how Spring can be used outside a Java EE environment, as do Spring's integration testing features, discussed later in this article. Dependency Injection and the related functionality are too general and valuable to be confined to a Java EE, or server-side, environment. In fact, most of Spring's core concepts aren't even specific to Java and are also available in .NET environments with Spring.NET (http://www.springframework.net), an application framework for the .NET platform.
+
+==== Custom XML ====
+
+
+==== Inversion of control container ====
+
+=== What does Spring do? ===
+
+== Resource ==
+
+=== Reference ===
+
+=== Attachments ===
+
+|| Filename || Description ||
+||  ||  ||
+
+=== Links ===
+
+=== Search ===
+
+== Scratch ==

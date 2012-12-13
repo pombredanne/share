@@ -1,0 +1,499 @@
+   #Start Wiki Markup Print View Search Index Glossary Help Start
+   javahltests.jar Search Index Glossary Help
+
+   Login | Register
+   CollabNet Enterprise Edition
+
+   Tigris.org
+   Tigris.org
+   Open Source Software Engineering Tools
+
+   What's New in SVN 1.6 Webinar Subversion 1.6 Quick Reference
+
+   My pages Projects Community openCollabNet
+
+   Projects > subclipse
+
+   Project pages
+
+          + Project home
+
+          + Screenshots
+
+          + Download and Install
+
+          + Issues and Help
+
+   Project tools
+
+          + Membership
+
+          + Announcements
+          + Discussions
+
+          + Documents & files
+          + Wiki
+               o Recent changes
+               o Find page
+               o Similar pages
+          + Subversion
+
+          + Issue tracker
+
+          + Project metrics
+
+   Search
+          [This project] __________ Go Advanced search
+
+   This site is Powered by CollabNet.
+
+   How do I...
+
+          + Learn about project wikis?
+          + Get release notes for CollabNet 5.2.0?
+          + Get help?
+
+
+     Category                     Featured projects
+   scm          Subversion, Subclipse, TortoiseSVN, RapidSVN
+   issuetrack   Scarab
+   requirements xmlbasedsrs
+   design       ArgoUML
+   techcomm     SubEtha, eyebrowse, midgard, cowiki
+   construction antelope, scons, frameworx, build-interceptor, propel,
+                phing
+   testing      maxq, aut
+   deployment   current
+   process      ReadySET
+   libraries    GEF, Axion, Style, SSTree
+   Over 500 more tools...
+
+   Subversion and IDEs
+   Eclipse
+   JDeveloper
+   NetBeans
+   Visual Studio
+
+    Tigris.org Status Info
+   Announcements mail list
+   Blog at WordPress
+   @tigrisdotorg on Twitter
+
+subclipse
+Wiki: JavaHL
+
+   Edit this page | Links to this page | Page information | Attachments |
+   Refresh page
+
+   [More Actions:.] Submit
+
+   JavaHL FAQ
+
+   This page will attempt to answer some questions about the Subversion
+   JavaHL library and its role in Subclipse.
+
+   Return to Wiki FrontPage
+
+   Contents
+    1. Get the right version!
+    2. What is JavaHL?
+    3. Why does Subclipse need JavaHL?
+    4. Why doesn't Subclipse provide everything I need to use JavaHL?
+    5. How do I get JavaHL?
+         1. Windows 32-bit
+         2. Windows 64-bit
+         3. OS X
+         4. Linux
+              1. Troubleshooting
+              2. Client loads OK on Linux, but locks/crashes Eclipse on
+                 first operation
+    6. Testing JavaHL Library
+
+Get the right version!
+
+   Before explaining what JavaHL is, it is important that you know what
+   version you need for the version of Subclipse you are using. JavaHL is
+   part of Subversion, so it's version matches that of the Subversion
+   command line client you have installed. Each Subclipse version
+   typically only supports a single Subversion client version (due to API
+   differences). Make sure you get the right version of JavaHL for your
+   Subclipse version.
+
+   Current Versions
+
+   Subclipse Version
+
+                    SVN/JavaHL Version
+
+   1.6.x
+
+                    1.6.x
+
+   1.4.x
+
+                    1.5.x
+
+   1.2.x
+
+                    1.4.x
+
+   1.0.x
+
+                    1.4.x
+
+What is JavaHL?
+
+   JavaHL is a part of the Subversion project. Specifically, it is the
+   Java language binding for the Subversion API. Subversion provides a
+   layered API design that is delivered as native libraries (DLL's). The
+   Subversion command line is simply one consumer of this API. The API is
+   rich in functionality but is also maintained for backwards
+   compatibility. This is the reason there are so many great Subversion
+   clients and tools available, because there is a rich and stable API
+   that provides all of the functionality you need.
+
+   Subversion is written in C to provide excellent cross platform support,
+   but also because C produces libraries that are easy to consume from
+   virtually any other language. The Subversion project provides and
+   maintains language bindings for Java, Perl, Python and Ruby. The latter
+   three are provided via the SWIG library and its ability to interface
+   languages with native libraries. JavaHL is a "High Level" API and is
+   provided with custom written C++ code to serve as the JNI bridge
+   between Java code and the native libraries. This design allows us to
+   provide a nice Java API into Subversion.
+
+   JavaHL consists of essentially four parts:
+    1. A relatively thin layer of Java code that provides the API that
+       consumers can talk to from Java.
+    2. A C++ library (the JavaHL library or libsvnjavahl-1). The Java
+       layer talks to this layer using Java Native Interface (JNI) calls.
+       The C++ layer is where the "High Level" API is implemented. For
+       example, Java may provide a simple API that says "Commit this list
+       of files, using this commit message". The C++ layer takes care of
+       memory management and performing all of the lower level Subversion
+       API calls it takes to complete the request.
+    3. The Subversion libraries themselves. These are the same libraries
+       that the command line client would install and use. Also, other
+       Subversion clients, such as TortoiseSVN or AnkhSVN would also use
+       these same libraries.
+    4. Subversion library dependencies. Subversion needs a number of
+       external libraries to operate. The biggest is the Apache Portable
+       Runtime (APR), but it also needs libraries like Neon for the HTTP
+       client and OpenSSL to handle encryption etc.
+
+   All four of these layers are needed for JavaHL to work and be used in
+   an application.
+
+Why does Subclipse need JavaHL?
+
+   Subclipse is written in Java, so it needs to use the JavaHL library to
+   be able to use the Subversion API. Subclipse includes the Java layer of
+   JavaHL. If you look at the previous entry, you see that JavaHL needs
+   three other layers for it to actually work (essentially the native
+   libraries).
+
+Why doesn't Subclipse provide everything I need to use JavaHL?
+
+   On 32-bit Windows we do provide everything you need. We cannot do it,
+   for technical reasons, on any other operating system. It has to do with
+   how native libraries are loaded on different operating systems. There
+   is no way to deliver all three of the native layers in a way that the
+   libraries will be found when used from Java and Eclipse. The only way
+   for them to be found is if they are properly installed in the specific
+   locations those operating systems look for libraries. Windows library
+   loading has a quirk we are able to exploit from Java. Basically, we can
+   load the dependencies in reverse order and then as we load each library
+   since its dependencies are already loaded into memory, the loader does
+   not try to load them.
+
+How do I get JavaHL?
+
+   This will vary by operating system:
+
+Windows 32-bit
+
+   Subclipse includes everything you need. You just have to be sure to
+   have installed the JavaHL plugin from our Eclipse update site.
+
+Windows 64-bit
+
+   If you are using a 32-bit JVM, then Subclipse should just work. If you
+   use a 64-bit JVM then you need to provide a 64-bit version of JavaHL.
+   One such distribution is SlikSVN which you can get here:
+
+   http://www.sliksvn.com/en/download
+
+   With that package installed, Subclipse should find JavaHL on PATH and
+   just work.
+
+OS X
+
+   The easiest thing to do is download and install the OSX package that is
+   provided on openCollabNet. This installs Subversion, including the
+   JavaHL library, into /opt/subversion. It then makes a symlink for the
+   JavaHL library into /Library/Java/Extensions. This is a global location
+   that the OSX JVM looks in when loading libraries via JNI. So basically,
+   if you install this package, there is nothing else you need to do. It
+   is OK to install this after you have installed Subclipse.
+
+Linux
+
+   This is the most complicated because there are so many distributions.
+
+   CollabNet provides a client RPM for Red Hat that includes JavaHL
+   (http://www.collab.net/downloads/subversion/redhat.html). In my
+   experience, this RPM works on other Linux distributions. On RPM-based
+   distributions like CentOS or Suse, it should just be a matter of
+   installing the RPM. On Debian-based systems, I was able to use the
+   alien package to install the RPM.
+
+   Of course many Linux distributions do a good job of providing up to
+   date Subversion packages, and most of these now provide JavaHL as well.
+   Typically, the JavaHL library is in a separate package that is
+   dependent on the main Subversion package.
+
+   Once you have the library installed, you still have to tell Java (when
+   used for Eclipse) where to find the library. The JVM on Linux does not
+   look in a lot of the standard locations to find the libraries. This
+   could obviously change in the future. For example, Debian uses a
+   standard location of /usr/lib/jni for libraries to be used from Java.
+   However, the Sun JVM does not currently look in this location. The
+   easiest way to tell Java where to find the JavaHL library is to specify
+   the following when starting the JVM:
+
+   -Djava.library.path=/usr/lib/jni
+
+   CollabNet Subversion installs into /opt/CollabNet_Subversion. So if you
+   are using that package, you need this:
+
+   -Djava.library.path=/opt/CollabNet_Subversion/lib
+
+   The name of the library is libsvnjavahl-1.so. The path you specify
+   should contain this file.
+
+   Eclipse provides its own mechanism for providing this setting. Eclipse
+   comes with a file named eclipse.ini. This file is looked at when the
+   Eclipse launcher starts the JVM and appends settings to the JVM when
+   launching it. Specifically, you should see a line that says "-vmargs".
+   Add a newline after this line and insert the above line to pass the
+   setting the JVM needs. Each argument needs to be on its own line, so be
+   sure to add a new line and then put the entire string above on its own
+   line. Here is an example of this file from Eclipse 3.4:
+
+-showsplash
+org.eclipse.platform
+-framework
+plugins/org.eclipse.osgi_3.4.0.v20080605-1900.jar
+-vmargs
+-Djava.library.path=/opt/CollabNet_Subversion/lib
+-Dosgi.requiredJavaVersion=1.5
+-Xms40m
+-Xmx512m
+-XX:MaxPermSize=256m
+
+Troubleshooting
+
+   You can tell if JavaHL has loaded by looking at the Eclipse preferences
+   under Team > SVN. If the library loaded correctly you will see the
+   version of the library, otherwise it will show "Not available". If a
+   version of the library that is too old to use is found, then we do not
+   load the library and it will show as "Not available".
+
+   A common problem that Linux users have run into is that they edit the
+   eclipse.ini file to point to the path where the library is loaded but
+   it still does not work. Something to check if this happens to you is
+   whether the settings in the INI file are being used. A lot of users
+   customize the launcher they create to run Eclipse and they include some
+   command line options for starting Eclipse. When you do this, it appears
+   that the Eclipse launcher does not use any of the settings in the INI
+   file. The easiest way to see this is happening is to do Help > About in
+   Eclipse and then choose Configuration Settings. If you look through the
+   settings you should eventually be able to see the command line settings
+   used for the JVM. If you do not see the java.library.path line then it
+   was not used.
+
+Client loads OK on Linux, but locks/crashes Eclipse on first operation
+
+   There is currently a bug in the new support for GNOME keyring in
+   Subversion 1.6. It works OK when using the command line, but not when
+   other users of the libraries use it. Until this is fixed, you can
+   workaround the problem by turning off this feature. To do this, open
+   the file ~/.subversion/config and add the following:
+
+[auth]
+### Set password stores used by Subversion. They should be
+### delimited by spaces or commas. The order of values determines
+### the order in which password stores are used.
+### Valid password stores:
+###   gnome-keyring        (Unix-like systems)
+###   kwallet              (Unix-like systems)
+###   keychain             (Mac OS X)
+###   windows-cryptoapi    (Windows)
+password-stores =
+
+   The empty value for "password-stores" disables the feature. Passwords
+   will be stored in plain text in the auth folder as with all previous
+   version of Subversion.
+
+Testing JavaHL Library
+
+   If all of the above has not helped and you are having problems getting
+   the JavaHL library to load or run, it can help to run the Subversion
+   JavaHL JUnit tests on your installation. Typically, this will give the
+   same errors you get in Subclipse, but it can be easier to perform trial
+   and error and diagnose the problem.
+
+   To make it easy to run the tests, we have bundled up the Subversion
+   tests, JUnit and the JavaHL classes into a single JAR file. You can
+   download the tests for Subversion 1.6 with the following link:
+
+   javahltests.jar
+
+   This JAR file will only work with the Subversion 1.6.x version of the
+   JavaHL libraries. To run the tests do the following:
+
+   Create a new folder and copy the JAR file into it. Then open a terminal
+   and cd to the folder you created and run:
+
+$ java -jar javahltests.jar
+.........................................
+.........
+Time: 145.805
+
+OK (50 tests)
+
+   The tests create a bunch of repositories and working copies, so run
+   these from a folder you can easily delete or cleanup. Also, you will
+   want to be sure you run the tests using the same JVM that you are using
+   for Eclipse. Finally, you will need to make sure the JavaHL library is
+   on your PATH. So you will probably need to run it something like this:
+
+$ java -Djava.library.path=/opt/CollabNet_Subversion/lib -jar javahltests.jar
+.........................................
+.........
+Time: 145.805
+
+OK (50 tests)
+
+   JavaHL (last edited 2009-06-04 19:26:02 -0700 by ?markphip)
+
+   Site FAQ | Feedback | Terms of service | Privacy policy | Developer
+   tools
+
+   © 2001 - 2008 CollabNet. CollabNet is a registered trademark of
+   CollabNet, Inc.
+http://subclipse.tigris.org/wiki/FrontPage
+http://subclipse.tigris.org/wiki/JavaHL?action=raw
+http://subclipse.tigris.org/wiki/JavaHL?action=print
+http://subclipse.tigris.org/wiki/FindPage
+http://subclipse.tigris.org/wiki/TitleIndex
+http://subclipse.tigris.org/wiki/WordIndex
+http://subclipse.tigris.org/wiki/HelpOnFormatting
+http://subclipse.tigris.org/wiki/FrontPage
+http://subclipse.tigris.org/wiki/JavaHL?action=AttachFile&do=view&target=javahltests.jar
+http://subclipse.tigris.org/wiki/FindPage
+http://subclipse.tigris.org/wiki/TitleIndex
+http://subclipse.tigris.org/wiki/WordIndex
+http://subclipse.tigris.org/wiki/HelpOnFormatting
+http://www.tigris.org/servlets/Login?detour=
+http://www.tigris.org/servlets/Join
+http://www.collab.net/
+http://www.tigris.org/
+http://www.collab.net/webinar/41/
+http://www.collab.net/community/subversion/articles/SvnQuickReferenceCard.html
+http://www.tigris.org/servlets/StartPage
+http://www.tigris.org/servlets/ProjectList
+http://www.tigris.org/servlets/DomainHome
+http://www.tigris.org/servlets/OpenCollabNet
+http://www.tigris.org/servlets/ProjectList?type=Projects
+http://subclipse.tigris.org/
+http://subclipse.tigris.org/servlets/ProjectHome;jsessionid=2C1FABA0EB04C3CFB8206A2A6AE87423
+http://subclipse.tigris.org/servlets/ProjectProcess;jsessionid=2C1FABA0EB04C3CFB8206A2A6AE87423?pageID=rr1TIx
+http://subclipse.tigris.org/servlets/ProjectProcess;jsessionid=2C1FABA0EB04C3CFB8206A2A6AE87423?pageID=p4wYuA
+http://subclipse.tigris.org/servlets/ProjectProcess;jsessionid=2C1FABA0EB04C3CFB8206A2A6AE87423?pageID=t65B1R
+http://subclipse.tigris.org/servlets/ProjectMemberList;jsessionid=2C1FABA0EB04C3CFB8206A2A6AE87423
+http://subclipse.tigris.org/servlets/ProjectNewsList;jsessionid=2C1FABA0EB04C3CFB8206A2A6AE87423
+http://subclipse.tigris.org/ds/viewForums.do
+http://subclipse.tigris.org/servlets/ProjectDocumentList;jsessionid=2C1FABA0EB04C3CFB8206A2A6AE87423
+http://subclipse.tigris.org/wiki/
+http://subclipse.tigris.org/wiki/RecentChanges
+http://subclipse.tigris.org/wiki/FindPage
+http://subclipse.tigris.org/wiki/JavaHL?action=LikePages
+http://subclipse.tigris.org/source/browse/subclipse/
+http://subclipse.tigris.org/servlets/ProjectIssues;jsessionid=2C1FABA0EB04C3CFB8206A2A6AE87423
+http://subclipse.tigris.org/servlets/ReportingHome;jsessionid=2C1FABA0EB04C3CFB8206A2A6AE87423?scope=Project
+http://subclipse.tigris.org/servlets/Search;jsessionid=2C1FABA0EB04C3CFB8206A2A6AE87423?mode=advanced
+http://www.collab.net/special/clickpbc0502.html
+http://www.tigris.org/scdocs/wiki
+http://www.collab.net/rn/
+http://subclipse.tigris.org/nonav/servlets/HelpTOC
+http://scm.tigris.org/
+http://subversion.tigris.org/
+http://subclipse.tigris.org/
+http://tortoisesvn.tigris.org/
+http://rapidsvn.tigris.org/
+http://issuetrack.tigris.org/
+http://scarab.tigris.org/
+http://requirements.tigris.org/
+http://xmlbasedsrs.tigris.org/
+http://design.tigris.org/
+http://argouml.tigris.org/
+http://techcomm.tigris.org/
+http://subetha.tigris.org/
+http://eyebrowse.tigris.org/
+http://midgard.tigris.org/
+http://cowiki.tigris.org/
+http://construction.tigris.org/
+http://antelope.tigris.org/
+http://scons.tigris.org/
+http://frameworx.tigris.org/
+http://build-interceptor.tigris.org/
+http://propel.tigris.org/
+http://phing.tigris.org/
+http://testing.tigris.org/
+http://maxq.tigris.org/
+http://aut.tigris.org/
+http://deployment.tigris.org/
+http://current.tigris.org/
+http://process.tigris.org/
+http://readyset.tigris.org/
+http://libraries.tigris.org/
+http://gef.tigris.org/
+http://axion.tigris.org/
+http://style.tigris.org/
+http://sstree.tigris.org/
+http://www.tigris.org/servlets/ProjectList
+http://subclipse.tigris.org/
+http://www.oracle.com/technology/products/jdev/htdocs/partners/addins/exchange/subversion/subversion.html
+http://subversion.netbeans.org/
+http://ankhsvn.open.collab.net/
+mailto:announce-subscribe@www.tigris.org
+http://tigrisdotorg.wordpress.com/
+http://twitter.com/tigrisdotorg
+http://subclipse.tigris.org/wiki/JavaHL?action=fullsearch&value=linkto%3A%22JavaHL%22&context=180
+http://subclipse.tigris.org/wiki/JavaHL?action=info
+http://subclipse.tigris.org/wiki/JavaHL?action=AttachFile
+http://subclipse.tigris.org/wiki/JavaHL
+http://subclipse.tigris.org/wiki/FrontPage
+http://subclipse.tigris.org/wiki/JavaHL#head-5ccce53a67ca6c3965de863ae91e2642eab537de
+http://subclipse.tigris.org/wiki/JavaHL#head-5d0a7f156dbdf1a0a5f7f51fcaab21d051ac963b
+http://subclipse.tigris.org/wiki/JavaHL#head-505552e42290e459bdf53bdaa8ebda3994b21cad
+http://subclipse.tigris.org/wiki/JavaHL#head-1c75c22d4d8e9c3cd16868bdd3d6157637589ef0
+http://subclipse.tigris.org/wiki/JavaHL#head-7498d204a5be83e0e97d196ba75fc797d5f0c822
+http://subclipse.tigris.org/wiki/JavaHL#head-3aade2af9917e233083d3a19446311d48c6f4ff7
+http://subclipse.tigris.org/wiki/JavaHL#head-0ae839721445e3f59d10a128ec9439d4f4988d5f
+http://subclipse.tigris.org/wiki/JavaHL#head-5bf26515097c3231c1b04dfdb22c036bc511926b
+http://subclipse.tigris.org/wiki/JavaHL#head-bb1dd50f9ec2f0d8c32246430c00e237d27a04fe
+http://subclipse.tigris.org/wiki/JavaHL#head-edfd418b80cac560a2557a9251b0e6ae5e95f0ad
+http://subclipse.tigris.org/wiki/JavaHL#head-3a1d2d3c54791d2d751794e5d6645f1d77d95b32
+http://subclipse.tigris.org/wiki/JavaHL#head-404019ac0784cfe12ca6de2581b8a6ac98896bde
+http://www.sliksvn.com/en/download
+http://www.open.collab.net/downloads/community/
+http://www.collab.net/downloads/subversion/redhat.html
+http://subclipse.tigris.org/wiki/JavaHL?action=AttachFile&do=get&target=javahltests.jar
+http://subclipse.tigris.org/wiki/markphip
+http://www.tigris.org/nonav/DomainFAQ
+http://www.tigris.org/nonav/DomainFeedback
+http://www.tigris.org/nonav/servlets/LegalNotices?type=TermsOfService
+http://www.tigris.org/nonav/servlets/LegalNotices?type=PrivacyPolicy
+http://www.collab.net/developers/tools/

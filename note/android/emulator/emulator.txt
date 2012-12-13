@@ -1,0 +1,80 @@
+= Android Emulator =
+
+每個 AVD 啟動之後，emulator 固定會 LISTEN 兩個 port，埠號範圍落在 5554 到 5585 之間：
+
+--------------------------------------------------------------------------------
+$ netstat -na | grep 555
+tcp        0      0 127.0.0.1:5554          0.0.0.0:*               LISTEN <1>
+tcp        0      0 127.0.0.1:5555          0.0.0.0:*               LISTEN
+tcp        0      0 127.0.0.1:5556          0.0.0.0:*               LISTEN
+tcp        0      0 127.0.0.1:5557          0.0.0.0:*               LISTEN
+
+$ adb devices
+* daemon not running. starting it now on port 5037 * <2>
+* daemon started successfully *
+List of devices attached 
+emulator-5554	device
+emulator-5556	device
+--------------------------------------------------------------------------------
+<1> 單數 port 用於 link:console.html[console connection]，雙數 port 則用於 link:../android-adb.html[adb connection]。
+<2> 由此可知，啟動 AVD 並不會自動帶出 ADB server。
+
+NOTE: 官方 http://developer.android.com/guide/developing/tools/adb.html[ADB] 文件提到 "It locates emulator/device instances by scanning odd-numbered ports in the range 5555 to 5585"，但實驗發現只有 emulator 才會有 port listening 的行為，顯然這裡 "emulator/device" 指的就是 emulator instance 而已？
+
+== 疑難排解 ==
+
+=== WebView/JavaScript & VM aborting ===
+
+--------------------------------------------------------------------------------
+06-06 13:43:31.738: W/dalvikvm(821): JNI WARNING: jarray 0x4058f490 points to non-array object (Ljava/lang/String;)
+06-06 13:43:31.738: I/dalvikvm(821): "WebViewCoreThread" prio=5 tid=9 NATIVE
+06-06 13:43:31.738: I/dalvikvm(821):   | group="main" sCount=0 dsCount=0 obj=0x4059df48 self=0x2d08f8
+06-06 13:43:31.748: I/dalvikvm(821):   | sysTid=829 nice=0 sched=0/0 cgrp=default handle=2951728
+06-06 13:43:31.748: I/dalvikvm(821):   | schedstat=( 9159487961 7693488694 700 )
+06-06 13:43:31.748: I/dalvikvm(821):   at android.webkit.LoadListener.nativeFinished(Native Method)
+06-06 13:43:31.748: I/dalvikvm(821):   at android.webkit.LoadListener.nativeFinished(Native Method)
+06-06 13:43:31.748: I/dalvikvm(821):   at android.webkit.LoadListener.tearDown(LoadListener.java:1200)
+06-06 13:43:31.748: I/dalvikvm(821):   at android.webkit.LoadListener.handleEndData(LoadListener.java:721)
+06-06 13:43:31.768: I/dalvikvm(821):   at android.webkit.LoadListener.handleMessage(LoadListener.java:219)
+06-06 13:43:31.768: I/dalvikvm(821):   at android.os.Handler.dispatchMessage(Handler.java:99)
+06-06 13:43:31.778: I/dalvikvm(821):   at android.os.Looper.loop(Looper.java:130)
+06-06 13:43:31.778: I/dalvikvm(821):   at android.webkit.WebViewCore$WebCoreThread.run(WebViewCore.java:629)
+06-06 13:43:31.788: I/dalvikvm(821):   at java.lang.Thread.run(Thread.java:1019)
+06-06 13:43:31.788: E/dalvikvm(821): VM aborting
+--------------------------------------------------------------------------------
+
+這個問題只會出現在 emulator 上。
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://code.google.com/p/android/issues/detail?id=12987[Issue 12987 - android - Javascript to Java Bridge Throws Exception on Android 2.3 - Android - An Open Handset Alliance Project - Google Project Hosting] (2010-12-06) - 有人很氣這個問題到 2012-05 都還沒解掉，有可能是這個問題並不會發生在 real device 上的關係。最後 Elvin Lok 有提出另一種寫法可以避開這個問題。
+ * https://groups.google.com/group/android-developers/browse_thread/thread/992ca132e15745ec/da8da866d107e8b3?pli=1[2.3: WebView's JavaScriptInterface throwing exception 100% of time - Android Developers | Google Groups] (2010-12-08)
+================================================================================
+
+=== Unfortunately, the process android.process.media has stopped ===
+
+下按 `.apk` 準備安裝時出現這個錯誤，目前出現在 Android 4.0/4.0.3 Emulator 上。
+
+這個問題好像不只出現在 emulator 上。
+
+== 參考資料 ==
+
+ * http://developer.android.com/tools/help/emulator.html[Android Emulator | Android Developers] - 只是列出 `emulator` 這個工具的 options 而已。
+ * http://developer.android.com/tools/devices/emulator.html[Using the Android Emulator | Android Developers]
+
+ * http://stackoverflow.com/questions/2417427/changing-the-android-emulator-locale-automatically/2418724#2418724[Changing the Android emulator locale automatically - Stack Overflow] (2010-03-10) - 用 `-prop` 在 emulator 啟動時將 locale 改掉。
+ * http://android-developers.blogspot.tw/2012/04/faster-emulator-with-better-hardware.html[Android Developers Blog: A Faster Emulator with Better Hardware Support] (2012-04-09)
+ * http://developer.android.com/guide/developing/devices/index.html[Managing Virtual Devices | Android Developers]
+ * http://www.17inda.com/html/4/article-1286.html[Android模擬器，不用買手機也能玩遊戲 - IN學習 - 17INDA-硬底子達人網] (2012-03-29)
+ * http://dev.blogs.nuxeo.com/2011/10/speeding-up-the-android-emulator.html[How to speed up the Android Emulator by up to 400% - Nuxeo Developers Blog at Nuxeo Developers Blog] (2010-10-10)
+
+////////////////////////////////////////////////////////////////////////////////
+
+ * 把 AVD Manager 關閉時，已經開起來的 AVD 不受影響。
+ * Emulator 中 Unknown sources 跟 USB debugging 預設都是啟用的。
+ * Launch Options: Wipe user data, Launch from snapshot, Save to snapshot?? 其中 Wipe user data 試用過感覺像是回到出廠預設值。
+ * Language 支援有韓文、日本語、繁中、簡中、泰文、阿拉伯文、法文等...
+
+////////////////////////////////////////////////////////////////////////////////
+

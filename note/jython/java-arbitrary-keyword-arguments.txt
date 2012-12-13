@@ -1,0 +1,28 @@
+= link:jython.html[Jython] / 讓 Java method 支援 *args 與 **kw =
+:title: [Jython] 讓 Java method 支援 *args 與 **kw
+
+在 Java 裡這樣宣告：
+
+ public PyObject foo(PyObject[] args, String[] keywords);
+
+在 Jython 裡這樣用：
+
+ foo(1,2,3,four=4,five=5)
+
+在 Java 裡會收到：
+
+ * `args` = `[1, 2, 3, 4, 5]`
+ * `keywords` = `['four', 'five']`
+
+如果要從 Java 裡直接呼叫這些方法的話，首先遇到的問題就是怎麼生出 `PyObject`？可以用 `PyInteger`、`PyLong`、`PyString` 等，例如：
+
+ foo(new PyObject[] { new PyString("hello") }, null);
+
+其中 'keywords' 可以是 `null`，但 'args' 至少要是 `PyObject[0]` 才行。
+
+== 參考資料 ==
+
+ * http://www.informit.com/articles/article.aspx?p=26127[Extending Jython | ClassDictInit | InformIT] (2002-03-29)
+ * http://www.jython.org/javadoc/org/python/core/PyObject.html#PyObject(org.python.core.PyType)[PyObject (Jython API documentation)]
+ * http://www.jython.org/archive/22/userfaq.html#extending-jython[Jython FAQ > Extending Jython] - 說明如何讓 Java class/object/method 用起來更像 Jython。
+

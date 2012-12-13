@@ -1,0 +1,198 @@
+= link:../index.html[Robot Framework] / link:remote-library.html[RemoteLibrary] / link:remote-servers.html[Remote Servers] / Python =
+:title: [Robot Framework][RemoteLibrary] Python Remote Server
+
+Python 版本的 remote server 直接內建在 Robot Framework 裡，可以從http://robotframework.googlecode.com/hg/tools/remoteserver/[這裡]下載 `robotremoteserver.py`。
+
+.`robotremoteserver.py`
+--------------------------------------------------------------------------------
+...
+015 import sys
+016 import inspect
+017 import traceback
+018 from StringIO import StringIO
+019 from SimpleXMLRPCServer import SimpleXMLRPCServer <1>
+020 try:
+021     import signal
+022 except ImportError:
+023     signal = None
+024 
+025 
+026 class RobotRemoteServer(SimpleXMLRPCServer):
+027     allow_reuse_address = True
+028 
+029     def __init__(self, library, host='localhost', port=8270, allow_stop=True): <2>
+030         SimpleXMLRPCServer.__init__(self, (host, int(port)), logRequests=False)
+031         self._library = library
+032         self._allow_stop = allow_stop
+033         self._register_functions()
+034         self._register_signal_handlers()
+035         self._log('Robot Framework remote server starting at %s:%s'
+036                   % (host, port))
+037         self.serve_forever()
+--------------------------------------------------------------------------------
+<1> `SimpleXMLRPCServer` 是 Python Standard Library 的一員。
+<2> 由 `library` 參數傳入 library 的實作（module 或 class），預設在 8270 埠服務。
+
+--------------------------------------------------------------------------------
+039     def _register_functions(self): <1>
+040         self.register_function(self.get_keyword_names)
+041         self.register_function(self.run_keyword)
+042         self.register_function(self.get_keyword_arguments)
+043         self.register_function(self.get_keyword_documentation)
+044         self.register_function(self.stop_remote_server)
+045 
+046     def _register_signal_handlers(self):
+047         def stop_with_signal(signum, frame):
+048             self._allow_stop = True <2>
+049             self.stop_remote_server()
+050         if hasattr(signal, 'SIGHUP'):
+051             signal.signal(signal.SIGHUP, stop_with_signal)
+052         if hasattr(signal, 'SIGINT'):
+053             signal.signal(signal.SIGINT, stop_with_signal)
+054 
+055     def serve_forever(self):
+056         self._shutdown = False
+057         while not self._shutdown:
+058             self.handle_request()
+059 
+060     def stop_remote_server(self):
+061         prefix = 'Robot Framework remote server at %s:%s ' % self.server_address
+062         if self._allow_stop:
+063             self._log(prefix + 'stopping')
+064             self._shutdown = True
+065         else:
+066             self._log(prefix + 'does not allow stopping', 'WARN')
+067         return True
+--------------------------------------------------------------------------------
+<1> 註冊 XML-RPC server 對外提供的服務，其中 `run_keyword` 所有 keyword 執行的進入點。另外 `stop_remote_server` 則是固定會有的 keyword，下面 `get_keyword_names()` 固定把 `stop_remote_server` 加到 keyword 的清單裡。
+<2> 本機要求 stop server 時，會強制將 `allow_stop` 打開。
+
+--------------------------------------------------------------------------------
+069     def get_keyword_names(self):
+070         get_kw_names = getattr(self._library, 'get_keyword_names', None) or \
+071                        getattr(self._library, 'getKeywordNames', None)
+072         if inspect.isroutine(get_kw_names):
+073             names = get_kw_names()
+074         else:
+075             names = [attr for attr in dir(self._library) if attr[0] != '_'
+076                      and inspect.isroutine(getattr(self._library, attr))]
+077         return names + ['stop_remote_server']
+078 
+079     def run_keyword(self, name, args): <1>
+080         result = {'status': 'PASS', 'return': '', 'output': '', <2>
+081                   'error': '', 'traceback': ''}
+082         self._intercept_stdout()       <3>
+083         try:
+084             return_value = self._get_keyword(name)(*args)
+085         except:
+086             result['status'] = 'FAIL'
+087             result['error'], result['traceback'] = self._get_error_details()
+088         else:
+089             result['return'] = self._handle_return_value(return_value)
+090         result['output'] = self._restore_stdout()
+091         return result
+092 
+093     def get_keyword_arguments(self, name):
+094         kw = self._get_keyword(name)
+095         if not kw:
+096             return []
+097         return self._arguments_from_kw(kw)
+--------------------------------------------------------------------------------
+<1> 除了 `stop_remote_server` 之後，其他的 keyword 都是由 `run_keyword` 做為進入點。
+<2> 回應的資料帶有 status、return、output、error、traceback 等 5 項重要的資訊。
+<3> 攔截 STDOUT 的輸出，結束時再由 `_restore_stdout()` 取得內容。
+
+--------------------------------------------------------------------------------
+099     def _arguments_from_kw(self, kw):
+100         args, varargs, _, defaults = inspect.getargspec(kw)
+101         if inspect.ismethod(kw):
+102             args = args[1:]  # drop 'self'
+103         if defaults:
+104             args, names = args[:-len(defaults)], args[-len(defaults):]
+105             args += ['%s=%s' % (n, d) for n, d in zip(names, defaults)]
+106         if varargs:
+107             args.append('*%s' % varargs)
+108         return args
+109 
+110     def get_keyword_documentation(self, name):
+111         if name == '__intro__':
+112             return inspect.getdoc(self._library) or ''
+113         if name == '__init__' and inspect.ismodule(self._library):
+114             return ''
+115         return inspect.getdoc(self._get_keyword(name)) or ''
+116 
+117     def _get_keyword(self, name):
+118         if name == 'stop_remote_server':
+119             return self.stop_remote_server
+120         kw = getattr(self._library, name, None)
+121         if inspect.isroutine(kw):
+122             return kw
+123         return None
+124
+125     def _get_error_details(self):
+126         exc_type, exc_value, exc_tb = sys.exc_info()
+127         if exc_type in (SystemExit, KeyboardInterrupt):
+128             self._restore_stdout()
+129             raise
+130         return (self._get_error_message(exc_type, exc_value),
+131                 self._get_error_traceback(exc_tb))
+132 
+133     def _get_error_message(self, exc_type, exc_value):
+134         name = exc_type.__name__
+135         message = str(exc_value)
+136         if not message:
+137             return name
+138         if name in ('AssertionError', 'RuntimeError', 'Exception'):
+139             return message
+140         return '%s: %s' % (name, message)
+141 
+142     def _get_error_traceback(self, exc_tb):
+143         # Latest entry originates from this class so it can be removed
+144         entries = traceback.extract_tb(exc_tb)[1:]
+145         trace = ''.join(traceback.format_list(entries))
+146         return 'Traceback (most recent call last):\n' + trace
+147 
+148     def _handle_return_value(self, ret): <1>
+149         if isinstance(ret, (basestring, int, long, float)):
+150             return ret
+151         if isinstance(ret, (tuple, list)):
+152             return [self._handle_return_value(item) for item in ret]
+153         if isinstance(ret, dict):
+154             return dict([(self._str(key), self._handle_return_value(value))
+155                          for key, value in ret.items()])
+156         return self._str(ret)
+157 
+158     def _str(self, item):
+159         if item is None:
+160             return ''
+161         return str(item)
+162 
+163     def _intercept_stdout(self):
+164         # TODO: What about stderr?
+165         sys.stdout = StringIO()
+166 
+167     def _restore_stdout(self):
+168         output = sys.stdout.getvalue()
+169         sys.stdout.close()
+170         sys.stdout = sys.__stdout__
+171         return output
+172 
+173     def _log(self, msg, level=None):
+174         if level:
+175             msg = '*%s* %s' % (level.upper(), msg)
+176         print msg
+--------------------------------------------------------------------------------
+<1> 確保複雜的資料也可以透過 XML-RPC 交換回呼叫端。
+
+== 參考資料 ==
+
+.網站
+--
+ * http://robotframework.googlecode.com/hg/tools/remoteserver/[/tools/remoteserver]
+--
+
+.文件
+--
+ * http://docs.python.org/2/library/simplexmlrpcserver.html[SimpleXMLRPCServer — Basic XML-RPC server — The Python Standard Library]
+--
+

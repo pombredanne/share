@@ -1,0 +1,76 @@
+= Android Emulator: Console =
+
+跟 link:snapshots.html[snapshot] 一樣，不知道為什麼官方文件只提到有 Console 這個東西，但對 Console 的內容則幾乎沒有什麼著墨... 其實很多控制都得透過 Console 來做才行，例如link:multiple-snapshots.html[控制多個 snapshots]、模擬接到電話或 SMS 簡訊等...
+
+每個 link:avd.html[AVD] 啟動之後，link:emulator.html[emulator] 固定會 LISTEN 兩個 port （5554 ～ 5585），其中雙數 port 是給 console connection 用的。
+
+[TIP]
+================================================================================
+同時啟動多個 AVD 時，可以從 emulator 視窗抬頭判別不同 AVD 的 console 埠號。
+
+image::console/title_port.png[]
+================================================================================
+
+透過一般 telnet 工具可以連上 console：
+
+--------------------------------------------------------------------------------
+$ telnet localhost 5554
+Trying ::1...
+Trying 127.0.0.1...
+Connected to localhost.
+Escape character is '^]'.
+Android Console: type 'help' for a list of commands
+OK
+help
+Android console command help:
+
+    help|h|?         print a list of commands
+    event            simulate hardware events
+    geo              Geo-location commands
+    gsm              GSM related commands
+    cdma             CDMA related commands
+    kill             kill the emulator instance
+    network          manage network settings
+    power            power related commands
+    quit|exit        quit control session
+    redir            manage port redirections
+    sms              SMS related commands
+    avd              control virtual device execution
+    window           manage emulator window
+    qemu             QEMU-specific commands
+    sensor           manage emulator sensors
+
+try 'help <command>' for command-specific help
+OK
+help gsm <1>
+allows you to change GSM-related settings, or to make a new inbound phone call
+
+available sub-commands:
+   gsm list             list current phone calls
+   gsm call             create inbound phone call
+   gsm busy             close waiting outbound call as busy
+   gsm hold             change the state of an oubtound call to 'held'
+   gsm accept           change the state of an outbound call to 'active'
+   gsm cancel           disconnect an inbound or outbound phone call
+   gsm data             modify data connection state
+   gsm voice            modify voice connection state
+   gsm status           display GSM status
+   gsm signal           set sets the rssi and ber
+
+OK
+help gsm call <2>
+'gsm call <phonenumber>' allows you to simulate a new inbound call
+OK
+quit <3>
+$
+--------------------------------------------------------------------------------
+<1> 從上面 `help` 與 `help gsm` 的輸出可以發現，它跟 link:../android-adb-shell.html[ADB shell] 是完全不同的東西。如果用過 DDMS 裡 Emulator Control 的功能，也會發現 console 可以做的事情比 link:../android-ddms.html[DDMS] 裡的 Emulator Control 多很多。
+<2> `help` 可以繼續往下查 sub-command 的用法。
+<3> 輸入 `quit` 或 `exit` 離開。
+
+== 參考資料 ==
+
+ * http://www.android-portal.com/2007/11/16/how-to-get-access-to-the-linux-shell-emulator-console-in-android-os/[Android Portal » How to get access to the Linux shell / emulator console in Android OS] (2007-11-16) - console 跟 shell 顯然是兩種很不一樣的東西。
+ * http://www.linuxtopia.org/online_books/android/devguide/guide/developing/tools/android_emulator_console.html[Android - Using the Emulator Console]
+ * http://www.cnblogs.com/mindmac/[命令行关闭Android模拟器 - MindMac - 博客园] (2012-05-13)
+

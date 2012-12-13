@@ -1,0 +1,145 @@
+= Permissions in Linux =
+
+== 使用者（權限）管理 ==
+
+使用者帳號管理相關的工具有：
+
+ * `useradd [options] username` - 新增使用者帳號。
+ * `passwd username` - 變更使用者帳號的密碼。
+ * `usermod [options] username` - 修改使用者帳號。
+ * `userdel [options] username` - 刪除使用者帳號跟相關的檔案。
+ * `groupadd [options] group_name` -
+ * `groupmod [options] group_name` -
+ * `groupdel group_name` - 
+ * `adduser [options] username` - Debian 特有
+ * `addgroup [options] group_name` - Debian 特有
+
+新增使用者帳號可以用 `useradd -m username -c comment`，其中 `-m` 可以一併建立使用者的家目錄，而 `-c` 可以對該帳號做一些簡單的說明（通常是用來描述該帳號的全名）。例如：
+
+ # useradd -m stevej -c 'Steve Jobs'
+
+使用者帳號剛建立完成後，並沒有給定密碼。如果該帳號需要登入的話，可以用 `passwd username` 來給定（或事後修改）密碼：
+
+ # passwd stevej
+
+TIP: 如果事後要將某帳號的密碼清掉，可以用 `passwd -d username` 來達成。
+
+[NOTE]
+.解讀 `/etc/passwd`
+================================================================================
+`/etc/passwd` 每一行都代表一個帳號。不同欄位的意義如下：
+
+ username:password:uid:gid:comment:home:shell
+
+其中 'gid' 是 primary group ID。
+
+TIP: 由於使用者的家目錄並不一定在 `/home` 底下（甚至沒有家目錄），所以要查看系統有哪些帳號的話，看 `/etc/passwd` 的內容才是對的。
+
+細節可以參考 `man 5 passwd` 的說明。
+================================================================================
+
+使用者的 primary group 可以用 `usermod -g group_name username` 來修改。下面的例子是將使用者 `stevej` 的 primary group 變成 `root` 群組：
+
+ # usermod -g root stevej
+
+至於其他附加的群組（supplementary groups），則可以用 `usermod -G group_name1[,group_name2...[,group_nameN]]` 來設定。下面的例子將使用者 `stevej` 的附加群組設定成 `sudo` 跟 `sambashare`。
+
+ # usermod -G sudo,sambashare stevej
+
+上面的用法會覆寫現有的附加群組。如果想要在現有的附加群組之上，再增加其他群組的話，要搭配 `-a` 一起使用才行。例如：
+
+ # usermod -aG sudo,sambashare stevej
+
+[NOTE]
+.解讀 `/etc/group`
+================================================================================
+`/etc/group` 每一行都代表一個群組。不同欄位的意義如下：
+
+ group_name:password:gid:[username1[,username2...[usernameN]]]
+
+其中 ‘[username1[,username2...[usernameN]]]’ 列出該群組的成員。
+
+細節可以參考 `man 5 group` 的說明。
+================================================================================
+
+檔案權限管理相關的工具有：
+
+`useradd` 
+`adduser` 跟 `useradd` 都可以用來建立使用者帳號。`adduser` 其實是 `useradd` 的 friendlier front end，兩者最大的差別是 `adduser` 
+
+low level tools like useradd, groupadd and usermod programs
+
+useradd - create a new user or update default new user information
+adduser, addgroup - add a user or group to the system
+
+新增一個使用者 ``
+
+ * `adduser`
+ * `passwd -d <username>` 可以拿掉使用者的密碼。
+
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://www.cyberciti.biz/faq/understanding-etcpasswd-file-format/[Understanding /etc/passwd File Format]
+ * https://help.ubuntu.com/community/AddUsersHowto[AddUsersHowto - Community Ubuntu Documentation]
+================================================================================
+
+== su 與 sudo ==
+
+執行 `sudo` 被要求輸入密碼時，是輸入自己的密碼（大概是為了再次提醒，接下來的動作會以 `root` 的權限來執行，要小心為之）。
+
+`sudo` 相關的設定都在 `/etc/sudoers` 裡，主要是在設定誰可以做什麼事情。
+
+--------------------------------------------------------------------------------
+## Sudoers allows particular users to run various commands as
+## the root user, without needing the root password.
+##
+## Examples are provided at the bottom of the file for collections
+## of related commands, which can then be delegated out to particular
+## users or groups.
+##
+## This file must be edited with the 'visudo' command.
+...
+--------------------------------------------------------------------------------
+
+不過這個檔案的權限很特別，連 `root` 自己也只有讀取的權限（單純用 `vi` 開啟，也無法對該檔案做寫入的動作）。
+
+--------------------------------------------------------------------------------
+-r--r----- 1 root root 567 2010-12-31 22:01 /etc/sudoers
+--------------------------------------------------------------------------------
+
+要變更 `sudo` 的設定的話，必須要以 `root` 的身份執行 `visudo` 才行。
+
+ # visudo
+
+[TIP]
+.如何將系統交給另一個人代管，但又不想把 `root` 的密碼給對方？
+================================================================================
+假設另一個管理者的帳號是 `sa`，下面兩種寫法都可以讓該帳號透過 `sudo` 執行所有 `root` 可以做的事，而且都會被記錄下來。
+
+---------------------------------------------------
+sa              ALL=(ALL)       ALL
+sa              ALL=(ALL)       NOPASSWD: ALL
+---------------------------------------------------
+
+兩種寫法的差別在於，前者執行 `sudo` 時，會被要求輸入（自己的）密碼，後者則不用再輸入密碼。
+================================================================================
+
+ * `/etc/sudoers` 用來（不用再輸入密碼）
+ * `sudo` 遠比 `su`sudo` 的使用都會被記錄在 `/var/log/secure` (Red Hat) 或 `/var/log/auth.log` (Debian)。
+ * 通過 `sudo` 的驗證之後，15 分鐘內不會再被問密碼。
+ * `visudo` 可以修改 `/etc/sudoers`
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://www.cyberciti.biz/tips/restrict-the-use-of-su-command.html[Restrict the use of su command] (2006-11-16)
+ * http://www.cyberciti.biz/tips/allow-a-normal-user-to-run-commands-as-root.html[Allow A Normal User To Run Commands As root Under Linux / UNIX Operating Systems] (2006-05-13)
+ * http://www.linuxquestions.org/questions/linux-security-4/limit-and-restrict-who-can-su-to-root-or-other-users-730697/[Limit and restrict who can su to root or other users] (2009-06-04)
+================================================================================
+
+== Sticky Bit / SUID / SGID ==
+
+ * http://www.techcuriosity.com/resources/linux/advanced_file_permissions_in_linux.php[Advanced File Permissions in Linux - Sticky Bit - SUID - GUID - Linux Tutorials - Techcuriosity.com]
+

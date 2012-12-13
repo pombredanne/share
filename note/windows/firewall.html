@@ -1,0 +1,149 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>Windows Firewall</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="firewall.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>Windows Firewall</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>Windows Firewall 第一次正式浮上抬面是 Windows XP SP2 時，預設是開啟的。</p></div>
+<div class="paragraph"><p>設定上區分為 standard/domain 兩種 profile，電腦有登入 domain 時會套用 domain profile，否則就是套用 standard profile。</p></div>
+<div class="paragraph"><p>預設會阻擋所有未經請求（unsolicited）的 inbound connections，對 outbout connections 則幾乎不做控管。所謂的 exception 指的是那些 port、program、system service 可以接受（listen）未經請求的連線而言，而 scope 則可以進一步控制這個 exception 只適用於某些特定來源的連線。</p></div>
+<div class="paragraph"><p>Windows Firewall &gt; Exceptions 的設定會套用到所有的網卡，而 Windows Firewall &gt; Advanced 則可以為每張網卡做不同的設定。但 Exceptions 終究是白名單，好像無法在 Windows Firewall &gt; Advanced 這一層將 Windows Fireall &gt; Exceptions 裡打開的通道關起來？
+分開設定</p></div>
+<div class="paragraph"><p>Windows Firewall 的設定除了來自控制台之外，也可能來自 <a href="netsh-firewall.html"><code>netsh firewall</code></a>、Local Group Policy 與 Domain-based Group Policy。最後的結果就是 Domain-based Group Policy &gt; Local Group Policy &gt; Control Panel &gt; <code>netsh firewall</code> 合併後的結果。只是如果大家都是設定白名單，衝突是怎麼來的？最後是取不同設定間最大的交集嗎？</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="advanced-security">Windows Firewall with Advanced Security</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>Vista 後 Windows Firewall with Advanced Security 取代原有的 Windows Firewall，原來的 <code>netsh firewall</code> 也被 <code>netsh advfirewall firewall</code> 取代。可以進一步控管 outbout connections，當然預設是全部放行的，但還是可以從 Turn Windows Firewall on or off 裡，分開設定預設要阻擋或放行 inbound/outbound connections。</p></div>
+<div class="paragraph"><p>事實上，Windows Firewall with Advanced Security 與舊 Windows Firewall 的觀念有很大的不同。感覺只是將 standard profile 拆成 private/public 兩個 profiles，但舊有 Profile &gt; NIC 的分層在 Windows Firewall with Advanced Security 已經看不到了，取而代之的是將所有的 NIC 粗分為 Home or work (private) networks 與 Public networks，會在第一次連線時由使用者來決定。</p></div>
+<div class="paragraph"><p><span class="image">
+<img src="firewall/advfirewall_profiles.png" alt="firewall/advfirewall_profiles.png" />
+</span></p></div>
+<div class="paragraph"><p>之後每一條 inbound/outbound rules 都可以指定要套在一或多個 profiles - Domain, Private, Public，甚至細部控制到要套用到那幾種 Interface Types：</p></div>
+<div class="paragraph"><p><span class="image">
+<img src="firewall/advfirewall_applied.png" alt="firewall/advfirewall_applied.png" />
+</span></p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">網站</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://technet.microsoft.com/en-us/network/bb545423.aspx">Windows Firewall</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://technet.microsoft.com/en-us/library/cc732283(v=ws.10)">Windows Firewall with Advanced Security and IPsec</a> (2009-06-15) - 適用 Windows 7, Windows Server 2008, Windows Server 2008 R2, Windows Vista
+</p>
+</li>
+<li>
+<p>
+<a href="http://technet.microsoft.com/en-us/library/cc739696(v=ws.10)">Windows Firewall Operations Guide: Windows Firewall (WF)</a> (2005-03-02) - 針對 Windows Server 2003
+</p>
+</li>
+<li>
+<p>
+<a href="http://technet.microsoft.com/en-us/library/6490c9fc-6c06-4304-b61c-5577af1445d0">Windows Firewall Technical Reference</a> (2003-03-28)
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://en.wikipedia.org/wiki/Windows_Firewall">Windows Firewall - Wikipedia, the free encyclopedia</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.howtogeek.com/112564/how-to-create-advanced-firewall-rules-in-the-windows-firewall/">How to Create Advanced Firewall Rules in the Windows Firewall - How-To Geek</a> (2012-04-30) - 很強大但不是很方便設定的工具，作者最後建議用其他 3-party 的工具來取代。
+</p>
+</li>
+<li>
+<p>
+<a href="http://technet.microsoft.com/en-us/library/Cc875811">How to Configure Windows Firewall on a Single Computer</a> (2004-12-10) - Windows Firewall &gt; Exceptions 的設定（standard configuration）會套用到所有的網卡，而 Windows Firewall &gt; Advanced 則可以為每張網卡做不同的設定。但 Exceptions 終究是白名單，好像無法在 Windows Firewall &gt; Advanced 這一層將 Windows Fireall &gt; Exceptions 裡打開的通道關起來？
+</p>
+</li>
+<li>
+<p>
+<a href="http://technet.microsoft.com/en-us/library/cc776258">Managing Windows Firewall Profiles: Windows Firewall (WF)</a> (2005-03-28) - standard/domain profile，預設採用 currently in used。
+</p>
+</li>
+<li>
+<p>
+<a href="http://technet.microsoft.com/en-us/library/cc755604">How Windows Firewall Works</a> (2003-03-28) - stateful host-firewall, IPv4 + IPv6, allows all outgoing traffic, exception = receive unsolicited traffic, standard/domain profiles = whether connected to a domain
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:09:10 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

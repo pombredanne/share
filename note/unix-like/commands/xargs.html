@@ -1,0 +1,210 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Unix-like][Commands] xargs</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="xargs.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="../unix-like.html">Unix-like</a> / <a href="commands.html">Commands</a> / <code>xargs</code></h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="quoteblock">
+<div class="content">
+<div class="paragraph"><p><code>xargs</code> is a command on Unix and most Unix-like operating systems used to build and execute command lines from standard input. Commands like <code>grep</code> and <code>awk</code> can accept the standard input as a parameter, or argument by using a pipe. However others like <code>cp</code> and <code>echo</code> disregard the standard input stream and rely solely on the arguments found after the command. Additionally, under the Linux kernel before version 2.6.23, arbitrarily long lists of parameters could not be passed to a command, so <code>xargs</code> breaks the list of arguments into sublists small enough to be acceptable.</p></div>
+</div>
+<div class="attribution">
+&#8212; <a href="http://en.wikipedia.org/wiki/Xargs">xargs - Wikipedia&#44; the free encyclopedia</a>
+</div></div>
+<div class="paragraph"><p><code>xargs</code> - build and execute command lines from standard input</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>xargs  [-0prtx]  [-E  eof-str] [-e[eof-str]] [--eof[=eof-str]] [--null]
+       [-d delimiter] [--delimiter delimiter]  [-I  replace-str]  [-i[replace-
+       str]]    [--replace[=replace-str]]   [-l[max-lines]]   [-L   max-lines]
+       [--max-lines[=max-lines]] [-n max-args] [--max-args=max-args] [-s  max-
+       chars]  [--max-chars=max-chars]  [-P max-procs] [--max-procs=max-procs]
+       [--interactive]      [--verbose]      [--exit]      [--no-run-if-empty]
+       [--arg-file=file]   [--show-limits]   [--version]   [--help]   [command
+       [initial-arguments]]</code></pre>
+</div></div>
+<div class="paragraph"><p>將來自 standard input 拆解成 input items，然後執行重新組出的新 command lines。常用的 option 有：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>-0, --null</code> - 用 NULL (<code>0x00</code>) 來拆解 input items。
+</p>
+</li>
+<li>
+<p>
+<code>-I replace-str</code> - 預設 <code>xargs</code> 會將 input items 串接在 initial arguments 之後。透過這個 option，則會將 initial arguments 裡出現 <em>replace-str</em> 的地方都代換成 input item。
+</p>
+</li>
+<li>
+<p>
+<code>-L max-lines</code> - 組出來的 command line 最多只包含 <em>max-lines</em> 個 input items，這跟 <code>--max-args</code> 有什麼不同？
+</p>
+</li>
+<li>
+<p>
+<code>-n max-args, --max-args=max-args</code> - 組出來的 command line 最多只包含 <em>max-args</em> 個 input items。
+</p>
+</li>
+<li>
+<p>
+<code>-p, --interactive</code> - 每次要執行 <code>xargs</code> 組出來的 command line 前，詢問要不要執行，可以用來觀察 <code>xargs</code> 組出來的 command line 為何。
+</p>
+</li>
+<li>
+<p>
+<code>-r, --no-run-if-empty</code> - 沒有 input items 時，不要執行 command line（預設至少會執行一次）。
+</p>
+</li>
+<li>
+<p>
+<code>-P max-procs, --max-procs=max-procs</code> - 用多個 process 同時執行 <em>max-procs</em> 個 command lines，預設只有一個 process 依序執行多個 command lines。
+</p>
+</li>
+<li>
+<p>
+<code>-t, --verbose</code> - 每一個組出來的 command line 要執行前，先將它印到 STDOUT。
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>先用 <a href="echo.html"><code>echo</code></a> 來提供 input items，觀察 <code>xargs</code> 的反應：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ echo -ne 'item1 "item 2"\nitem3' | xargs --interactive --max-args=2 echo input: <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+echo input: item1 item 2 ?...
+echo input: item3 ?...
+$
+$ echo -ne 'item1 item 2\nitem3' | xargs --interactive --max-args=2 echo input:   <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+echo input: item1 item ?...
+echo input: 2 item3 ?...
+echo input: ?... <img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+$
+$ echo -ne 'item1 item 2\nitem3' | xargs --interactive --max-args=2 --no-run-if-empty echo input: <img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+echo input: item1 item ?...
+echo input: 2 item3 ?...
+$
+$ echo -en 'item1\x00item 2\x00item3' | xargs --null --interactive --max-args=2 echo input: <img src="../../../_asciidoc/images/icons/callouts/4.png" alt="4" />
+echo input: item1 item 2 ?...
+echo input: item3 ?...
+$
+$ $ echo -en 'World\nLinux\nBash' | xargs --interactive --max-args=2 -I {} echo Hello, {}! <img src="../../../_asciidoc/images/icons/callouts/5.png" alt="5" />
+echo Hello, World! ?...
+echo Hello, Linux! ?...
+echo Hello, Bash! ?...</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+預設 <code>xargs</code> 用 whitespace 跟 <a href="../../text/text-newline.html">newline</a> 做為 input items 的分隔字元。
+<div class="openblock">
+<div class="content">
+<div class="paragraph"><p>其中 <code>echo input:</code> 就是所謂的 initial arguments，後面會串上一或多個 input items。這裡用 <code>--max-args=2</code> 來限定一次最多接兩個 input items，<code>--interactive</code> 可以用來觀察組合出來的 command lines。</p></div>
+</div></div>
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+注意 <code>"item 2"</code> 兩側的雙引號不能省，否則會被視為兩個 input items。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+不知道為什麼最後會對一個空白？加上 <code>--no-run-if-empty</code> 就沒有這種狀況了。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/4.png" alt="4" /></td><td>
+<code>--null</code> 表示用 NULL 來拆解 input items，當然 input 也要搭配用 NULL (<code>0x00</code>) 字元來做分隔才行。這樣就不用擔心 input item 本身包含 whitespace 或 newline 了。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/5.png" alt="5" /></td><td>
+利用 <code>-I replace-str</code> 將 input item 代換進 initial arguments 的中間。注意這個時候 <code>--max-args=2</code> 失去作用了。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>實務上，通常用 <code>xargs -0</code> 搭配 <a href="find.html"><code>find -print0</code></a>、<a href="../../grep/grep.html"><code>grep -Z</code></a>、<a href="locate.html"><code>locate -0</code></a>，對符合條件的檔案做進一步地處理。例如：</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>find -name '*.txt' -print0 | xargs -0 sed 's/typo/type/g'</code></pre>
+</div></div>
+<div class="paragraph"><p>利用 <code>find</code> 找出符合條件的檔案之後，用 <a href="../../sed/sed.html"><code>sed</code></a> 將裡頭的 <code>typo</code> 都置換成 <code>type</code>。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_延伸閱讀">延伸閱讀</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="../find-replace-files.html">批次搜尋取代多個檔案的內容</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://en.wikipedia.org/wiki/Xargs">xargs - Wikipedia, the free encyclopedia</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://manpages.debian.net/cgi-bin/man.cgi?query=xargs">xargs - Debian Hypertext Man Pages</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:10:04 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

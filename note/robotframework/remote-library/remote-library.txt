@@ -1,0 +1,67 @@
+= link:../index.html[Robot Framework] / RemoteLibrary =
+:title: [Robot Framework] RemoteLibrary
+
+RemoteLibrary - A standard library providing the remote library interface.
+
+突然想到，RemoteLibrary 麻煩的是需要引用的人給一個 port，如果可以再用另一個 library 包裝，跟 remote library 透過本機某個 port 做通訊，這樣用起來就直覺多了。
+
+用途：
+
+ * 測試過程中需要動用到管理者的權限去修改系統設定，可以另外拉出一個以系統管理者身份執行起來的 remote library，這樣測試就可以用一般使用者的身份執行。
+ * distributed testing
+ * 用其他語言實作 test libraries，只要支援 XML-RPC 即可
+
+Remote Library Interface... 要怎麼定義這個 interface？
+
+ * remote library 只是個 robot framework 跟 test library 間的 proxy，負責跟 remote server 溝通。
+ * generic remote servers，這裡 generic 指的是跟特定 test library 無關。
+ * Python - 內建 `robotremoteserver.py`，也可以用 Jython 來跑。可以將 library 跟 `robotremoteserver.py` 寫在一起嗎？否則分成兩支 `.py` 不容易維護。
+ * Ruby - https://github.com/semperos/robot-remote-server-rb[semperos/robot-remote-server-rb]
+ * .NET, Clojure, Java, Perl
+
+== 延伸閱讀 ==
+
+ * link:examples.html[官方提供的範例]
+ * link:remote-servers.html[Remote Servers]
+
+== 參考資料 ==
+
+.文件
+--
+ * http://code.google.com/p/robotframework/wiki/RemoteLibrary[RemoteLibrary - A standard library providing the remote library interface]
+ * http://robotframework.googlecode.com/hg/doc/userguide/RobotFrameworkUserGuide.html?#remote-library-interface[Robot Framework User Guide > Remote Library]
+--
+
+.其他文件
+--
+ * http://groups.google.com/group/robotframework-users/browse_thread/thread/16e81e520c1ab705[Issue when using Autoit and Jython - robotframework-users | Google Groups] (2010-11-24) - 提到 AutoItLibrary 不能直接搭配 Jython 運作時，有人建議用 Remote Library 的方式，讓 AutoItLibrary 運作在同一機器上的另一個 process。
+--
+
+////////////////////////////////////////////////////////////////////////////////
+
+ * 透過 RemoteLibrary 跟 remote server，可以讓 keyword 執行在跟 Robot Framework 不同的機器上，而且能讓 Robot Framework 叫用得到。重點是使用者感覺不出來該 keyword 其實是執行在另一台機器上，跟使用一般的 keyword 沒什麼不同。
+ * RemoteLibrary 是 standard library 的一員，只是它本身並不提供任何 keyword，它只是做為一個 proxy，讓 Robot Framework 可以叫用到執行在 remote server 之上的 remote keyword。
+ * RemoteLibrary 定義有它跟 remote server 溝通的的方式，也就是所謂的 remote library interface。除非你要實作自己的 remote server，否則單純要實作 remote keyword 的話，並不需要瞭解 http://robotframework.googlecode.com/hg/doc/userguide/RobotFrameworkUserGuide.html?#remote-protocol[remote protocol] 的細節。
+ * 由於 remote library interface 走的是 XML-RPC 協定，所以背後的實作除了標準的 Java 跟 Python 之外，理論上也可以用其他程式語言來寫，只要該語言可以處理 XML-RPC 的要求即可。目前只提供有 Python/Jython 及 Ruby 版的 remote server，未來計劃還會支援 Java 跟 Perl。
+ * 聽說寫 remote keyword 跟寫一般的 keyword 沒什麼差別？如果真是如此，或許在開發共用的 keyword library 時，就要寫成同時支援 local/remote 兩種用法，尤其我們無法預期使用者會用 pybot 還是 jybot... 但由於底層 XML-RPC 協定的關係，keyword 接收的參數跟回傳值，在型態上就有所限制...
+ * 所謂的 remote 也不一定是另一台機器，重點是不同的 process。除非要做分散式的測試，通常會將 remote library 擺在跟 robot framework 同一台機器上，因為 SUT 就在那裡。
+ * 因此會動用到 remote library，通常是因為 keyword library 所採用的語言跟 Robot Framework 的 runtime 不同，例如執行 `pybot` 時，remote library 用 Java 寫，或是執行 `jybot` 時，remote library 用 CPython 寫（因為用到某些平台相依的 module）。
+ * 由於 CPython 支援的 third-party module 比 Jython 來得多，執行起來也比較快，所以長遠來看，主程式建議用 `pybot`，需要時才透過 remote library 調用其他語言寫的 keyword？但如果同時用到 Ruby、JavaScript、Lua 等（通常不會單純想用某個語言寫，而是想用各語言背後豐富的 library），或許 `jybot` 才是最佳解，因為 `jybot` 可以一次吃下眾多的 JVM scripting language，而且 Python modules 也多半會強調自己是 pure Python，所以 Jython 去整這些 third-party module 通常不會有問題。
+ * 由於 remote library 用起來不是很方便，如果為了要支援不同的程式語言，直接採用 `jybot` 會比較簡單。remote library 主要是設計被用來做 distributed testing 的，但目前 distributed testing 也不過在 RemoteLibrary 文件一開始提到而已，感覺還不是很成熟，真的要做 distributed testing 的話，目前 STAF 還是比較適合。
+ * 引入 remote library 的方法如下，之後 keyword 使用起來就沒什麼不同了：
++
+--
+--------------------------------------------------------------------------------
+| Library | Remote | http://localhost:8270 | WITH NAME | XXXLibrary
+| Library | Remote | http://localhost:8271 | WITH NAME | OOOLibrary
+--------------------------------------------------------------------------------
+
+引入多次會產生多個 instance？還是因為搭配 `WITH NAME` 才產生多個 instance？不過最大的問題還是，誰把 remote server 叫起來？可以仿 SeleniumLibrary 提供 Start/Stop Selenium Server 的 keyword 嗎??
+
+其中 8270 是預設的 port number；為什麼是 8270 呢？因為 'R' 跟 'F' 的 ASCII 碼分別是 82 跟 70
+--
++
+ * RemoteLibrary 的 scope 是 test suite，不過從 remote protocol 看起來，並沒有人會去參考 remote library 的 scope，也就是 remote server 一執行起來之後，所有 remote keyword 的叫用都是執行在同一個 instance。這是否意謂著 remote library 只支援 global scope，所以不要被 RemoteLibrary 的 test suite scope 給騙了。
+
+////////////////////////////////////////////////////////////////////////////////
+

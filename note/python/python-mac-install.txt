@@ -1,0 +1,79 @@
+= [Python][Mac] 在 Mac 上安裝 Python =
+
+Mac 內建的 Python 通常比較舊，要安裝 Python 2.x 的話：
+
+ 1. 從http://www.python.org/getit/[官網]分別下載到 Mac OS X 10.3 - 10.6 (32-bit i386/PPC; `python-2.7.3-macosx10.3.dmg`) 或 Mac OS X 10.6 - 10.7 (64-bit/32-bit x86-64/i386; `python-2.7.3-macosx10.6.dmg`) 的版本。
+ 2. 點開 `.dmp` 後可以透過 `Python.mpkg` 開始進行安裝。
+
+例如 Mac OS X 10.6 Snow Leopard 預設採用 Python 2.6.1，安裝 Python 2.7.3 時，預設會安裝到 `/Library/Frameworks/Python.framework/Versions/<version>/` 底下，打開 shell 查看 `PATH` 的設定，已經被調整過：（完整的 log 可以參考link:python-mac-install/10.6_server_install.log[這裡]）
+
+ /Library/Frameworks/Python.framework/Versions/2.7/bin:/usr/bin:/bin:/usr/sbin:/sbin:usr/local/bin
+
+不知道是加在什麼地方？因為 `/etc/paths` 或 `/etc/paths.d/` 下都找不到 Python 路徑的設定... 如果是 root 的話，情況又不太一樣了：
+
+ /usr/bin:/bin:/usr/sbin:/sbin:usr/local/bin:/Library/Frameworks/Python.framework/Versions/2.7/bin
+
+Mac OS X Lion 內建 Python 2.7.1，還是可以透過官方的安裝程式昇級到較新的版本。之前昇級到 2.7.3 (`python-2.7.3-macosx10.6.dmg`) 時，發生了一些小混亂... 最後的決定是，在還沒有搞清楚狀況之前，還是保留 Python 2.7.1 即可。
+
+[NOTE]
+.Mac OS X Lion 昇級 Python 2.7.3 的小災難
+================================================================================
+安裝程式會在 `~/.bash_profile` 寫入下面這段設定：
+
+--------------------------------------------------------------------------------
+$ cat ~/.bash_profile
+# Setting PATH for Python 2.7
+# The orginal version is saved in .bash_profile.pysave
+PATH="/Library/Frameworks/Python.framework/Versions/2.7/bin:${PATH}"
+export PATH
+--------------------------------------------------------------------------------
+
+觀察執行 `python` 跟 `/usr/bin/python` 的差異：
+
+--------------------------------------------------------------------------------
+$ which python
+/Library/Frameworks/Python.framework/Versions/2.7/bin/python
+$ python
+Python 2.7.3 (v2.7.3:70274d53c1dd, Apr  9 2012, 20:52:43) 
+[GCC 4.2.1 (Apple Inc. build 5666) (dot 3)] on darwin
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import sys; sys.path
+['', '/usr/local/lib/wxPython-unicode-2.8.12.1/lib/python2.7/site-packages', '/usr/local/lib/wxPython-unicode-2.8.12.1/lib/python2.7/site-packages/wx-2.8-mac-unicode', '/Library/Frameworks/Python.framework/Versions/2.7/lib/python27.zip', '/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7', '/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/plat-darwin', '/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/plat-mac', '/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/plat-mac/lib-scriptpackages', '/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/lib-tk', '/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/lib-old', '/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/lib-dynload', '/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages', '/Library/Python/2.7/site-packages', '/usr/local/lib/wxPython-unicode-2.8.12.1/lib/python2.7']
+>>> ^D
+$ /usr/bin/python
+Python 2.7.1 (r271:86832, Jul 31 2011, 19:30:53) 
+[GCC 4.2.1 (Based on Apple Inc. build 5658) (LLVM build 2335.15.00)] on darwin
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import sys; sys.path
+['', '/usr/local/lib/wxPython-unicode-2.8.12.1/lib/python2.7/site-packages', '/usr/local/lib/wxPython-unicode-2.8.12.1/lib/python2.7/site-packages/wx-2.8-mac-unicode', '/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python27.zip', '/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7', '/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/plat-darwin', '/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/plat-mac', '/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/plat-mac/lib-scriptpackages', '/System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python', '/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/lib-tk', '/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/lib-old', '/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/lib-dynload', '/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages', '/Library/Python/2.7/site-packages', '/usr/local/lib/wxPython-unicode-2.8.12.1/lib/python2.7']
+>>> ^D
+--------------------------------------------------------------------------------
+
+ * Python 2.7.1 - `/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages`, `/Library/Python/2.7/site-packages`
+ * Python 2.7.3 - `/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages`, `/Library/Python/2.7/site-packages`
+
+觀察發現 Python 2.7.1 會把新安裝的東西寫到 `/Library/Python/2.7/site-packages`，Python 2.7.3 則是寫到 `/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages`。但 `/Library/Python/2.7/site-packages` 卻同時出現在 Python 2.7.1/2.7.3 的 path 裡，刻意設計成這樣，該不會 Python 2.7.3 想同時吃到在 Python 2.7.1 下安裝的其他套件？
+
+問題在於 `/usr/bin/python` 並沒有被取代成 Python 2.7.3，返倒還是停留在舊的 Python 2.7.1，不曉得是不是怕影響到底層系統工具？但這肯定會造成 shell script 因為 shebang 寫法上 `#!/usr/bin/env python` 與 `#!/usr/bin/python` 的不同，造成行為上的差異。例如某些工具出現 "ImportError: cannot import name urandom" 的問題：
+
+--------------------------------------------------------------------------------
+  File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/random.py", line 47, in <module>
+    from os import urandom as _urandom
+ImportError: cannot import name urandom
+--------------------------------------------------------------------------------
+
+搜尋的結果https://bugs.launchpad.net/ubuntu/+source/python2.7/+bug/954595[大多指向]是因為新舊版 Python interpreter 混用所造成，細查之下才發現是因為 `#!/usr/bin/python` 的寫法造成沒有執行到環境內較新的 Python 2.7.3。雖然還是搞不清楚為什麼會丟出 "cannot import name urandom"，總之將 shebang 從 `#!/usr/bin/python` 換成 `#!/usr/bin/env python` 就好了。
+
+後來發現問題的根源可能不是因為昇級 Python 2.7.3，而是之前裝 PyDev 時，自行下載原始碼硬放進 `/System/Library/Frameworks/Python.framework/Version/2.7/lib/python2.7` 的關係。這或許可以說明為什麼網路上沒有人在提類似的問題...
+================================================================================
+
+== 延伸閱讀 ==
+
+ * link:python-mac.html[Mac 上的 Python]
+
+== 參考資料 ==
+
+ * http://www.python.org/getit/[Download Python]
+   ** http://www.python.org/getit/mac/[Python on the Macintosh]
+ * http://stackoverflow.com/questions/10445666/mac-osx-switch-to-python-2-7-3[Mac OSX: Switch to Python 2.7.3 - Stack Overflow] (2012-05-04)
+

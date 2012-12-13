@@ -1,0 +1,79 @@
+= Siklui: 鍵盤操作與文字輸入 =
+
+[CAUTION]
+================================================================================
+適時用鍵盤的操作（尤其是使用快捷鍵）來取代圖像式的操作，可以讓測試程式比較不容易受到顯示條件的影響。不過鍵盤與滑鼠的操作必須要取得平衡，否則用鍵盤操作都測不到問題，但滑鼠操作的問題都沒有被反應出來。簡單地來說：
+
+ * 如果操作的對像是受測的應用程式，要能兼顧鍵盤與滑鼠來操作；當然，如果沒有特殊的考量，用鍵盤來操作是比較不容易出錯的。
+ * 否則，儘量用鍵盤來取代滑鼠定位的操作。
+================================================================================
+
+跟鍵盤或文字輸入相關的操作有：
+
+ * `Region.type()`
+ * `Region.paste()`
+ * `Region.keyDown()`
+ * `Region.keyUp()`
+ * `Env.isLockOn()`
+
+先看相對高階的操作：
+
+ * `paste([PSMRL], text)`
+ * `type([PSMRL], text[, modifiers])` - 直接在目前取得焦點的控制項上輸入 'text'，或是點擊 'PSMRL' 之後再接著輸入 'text'。
+
+其中 `type()` 會模擬鍵盤按鍵的動作，所以不能輸入英文以外的字元，而 `paste()` 則是透過剪貼簿將文字貼到控制項上，所以可以支援英文以外的字元。由於這樣的差異，建議單純將 `type()` 用在模擬使用者連續敲鍵盤按鍵的動作（通常是組合鍵），文字的輸入則統一交給 `paste()`，或許 `type()` 的 'text' 參數應該取做 'keys' 比較不會造成混淆。
+
+下面示範在 Mac OS X 下用 TextEdit 打開 `log.txt`：
+
+--------------------------------------------------------------------------------
+openApp('TextEdit')
+sleep(2) <1>
+type('o', KeyModifier.CMD) <2>
+sleep(2)
+type('g', KeyModifier.CMD | KeyModifier.SHIFT)
+sleep(2)
+paste('/Users/jeremy/Desktop/log.txt')
+type(Key.ENTER)
+--------------------------------------------------------------------------------
+<1> 按鍵不能送得太快，否則畫面可能還沒開出來。
+<2> 送出 CMD + O 的意思。測試發現傳入大寫的 `O` 反而不會有作用，跟當時 Caps Lock 的狀態無關。
++
+--
+同時間要按下的修飾鍵（key modifiers）由參數 'modifiers' 來控制，可使用的常數都定義在 `KeyModifier` 裡：(`KeyModifier.CONSTANT`)
+
+ * `CTRL`
+ * `SHIFT`
+ * `ALT` - 也就是 Mac 下的 Option。
+ * `CMD`
+ * `WIN` - 微軟的國旗鍵。
+ * `META` - 在 Windows/Linux 與 Mac 下分別對應 `KeyModifier.WIN` 與 `KeyModifier.CMD`。
+
+如果有多個修飾鍵，可以用 `|` 串接起來，例如 `KeyModifier.CMD | KeyModifier.SHIFT`
+
+修飾鍵以外的按鍵則由參數 'text' 來控制。一般的按鍵可以用對應的字元來表示，其他的功能鍵則由定義在 `Key` 的常數表示：(`Key.CONSTANT`)
+
+ * `ENTER, TAB, ESC, BACKSPACE, DELETE, INSERT`
+ * `SPACE`
+ * `F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15`
+ * `HOME, END, LEFT, RIGHT, DOWN, UP, PAGE_DOWN, PAGE_UP`
+ * `PRINTSCREEN, PAUSE, CAPS_LOCK, SCROLL_LOCK, NUM_LOC`
+ * `NUM0, NUM1, NUM2, NUM3, NUM4, NUM5, NUM6, NUM7, NUM8, NUM9, SEPARATOR, ADD, MINUS, MULTIPLY, DIVIDE`
+ * `ALT, CMD, CTRL, META, SHIFT, WIN`
+
+如果要連續按下多個按鍵可以用 `+` 將多個 `Key.CONSTANT` 串接起來。例如 `type(Key.DOWN + Key.DOWN + Key.ENTER)` 表示連按兩次方向鍵，再接著按 Enter。
+
+WARNING: 別寫成 `type(Key.CMD + 'o')`，這意謂著連續按下 CMD 跟 O，跟同時按下 CMD + O 的意義完全不同。基本上 `Key.CONSTANT` 只能用在參數 'text'，而 `KeyModifier.CONSTANT` 則只能用在參數 'modifiers'。
+--
+
+再來看比較低階的鍵盤操作：
+
+ * `keyDown(key | list-of-keys)` - 按下一或多個鍵，直到用 `Region.keyUp()` 放開為止。
+ * `keyUp([key | list-of-keys])` - 放開一或多個鍵；如果沒有給定任何鍵的話，表示放開所有目前被按下的鍵。
+
+...
+
+== 參考資料 ==
+
+ * http://sikuli.org/docx/region.html#Region.type[Acting on a Region - type]
+ * http://sikuli.org/docx/region.html#low-level-mouse-and-keyboard-actions[Low-level Mouse and Keyboard Actions]
+

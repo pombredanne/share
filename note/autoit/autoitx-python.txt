@@ -1,0 +1,56 @@
+= 從 Python 叫用 AutoItX =
+
+[TIP]
+.延伸閱讀
+================================================================================
+================================================================================
+
+安裝 link:../pywin32/pywin32.html[PyWin32] 後，用下面的程式做測試：
+
+--------------------------------------------------------------------------------
+from win32com.client import Dispatch
+
+autoit = Dispatch("AutoItX3.Control")
+autoit.Run("notepad.exe")
+autoit.WinWaitActive("Untitled - Notepad")
+autoit.Send("This is some text.")
+--------------------------------------------------------------------------------
+
+由下面的實驗得知，多個 `Dispatch` 背後其實是分享同一個 COM 元件。
+
+--------------------------------------------------------------------------------
+>>> from win32com.client import Dispatch
+>>> autoit_default = Dispatch("AutoItX3.Control")
+>>> autoit = Dispatch("AutoItX3.Control")
+>>> autoit.AutoItSetOption('WinWaitDelay', 5)
+250
+>>> autoit_default.AutoItSetOption('WinWaitDelay', 10)
+5
+--------------------------------------------------------------------------------
+
+== 參考資料 ==
+
+ * http://python.net/crew/mhammond/win32/[PyWin32]
+   ** PyWin32 CHM > Quick Start to Client side COM and Python
+ * http://sebsauvage.net/python/snyppets/#autoit[http://sebsauvage.net/python/snyppets/#autoit[Using AutoIt from Python]
+ * http://www.devshed.com/c/a/Python/Windows-Programming-in-Python/2/[Calling COM components from Python - Python]
+
+== 雜記 ==
+
+ * http://www.autoitscript.com/forum/topic/13058-can-i-run-au3-script-files/[Can I run .AU3 script files? - AutoIt Forums] (2005-06-30) - 提到 AutoItX 只支援 AutoIt3.exe 的子集，所以不能用來執行 `.au3`。
+ * ActiveX 透過 Python 來叫用並不是很直覺，有必要再往上包一層 py-autoit。
+ * WinWait 的 timeout 給 0 好像是永遠等待？
+ * ControlClick 要傳入 "main" 比較妥當，尤其是左右鍵可能被對調時。
+ * 感覺 AutoIt 應該要被重新包裝過（更 OO 一點）
+   ** 採用 Python 的命名慣例，例如 win_wait 或 send 等
+   ** 可以為 win_wait 建立舊有命名的 alias，方便從 AU3 migrate 過來。
+   ** 例如 WinWait 跟 WinActivate 還滿常用的，可以考慮開發一個 WinWaitAndActivate 的功能。
+   ** WinWait 不會傳回 handle，要另外用 WinGetHandle 才能取得。可以考慮內部都用 handle 來識別單一個視窗。control 也可以用相同的方式處理。
+   ** 取得 window handle 之後，好像又不能等某個字串出現在視窗裡？
+   ** 可以調整執行的速度（打字或按鈕之前，至少要停 0.5 秒），避免按太快的 timing issue。
+   ** 拋出例外，而非以特殊值來表示
+   ** 也要有 exception/block handler 的設計，主要排除 security warning 的問題
+   ** 判斷 return value 很麻煩，應該重新丟出 exception 才好做 error handling.
+   ** 用 Send 來操作 UI 時，非常倚重環境（瀏覽器版本、作業系統等），所以要直接提供判斷這些資訊的工具
+ * Text 不能傳 None，如果要略過，要傳入空字串才行。
+ * 發現 Send('!d') 跟 Send('!D') 是不同的，用它來選 browser 的 address bar 時，只有前者才 work。

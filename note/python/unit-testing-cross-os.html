@@ -1,0 +1,172 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>Python Unit Test: 在不同 OS 下跑同一個單元測試</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="unit-testing-cross-os.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>Python Unit Test: 在不同 OS 下跑同一個單元測試</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>理想上，同一個 UT 應該要能夠執行在不同的 OS 下，但要達到這個 "理想"，開發時要多做一些 testability 的考量才行。</p></div>
+<div class="paragraph"><p>以 <code>os.path</code> 的使用為例：</p></div>
+<div class="listingblock">
+<div class="title"><code>ospath.py</code></div>
+<div class="content">
+<pre><code>import os.path as path, unittest
+
+def get_output_dir(install_dir):
+    return path.normpath(path.join(install_dir, 'tmp', 'output'))
+
+class Test(unittest.TestCase):
+
+    def test_get_output_dir(self):
+        self.assertEqual(r'C:\Program Files\MySoftware\tmp\output', get_output_dir(r'C:\Program Files\MySoftware'))
+
+if __name__ == '__main__':
+    unittest.main()</code></pre>
+</div></div>
+<div class="paragraph"><p>這個 UT 在 Windows 上跑沒問題，但如果在 Linux 跑就會遇到下面的錯誤：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>Traceback (most recent call last):
+  File "ospath.py", line 9, in test_get_output_dir
+    self.assertEqual(r'C:\Program Files\MySoftware\tmp\output', get_output_dir(r'C:\Program Files\MySoftware'))
+AssertionError: 'C:\\Program Files\\MySoftware\\tmp\\output' != 'C:\\Program Files\\MySoftware/tmp/output'</code></pre>
+</div></div>
+<div class="paragraph"><p>如果 <code>get_output_dir()</code> 只會用在 Windows，或者是會被執行在 Linux 上用來處理 Windows 的路徑名稱，最簡單的方法就是將 <code>os.path</code> 換成 <code>ntpath</code>：</p></div>
+<div class="listingblock">
+<div class="title"><code>ospath_windows1.py</code></div>
+<div class="content">
+<pre><code>import ntpath as path, unittest
+
+...</code></pre>
+</div></div>
+<div class="paragraph"><p>但如果不想動原始碼，也可以考慮測試過程中動態將 <code>path</code> 換掉：</p></div>
+<div class="listingblock">
+<div class="title"><code>ospath_windows2.py</code></div>
+<div class="content">
+<pre><code>import os.path as path, unittest
+
+def get_output_dir(install_dir):
+    return path.normpath(path.join(install_dir, 'tmp', 'output'))
+
+class Test(unittest.TestCase):
+
+    def test_get_output_dir(self):
+        global path
+        import ntpath; path = ntpath <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+        self.assertEqual(r'C:\Program Files\MySoftware\tmp\output', get_output_dir(r'C:\Program Files\MySoftware'))
+
+if __name__ == '__main__':
+    unittest.main()</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+模擬 <code>os.path</code> 在 Windows 下會指向 <code>ntpath</code> 的狀況。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>如果 <code>get_output_dir()</code> 會被執行在不同平台，就只能用上面動態換掉 <code>path</code> 的做法了。</p></div>
+<div class="listingblock">
+<div class="title"><code>ospath_cross.py</code></div>
+<div class="content">
+<pre><code>import os.path as path, unittest <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+
+def get_output_dir(install_dir):
+    return path.normpath(path.join(install_dir, 'tmp', 'output'))
+
+class Test(unittest.TestCase):
+
+    def test_get_output_dir_windows(self):
+        global path
+        import ntpath; path = ntpath       <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+        self.assertEqual(r'C:\Program Files\MySoftware\tmp\output', get_output_dir(r'C:\Program Files\MySoftware'))
+
+    def test_get_output_dir_linux(self):
+        global path
+        import posixpath; path = posixpath <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+        self.assertEqual(r'/opt/MySoftware/tmp/output', get_output_dir(r'/opt/MySoftware'))
+
+if __name__ == '__main__':
+    unittest.main()</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+維持用 <code>os.path</code>，程式才能跑在不同 OS。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+測試跑在 Windows 的狀況，模擬 <code>os.path</code> 在 Windows 下會指向 <code>ntpath</code> 的狀況。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+測試跑在 Linux 的狀況，模擬 <code>os.path</code> 在 Linux 下會指向 <code>posixpath</code> 的狀況。
+</td></tr>
+</table></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://docs.python.org/library/os.path.html">os.path — Common pathname manipulations</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:13:25 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

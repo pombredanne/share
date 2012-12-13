@@ -1,0 +1,91 @@
+= link:asciidoc.html[AsciiDoc] / Syntax Highlighting =
+:title: [AsciiDoc] Syntax Highlighting
+:source-highlighter: pygments
+
+AsciiDoc 的 link:../syntax-highlighting/syntax-highlighting.html[syntax highlighting] 由 source 這個 filter plugin 來負責。
+
+輸出 HTML 時，有多個 syntax highlighter 可供選擇，由 `source-highlighter` 這個 link:asciidoc-attribute.html[attribute] 來指定：
+
+ * http://www.gnu.org/software/src-highlite/[GNU Source-highlight]（預設）
++
+內部會呼叫 `source-highlight` 來做轉換。Ubuntu 下可以安裝 `source-highlight` 套件。
++
+ * http://www.andre-simon.de/doku/highlight/en/highlight.html[Highlight]
++
+--
+ source-highlighter=highlight
+
+內部會呼叫 `highlight` 來做轉換，會吃 `encoding` attribute 的設定。Ubuntu 下可以安裝 `highlight` 套件。
+--
++
+ * link:../pygments/pygments.html[Pygments]
++
+--
+ source-highlighter=pygments
+
+內部會呼叫 `pygmentize` 來做轉換，會吃 `encoding` attribute 的設定。Ubuntu 下可以安裝 `highlight` 套件。
+
+NOTE: 不同於上面兩個 highlighters，文字的效果並非內嵌在 HTML 裡，必須要搭配 `pygments.css` 才會有效果，因此別忘了將 CSS 引進來。
+--
+
+例如：
+
+[listing]
+................................................................................
+[source,python,numbered]
+--------------------------------------------------------------------------------
+if __name__ == '__main__':
+    print 'Hello, World!'
+--------------------------------------------------------------------------------
+................................................................................
+
+用 Pygments 輸出的效果：
+
+[source,python,numbered]
+--------------------------------------------------------------------------------
+def main():
+    print 'Hello, World!'
+
+if __name__ == '__main__':
+    main()
+--------------------------------------------------------------------------------
+
+其中 `[source,python,numbered]` 依序對應下面 3 個不同的 block attributes：
+
+ * `style` - 固定填上 `source`，表示要用 source filter 來處理這個 block。
+ * `language` - 用來識別程式語言，這裡要填的值會依 highlighter 不同而異。如果採用 Pygments 的話，可以參考http://pygments.org/docs/lexers/[這裡]，常用的有：`python`、`pycon` (Python console)、`python3`、`javascript`、`html`、`java`、`sh`、`console` (shell sessions)、`bat` 等。
+ * `src_numbered` - 預設不輸出行號，如果需要的話，可以填上 `numbered`。
+
+更多 Pygments 的例子：
+
+[listing]
+................................................................................
+[source,pycon]
+--------------------------------------------------------------------------------
+>>> def say_hello():
+...     print 'Hello, World!' # \<1>
+... 
+>>> say_hello()
+Hello, World!
+>>> 
+--------------------------------------------------------------------------------
+\<1> 注意 link:asciidoc-callout.html[callout] 要放在該程式語言的註解裡，才不會造成 highlighter 的混淆。
+................................................................................
+
+[source,pycon]
+--------------------------------------------------------------------------------
+>>> def say_hello():
+...     print 'Hello, World!' # <1>
+... 
+>>> say_hello()
+Hello, World!
+--------------------------------------------------------------------------------
+<1> 注意 link:asciidoc-callout.html[callout] 要放在該程式語言的註解裡，才不會造成 highlighter 的混淆。
+
+== 參考資料 ==
+
+ * http://www.methods.co.nz/asciidoc/source-highlight-filter.html[Source Code Highlight Filter]
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+

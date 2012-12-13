@@ -1,0 +1,625 @@
+   #RSS 2.0 Ubuntu Geek » How to install vmware server 2.0.x in Ubuntu
+   9.10 (Karmic) Comments Feed Ubuntu Geek Setting up Dial-up connection
+   in Ubuntu Fix for VLC doesn’t play video after ubuntu 9.10 (Karmic)
+   Upgrade Ubun-student - Easy way to install commonly used professional
+   softwares in Ubuntu
+
+Ubuntu Geek
+
+Ubuntu Linux Tutorials,Howtos,Tips & News | Jaunty,Karmic,Lucid
+
+   _________________________ Search
+     * Home
+     * Forum
+     * Submit Article
+     * Top Posts
+     * Ubuntu Hosting
+     * Contact
+     * About
+     * Subscribe
+     * Sitemap
+     * Privacy Policy
+     * Search
+
+     * Sponsor
+        Cheap Web Hosting
+        Disciplanner
+     * Categories
+          + Backup
+          + General
+          + Monitoring
+          + Networking
+          + News
+          + Package Mgmt
+          + Security
+          + Server
+     * Sponsor
+     * Login/Register
+          + Register
+          + Log in
+     * Archives [Select Month..]
+
+How to install vmware server 2.0.x in Ubuntu 9.10 (Karmic)
+
+   November 4, 2009 · General · Email This Post
+   Share
+
+   If you're new here, you may want to subscribe to my RSS feed and if you
+   have questions related to your ubuntu system post question to our
+   forums. Thanks for visiting!
+
+   IFRAME:
+   http://api.tweetmeme.com/button.js?url=http%3A%2F%2Fwww.ubuntugeek.com%
+   2Fhow-to-install-vmware-server-2-0-x-in-ubuntu-9-10-karmic.html&style=c
+   ompact
+
+   VMware Server is a free virtualization product for Windows and Linux
+   servers with enterprise-class support and VirtualCenter management.
+   VMware Server is a robust yet easy to use server virtualization product
+   and is based on proven virtualization technology, which has been used
+   by thousands of customers for many years.
+   First you need to download vmware server 2.0.x from vmware website and
+   get the vmware server installation key
+
+   Currently we have a problems compiling vmware server under kernel
+   version 2.6.31 so this tutorial will explain how to install vmware
+   server 2.0.x in Ubuntu 9.10
+
+   Now we have VMware-server-2.0.2-203138.i386.tar.gz file so unpack this
+   file
+
+     tar -zvxf VMware-server-2.0.2-203138.i386.tar.gz
+
+   go to vmware-server-distrib directory
+
+     cd vmware-server-distrib
+
+   Run vmware-install.pl script using the following command
+
+     ./vmware-install.pl
+
+   Now you might receive compilation error messages so now you need to
+   download required patch files from here in vmware-server-distrib
+   directory these patches from  vmware forum
+
+   You can use the following command to download patches
+
+     wget
+     http://www.ubuntugeek.com/images/vmware-server.2.0.1_x64-modules-2.6
+     .30.4-fix.tgz
+
+   After downloading extract
+   vmware-server.2.0.1_x64-modules-2.6.30.4-fix.tgz file
+
+     tar xvzf vmware-server.2.0.1_x64-modules-2.6.30.4-fix.tgz
+
+   Now run the patch script using the following command
+
+     sh vmware-server.2.0.1_x64-modules-2.6.30.4-fix.sh
+
+   Note:- This script will work 2.6.30,2.6.31 kernel versions
+
+   After each completing the patch installation you should see similar to
+   the following message
+
+   3
+
+   After completing the patch installation you need to remove
+   /usr/lib/vmware/modules/binary directory because The original VMware
+   modules directory is still in the way so this will confuses VMware that
+   is why we are removing this directory
+
+     rm -rf /usr/lib/vmware/modules/binary
+
+   Now run vmware-config.pl script
+
+     vmware-config.pl
+
+   This should complete the vmware server installation.
+
+   4
+
+   Now open your browser type https://PC-ipaddress:8333 once it opens you
+   should see similar to the following screen
+
+   5
+
+   Whe you try to login using your ubuntu user login details you might see
+   “You do not have permissions to login to the server” error this is
+   because you need to enable root account on your ubuntu machine using
+   this tutorial or login as user who is having root permissions
+
+   6
+
+   Once you login you should see similar to the following screen
+
+   7
+
+   Reinstall Vmware server
+
+   If you still having  problems with your vmware server installation
+   follow these steps
+
+   Delete the vmware modules using the following command
+
+     rm -rf /usr/lib/vmware/modules/
+
+     rm -rf /lib/modules/2.6.31-13-server/misc/vm*
+
+   Now kill all vmware processes manually
+
+     kill -9 $( ps -ef | awk ‘/vm/ { print $2 }’ )
+
+   Now run vmware-install.pl file
+
+     ./vmware-install.pl
+
+   at the time of installation where you see the following message type no
+   and press enter
+
+   Before running VMware Server for the first time, you need to configure
+   it by
+   invoking the following command: “/usr/bin/vmware-config.pl”. Do you
+   want this
+   program to invoke the command for you now? [yes] no
+
+   Now you need to run the patch script file using the following command
+
+     sh vmware-server.2.0.1_x64-modules-2.6.30.4-fix.sh
+
+   After completing this you should run vmware-config.pl
+
+     /usr/bin/vmware-config.pl
+
+   Error message
+
+   When i try to install vmware server 2.0.2 under ubuntu 9.10 i got the
+   following error so i installed the patch file with the procedure
+   specified above
+
+   /tmp/vmware-config0/vmmon-only/linux/driver.c:2007: error: too many
+   arguments to function ‘smp_call_function’
+   make[2]: *** [/tmp/vmware-config0/vmmon-only/linux/driver.o] Error 1
+   make[1]: *** [_module_/tmp/vmware-config0/vmmon-only] Error 2
+   make[1]: Leaving directory `/usr/src/linux-headers-2.6.31-14-generic’
+   make: *** [vmmon.ko] Error 2
+   make: Leaving directory `/tmp/vmware-config0/vmmon-only’
+   Unable to build the vmmon module.
+
+   For more information on how to troubleshoot module-related problems,
+   please
+   visit our Web site at “http://www.vmware.com/go/unsup-linux-products”
+   and
+   “http://www.vmware.com/go/unsup-linux-tools”.
+
+   Execution aborted.
+
+     * Share/Bookmark
+
+Related Articles
+
+     * How to install Edubuntu Menu Editor in Ubuntu lucid/Karmic (0)
+     * How to install google gadgets in Ubuntu 9.04(Jaunty) (16)
+     * How to Install Ubuntu Lucid Proposed Community Themes In
+       Karmic/Jaunty/Intrepid (3)
+     * Gufw - Simple GUI for ufw (Uncomplicated Firewall) (13)
+     * Screengrab - Nice Firefox add-on (4)
+     * How to Enable Packet Injection on a Intel PRO/Wireless 3945ABG
+       Wireless Card (9)
+     * Install Ubuntu kernel updates without rebooting using Ksplice
+       Uptrack (7)
+     * iPhone Tethering on Ubuntu 9.10 (Karmic) (93)
+     * Download Ubuntu One applet icons for Humanity icon theme (0)
+
+   ← Fix for VLC doesn’t play video after ubuntu 9.10 (Karmic) Upgrade
+   Ubun-student - Easy way to install commonly used professional softwares
+   in Ubuntu →
+
+51 Comments to “How to install vmware server 2.0.x in Ubuntu 9.10 (Karmic)”
+
+    1. Seanie says:
+       January 6, 2010 at 7:42 pm
+       Thanks!
+    2. Pavan says:
+       January 13, 2010 at 5:46 pm
+       Thanks! This was very helpful
+    3. anivair says:
+       January 14, 2010 at 8:02 pm
+       Great tutorial. Took me forever thanks to older patches getting in
+       the way. You might want to make a note to remove old entries from
+       /usr/lib/vmware/modules/source. (Anything with old in it at least).
+       One other note: you don’t need to enable the root login to make
+       this work in ubuntu. You can just set whatever user you like as the
+       Administrator. I set myself and it works just fine.
+    4. Naresh says:
+       January 18, 2010 at 12:33 am
+       Thanks ruchi for the excellent article.
+    5. Daniel says:
+       January 21, 2010 at 8:01 pm
+       Thank you very much for this tutorial - it was very helpful. In the
+       end I was able to get up and running on my Ubuntu 9.10 machine and
+       all is well.
+    6. Cesar says:
+       January 23, 2010 at 2:31 pm
+       EXCELENT!!!!!!
+       it was very very helpful.
+       Thanks you. so much.
+       Disculpen mi ingles, pero este tutorial ha sido excelene, me ha
+       ayudado mucho para tener una maquina virtual en mi Pc con Ubuntu
+       9.10
+    7. Trevor says:
+       January 25, 2010 at 4:35 am
+       I’m recently installed vmware server on a freshly installed and
+       updated of version of Ubuntu 9.1.
+       Today I wanted to change the network setup, so I tried to run
+       /urs/bin/vmware-config.pl. I got the error:
+       --------------------
+       The following VMware kernel modules have been found on your system
+       that were
+       not installed by the VMware Installer. Please remove them then run
+       this
+       installer again.
+       vmnet
+       vmci
+       vmmon
+       I.e. - ‘rm /lib/modules/2.6.31-17-generic/misc/.{o,ko}’
+       Execution aborted.
+       -----------------
+       I’m almost positive this is caused by the patched versions that
+       were installed.
+       Is there some way I can run the script without recompiling? Or,
+       make the version I have work?
+       I found the following (semi)related website…
+       http://communities.vmware.com/thread/60867;jsessionid=B3446B5E206F1
+       A2E1E49D2D2C81EDC7B
+    8. keshav kapil says:
+       January 29, 2010 at 12:31 pm
+       Thanks a lot :)
+       very very helpful tutorial Ruchi …
+    9. JD says:
+       February 1, 2010 at 1:02 am
+       This is the straight up pimp version of documention for installing
+       vmware on Karmic Koala. Thanks for making it noob-proof.
+   10. Cana says:
+       February 1, 2010 at 4:15 pm
+       Thx for the tutorial. But I cannot bring up the web interface?
+       Firefox can’t establish a connection to the server at
+       127.0.0.1:8333
+       Starting VMware services:
+       Virtual machine monitor done
+       Virtual machine communication interface done
+       Virtual ethernet done
+       Bridged networking on /dev/vmnet0 done
+       Host-only networking on /dev/vmnet1 (background) done
+       DHCP server on /dev/vmnet1 done
+       Host-only networking on /dev/vmnet8 (background) done
+       DHCP server on /dev/vmnet8 done
+       NAT service on /dev/vmnet8 done
+       VMware Server Authentication Daemon (background) done
+       Shared Memory Available done
+       Starting VMware management services:
+       VMware Server Host Agent (background) done
+       VMware Virtual Infrastructure Web Access
+       Starting VMware autostart virtual machines:
+       Virtual machines done
+       The configuration of VMware Server 2.0.2 build-203138 for Linux for
+       this
+       running kernel completed successfully.
+   11. Tully says:
+       February 3, 2010 at 3:10 pm
+       Fantastic tutorial. Got it working first time thanks to this. Thank
+       you!
+   12. Rafael Guedes says:
+       February 11, 2010 at 8:14 pm
+       Its cool! This tutorial works very well for me, but after the
+       instalation I try to install a W2K3 server and the combination keys
+       CTRL+ALT+DEL don’t work for introduce the login screen.. =/
+       Do you have any idea about this?
+   13. Rafael Guedes says:
+       February 11, 2010 at 8:30 pm
+       I solved this through this link
+       http://ubuntuguide.org/wiki/Ubuntu:Intrepid#Keyboard_errors_in_VMwa
+       re_guest. Thanks!
+   14. SilvioZG says:
+       February 14, 2010 at 9:05 am
+       Hi guys!
+       Hawe worked fine for me! Many thanks!
+       ---
+       Enjoy,
+       --the VMware team
+       Starting VMware services:
+       Virtual machine monitor done
+       Virtual machine communication interface done
+       Virtual ethernet done
+       Bridged networking on /dev/vmnet0 done
+       Host-only networking on /dev/vmnet1 (background) done
+       DHCP server on /dev/vmnet1 done
+       Host-only networking on /dev/vmnet2 (background) done
+       DHCP server on /dev/vmnet2 done
+       NAT service on /dev/vmnet2 done
+       Host-only networking on /dev/vmnet3 (background) done
+       DHCP server on /dev/vmnet3 done
+       NAT service on /dev/vmnet3 done
+       Host-only networking on /dev/vmnet8 (background) done
+       DHCP server on /dev/vmnet8 done
+       NAT service on /dev/vmnet8 done
+       VMware Server Authentication Daemon (background) done
+       Shared Memory Available done
+       Starting VMware management services:
+       VMware Server Host Agent (background) done
+       VMware Virtual Infrastructure Web Access
+       Starting VMware autostart virtual machines:
+       Virtual machines done
+       The configuration of VMware Server 2.0.2 build-203138 for Linux for
+       this
+       running kernel completed successfully.
+       ---
+   15. SilvioZG says:
+       February 14, 2010 at 9:17 am
+       Hi guys…!
+       Have problem with HTTPS acces to WMware Infrastructure webacces
+       panel on Firefox. Some issue vith certification…! Trying to find
+       out…!
+       But the HTTP conection works fine…
+       Use the http://localhost:8222 access on Firefox 3.5.7! Port 8222 is
+       default setting in WMware setup script!
+       Have fun…
+   16. Ian Justman says:
+       February 15, 2010 at 5:09 am
+       This tutorial does NOT work with VMware Server 2.0.2.
+       Building modules, stage 2.
+       MODPOST 1 modules
+       WARNING: “VMCIDatagram_CreateHnd”
+       [/tmp/vmware-config0/vsock-only/vsock.ko] undefined!
+       WARNING: “VMCIDatagram_DestroyHnd”
+       [/tmp/vmware-config0/vsock-only/vsock.ko] undefined!
+       WARNING: “VMCI_GetContextID”
+       [/tmp/vmware-config0/vsock-only/vsock.ko] undefined!
+       WARNING: “VMCIDatagram_Send”
+       [/tmp/vmware-config0/vsock-only/vsock.ko] undefined!
+       CC /tmp/vmware-config0/vsock-only/vsock.mod.o
+       LD [M] /tmp/vmware-config0/vsock-only/vsock.ko
+       make[1]: Leaving directory
+       `/usr/src/linux-headers-2.6.31-19-server’
+       cp -f vsock.ko ./../vsock.o
+       make: Leaving directory `/tmp/vmware-config0/vsock-only’
+       Unable to make a vsock module that can be loaded in the running
+       kernel:
+       insmod: error inserting ‘/tmp/vmware-config0/vsock.o’: -1 Unknown
+       symbol in module
+       --Ian.
+   17. aljacobs says:
+       February 15, 2010 at 7:55 am
+       Tried the latest 2.0.2 vmware server dist. built on my Karmic
+       Ubuntu.
+       Tried every published hack available.
+       The only way I could get it working was to revert back to Firefox
+       3.5.7, 3.6 did not work even after changing security settings in
+       about:config
+       So confirm post above
+   18. Dave says:
+       February 24, 2010 at 12:38 pm
+       I got 2.0 installed on a fresh install of 9.10, with all updates
+       applied, but my mouse and keyboard are not behaving. Basically the
+       mouse only works in the upper left hand quadrant of an XP window
+       (fresh XP install as well on a new VM). Outside of that the mouse
+       changes from an arrow to a “hand” and the buttons don’t work
+       properly. If I try to close a window clicking on the upper
+       right-hand X, it’s as if I am holding down the “9″ key on the
+       keyboard and everything locks up.
+       This is on a fairly recently built machine, standard MS keyboard
+       and mouse, PS2 connected etc.
+       Ideas ?
+   19. Rodrigo López-Guzmán says:
+       February 27, 2010 at 1:45 am
+       Patch was not working on my clean install and message was not
+       completely clear. Trying to validate patch by myself, I realized
+       that patch utility was not installed, so I ran apt-get install
+       patch and evereythig worked fine.
+   20. Access Recovery says:
+       March 2, 2010 at 2:29 pm
+       Good job! Thanks! Thank you! for a great post.
+   21. Martin says:
+       March 12, 2010 at 3:14 am
+       If when you run the sh script and you get an error;
+       vmware-server.2.0.1_x64-modules-2.6.30.4-fix.sh 71 patch not found.
+       You need to run ‘apt-get install patch’
+       then rerun the sh script.
+
+   ← Older comments
+
+Leave a Reply
+
+   Click here to cancel reply.
+
+   ______________________ Name (required)
+
+   ______________________ Mail (will not be published) (required)
+
+   ______________________ Website
+
+
+   __________________________________________________
+   __________________________________________________
+   __________________________________________________
+   __________________________________________________
+   __________________________________________________
+   __________________________________________________
+   __________________________________________________
+   __________________________________________________
+   __________________________________________________
+   __________________________________________________
+
+   Submit Comment
+
+   [_] Notify me of followup comments via e-mail
+   ← Fix for VLC doesn’t play video after ubuntu 9.10 (Karmic) Upgrade
+   Ubun-student - Easy way to install commonly used professional softwares
+   in Ubuntu →
+     * RSS Feed
+       subscribe to the ubuntu Geek RSS feed
+     * UbuntuGeek on Twitter
+        Follow Us on Twitter
+     *
+     *
+          + RAID Data Recovery
+          + Data Recovery
+          + HP Coupons Codes
+     * Support Ubuntugeek
+       Amount $: [5.00..]
+       Website(Optional):
+       ________________
+       Make payments with PayPal - fast, free and secure
+     * Favourite Sites
+       Chrome OS Geek
+       Windows Reference
+       Debian Admin
+       DebianHelp
+       SuSe Linux Tutorials
+       Ubuntux
+       Tuxmachines
+       Unixmen
+       Arabic ubuntu support
+
+     * Recent entries
+          + Uget - Free and Open Source download manager
+          + Ubuntu Tweak 0.5.3 released: more powerful window button
+            control
+          + Radience Osliner - New Ubuntu 10.04 (Lucid) Proposed theme
+          + Canonical’s design team responds to theme criticisms
+          + X2go - Open source terminal server project (alternative to
+            FreeNX)
+
+     * Recent comments
+          + hjnathan: Thanks everyone for the help. Tux, than
+          + Duane: Thanks!!!
+          + jordanwb: Not sure if want. If anyone wants to kno
+          + daya: i want e-books in pdf format of ubuntu.
+          + SEO: Excellent article. well done!
+
+     * Popular posts
+          + Speed Up Firefox web browser (145)
+          + Atheros AR5007 wireless with madwifi on Ubuntu 8.04 (Hardy
+            heron) (141)
+          + Send and Receive Your Hotmail messages through Evolution (107)
+          + How to Install Java Runtime Environment (JRE) in Ubuntu (104)
+          + How to connect iPhone/iPod Touch (Using USB) in
+            Karmic/Jaunty/Intrepid/Hardy (96)
+
+   © 2006-2010 · All rights reserved. · Ubuntu Geek
+http://www.ubuntugeek.com/feed
+http://www.ubuntugeek.com/how-to-install-vmware-server-2-0-x-in-ubuntu-9-10-karmic.html/feed
+http://www.ubuntugeek.com/
+http://www.ubuntugeek.com/setting-up-dial-up-connection-in-ubuntu.html
+http://www.ubuntugeek.com/fix-for-vlc-doesnt-play-video-after-ubuntu-9-10-karmic-upgrade.html
+http://www.ubuntugeek.com/ubun-student-easy-way-to-install-commonly-used-professional-softwares-in-ubuntu.html
+http://www.ubuntugeek.com/
+http://www.ubuntugeek.com/
+http://www.ubuntugeek.com/forum
+http://www.ubuntugeek.com/submit-article
+http://www.ubuntugeek.com/top-posts
+http://www.ubuntugeek.com/ubuntu-hosting
+http://www.ubuntugeek.com/contact
+http://www.ubuntugeek.com/about-2
+http://www.ubuntugeek.com/subscribe
+http://www.ubuntugeek.com/sitemap
+http://www.ubuntugeek.com/privacy-policy
+http://www.ubuntugeek.com/search
+http://www.a2hosting.com/1659-vps-224-custom.html
+http://www.disciplanner.com/
+http://www.ubuntugeek.com/category/backup
+http://www.ubuntugeek.com/category/general
+http://www.ubuntugeek.com/category/monitoring
+http://www.ubuntugeek.com/category/networking
+http://www.ubuntugeek.com/category/news
+http://www.ubuntugeek.com/category/package-mgmt
+http://www.ubuntugeek.com/category/security
+http://www.ubuntugeek.com/category/server
+http://www.ubuntugeek.com/wp-login.php?action=register
+http://www.ubuntugeek.com/wp-login.php
+http://www.ubuntugeek.com/how-to-install-vmware-server-2-0-x-in-ubuntu-9-10-karmic.html
+http://www.ubuntugeek.com/category/general
+http://www.ubuntugeek.com/how-to-install-vmware-server-2-0-x-in-ubuntu-9-10-karmic.html/emailpopup/
+http://feedproxy.google.com/UbuntuGeek
+http://www.ubuntugeek.com/forum
+http://api.tweetmeme.com/button.js?url=http%3A%2F%2Fwww.ubuntugeek.com%2Fhow-to-install-vmware-server-2-0-x-in-ubuntu-9-10-karmic.html&style=compact
+http://www.vmware.com/download/server/getserver.html
+http://www.ubuntugeek.com/images/vmware-server.2.0.1_x64-modules-2.6.30.4-fix.tgz
+http://communities.vmware.com/thread/215985
+http://www.ubuntugeek.com/enable-and-disable-ubuntu-root-password.html
+http://www.addtoany.com/share_save?linkurl=http%3A%2F%2Fwww.ubuntugeek.com%2Fhow-to-install-vmware-server-2-0-x-in-ubuntu-9-10-karmic.html&linkname=How%20to%20install%20vmware%20server%202.0.x%20in%20Ubuntu%209.10%20%28Karmic%29
+http://www.ubuntugeek.com/how-to-install-edubuntu-menu-editor-in-ubuntu-lucidkarmic.html
+http://www.ubuntugeek.com/how-to-install-google-gadgets-in-ubuntu-94jaunty.html
+http://www.ubuntugeek.com/how-to-install-ubuntu-lucid-proposed-community-themes-in-karmicjauntyintrepid.html
+http://www.ubuntugeek.com/gufw-simple-gui-for-ufw-uncomplicated-firewall.html
+http://www.ubuntugeek.com/screengrab-nice-firefox-add-on.html
+http://www.ubuntugeek.com/how-to-enable-packet-injection-on-a-intel-prowireless-3945abg-wireless-card.html
+http://www.ubuntugeek.com/install-ubuntu-kernel-updates-without-rebooting-using-ksplice-uptrack.html
+http://www.ubuntugeek.com/iphone-tethering-on-ubuntu-9-10-karmic.html
+http://www.ubuntugeek.com/download-ubuntu-one-applet-icons-for-humanity-icon-theme.html
+http://www.ubuntugeek.com/fix-for-vlc-doesnt-play-video-after-ubuntu-9-10-karmic-upgrade.html
+http://www.ubuntugeek.com/ubun-student-easy-way-to-install-commonly-used-professional-softwares-in-ubuntu.html
+http://www.ubuntugeek.com/how-to-install-vmware-server-2-0-x-in-ubuntu-9-10-karmic.html/comment-page-2#comment-20224
+http://www.ubuntugeek.com/how-to-install-vmware-server-2-0-x-in-ubuntu-9-10-karmic.html/comment-page-2#comment-20642
+http://www.ubuntugeek.com/how-to-install-vmware-server-2-0-x-in-ubuntu-9-10-karmic.html/comment-page-2#comment-20703
+http://www.ubuntugeek.com/how-to-install-vmware-server-2-0-x-in-ubuntu-9-10-karmic.html/comment-page-2#comment-20845
+http://www.ubuntugeek.com/how-to-install-vmware-server-2-0-x-in-ubuntu-9-10-karmic.html/comment-page-2#comment-21090
+http://www.ubuntugeek.com/how-to-install-vmware-server-2-0-x-in-ubuntu-9-10-karmic.html/comment-page-2#comment-21214
+http://www.ubuntugeek.com/how-to-install-vmware-server-2-0-x-in-ubuntu-9-10-karmic.html/comment-page-2#comment-21302
+http://communities.vmware.com/thread/60867;jsessionid=B3446B5E206F1A2E1E49D2D2C81EDC7B
+http://www.ubuntugeek.com/how-to-install-vmware-server-2-0-x-in-ubuntu-9-10-karmic.html/comment-page-2#comment-21540
+http://www.ubuntugeek.com/how-to-install-vmware-server-2-0-x-in-ubuntu-9-10-karmic.html/comment-page-2#comment-21667
+http://www.ubuntugeek.com/how-to-install-vmware-server-2-0-x-in-ubuntu-9-10-karmic.html/comment-page-2#comment-21723
+http://www.ubuntugeek.com/how-to-install-vmware-server-2-0-x-in-ubuntu-9-10-karmic.html/comment-page-2#comment-21847
+http://bigualinux.wordpress.com/
+http://www.ubuntugeek.com/how-to-install-vmware-server-2-0-x-in-ubuntu-9-10-karmic.html/comment-page-2#comment-22524
+http://bigualinux.wordpress.com/
+http://www.ubuntugeek.com/how-to-install-vmware-server-2-0-x-in-ubuntu-9-10-karmic.html/comment-page-2#comment-22526
+http://ubuntuguide.org/wiki/Ubuntu:Intrepid#Keyboard_errors_in_VMware_guest
+http://--/
+http://www.ubuntugeek.com/how-to-install-vmware-server-2-0-x-in-ubuntu-9-10-karmic.html/comment-page-2#comment-22728
+http://--/
+http://www.ubuntugeek.com/how-to-install-vmware-server-2-0-x-in-ubuntu-9-10-karmic.html/comment-page-2#comment-22733
+http://localhost:8222/
+http://www.ubuntugeek.com/how-to-install-vmware-server-2-0-x-in-ubuntu-9-10-karmic.html/comment-page-2#comment-22805
+http://www.ubuntugeek.com/how-to-install-vmware-server-2-0-x-in-ubuntu-9-10-karmic.html/comment-page-2#comment-22810
+http://www.ubuntugeek.com/how-to-install-vmware-server-2-0-x-in-ubuntu-9-10-karmic.html/comment-page-2#comment-23397
+http://ibiika.com/
+http://www.ubuntugeek.com/how-to-install-vmware-server-2-0-x-in-ubuntu-9-10-karmic.html/comment-page-2#comment-23550
+http://www.squidoo.com/repairaccess
+http://www.ubuntugeek.com/how-to-install-vmware-server-2-0-x-in-ubuntu-9-10-karmic.html/comment-page-2#comment-23752
+http://www.ubuntugeek.com/how-to-install-vmware-server-2-0-x-in-ubuntu-9-10-karmic.html/comment-page-2#comment-24718
+http://www.ubuntugeek.com/how-to-install-vmware-server-2-0-x-in-ubuntu-9-10-karmic.html/comment-page-1#comments
+http://www.ubuntugeek.com/how-to-install-vmware-server-2-0-x-in-ubuntu-9-10-karmic.html#respond
+http://www.ubuntugeek.com/fix-for-vlc-doesnt-play-video-after-ubuntu-9-10-karmic-upgrade.html
+http://www.ubuntugeek.com/ubun-student-easy-way-to-install-commonly-used-professional-softwares-in-ubuntu.html
+http://feeds.feedburner.com/UbuntuGeek
+http://twitter.com/ubuntugeek
+http://www.harddriverecovery.org/
+http://www.datarecovery.net/
+http://www.dealigg.com/
+http://www.chromeosgeek.com/
+http://www.windowsreference.com/
+http://www.debianadmin.com/
+http://www.debianhelp.co.uk/
+http://www.susegeek.com/
+http://www.ubuntux.org/
+http://www.tuxmachines.org/
+http://www.unixmen.com/
+http://arabicubuntusupport.wordpress.com/
+http://www.ubuntugeek.com/uget-free-and-open-source-download-manager.html
+http://www.ubuntugeek.com/ubuntu-tweak-0-5-3-released-more-powerful-window-button-control.html
+http://www.ubuntugeek.com/radience-osliner-new-ubuntu-10-04-lucid-proposed-theme.html
+http://www.ubuntugeek.com/canonicals-design-team-responds-to-theme-criticisms.html
+http://www.ubuntugeek.com/x2go-open-source-terminal-server-project-alternative-to-freenx.html
+http://www.ubuntugeek.com/klavaro-a-very-flexible-touch-typing-tutor.html#comment-25066
+http://www.ubuntugeek.com/bleachbit-cleans-unnecessary-files-to-free-disk-space-and-maintain-privacy.html#comment-25048
+http://www.ubuntugeek.com/radience-osliner-new-ubuntu-10-04-lucid-proposed-theme.html#comment-25030
+http://www.ubuntugeek.com/free-ubuntu-linux-e-books.html#comment-25026
+http://www.ubuntugeek.com/speed-up-firefox-web-browser.html#comment-25011
+http://www.ubuntugeek.com/speed-up-firefox-web-browser.html
+http://www.ubuntugeek.com/atheros-ar5007-wireless-with-madwifi-on-ubuntu-804-hardy-heron.html
+http://www.ubuntugeek.com/send-and-receive-your-hotmail-messages-through-evolution.html
+http://www.ubuntugeek.com/how-to-install-java-runtime-environment-jre-in-ubuntu.html
+http://www.ubuntugeek.com/how-to-connect-iphoneipod-touch-using-usbin-karmicjauntyintrepidhardy.html
+http://www.ubuntugeek.com/

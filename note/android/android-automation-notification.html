@@ -1,0 +1,111 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Android][Automation] 叫出畫面上方的 Notifications</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="android-automation-notification.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>[Android][Automation] 叫出畫面上方的 Notifications</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>用 <a href="android-logcat.html">logcat</a> 觀察 locat 的輸出，發現無論是從畫面上方將 notifications 下拉出來，或是回到 home 再透過選單將它叫出來，過程中 activity manager 都沒有任何反應，所以無法透過 activity manager 直接把它叫出來。</p></div>
+<div class="paragraph"><p>還好 home screen 的選單裡固定提供有 Notifications 的選項，看來這是目前唯一可行的方式了。</p></div>
+<div class="paragraph"><p>不過若單純是要檢查 notifications 的內容，<code>dumpsys</code> 應該可以幫上一些忙：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ dumpsys notification
+Current Notification Manager state:
+  Notification List:
+    NotificationRecord{40dfd130 pkg=android id=1040385 tag=null}
+      icon=0x1080295 / android:drawable/stat_sys_adb
+      contentIntent=PendingIntent{40e43678: PendingIntentRecord{40d35178 android startActivity}}
+      deleteIntent=null
+      tickerText=USB debugging connected
+      contentView=android.widget.RemoteViews@40dc20f8
+      defaults=0x0
+      flags=0x2
+      sound=null
+      vibrate=null
+      ledARGB=0x0 ledOnMS=0 ledOffMS=0
+    NotificationRecord{40cf1490 pkg=com.htc.android.psclient id=7f020013 tag=null}
+      icon=0x7f020013 / com.htc.android.psclient:drawable/usb_to_pc_notify
+      contentIntent=PendingIntent{40d04500: PendingIntentRecord{40d3b730 com.htc.android.psclient startActivity}}
+      deleteIntent=null
+      tickerText=Charge only
+      contentView=android.widget.RemoteViews@40b474a8
+      defaults=0x0
+      flags=0x2
+      sound=null
+      vibrate=null
+      ledARGB=0x0 ledOnMS=0 ledOffMS=0
+
+  mSoundNotification=null
+  mSound=com.android.server.NotificationPlayer@40919ec0
+  mVibrateNotification=null
+  mDisabledNotifications=0x0
+  mSystemReady=true</code></pre>
+</div></div>
+<div class="paragraph"><p>要判斷現在 Notification Bar 是否被拉下來，<code>dumpsys window</code> 提供了一些線索：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>  mCurrentFocus=Window{409aef68 StatusBarExpanded paused=false}
+  mLastFocus=Window{409aef68 StatusBarExpanded paused=false}
+  mFocusedApp=AppWindowToken{410081c8 token=HistoryRecord{41007ec8 com.android.settings/.framework.activity.HtcSettings}}</code></pre>
+</div></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:06:29 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

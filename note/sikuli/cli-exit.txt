@@ -1,0 +1,101 @@
+= 如何偵測 Sikuli Script 執行過程中有發生錯誤？ =
+
+[TIP]
+.延伸閱讀
+--
+ . link:SikuliCLI.html[從 CLI 執行 Sikuli Script]
+--
+
+實驗發現，從 CLI 執行 Sikuli Script 的過程中如果有發生錯誤，這個錯誤並不會被反應到 link:../shell/exit-status.html[exit status]。
+
+.`C:\tmp\error.sikuli\error.py` 或 `/tmp/error.sikuli/error.py`
+--------------------------------------------------------------------------------
+raise Exception()
+--------------------------------------------------------------------------------
+
+分別在 Windows 跟 Linux 下做實驗，結果 exit status 都是 0：
+
+--------------------------------------------------------------------------------
+C:\tmp> java -jar "%SIKULI_HOME%\sikuli-script.jar" c:\tmp\error.sikuli 2> stderr.txt
+[info] Sikuli vision engine loaded.
+[info] Windows utilities loaded.
+[info] VDictProxy loaded.
+[error] Can't run this Sikuli script: c:\tmp\error.sikuli
+
+C:\tmp> echo %ERRORLEVEL%
+0
+
+C:\tmp> type stderr.txt
+Traceback (most recent call last):
+  File "c:\tmp\error.sikuli\error.py", line 1, in &lt;module>
+    raise Exception()
+Exception
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+$ java -jar $SIKULI_HOME/sikuli-script.jar /tmp/error.sikuli 2> stderr.txt
+[info] Sikuli vision engine loaded.
+[info] VDictProxy loaded.
+[error] Can't run this Sikuli script: /tmp/error.sikuli
+
+$ echo $?
+0
+
+$ cat stderr.txt 
+Traceback (most recent call last):
+  File "/tmp/error.sikuli/error.py", line 1, in <module>
+    raise Exception()
+Exception
+--------------------------------------------------------------------------------
+
+還好錯誤訊息都會寫到 STDERR，可以利用這個特性間接做判斷。像上面這樣，用 `2>` 將 STDERR 導到特定檔案，程式執行結束後就可以檢查檔案的內容，如果是空的就表示成功，否則表示過程中有發生錯誤。
+
+相同的概念也可以套用在 Python 裡：
+
+.link:cli-exit/run_sikuli.py[`run_sikuli.py`]
+--------------------------------------------------------------------------------
+import sys, os, os.path as path, subprocess
+
+sikuli_script = sys.argv[1]
+sikuli_jar = path.join(os.environ['SIKULI_HOME'], 'sikuli-script.jar')
+process = subprocess.Popen(['java', '-jar', sikuli_jar, sikuli_script], stderr=subprocess.PIPE) <1>
+stderr = process.communicate()[1]
+
+if stderr != '': raise Exception(stderr) <2>
+--------------------------------------------------------------------------------
+<1> 只將 STDERR 的內容轉到 Python 內部。
+<2> 如果 `stderr` 有內容，就表示過程中有發生錯誤。
+
+--------------------------------------------------------------------------------
+$ python run_sikuli.py /tmp/error.sikuli/
+[info] Sikuli vision engine loaded. <1>
+[info] VDictProxy loaded.
+[error] Can't run this Sikuli script: /tmp/error.sikuli/
+Traceback (most recent call last):
+  File "run_sikuli.py", line 8, in <module>
+    if stderr != '': raise Exception(stderr)
+Exception: Traceback (most recent call last):
+  File "/tmp/error.sikuli/error.py", line 1, in <module>
+    raise Exception()
+Exception
+
+$ echo $? <2>
+1
+--------------------------------------------------------------------------------
+<1> STDOUT 沒有被轉向，所以還是直接輸出到螢幕。
+<2> 錯誤有被反應到 exit status 了。
+
+不過經過一段時間的測試之後，發現某些不是錯誤的訊息也會被寫到 STDERR 去，目前的 workaround 就是進一步判斷 "Traceback (most recent call last)" 這一串字有沒有出現：
+
+.link:cli-exit/run_sikuli2.py[`run_sikuli2.py`]
+--------------------------------------------------------------------------------
+import sys, os, os.path as path, subprocess
+
+sikuli_script = sys.argv[1]
+sikuli_jar = path.join(os.environ['SIKULI_HOME'], 'sikuli-script.jar')
+process = subprocess.Popen(['java', '-jar', sikuli_jar, sikuli_script], stderr=subprocess.PIPE)
+stderr = process.communicate()[1]
+
+if "Traceback (most recent call last)" in stderr: raise Exception(stderr)
+--------------------------------------------------------------------------------
+

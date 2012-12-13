@@ -1,0 +1,65 @@
+= [Sikuli] Windows 上的 Sikuli =
+
+[[install]]
+== 安裝 ==
+
+ 1. 確認 32-bit JRE 6 已經安裝。
+＋
+CAUTION: Sikuli 目前https://bugs.launchpad.net/sikuli/+bug/840759[還不能運作在 Java 7 下]，在 64-bit Windows 下也只能搭配 32-bit JRE，所以 JRE 一定得安裝 32-bit JRE 6 才行。（因此從 Task Manager 很容易可以從 `javaw.exe *32` 認出它）
+＋
+ 2. 從http://sikuli.org/download.shtml#win[官網]下載 `Sikuli-X-<version>-win32.exe` 後執行。預設會裝到 `C:\Program Files\Sikuli X\` 或 `C:\Program Files (x86)\Sikuli X\` （64-bit Windows 而言）。
+ 3. 開始選單裡會出現 "Sikuli IDE.exe" (`Sikuli-IDE.exe`) 跟 "Sikuli IDE" (`Sikuli-IDE-w.bat`)；在 32-bit Windows 下用 `Sikuli-IDE.exe`，在 64-bit Windows 下則要改用 `Sikuli-IDE-w.bat`，否則抓圖時螢幕不會暗下來，Sikuli 會整個回不來。
++
+--
+觀察 `Sikuli-IDE-w.bat` 的內容：
+
+--------------------------------------------------------------------------------
+@echo off
+
+PATH=%PATH%;%~d0%~p0libs
+set JAVA_EXE="javaw"
+if defined PROGRAMFILES(X86) set JAVA_EXE="%PROGRAMFILES(X86)%\Java\jre6\bin\javaw.exe" <1>
+start /B "Sikuli-IDE" %JAVA_EXE% -Xms64M -Xmx512M -Dfile.encoding=UTF-8 -Dpython.path="%~d0%~p0sikuli-script.jar/" -jar "%~d0%~p0sikuli-ide.jar" %*
+--------------------------------------------------------------------------------
+<1> 表示環境內可以有 64-bit JDK/JRE 7，但如果在 64-bit 環境下，固定會跑 32-bit JRE 6。
+
+原來 `Sikuli-IDE-w.bat` 多做了判斷，必要時會轉向 32-bit JRE 6，這也就是為什麼官方文件會說 64-bit 不能直接跑 `Sikuli-IDE.exe` 的原因。
+--
+
+以下列出幾個常見的問題：
+
+ * VisionProxy.dll: Can't load IA 32-bit .dll on a AMD 64-bit platform
++
+--
+-------------------------------------------------------------------------------- 
+120509 13:55:16.583:S [main] [com.android.monkeyrunner.MonkeyRunnerOptions]Cause
+d by: java.lang.UnsatisfiedLinkError: C:\Users\YuneLiu\AppData\Local\Temp\tmplib
+\VisionProxy.dll: Can't load IA 32-bit .dll on a AMD 64-bit platform
+-------------------------------------------------------------------------------- 
+
+在 Windows 下用 64-bit JRE 跑 Sikuli 會遇到上述的錯誤，改用 32-bit JRE 即可。
+--
++
+ * VisionProxy.dll: Can't find dependent libraries
++
+--
+-------------------------------------------------------------------------------- 
+java.lang.UnsatisfiedLinkError: java.lang.UnsatisfiedLinkError: C:\Users\YuneLiu
+\AppData\Local\Temp\tmplib\VisionProxy.dll: Can't find dependent libraries
+--------------------------------------------------------------------------------
+
+這是因為沒有把 `%SIKULI_HOME%\libs` 加到 `%PATH%` 的關係。
+
+ * https://answers.launchpad.net/sikuli/+question/166928[Question #166928 : Questions : Sikuli]
+--
+
+
+
+== java.lang.UnsatisfiedLinkError: Can't load IA 32-bit .dll on a AMD 64-bit platform ==
+
+--------------------------------------------------------------------------------
+java.lang.UnsatisfiedLinkError: java.lang.UnsatisfiedLinkError: C:\Users\<username>\AppData\Local\Temp\tmplib\Win32Util.dll: Can't load IA 32-bit .dll on a AMD 64-bit platform
+--------------------------------------------------------------------------------
+
+也是因為在 Windows 下用 64-bit JRE 跑 Sikuli 才會遇到上述的錯誤，改用 32-bit JRE 即可。
+

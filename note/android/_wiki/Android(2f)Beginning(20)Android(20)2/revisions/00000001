@@ -1,0 +1,1869 @@
+= Android / Beginning Android 2 =
+http://www.apress.com/book/view/1430226293
+<<TableOfContents>>
+
+= Preface =
+
+'''Welcome to the Book!'''
+
+Thanks for your interest in developing applications for Android! Increasingly, people will access Internet-based services using so-called "nontraditional" means, such as mobile devices. The more we do in that space now, the more that people will help invest in that space to make it easier to build more powerful mobile applications in the future. Android is new—__Android-powered devices first appeared on the scene in late 2008—but it likely will rapidly grow in importance due to the size and scope of the Open Handset Alliance.__
+
+And, most of all, thanks for your interest in this book! I sincerely hope you find it useful and at least occasionally entertaining.
+
+'''Prerequisites'''
+
+If you are interested in programming for Android, you will need at least a basic understanding of how to program in Java. __Android programming is done using Java syntax, plus a class library that resembles a ''subset'' of the Java SE library (plus Android-specific extensions).__ If you have not programmed in Java before, you probably should learn how that works before attempting to dive into programming for Android.
+
+The book does not cover in any detail how to download or install the Android development tools, either the Eclipse IDE flavor or the stand-alone flavor. The Android web site covers this quite nicely. __The material in the book should be relevant whether or not you use the IDE.__ You should download, install, and test the Android development tools from the Android web site before trying any of the examples presented in this book.
+
+Some chapters may reference material in previous chapters. Also, not every sample shown has the complete source code in the book, lest this book get too large. If you wish to compile the samples, download the source code from the Apress web site (www.apress.com).
+
+'''Editions of This Book'''
+
+This book is being produced via a partnership between Apress and !CommonsWare. You are reading the Apress edition, which is available in print and in digital form from various digital book services, such as Safari.
+
+!CommonsWare continually updates the original material and makes it available to members of its Warescription program, under the title The Busy Coder's Guide to Android Development.
+
+!CommonsWare maintains a FAQ about this partnership at http://commonsware.com/apress.
+
+'''Source Code and Its License'''
+
+The source code for this book is available to readers at www.apress.com. All of the Android projects are licensed under the Apache 2.0 License at www.apache.org/licenses/LICENSE-2.0.html, in case you have the desire to reuse any of it.
+
+= Chapter 1. The Big Picture =
+
+__Android devices, by and large, will be mobile phones. While the Android technology is being discussed for use in other areas (e.g., car dashboard “PCs”), for now, the focus is on phone applications.__ For developers, this has benefits and drawbacks.
+
+== Challenges of Smartphone Programming ==
+
+On the plus side, Android-style smartphones are sexy. Offering Internet services over mobile devices dates back to the mid-1990s and the Handheld Device Markup Language (HDML). However, only in recent years have phones capable of Internet access taken off. Now, thanks to trends like text messaging and products like Apple's iPhone, phones that can serve as Internet-access devices are rapidly gaining popularity. So, working on Android applications gives you experience with an interesting technology (Android) in a fast-moving market segment (Internet-enabled phones), which is always a good thing.
+
+The problem comes when you actually have to program the darn things.
+
+Anyone with experience in programming for PDAs or phones has felt the pain of phones simply being small in all sorts of dimensions, such as the following:
+
+ * Screens are small (you won’t get comments like, “Is that a 24-inch LCD in your pocket, or...?”).
+
+ * Keyboards, if they exist, are small.
+
+ * __Pointing devices, if they exist, are annoying (as anyone who has lost a stylus will tell you) or inexact (large fingers and “multitouch” LCDs are not a good mix).__
+
+ * CPU speed and memory are limited compared with what are available on desktops and servers.
+
+ * __You can have any programming language and development framework you want, as long as it was what the device manufacturer chose and burned into the phone’s silicon.__
+
+Moreover, applications running on a phone must deal with the fact that they are on a phone.
+
+__'''People with mobile phones tend to get very irritated when those phones don’t work'''__, which is why the “Can you hear me now?” ad campaign from Verizon Wireless has been popular for the past few years. Similarly, those same people will get angry with you if your program “breaks” their phone:
+
+ * By tying up the CPU so that calls can’t be received
+
+ * By not quietly fading into the background when a call comes in or needs to be placed, because it does not work properly with the rest of the phone’s operating system
+
+ * By crashing the phone’s operating system, such as by leaking memory like a sieve
+
+__Hence, developing programs for a phone is a different experience than developing desktop applications, web sites, or back-end server processes.__ The tools look different, the frameworks behave differently, and there are more limitations on what you can do with your programs.
+
+What Android tries to do is meet you halfway:
+
+ * You get a commonly used programming language (Java) with some commonly used libraries (e.g., some Apache Commons APIs), with support for tools you may be used to using (Eclipse).
+
+ * __You get a fairly rigid and separate framework in which your programs need to run so they can be “good citizens” on the phone and not interfere with other programs or the operation of the phone itself.__
+
+As you might expect, much of this book deals with that framework and how to write programs that work within its confines and take advantage of its capabilities.
+
+== What Androids Are Made Of ==
+
+When you write a desktop application, you are “master of your own domain.” You launch your main window and any child windows—like dialog boxes—that are needed. From your standpoint, you are your own world, leveraging features supported by the operating system, but largely ignorant of any other program that may be running on the computer at the same time. If you do interact with other programs, it is typically through an API, such as Java Database Connectivity (JDBC), or frameworks atop it, to communicate with MySQL or another database.
+
+__Android has similar concepts, but packaged differently and structured to make phones more crash-resistant.__ Here are the main components used in an Android application:
+
+ * Activities: __The building block of the user interface is the activity. You can think of an activity as being the Android analogue for the window or dialog box in a desktop application. While it is possible for activities to not have a user interface, most likely your “headless” code will be packaged in the form of content providers or services.__
+
+ * Content providers: __Content providers provide a level of abstraction for any data stored on the device that is accessible by multiple applications. '''The Android development model encourages you to make your own data available to other applications, as well as your own.''' Building a content provider lets you do that, while maintaining complete control over how your data is accessed.__
+
+ * Services: __Activities and content providers are short-lived and can be shut down at any time. Services, on the other hand, are designed to keep running, if needed, independent of any activity.__ You might use a service for checking for updates to an RSS feed or to play back music even if the ''controlling activity'' is no longer operating.
+
+ * Intents: __Intents are system messages, running around the inside of the device, notifying applications of various events, from hardware state changes (e.g., an SD card was inserted), to incoming data (e.g., an SMS message arrived), to application events (e.g., your activity was launched from the device’s main menu). Not only can you respond to intents, but you can create your own to launch other activities or to let you know when specific situations arise (e.g., raise such-and-so intent when the user gets within 100 meters of this-and-such location).__
+
+== Stuff at Your Disposal ==
+
+Android comes with a number of features to help you develop applications:
+
+ * Storage: __You can package ''data files'' with your application, for things that do not change, such as icons or help files. You also can carve out a bit of space on the device itself, for databases or files containing user-entered or retrieved data needed by your application. And, if the user supplies bulk storage, like an SD card, you can read and write files there as needed.__
+
+ * Network: Android devices will generally be Internet-ready, through one communications medium or another. You can take advantage of the Internet access at any level you wish, from raw Java sockets all the way up to a built-in WebKit-based web browser widget you can embed in your application.
+
+ * Multimedia: __Android devices have the ability to play back and record audio and video. While the specifics may vary from device to device, you can query the device to learn its capabilities, and then take advantage of the multimedia capabilities as you see fit__—whether that is to play back music, take pictures with the camera, or use the microphone for audio note-taking.
+
+ * Global positioning system (GPS): __Android devices will frequently have access to ''location providers'', such as a GPS, which can tell your applications where the device is on the face of the Earth.__ In turn, you can display maps or otherwise take advantage of the location data, such as tracking a device’s movements if the device has been stolen.
+
+ * Phone services: Of course, since Android devices are typically phones, your software can initiate calls, send and receive Short Message Service (SMS) messages, and everything else you expect from a modern bit of telephony technology.
+
+= Chapter 2. Projects and Targets =
+
+After you have downloaded and installed the latest Android Software Development Kit (SDK), and perhaps the Android Developer Tools (ADT) plugin for Eclipse (both available from the Android Developers web site), you’re ready to get started. This chapter covers what is involved in building an Android application.
+
+== Pieces and Parts ==
+
+To create an Android application, you will need to create a corresponding Android project. This could be an Eclipse project, if you are using Eclipse for Android development. The project will hold all of your source code, resources (e.g., internationalized strings), third-party JARs, and related materials. __The Android build tools—whether Eclipse-integrated or stand-alone—will turn the contents of your project into an Android package (APK) file, which is the Android application. Those tools will also help you get your APK file onto an Android emulator or an actual Android device for testing purposes.__
+
+__One key element of a project is the manifest (`AndroidManifest.xml`). This file contains the “table of contents” for your application, listing all of the major application components, permissions, and so on. The manifest is used by Android at runtime to tie your application into the operating system. The manifest contents are also used by the Android Market (and perhaps other independent “app stores”), so applications that need Android 2.0 will not be presented to people with Android 1.5 devices, for example.__
+
+__To test your application with the emulator, you will need to create an Android Virtual Device, or AVD. Most likely, you will create several of these, as each AVD emulates an Android device with a particular set of hardware. You might have AVDs for different screen sizes, Android versions, and so on.__
+
+__When creating projects and creating AVDs, you will need to indicate to Android the ''API level'' with which you are working. The API level is a simple integer that maps to an Android version; for example, API level 3 means Android 1.5. When creating a project, you will be able to tell Android the minimum and maximum API levels your application supports. When creating an AVD, you will tell Android which API level the AVD should emulate, so you can see how your application runs on various (fake) devices implementing different versions of Android.__
+
+All of these concepts are described in greater detail in this chapter.
+
+== Creating a Project ==
+
+To create a project from the command line, for use with the command-line build tools (e.g., `ant`), you will need to run the `android create project` command. This command takes a number of switches to indicate the Java package in which the application’s code will reside, the API level the application is targeting, and so on. __The result of running this command will be a directory containing all of the files necessary to build a “Hello, World!” Android application.__
+
+Here is an example of running `android create project`:
+
+ {{{
+android create project --target 2 --path ./FirstApp --activity FirstApp --package apt.tutorial
+ }}}
+
+If you intend to develop for Android using Eclipse, rather than `android create pboject`, you will use the Eclipse new-project wizard to create a new Android application.
+
+NOTE: The source code that accompanies this book was set up to be built using the command-line build tools. __If you prefer to use Eclipse, you can create empty Eclipse Android projects and import the code into those projects.__
+
+== Project Structure ==
+
+__The Android build system is organized around a specific directory tree structure for your Android project, much like any other Java project. The specifics, though, are fairly unique to Android.__ Here’s a quick primer on the project structure, to help you make sense of it all, particularly for the sample code referenced in this book.
+
+=== Root Contents ===
+
+When you create a new Android project (e.g., via `android create project`), you get several items in the project’s root directory, including the following:
+
+ * `AndroidManifest.xml`: An XML file describing the application being built and which components—activities, services, and so on—are being supplied by that application.
+
+ * `build.xml`: An Ant script for compiling the application and installing it on the device.
+
+ * `default.properties` and `local.properties`: Property files used by the Ant build script.
+
+ * `assets/`: A folder that holds other static files you wish packaged with the application for deployment onto the device. (跟 `res/` 有何不同[?])
+
+ * `bin/`: A folder that holds the application once it is compiled.
+
+ * `gen/`: Where Android’s build tools will place source code that they generate.
+
+ * `libs/`: A folder that holds any third-party JARs your application requires.
+
+ * `src/`: A folder that holds the Java source code for the application.
+
+ * `res/`: A folder that holds resources—such as icons, graphic user interface (GUI) layouts, and the like—that are packaged with the compiled Java in the application.
+
+ * `tests/`: __A folder that holds an ''entirely separate'' Android project used for testing the one you created.__
+
+=== The Sweat Off Your Brow ===
+
+When you create an Android project (e.g., via `android create project`), you supply the fully qualified class name of the ''main activity'' for the application (e.g., `com.commonsware.android.SomeDemo`). You will then find that your project’s `src/` tree already has the ''namespace directory tree'' in place, plus a stub `Activity` subclass representing your main activity (e.g., `src/com/commonsware/android/SomeDemo.java`). You are welcome to modify this file and add others to the `src/` tree as needed to implement your application.
+
+__The first time you compile the project (e.g., via `ant`), out in the main activity’s namespace directory, the Android ''build chain'' will create `R.java`. This contains a number of constants tied to the various resources you placed in the `res/` directory tree.__ Throughout this book, you will see that many of the examples reference things in `R.java` (e.g., referring to a layout’s identifier via `R.layout.main`).
+
+NOTE: __You should not modify `R.java` yourself, but instead let the Android tools handle this for you.__
+
+=== And Now, the Rest of the Story ===
+
+__The `res/` directory tree holds resources—static files that are packaged along with your application, either in their original form or, occasionally, in a ''preprocessed form''.__ These are some of the subdirectories you will find or create under `res/`:
+
+ * `res/drawable/`: For images (PNG, JPEG, etc.).
+ * `res/layout/`: For XML-based UI layout specifications.
+ * `res/menu/`: For XML-based menu specifications.
+ * `res/raw/`: For general-purpose files (e.g., a CSV file of account information).
+ * `res/values/`: For strings, dimensions, and the like.
+ * `res/xml/`: For other general-purpose XML files you wish to ship.
+
+All of these, as well as other resources, are covered in this book.
+
+=== What You Get Out of It ===
+
+When you compile your project (via `ant` or the IDE), the results go into the `bin/` directory under your project root, as follows:
+
+ * `bin/classes/`: Holds the compiled Java classes.
+
+ * `bin/classes.dex`: __Holds the executable created from those compiled Java classes.__
+
+ * `bin/yourapp.ap_`: __Holds your application’s resources, packaged as a ZIP file (where `yourapp` is the name of your application).__
+
+ * `bin/yourap-debug.apk` or `bin/yourapp-unsigned.apk`: __The actual Android application (where `yourapp` is the name of your application).__
+
+__The `.apk` file is a ZIP archive containing the `.dex` file, the compiled edition of your resources (`resources.arsc`), any uncompiled resources (such as what you put in `res/raw`), and the `AndroidManifest.xml` file. It is also digitally signed, with the `-debug` portion of the filename indicating it has been signed using a ''debug key'' that works with the emulator, or `-unsigned` indicating that you built your application for release (`ant release`), but the APK still needs to be signed using `jarsigner` and an official key.__
+
+== Inside the Manifest ==
+
+The foundation for any Android application is the manifest file, `AndroidManifest.xml` in the root of your project. Here is where you declare what is inside your application—the activities, the services, and so on. __You also indicate how these pieces attach themselves to the overall Android system; for example, you indicate which activity (or activities) should appear on the device’s main menu (a.k.a. the launcher).__
+
+When you create your application, a starter manifest will be generated for you automatically. For a simple application, offering a single activity and nothing else, the autogenerated manifest will probably work out fine, or perhaps require a few minor modifications. __On the other end of the spectrum, the manifest file for the Android API demo suite is more than 1,000 lines long. Your production Android applications will probably fall somewhere in the middle.__
+
+Most of the interesting bits of the manifest will be described in greater detail in the chapters on their associated Android features. For example, the `service` element will be described in greater detail in Chapter 29, which covers creating services. For now, you just need to understand the role of the manifest and its general overall construction.
+
+=== In the Beginning, There Was the Root, And It Was Good ===
+
+The root of all manifest files is, not surprisingly, a `manifest` element:
+
+ {{{
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+  package="com.commonsware.android.search">
+...
+</manifest>
+ }}}
+
+__Note the namespace declaration. Curiously, the generated manifests apply it only on the attributes, not the elements (e.g., it’s `manifest`, not `android:manifest`). Since this pattern works, unless Android changes, you should stick with it.__
+
+__The biggest piece of information you need to supply on the `manifest` element is the `package` attribute (also curiously not namespaced). Here, you can provide the name of the Java package that will be considered the “base” of your application. Then, everywhere else in the manifest file that needs a class name, you can just substitute a leading dot as shorthand for the package. (實驗發現 Android 1.6 開始就不用加這個 leading dot 了, 如果程式要向下相容的話, 大概還是要加吧?)__ For example, if you needed to refer to `com.commonsware.android.search.Snicklefritz` in this preceding manifest, you could just use `.Snicklefritz`, since `com.commonsware.android.search` is defined as the application’s package.
+
+=== Permissions, Instrumentations, and Applications (Oh My!) ===
+
+Underneath the `manifest` element, you may find the following:
+
+ * `uses-permission` elements: __Indicate the permissions your application will need in order to function properly.__
+
+ * `permission` elements: __Declare permissions that activities or services might require other applications to hold in order to use your application’s data or logic.__
+
+ * `instrumentation` elements: Indicate code that should be invoked on key system events, such as starting up activities, for the purposes of logging or monitoring.[?]
+
+ * `uses-library` elements: __Hook in optional Android components, such as mapping services.__
+
+ * `uses-sdk` element: Indicates for which version of the Android SDK the application was built.
+
+ * `application` element: Defines the guts of the application that the manifest describes.
+
+Here’s an example:
+
+ {{{
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+  package="com.commonsware.android">
+  <uses-permission
+    android:name="android.permission.ACCESS_LOCATION" />
+  <uses-permission
+    android:name="android.permission.ACCESS_GPS" />
+  <uses-permission
+    android:name="android.permission.ACCESS_ASSISTED_GPS" />
+  <uses-permission
+    android:name="android.permission.ACCESS_CELL_ID" />
+  <application>
+...
+  </application>
+</manifest>
+ }}}
+
+In this example, the manifest has `uses-permission` elements to indicate some ''device capabilities'' the application will need—in this case, permissions to allow the application to determine its current location. The contents of the `application` element will describe the activities, services, and whatnot that make up the bulk of the application itself.
+
+Permissions will be covered in greater detail in Chapter 28.
+
+=== Your Application Does Something, Right? ===
+
+The children of the `application` element represent the core of the manifest file. By default, when you create a new Android project, you get a single `activity` element:
+
+ {{{
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+  package="com.commonsware.android.skeleton">
+  <application>
+    <activity android:name=".Now" android:label="Now">
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
+        <category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
+    </activity>
+  </application>
+</manifest>
+ }}}
+
+__This element supplies `android:name` for the class implementing the activity, `android:label` for the display name of the activity, and (frequently) an `intent-filter` child element describing under which conditions this activity will be displayed. The stock `activity` element sets up your activity to appear in the launcher, so users can choose to run it.__ As you’ll see later in this book, you can have several activities in one project, if you so choose.
+
+__You may have one or more `provider` elements, indicating content providers, which are the components that supply data to your activities and, with your permission, other activities in other applications on the device. These wrap up databases or other data stores into a single API that any application can use.__ Later, you’ll see how to create content providers and how to use content providers that you or others create.
+
+__Finally, you may have one or more `service` elements, describing services, which are long-running pieces of code that can operate independently of any activity.__ The quint-essential example is the MP3 player, where you want the music to keep playing even if the user pops open other activities and the MP3 player’s user interface is “misplaced.” Chapters 29 and 30 cover how to create and use services.
+
+=== Achieving the Minimum ===
+
+Android, like most operating systems, goes through various revisions, versions, and changes. Some of these affect the Android SDK, meaning there are new classes, methods, or parameters you can use that you could not in previous versions of the SDK.
+
+__If you want to ensure your application is run only on devices that have a certain version (or higher) of the Android environment, you will add a `uses-sdk` element, as a child of the root `<manifest>` element in your `AndroidManifest.xml` file. The `<uses-sdk>` element has one attribute, `minSdkVersion`, indicating which SDK version your application requires:__
+
+ {{{
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+  package="com.commonsware.android.search">
+  <uses-sdk minSdkVersion="2" />
+  ...
+</manifest>
+ }}}
+
+At the time of this writing, there are five possible `minSdkVersion` values:
+
+ * 1: Android 1.0 SDK
+ * 2: Android 1.1 SDK
+ * 3: Android 1.5 SDK
+ * 4: Android 1.6 SDK
+ * 5: Android 2.0 SDK
+
+__If you omit the `<uses-sdk>` element, your application will behave as though `minSdkVersion` is set to 1.__
+
+CAUTION: The Android Market seems to insist that you specifically state your `minSdkVersion`, so be certain to have a proper `<uses-sdk>` element if you are going to distribute via that channel.
+
+__If you set `<uses-sdk>`, the application will install only on compatible devices. You do not need to specify the latest SDK, but if you choose an older one, it is up to you to ensure your application works on every SDK version you claim is compatible.__ For example, if you leave out `<uses-sdk>`, in effect, you are stipulating that your application works on every Android SDK version ever released, and you will need to test your application to determine if this is indeed the case.
+
+__Also note that a bug in the Android Market means you should make the `<uses-sdk>` element be the first child of your `<manifest>` element.__
+
+=== Version=Control ===
+
+Particularly if you are going to distribute your application, via the Android Market or other means, you probably should add a pair of other attributes to the root `<manifest>` element: `android:versionCode` and `android:versionName`. These assist in the process of upgrading applications.
+
+__The `android:versionName` attribute is some human-readable label for the version name or number of your application.__ So, you can use `3.0` or `System V` or `5000` or `3.1` as you see fit.
+
+__The `android:versionCode` attribute is a pure integer indication of the version of the application. This is used by the system to determine if one version of your application is newer than another. Newer is defined as “has a higher `android:versionCode` value.”__ Whether you attempt to convert your actual version (as found in `android:versionName`) to a number or simply increment this value by one for each release is up to you.
+
+== Emulators and Targets ==
+
+Let’s take a moment to discuss the notion of `targets` in Android, since they can be a bit confusing. __Targets are important for your long-term application development, particularly when you use the Android emulator for testing your applications.__
+
+=== Virtually There ===
+
+__To use the emulator, you will need to create one or more AVDs. These virtual devices are designed to mimic real Android devices like the T-Mobile G1 or the HTC Magic. You tell the emulator which AVD to use, and the emulator will pretend it is the device described by that AVD.__
+
+When you create an AVD, you need to specify a target. The target indicates which class of device the AVD will pretend to be. At the time of this writing, there are five targets:
+
+ * 1: An Android 1.1 device, such as a nonupgraded T-Mobile G1.
+
+ * 2: An Android 1.5 device that lacks Google Maps support. This is what you might get from a home-brew port of Android onto a device.
+
+ * 3: An Android 1.5 device that has Google Maps support.
+
+ * 4: An Android 1.6 device that has Google Maps support.
+
+ * 5: An Android 2.0 device that has Google Maps support.
+
+TIP: You can find out the available API targets via the `android list targets` command.
+
+__If you are building applications that may use Google Maps, you will want to use an AVD that has a target of 3 or higher.__
+
+You can create as many AVDs as you need and for which you have disk space. __Each AVD behaves as a totally distinct device, so installing your app on one AVD does not affect any other AVDs that you have created.__
+
+__AVDs can be created through the `android create` command, via Eclipse, or via the AVD Manager, a GUI added in Android 1.6. To use the AVD Manager, simply run the `android` command without any arguments.__ As shown in Figure 2-1, you will be presented with a list of prebuilt AVDs, New and Delete buttons to add and remove AVDs, a Start button to launch an emulator using a selected AVD, and so on.
+
+{{attachment:figure_2-1.png}} <<BR>> Figure 2-1. The AVD Manager GUI, showing a list of available AVDs
+
+When you add an AVD through the GUI (via the New button in the main window), you will be prompted for a name, target API/Google Maps combination, details about an SD card image, and the size of screen you wish to emulate (called the skin). Figure 2-2 shows the Create New AVD dialog box.
+
+{{attachment:figure_2-2.png}} <<BR>> Figure 2-2. Adding an AVD
+
+=== Aiming at a Target ===
+
+When you create a new project (via `android create project` or Eclipse), you will need to indicate which ''class of device'' this project targets. The same values shown in the previous section apply. For example, creating a project with a target of 3 indicates Android 1.5. Your resulting application will not install on devices that do not meet the specified target.
+
+Here are some rules of thumb for dealing with targets:
+
+ * __Ask for only what you really need. If you are sticking with Android 1.5 APIs, you may as well ask to build with Android 1.5 APIs and maximize the number of devices on which your program can run.__
+
+ * __Test on as many targets as you can and that are possible. For example, you may be tempted to target 1, to reach the maximum possible range of Android devices. That is fine, but you will need to test on a target 1 AVD, and a target 2 AVD, and so on.__
+
+ * __Check out the new target levels with each Android release. There should be a new values with every Android ''point-release update'' (e.g., 2.0 or 1.6), and possibly even for ''SDK patch levels'' (e.g., 1.5r1 versus 1.5r2). Be sure to test your application on those new targets whenever you can, as some people may start getting devices with the new Android release soon.__
+
+ * __Testing on AVDs, regardless of target, is no substitute for testing on hardware. AVDs are designed to give you disposable environments that let you test a wide range of environments, even those that may not yet exist in hardware. However, you really need to test your application on at least one actual Android device. If nothing else, the speed of your emulator may not match the speed of the device; the emulator may be faster or slower depending on your system.__
+
+= Chapter 3. Creating a Skeleton Application =
+
+Every programming language or environment book starts off with the popular “Hello, World!” demonstration. This is just enough of a program to prove you can build things. However, the typical Hello, World! program has no interactivity (e.g., it just dumps the words to a console), and so it’s really boring.
+
+This chapter demonstrates a simple project, but one using Advanced Push-Button Technology and the current time, making it a bit more interesting than the typical Hello, World! demo.
+
+== Begin at the Beginning ==
+
+As described in the previous chapter, to work with anything in Android, you need a project. If you are using tools that are not Android-enabled, you can use the `android create project` script, found in the `tools/` directory in your SDK installation. You will need to pass to `android create project` the API target, the directory where you want the skeleton generated, the name of the default activity, and the Java package where all of this should reside:
+
+ {{{
+android create project --target 2 \
+  --path /path/to/my/project/dir --activity Now \
+  --package com.commonsware.android.Now
+ }}}
+
+You can also download the project directories of the samples shown in this book in a ZIP file on the Apress web site. These projects are ready for use; you do not need to run `android create project` on those unpacked samples.
+
+Your project’s `src/` directory contains the standard Java-style tree of directories based on the Java package you used when you created the project (e.g., `com.commonsware.android` results in `src/com/commonsware/android/`). Inside the innermost directory, you should find a pregenerated source file named `Now.java`, which is where your first activity will go.
+
+__This activity will contain a single button that displays the time that the button was last pushed (or the time the application was started if the button has not been pushed).__
+
+NOTE: If you downloaded the source files from the Apress web site, you can just use the `Skeleton/Now` project directly, rather than entering the code.
+
+Open `Now.java` in your editor and paste in the following code:
+
+ {{{
+package com.commonsware.android.skeleton;
+
+import android.app.Activity;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import java.util.Date;
+
+public class Now extends Activity implements View.OnClickListener {
+
+  Button btn;
+
+  @Override
+  public void onCreate(Bundle icicle) {
+    super.onCreate(icicle);
+
+    btn=new Button(this);
+    btn.setOnClickListener(this);
+    updateTime();
+    setContentView(btn);
+  }
+
+  public void onClick(View view) {
+    updateTime();
+  }
+
+  private void updateTime() {
+    btn.setText(new Date().toString());
+  }
+
+}
+ }}}
+
+Let’s examine this piece by piece.
+
+== Dissecting the Activity ==
+
+The package declaration needs to be the same as the one you used when creating the project. And, as with any other Java project, you need to import any classes you reference. __Most of the Android-specific classes are in the `android` package.__
+
+ {{{
+package com.commonsware.android.skeleton;
+
+import android.app.Activity;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import java.util.Date;
+ }}}
+
+__It’s worth noting that not every Java SE class is available to Android programs. Visit the Android class reference to see what is and is not available.__
+
+ {{{
+public class Now extends Activity implements View.OnClickListener {
+
+  Button btn;
+ }}}
+
+__Activities are public classes, inheriting from the `android.app.Activity` base class.__ In this case, the activity holds a button (`btn`).
+
+NOTE: A button, as you can see from the package name, is an Android widget, and __widgets are the user interface elements that you use in your application.__
+
+Since, for simplicity, we want to trap all button clicks just within the activity itself, we also have the activity class implement `OnClickListener`:
+
+ {{{
+@Override
+public void onCreate(Bundle icicle) {
+  super.onCreate(icicle);
+
+  btn=new Button(this);
+  btn.setOnClickListener(this);
+  updateTime();
+  setContentView(btn);
+}
+ }}}
+
+__The `onCreate()` method is invoked when the activity is started. The first thing you should do is ''chain upward'' to the superclass, so the stock Android activity initialization can be done.__
+
+In our implementation, we then create the button instance (`new Button(this)`), tell it to send all button clicks to the activity instance itself (via `setOnClickListener()`), call a private `updateTime()` method (shown shortly), and then set the activity’s content view to be the button itself (via `setContentView()`).
+
+NOTE: __All widgets extend the `View` base class. You usually build the user interface out of a hierarchy of views__, but in this example, we are using a single view.
+
+We will discuss that magical `Bundle` icicle in Chapter 16. For the moment, consider it an opaque handle that all activities receive upon creation.
+
+ {{{
+public void onClick(View view) {
+  updateTime();
+}
+ }}}
+
+In Swing, a `JButton` click raises an `ActionEvent`, which is passed to the `ActionListener` configured for the button. In Android, a button click causes `onClick()` to be invoked in the `OnClickListener` instance configured for the button. The listener is provided to the view that triggered the click (in this case, the button). All we do here is call that private `updateTime()` method:
+
+ {{{
+private void updateTime() {
+  btn.setText(new Date().toString());
+}
+ }}}
+
+When we open the activity (`onCreate()`), or when the button is clicked (`onClick()`), we update the button’s label to be the current time via `setText()`, which functions much the same as the `JButton` equivalent.
+
+== Building and Running the Activity ==
+
+To build the activity, use your integrated development environment’s (IDE’s) built-in Android packaging tool or run `ant` in the base directory of your project. Then do the following to run the activity:
+
+1. Launch the emulator by running the `android` command, choosing an AVD in the AVD Manager, and clicking the Start button. You should be able to accept the defaults in the Launch Options dialog. Figure 3–1 shows the Android home screen.
+
+{{attachment:figure_3-1.png}} <<BR>> Figure 3–1. The Android home screen
+
+NOTE: __The first time you use an AVD with the emulator, it will take substantially longer to start than it will subsequent times.__
+
+2. Install the package (e.g., run `ant install`).
+
+3. View the list of installed applications in the emulator and find the Now application. In Figure 3–2, it’s on the bottom row.
+
+{{attachment:figure_3-2.png}} <<BR>> Figure 3–2. The Android application launcher
+
+4. Open that application. You should see an activity screen similar to the one shown in Figure 3–3.
+
+{{attachment:figure_3-3.png}} <<BR>> Figure 3–3. The Now demonstration activity
+
+Clicking the button—in other words, clicking pretty much anywhere on the phone’s screen—will update the time shown in the button’s label.
+
+Note that the label is centered horizontally and vertically, as those are the default styles applied to button captions. You can control that formatting, as described in Chapter 5.
+
+After you are finished gazing at the awesomeness of Advanced Push-Button Technology, you can click the back button on the emulator to return to the launcher.
+
+= Chapter 4. Using XML-Based Layouts =
+
+__While it is technically possible to create and attach widgets to your activity purely through Java code, as we did in the preceding chapter, the more common approach is to use an XML-based layout file. Dynamic instantiation of widgets is reserved for more complicated scenarios, where the widgets are not known at compile time__ (e.g., populating a column of radio buttons based on data retrieved from the Internet).
+
+With that in mind, it’s time to break out the XML and learn how to lay out Android activities that way.
+
+== What Is an XML-Based Layout? ==
+
+__As the name suggests, an XML-based layout is a specification of widgets’ relationships to each other—and to their containers (which are covered in Chapter 6)—encoded in XML format. Specifically, Android considers XML-based layouts to be resources, and as such, layout files are stored in the `res/layout` directory inside your Android project.__
+
+__Each XML file contains a tree of elements specifying a layout of widgets and containers that make up one `View` hierarchy. The attributes of the XML elements are properties, describing how a widget should look or how a container should behave. For example, if a `Button` element has an attribute value of `android:textStyle = "bold"`, that means that the text appearing on the face of the button should be rendered in a boldface font style.__
+
+__Android’s SDK ships with a tool (`aapt`) that uses the layouts. This tool should be automatically invoked by your Android toolchain (e.g., Eclipse or Ant’s `build.xml`). Of particular importance to you as a developer is that `aapt` generates the `R.java` source file within your project, allowing you to access layouts and widgets within those layouts directly from your Java code__, as will be demonstrated in this chapter.
+
+== Why Use XML-Based Layouts? ==
+
+Most everything you do using XML layout files can be achieved through Java code. For example, you could use `setTypeface()` to have a button render its text in bold, instead of using a property in an XML layout. __Since XML layouts are yet another file for you to keep track of, we need good reasons for using such files.__
+
+__Perhaps the biggest reason is to assist in the creation of tools for ''view definition'', such as a GUI builder in an IDE like Eclipse or a dedicated Android GUI designer like !DroidDraw.__ Such GUI builders could, in principle, generate Java code instead of XML. The challenge is rereading the UI definition to support edits, which is far simpler when the data is in a structured format like XML rather than in a programming language. Moreover, keeping generated XML definitions separated from handwritten Java code makes it less likely that someone’s custom-crafted source will get clobbered by accident when the generated bits are regenerated. __XML forms a nice middle ground between something that is convenient for tool writers to use and easy for programmers to work with by hand as needed.__
+
+Also, __XML as a GUI definition format is becoming more commonplace. Microsoft’s Extensible Application Markup Language (XAML), Adobe’s Flex, and Mozilla’s XML User Interface Language (XUL) all take a similar approach to that of Android: put layout details in an XML file and put programming smarts in source files (e.g., !JavaScript for XUL).__ Many less well-known GUI frameworks, such as ZK, also use XML for view definition. __While following the herd is not necessarily the best policy, it does have the advantage of helping to ease the transition to Android from any other XML-centered view description language.__
+
+== OK, So What Does It Look Like? ==
+
+Here is the `Button` from the previous chapter’s sample application, converted into an XML layout file, found in the `Layouts/NowRedux` sample project:
+
+ {{{
+<?xml version="1.0" encoding="utf-8"?>
+<Button xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/button"
+    android:text=""
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"/>
+ }}}
+
+__The class name of the widget, `Button`, forms the name of the XML element. Since `Button` is an Android-supplied widget, we can just use the bare class name. If you create your own widgets as subclasses of `android.view.View`, you will need to provide a full package declaration as well (e.g., `com.commonsware.android.MyWidget`).__
+
+The root element needs to declare the Android XML namespace:
+
+ {{{
+xmlns:android="http://schemas.android.com/apk/res/android"
+ }}}
+
+__All other elements will be children of the root and will inherit that namespace declaration.__
+
+__Because we want to reference this button from our Java code, we need to give it an identifier via the `android:id` attribute.__ We will cover this concept in greater detail in the next section.
+
+The remaining attributes are properties of this `Button` instance:
+
+ * `android:text`: Indicates the initial text to be displayed on the button face (in this case, an empty string).
+
+ * `android:layout_width` and `android:layout_height`: Tell Android to have the button's width and height fill the parent—in this case, the entire screen.
+
+These attributes will be covered in greater detail in Chapter 6.
+
+Since this single widget is the only content in our activity, we need just this single element. __Complex UIs will require a whole tree of elements, representing the widgets and containers that control their positioning.__ All the remaining chapters of this book will use the XML layout form whenever practical, so there are dozens of other examples of more complex layouts for you to peruse.
+
+== What’s with the @ Signs? ==
+
+__Many widgets and containers need to appear only in the XML layout file and do not need to be referenced in your Java code. For example, a static label (`TextView`) frequently needs to be in the layout file just to indicate where it should appear. These sorts of elements in the XML file do not need to have the `android:id` attribute to give them a name.__
+
+__Anything you do want to use in your Java source, though, needs an `android:id`.__
+
+__The convention is to use `@+id/...` as the `id` value, where the `...` represents your ''locally unique name'' for the widget in question. In the XML layout example in the preceding section, `@+id/button` is the identifier for the `Button` widget.__
+
+Android provides a few special `android:id` values, of the form `@android:id/....` You will see some of these in various examples throughout this book.
+
+== And How Do We Attach These to the Java? ==
+
+Given that you have painstakingly set up the widgets and containers in an XML layout file named `main.xml` stored in `res/layout`, all you need is one statement in your activity’s `onCreate()` callback to use that layout:
+
+ {{{
+setContentView(R.layout.main);
+ }}}
+
+This is the same `setContentView()` we used earlier, passing it an instance of a `View` subclass (in that case, a `Button`). __The Android-built `View`, constructed from our layout, is accessed from that code-generated `R` class. All of the layouts are accessible under `R.layout`, keyed by the ''base name'' of the layout file; for example, `res/layout/main.xml` results in `R.layout.main`.__
+
+__To access your identified widgets, use `findViewById()`, passing in the ''numeric identifier'' of the widget in question. That numeric identifier was generated by Android in the `R` class as `R.id.something` (where something is the specific widget you are seeking).__ Those widgets are simply subclasses of `View`, just like the `Button` instance we created in the previous chapter.
+
+== The Rest of the Story ==
+
+In the original `Now` demo, the button’s face would show the current time, which would reflect when the button was last pushed (or when the activity was first shown, if the button had not yet been pushed). Most of that logic still works, even in this revised demo (`NowRedux`). However, rather than instantiating the `Button` in our activity’s `onCreate()` callback, we can reference the one from the XML layout:
+
+ {{{
+package com.commonsware.android.layouts;
+
+import android.app.Activity;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import java.util.Date;
+
+public class NowRedux extends Activity implements View.OnClickListener {
+
+  Button btn;
+
+  @Override
+  public void onCreate(Bundle icicle) {
+    super.onCreate(icicle);
+
+    setContentView(R.layout.main);
+    btn=(Button)findViewById(R.id.button);
+    btn.setOnClickListener(this);
+    updateTime();
+  }
+
+  public void onClick(View view) {
+    updateTime();
+  }
+
+  private void updateTime() {
+    btn.setText(new Date().toString());
+  }
+
+}
+ }}}
+
+The first difference is that, rather than setting the content view to be a view we created in Java code, we set it to reference the XML layout (`setContentView(R.layout.main)`).
+
+__The `R.java` source file will be updated when we rebuild this project to include a reference to our layout file (stored as `main.xml` in our project’s `res/layout` directory).__
+
+The other difference is that we need to get our hands on our `Button` instance, for which we use the `findViewById()` call. Since we identified our button as `@+id/button`, we can reference the button’s identifier as `R.id.button`. Now, with the `Button` instance in hand, we can set the callback and set the label as needed.
+
+The results look the same as with the original `Now` demo, as shown in Figure 4–1.
+
+{{attachment:figure_4-1.png}} <<BR>> Figure 4–1. The `NowRedux` sample activity
+
+= Chapter 5. Employing Basic Widgets =
+
+Every GUI toolkit has some basic widgets: fields, labels, buttons, and so on. Android’s toolkit is no different in scope, and the basic widgets will provide a good introduction to how widgets work in Android activities.
+
+== Assigning Labels ==
+
+The simplest widget is the label, referred to in Android as a `TextView`. As in most GUI toolkits, labels are bits of text that cannot be edited directly by users. __Typically, they are used to identify adjacent widgets (e.g., a “Name:” label next to a field where you fill in a name).__
+
+In Java, you can create a label by creating a `TextView` instance. More commonly, though, you will create labels in XML layout files by adding a `TextView` element to the layout, with an `android:text` property to set the value of the label itself. __If you need to swap labels based on certain criteria, such as internationalization, you may wish to use a resource reference in the XML instead, as will be described in Chapter 20.__
+
+TextView has numerous other properties of relevance for labels, such as the following:
+
+ * android:typeface: Sets the typeface to use for the label (e.g., monospace).
+ * android:textStyle: Indicates that the typeface should be made bold (bold), italic (italic), or bold and italic (bold_italic).
+ * android:textColor: Sets the color of the label’s text, in RGB hex format (e.g., #FF0000 for red).
+
+For example, in the Basic/Label project, you will find the following layout file:
+
+ {{{
+<?xml version="1.0" encoding="utf-8"?>
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="fill_parent"
+  android:layout_height="wrap_content"
+  android:text="You were expecting something profound?"
+  />
+ }}}
+
+Just that layout alone, with the stub Java source provided by Android’s project builder (e.g., android create project), gives you the demo shown in Figure 5–1.
+
+{{attachment:figure_5-1.png}} <<BR>> Figure 5–1. The LabelDemo sample application
+
+== Button, Button, Who’s Got the Button? ==
+
+You have already seen the use of the Button widget in the previous two chapters. As it turns out, Button is a subclass of TextView, so everything discussed in the preceding section also applies to formatting the face of the button.
+
+However, Android 1.6 adds a new feature for the declaration of the “on-click” listener for a Button. In addition to the classic approach of defining some object (such as the activity) as implementing the View.OnClickListener interface, you can now take a somewhat simpler approach:
+
+ * Define some method on your Activity that holds the button that takes a single View parameter, has a void return value, and is public.
+
+ * In your layout XML, on the Button element, include the android:onClick attribute with the name of the method you defined in the previous step.
+
+For example, you might have a method on your Activity that looks like this:
+
+ {{{
+public void someMethod(View theButton) {
+  // do something useful here
+}
+ }}}
+
+Then you could use this XML declaration for the Button itself, including android:onClick:
+
+ {{{
+<Button
+  android:onClick="someMethod"
+  ...
+/>
+ }}}
+
+This is enough for Android to wire together the Button with the click handler.
+
+=== Fleeting Images ===
+
+Android has two widgets to help you embed images in your activities: ImageView and ImageButton. As the names suggest, they are image-based analogues to TextView and Button, respectively.
+
+Each widget takes an android:src attribute (in an XML layout) to specify which picture to use. These usually reference a drawable resource, described in greater detail in Chapter 20. You can also set the image content based on a Uri from a content provider via setImageURI().
+
+ImageButton, a subclass of ImageView, mixes in the standard Button behaviors, for responding to clicks and whatnot. For example, take a peek at the main.xml layout from the Basic/ImageView sample project:
+
+ {{{
+<?xml version="1.0" encoding="utf-8"?>
+<ImageView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/icon"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:adjustViewBounds="true"
+    android:src="@drawable/molecule"
+    />
+ }}}
+
+The result, just using the code-generated activity, is simply the image shown in Figure 5–2.
+
+{{attachment:figure_5-2.png}} <<BR>> Figure 5–2. The ImageViewDemo sample application
+
+== Fields of Green. Or Other Colors. ==
+
+Along with buttons and labels, fields are the third anchor of most GUI toolkits. In Android, they are implemented via the EditText widget, which is a subclass of the TextView used for labels.
+
+Along with the standard TextView properties (e.g., android:textStyle), EditText has many other properties that will be useful to you in constructing fields, including the following:
+
+ * android:autoText: Controls if the field should provide automatic spelling assistance.
+
+ * android:capitalize: Controls if the field should automatically capitalize the first letter of entered text (useful for name or city fields, for example).
+
+ * android:digits: Configures the field to accept only certain digits.
+
+ * android:singleLine: Controls if the field is for single-line input or multiple-line input (e.g., does pressing Enter move you to the next widget or add a newline?).
+
+Most of these properties are also available from the new android:inputType attribute, introduced in Android 1.5 as part of adding “soft keyboards” to Android (discussed in Chapter 10).
+
+For example, from the Basic/Field project, here is an XML layout file showing an EditText widget:
+
+ {{{
+<?xml version="1.0" encoding="utf-8"?>
+<EditText xmlns:android="http://schemas.android.com/apk/res/android"
+  android:id="@+id/field"
+  android:layout_width="fill_parent"
+  android:layout_height="fill_parent"
+  android:singleLine="false"
+  />
+ }}}
+
+Note that android:singleLine is set to "false", so users will be able to enter in several lines of text.
+
+For this project, the FieldDemo.java file populates the input field with some prose:
+
+ {{{
+package com.commonsware.android.field;
+
+import android.app.Activity;
+import android.os.Bundle;
+import android.widget.EditText;
+
+public class FieldDemo extends Activity {
+
+  @Override
+  public void onCreate(Bundle icicle) {
+    super.onCreate(icicle);
+
+    setContentView(R.layout.main);
+    EditText fld=(EditText)findViewById(R.id.field);
+    fld.setText("Licensed under the Apache License, Version 2.0 " +
+                "(the \"License\"); you may not use this file " +
+                "except in compliance with the License. You may " +
+                "obtain a copy of the License at " +
+                "http://www.apache.org/licenses/LICENSE-2.0");
+  }
+
+}
+ }}}
+
+The result, once built and installed into the emulator, is shown in Figure 5–3.
+
+{{attachment:figure_5-3.png}} <<BR>> Figure 5–3. The FieldDemo sample application
+
+Another flavor of field is one that offers autocompletion, to help users supply a value without typing in the whole entry. That is provided in Android as the AutoCompleteTextView widget, discussed in greater detail in Chapter 9.
+
+== Just Another Box to Check ==
+
+The classic check box has two states: checked and unchecked. Clicking the check box toggles between those states to indicate a choice (e.g., “Add rush delivery to my order”).
+
+In Android, there is a CheckBox widget to meet this need. It has TextView as an ancestor, so you can use TextView properties like android:textColor to format the widget.
+
+Within Java, you can invoke the following:
+
+ * isChecked(): Determines if the check box has been checked.
+ * setChecked(): Forces the check box into a checked or unchecked state.
+ * toggle(): Toggles the check box as if the user checked it.
+
+Also, you can register a listener object (in this case, an instance of OnCheckedChangeListener) to be notified when the state of the check box changes.
+
+For example, from the Basic/CheckBox project, here is a simple check box layout:
+
+ {{{
+<?xml version="1.0" encoding="utf-8"?>
+<CheckBox xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/check"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="This checkbox is: unchecked" />
+ }}}
+
+The corresponding CheckBoxDemo.java retrieves and configures the behavior of the check box:
+
+ {{{
+public class CheckBoxDemo extends Activity implements CompoundButton.OnCheckedChangeListener {
+
+  CheckBox cb;
+
+  @Override
+  public void onCreate(Bundle icicle) {
+    super.onCreate(icicle);
+
+    setContentView(R.layout.main);
+    cb=(CheckBox)findViewById(R.id.check);
+    cb.setOnCheckedChangeListener(this);
+  }
+
+  public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+    if (isChecked) {
+      cb.setText("This checkbox is: checked");
+    } else {
+      cb.setText("This checkbox is: unchecked");
+    }
+  }
+
+}
+ }}}
+
+Note that the activity serves as its own listener for check box state changes, since it implements the OnCheckedChangeListener interface (via cb.setOnCheckedChangeListener(this)). The callback for the listener is onCheckedChanged(), which receives the check box whose state has changed and the new state. In this case, we update the text of the check box to reflect what the actual box contains.
+
+What’s the result? Clicking the check box immediately updates its text, as shown in Figures 5–4 and 5–5.
+
+{{attachment:figure_5-4.png}} <<BR>> Figure 5–4. The CheckBoxDemo sample application, with the check box unchecked
+
+{{attachment:figure_5-5.png}} <<BR>> Figure 5–5. The same application, with the check box checked
+
+== Turn the Radio Up ==
+
+As with other implementations of radio buttons in other toolkits, Android’s radio buttons are two-state, like check boxes, but can be grouped such that only one radio button in the group can be checked at any time.
+
+Like CheckBox, RadioButton inherits from CompoundButton, which in turn inherits from TextView. Hence, all the standard TextView properties for font face, style, color, and so on are available for controlling the look of radio buttons. Similarly, you can call isChecked() on a RadioButton to see if it is selected, toggle() to select it, and so on, as you can with a CheckBox.
+
+Most times, you will want to put your RadioButton widgets inside a RadioGroup. The RadioGroup indicates a set of radio buttons whose state is tied, meaning only one button in that group can be selected at any time. If you assign an android:id to your RadioGroup in your XML layout, you can access the group from your Java code and invoke the following:
+
+ * check(): Checks a specific radio button via its ID (e.g., group.check(R.id.radio1)).
+ * clearCheck(): Clears all radio buttons, so none in the group are checked.
+ * getCheckedRadioButtonId(): Gets the ID of the currently checked radio button (or -1 if none are checked).
+
+For example, from the Basic/RadioButton sample application, here is an XML layout showing a RadioGroup wrapping a set of RadioButton widgets:
+
+ {{{
+<?xml version="1.0" encoding="utf-8"?>
+<RadioGroup
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  android:orientation="vertical"
+  android:layout_width="fill_parent"
+  android:layout_height="fill_parent"
+  >
+  <RadioButton android:id="@+id/radio1"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Rock" />
+  <RadioButton android:id="@+id/radio2"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Scissors" />
+  <RadioButton android:id="@+id/radio3"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Paper" />
+</RadioGroup>
+ }}}
+
+Using the stock Android-generated Java for the project and this layout, you get the result shown in Figure 5–6.
+
+{{attachment:figure_5-6.png}} <<BR>> Figure 5–6. The RadioButtonDemo sample application
+
+Note that the radio button group is initially set so that none of the buttons are checked at the outset. To preset one of the radio buttons to be checked, use either setChecked() on the RadioButton or check() on the RadioGroup from within your onCreate() callback in your activity.
+
+== It’s Quite a View ==
+
+All widgets, including the ones shown in the preceding sections, extend View, and as such, give all widgets an array of useful properties and methods beyond those already described.
+
+=== Useful Properties ===
+
+Some of the properties on View most likely to be used include the following, which control the focus sequence:
+
+ * android:nextFocusDown
+ * android:nextFocusLeft
+ * android:nextFocusRight
+ * android:nextFocusUp
+
+Another useful property is android:visibility, which controls whether the widget is initially visible.
+
+=== Useful Methods ===
+
+You can toggle whether or not a widget is enabled via setEnabled() and see if it is enabled via isEnabled(). One common use pattern for this is to disable some widgets based on a CheckBox or RadioButton selection.
+
+You can give a widget focus via requestFocus() and see if it is focused via isFocused(). You might use this in concert with disabling widgets, to ensure the proper widget has the focus once your disabling operation is complete.
+
+To help navigate the tree of widgets and containers that make up an activity’s overall view, you can use the following:
+
+ * getParent(): Finds the parent widget or container.
+ * findViewById(): Finds a child widget with a certain ID.
+ * getRootView(): Gets the root of the tree (e.g., what you provided to the activity via setContentView()).
+
+=== Colors ===
+
+There are two types of color attributes in Android widgets. Some, like android:background, take a single color (or a graphic image to serve as the background). Others, like android:textColor on TextView (and subclasses), can take a ColorStateList, including via the Java accessor (in this case, setTextColor()).
+
+A ColorStateList allows you to specify different colors for different conditions. For example, a TextView can have one text color when it is the selected item in a list and another color when it is not selected (selection widgets are discussed in Chapter 7). This is handled via the default ColorStateList associated with TextView.
+
+If you wish to change the color of a TextView widget in Java code, you have two main choices:
+
+ * Use ColorStateList.valueOf(), which returns a ColorStateList in which all states are considered to have the same color, which you supply as the parameter to the valueOf() method. This is the Java equivalent of the android:textColor approach, to make the TextView always a specific color, regardless of circumstances.
+
+ * Create a ColorStateList with different values for different states, either via the constructor or via an XML document.
+
+= Chapter 6. Working with Containers =
+
+Containers pour a collection of widgets (and possibly child containers) into specific structures. If you want a form with labels on the left and fields on the right, you need a container. If you want OK and Cancel buttons to be beneath the rest of the form, next to one another, and flush to the right side of the screen, you need a container. Just from a pure XML perspective, if you have multiple widgets (beyond RadioButton widgets in a RadioGroup), you need a container just to have a root element to place the widgets inside.
+
+Most GUI toolkits have some notion of layout management, frequently organized into containers. In Java/Swing, for example, you have layout managers like BoxLayout and containers that use them (e.g., Box). Some toolkits, such as XUL and Flex, stick strictly to the box model, figuring that any desired layout can be achieved through the correct combination of nested boxes. Android, through LinearLayout, also offers a box model.
+
+In addition, Android supports a range of containers that provide different layout rules. In this chapter, we will look at several commonly used containers: LinearLayout (the box model), RelativeLayout (a rule-based model), TableLayout (the grid model), and ScrollView, a container designed to assist with implementing scrolling containers.
+
+== Thinking Linearly ==
+
+LinearLayout is a box model, in which widgets or child containers are lined up in a column or row, one after the next. This works in a similar manner to FlowLayout in Java/Swing, and vbox and hbox in Flex and XUL.
+
+Flex and XUL use the box as their primary unit of layout. If you want, you can use LinearLayout in much the same way, eschewing some of the other containers. Getting the visual representation you want is mostly a matter of identifying where boxes should nest and which properties those boxes should have, such as their alignment in relation to other boxes.
+
+=== LinearLayout Concepts and Properties ===
+
+To configure a LinearLayout, you have five main areas of control: the orientation, the fill model, the weight, the gravity, and the padding.
+
+==== Orientation ====
+
+Orientation indicates whether the LinearLayout represents a row or a column. Just add the android:orientation property to your LinearLayout element in your XML layout, setting the value to be horizontal for a row or vertical for a column.
+
+The orientation can be modified at runtime by invoking setOrientation() on the LinearLayout, supplying it either HORIZONTAL or VERTICAL.
+
+==== Fill Model ====
+
+Let’s imagine a row of widgets, such as a pair of radio buttons. These widgets have a “natural” size based on their text. Their combined sizes probably do not exactly match the width of the Android device’s screen, particularly since screens come in various sizes. You then have the issue of what to do with the remaining space.
+
+All widgets inside a LinearLayout must supply android:layout_width and android:layout_height properties to help address this issue. These properties’ values have three flavors:
+
+ * You can provide a specific dimension, such as 125px to indicate the widget should take up exactly 125 pixels.
+
+ * You can provide wrap_content, which means the widget should fill up its natural space, unless that is too big, in which case Android can use word-wrap as needed to make it fit.
+
+ * You can provide fill_parent, which means the widget should fill up all available space in its enclosing container, after all other widgets are handled.
+
+The latter two flavors are the most common, as they are independent of screen size, allowing Android to adjust your view to fit the available space.
+
+==== Weight ====
+
+But what happens if you have two widgets that should split the available free space? For example, suppose you have two multiline fields in a column, and you want them to take up the remaining space in the column after all other widgets have been allocated their space. To make this work, in addition to setting android:layout_width (for rows) or android:layout_height (for columns) to fill_parent, you must also set android:layout_weight.
+
+The android:layout_weight property indicates the proportion of the free space that should go to that widget. For example, if you set android:layout_weight to be the same nonzero value for a pair of widgets (e.g., 1), the free space will be split evenly between them. If you set it to be 1 for one widget and 2 for the other widget, the second widget will use up twice the free space that the first widget does. The weight for a widget is zero by default.
+
+Another pattern for using weights is if you want to allocate sizes on a percentage basis. To use this technique for, say, a horizontal layout:
+
+ * Set all the android:layout_width values to be 0 for the widgets in the layout.
+ * Set the android:layout_weight values to be the desired percentage size for each widget in the layout.
+ * Make sure all those weights add up to 100.
+
+==== Gravity ====
+
+By default, everything in a LinearLayout is left- and top-aligned. So, if you create a row of widgets via a horizontal LinearLayout, the row will start flush on the left side of the screen. If that is not what you want, you need to specify a gravity value. Using android:layout_gravity on a widget (or calling setGravity() at runtime on the widget’s Java object), you can tell the widget and its container how to align it in on the screen.
+
+For a column of widgets, common gravity values are left, center_horizontal, and right for left-aligned, centered, and right-aligned widgets, respectively.
+
+For a row of widgets, the default is for them to be aligned so their text is aligned on the baseline (the invisible line that letters seem to “sit on”). You can specify a gravity of center_vertical to center the widgets along the row’s vertical midpoint.
+
+==== Padding ====
+
+By default, widgets are tightly packed next to each other. If you want to increase the whitespace between widgets, you will want to use the android:padding property (or call setPadding() at runtime on the widget’s Java object). The padding specifies how much space there is between the boundaries of the widget’s “cell” and the actual widget contents, as shown in Figure 6-1.
+
+{{attachment:figure_6-1.png}} <<BR>> Figure 6-1. The relationship between a widget, its cell, and the padding values
+
+The android:padding property allows you to set the same padding on all four sides of the widget, with the widget’s contents centered within that padded-out area. If you want the padding to vary on different sides, use android:paddingLeft, android:paddingRight, android:paddingTop, and android:paddingBottom. The value of the padding is a dimension, such as 5px for 5 pixels’ worth of padding.
+
+If you apply a custom background to a widget (e.g., via the android:background attribute), the background will be behind both the widget and the padding area. To avoid this, rather than using padding, you can establish margins, which add whitespace without extending the intrinsic size of the widget. You can set margins via android:layout_marginTop and related attributes.
+
+=== LinearLayout Example ===
+
+Let’s look at an example (Containers/Linear) that shows LinearLayout properties set both in the XML layout file and at runtime. Here is the layout:
+
+ {{{
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  android:orientation="vertical"
+  android:layout_width="fill_parent"
+  android:layout_height="fill_parent"
+  >
+  <RadioGroup android:id="@+id/orientation"
+    android:orientation="horizontal"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:padding="5px">
+    <RadioButton
+      android:id="@+id/horizontal"
+      android:text="horizontal" />
+    <RadioButton
+      android:id="@+id/vertical"
+      android:text="vertical" />
+  </RadioGroup>
+  <RadioGroup android:id="@+id/gravity"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:padding="5px">
+    <RadioButton
+      android:id="@+id/left"
+      android:text="left" />
+    <RadioButton
+      android:id="@+id/center"
+      android:text="center" />
+    <RadioButton
+      android:id="@+id/right"
+      android:text="right" />
+  </RadioGroup>
+</LinearLayout>
+ }}}
+
+Note that we have a LinearLayout wrapping two RadioGroup sets. RadioGroup is a subclass of LinearLayout, so our example demonstrates nested boxes as if they were all LinearLayout containers.
+
+The top RadioGroup sets up a row (android:orientation = "horizontal") of RadioButton widgets. The RadioGroup has 5px of padding on all sides, separating it from the other RadioGroup. The width and height are both set to wrap_content, so the radio buttons will take up only the space that they need.
+
+The bottom RadioGroup is a column (android:orientation = "vertical") of three RadioButton widgets. Again, we have 5px of padding on all sides and a natural height (android:layout_height = "wrap_content"). However, we have set android:layout_width to be fill_parent, meaning the column of radio buttons claims the entire width of the screen.
+
+To adjust these settings at runtime based on user input, we need some Java code:
+
+ {{{
+package com.commonsware.android.linear;
+
+import android.app.Activity;
+import android.os.Bundle;
+import android.view.Gravity;
+import android.text.TextWatcher;
+import android.widget.LinearLayout;
+import android.widget.RadioGroup;
+import android.widget.EditText;
+
+public class LinearLayoutDemo extends Activity implements RadioGroup.OnCheckedChangeListener {
+
+  RadioGroup orientation;
+  RadioGroup gravity;
+
+  @Override
+  public void onCreate(Bundle icicle) {
+    super.onCreate(icicle);
+
+    setContentView(R.layout.main);
+    orientation=(RadioGroup)findViewById(R.id.orientation);
+    orientation.setOnCheckedChangeListener(this);
+    gravity=(RadioGroup)findViewById(R.id.gravity);
+    gravity.setOnCheckedChangeListener(this);
+  }
+
+  public void onCheckedChanged(RadioGroup group, int checkedId) {
+    switch (checkedId) {
+      case R.id.horizontal:
+        orientation.setOrientation(LinearLayout.HORIZONTAL);
+        break;
+      case R.id.vertical:
+        orientation.setOrientation(LinearLayout.VERTICAL);
+        break;
+      case R.id.left:
+        gravity.setGravity(Gravity.LEFT);
+        break;
+      case R.id.center:
+        gravity.setGravity(Gravity.CENTER_HORIZONTAL);
+        break;
+      case R.id.right:
+        gravity.setGravity(Gravity.RIGHT);
+        break;
+    }
+  }
+
+}
+ }}}
+
+In onCreate(), we look up our two RadioGroup containers and register a listener on each, so we are notified when the radio buttons change state (setOnCheckedChangeListener(this)). Since the activity implements OnCheckedChangeListener, the activity itself is the listener.
+
+In onCheckedChanged() (the callback for the listener), we see which RadioGroup had a state change. If it was the orientation group, we adjust the orientation based on the user’s selection. If it was the gravity group, we adjust the gravity based on the user’s selection.
+
+Figure 6-2 shows the result when the layout demo is first launched inside the emulator.
+
+{{attachment:figure_6-2.png}} <<BR>> Figure 6-2. The LinearLayoutDemo sample application, as initially launched
+
+If we toggle on the vertical radio button, the top RadioGroup adjusts to match, as shown in Figure 6-3.
+
+{{attachment:figure_6-3.png}} <<BR>> Figure 6-3. The same application, with the vertical radio button selected
+
+If we toggle the center or right radio button, the bottom RadioGroup adjusts to match, as shown in Figures 6-4 and 6-5.
+
+{{attacment:figure_6-4.png}} <<BR>> Figure 6-4. The same application, with the vertical and center radio buttons selected
+
+{{attachment:figure_6-5.png}} <<BR>> Figure 6-5. The same application, with the vertical and right radio buttons selected
+
+== All Things Are Relative ==
+
+RelativeLayout, as the name suggests, lays out widgets based on their relationship to other widgets in the container and the parent container. You can place widget X below and to the left of widget Y, have widget Z’s bottom edge align with the bottom of the container, and so on. This is reminiscent of James Elliot’s RelativeLayout for use with Java/Swing.
+
+=== RelativeLayout Concepts and Properties ===
+
+To make your RelativeLayout work, you need ways to reference other widgets within an XML layout file, plus ways to indicate the relative positions of those widgets.
+
+==== Positions Relative to Container ====
+
+The easiest relationships to set up are those that tie a widget’s position to that of its container:
+
+ * android:layout_alignParentTop: Aligns the widget’s top with the top of the container.
+ * android:layout_alignParentBottom: Aligns the widget’s bottom with the bottom of the container.
+ * android:layout_alignParentLeft: Aligns the widget’s left side with the left side of the container.
+ * android:layout_alignParentRight: Aligns the widget’s right side with the right side of the container.
+ * android:layout_centerHorizontal: Positions the widget horizontally at the center of the container.
+ * android:layout_centerVertical: Positions the widget vertically at the center of the container.
+ * android:layout_centerInParent: Positions the widget both horizontally and vertically at the center of the container.
+
+All of these properties take a simple Boolean value (true or false).
+
+NOTE: The padding of the widget is taken into account when performing the various alignments. The alignments are based on the widget’s overall cell (combination of its natural space plus the padding).
+
+==== Relative Notation in Properties ====
+
+The remaining properties of relevance to RelativeLayout take as a value the identity of a widget in the container. To do this:
+
+ * Put identifiers (android:id attributes) on all elements that you will need to address, of the form @+id/....
+ * Reference other widgets using the same identifier value without the plus sign (@id/...).
+
+For example, if widget A is identified as @+id/widget_a, widget B can refer to widget A in one of its own properties via the identifier @id/widget_a.
+
+==== Positions Relative to Other Widgets ====
+
+Four properties control the position of a widget in relation to other widgets:
+
+ * android:layout_above: Indicates that the widget should be placed above the widget referenced in the property.
+ * android:layout_below: Indicates that the widget should be placed below the widget referenced in the property.
+ * android:layout_toLeftOf: Indicates that the widget should be placed to the left of the widget referenced in the property.
+ * android:layout_toRightOf: Indicates that the widget should be placed to the right of the widget referenced in the property.
+
+Beyond those four, five additional properties can control one widget’s alignment relative to another:
+
+ * android:layout_alignTop: Indicates that the widget’s top should be aligned with the top of the widget referenced in the property.
+
+ * android:layout_alignBottom: Indicates that the widget’s bottom should be aligned with the bottom of the widget referenced in the property.
+
+ * android:layout_alignLeft: Indicates that the widget’s left should be aligned with the left of the widget referenced in the property.
+
+ * android:layout_alignRight: Indicates that the widget’s right should be aligned with the right of the widget referenced in the property.
+
+ * android:layout_alignBaseline: Indicates that the baselines of the two widgets should be aligned (where the baseline is the invisible line that text appears to sit on).
+
+The android:layout_alignBaseline property is useful for aligning labels and fields so that the text appears natural. Since fields have a box around them and labels do not, android:layout_alignTop would align the top of the field’s box with the top of the label, which will cause the text of the label to be higher on the screen than the text entered into the field.
+
+So, if you want widget B to be positioned to the right of widget A, in the XML element for widget B, you need to include android:layout_toRightOf = "@id/widget_a" (assuming @id/widget_a is the identity of widget A).
+
+==== Order of Evaluation ====
+
+It used to be that Android would use a single pass to process RelativeLayout-defined rules. That meant you could not reference a widget (e.g., via android:layout_above) until it had been declared in the XML. This made defining some layouts a bit complicated. Starting in Android 1.6, Android uses two passes to process the rules, so you can now safely have forward references to as-yet-undefined widgets.
+
+=== RelativeLayout Example ===
+
+Now let’s examine a typical “form” with a field, a label, and a pair of buttons labeled OK and Cancel. Here is the XML layout, pulled from the Containers/Relative sample project:
+
+ {{{
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="fill_parent"
+  android:layout_height="wrap_content"
+  android:padding="5px">
+  <TextView android:id="@+id/label"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="URL:"
+    android:paddingTop="15px"/>
+  <EditText
+    android:id="@+id/entry"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:layout_toRightOf="@id/label"
+    android:layout_alignBaseline="@id/label"/>
+  <Button
+    android:id="@+id/ok"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_below="@id/entry"
+    android:layout_alignRight="@id/entry"
+    android:text="OK" />
+  <Button
+    android:id="@+id/cancel"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_toLeftOf="@id/ok"
+    android:layout_alignTop="@id/ok"
+    android:text="Cancel" />
+</RelativeLayout>
+ }}}
+
+First, we open the RelativeLayout. In this case, we want to use the full width of the screen (android:layout_width = "fill_parent"), only as much height as we need (android:layout_height = "wrap_content"), and have 5 pixels of padding between the boundaries of the container and its contents (android:padding = "5px").
+
+Next, we define the label, which is fairly basic, except for its own 15-pixel padding (android:padding = "15px"). More on that in a moment.
+
+After that, we add in the field. We want the field to be to the right of the label and have the text aligned along the baseline. Also, the field should take up the rest of this “row” in the layout. These requirements are handled by three properties:
+
+ * android:layout_toRightOf = "@id/label"
+ * android:layout_alignBaseline = "@id/label"
+ * android:layout_width = "fill_parent"
+
+If we skipped the 15-pixel padding on the label, we would find that the top of the field was clipped off. That’s because of the 5-pixel padding on the container itself. The android:layout_alignBaseline = "@id/label" simply aligns the baselines of the label and field. The label, by default, has its top aligned with the top of the parent. But the label is shorter than the field because of the field’s box. Since the field is dependent on the label’s position, and the label’s position is already defined (because it appeared first in the XML), the field winds up being too high and has the top of its box clipped off by the container’s padding.
+
+You may find yourself running into these sorts of problems as you try to get your RelativeLayout to behave the way you want it to.
+
+The solution to this conundrum, used in the XML layout shown above, is to give the label 15 pixels’ worth of padding on the top This pushes the label down far enough that the field will not get clipped.
+
+The OK button is set to be below the field (android:layout_below = "@id/entry") and have its right side align with the right side of the field (android:layout_alignRight = "@id/entry"). The Cancel button is set to be to the left of the OK button (android:layout_toLeft = "@id/ok") and have its top aligned with the OK button (android:layout_alignTop = "@id/ok").
+
+Of course, that 15px of padding is a bit of a hack. A better solution, for Android 1.6 and beyond, is to anchor the EditText to the top of the screen and have the TextView say it is aligned with the EditText widget’s baseline, as shown in the following example. (In Android 1.5 and earlier, this was not possible, because of the single-pass rule interpretation mentioned earlier.)
+
+ {{{
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="fill_parent"
+  android:layout_height="wrap_content"
+  android:padding="5px">
+  <TextView android:id="@+id/label"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="URL:"
+    android:layout_alignBaseline="@+id/entry"
+    android:layout_alignParentLeft="true"/>
+  <EditText
+    android:id="@id/entry"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:layout_toRightOf="@id/label"
+    android:layout_alignParentTop="true"/>
+  <Button
+    android:id="@+id/ok"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_below="@id/entry"
+    android:layout_alignRight="@id/entry"
+    android:text="OK" />
+  <Button
+    android:id="@+id/cancel"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_toLeftOf="@id/ok"
+    android:layout_alignTop="@id/ok"
+    android:text="Cancel" />
+</RelativeLayout>
+ }}}
+
+With no changes to the autogenerated Java code, the emulator gives us the result shown in Figure 6-6.
+
+{{attachment:figure_6-6.png}} <<BR>> Figure 6-6. The RelativeLayoutDemo sample application
+
+== Tabula Rasa ==
+
+If you like HTML tables, spreadsheet grids, and the like, you will appreciate Android’s TableLayout, which allows you to position your widgets in a grid to your specifications. You control the number of rows and columns, which columns might shrink or stretch to accommodate their contents, and so on.
+
+TableLayout works in conjunction with TableRow. TableLayout controls the overall behavior of the container, with the widgets themselves poured into one or more TableRow containers, one per row in the grid.
+
+=== TableLayout Concepts and Properties ===
+
+For your table layout, you need to figure out how widgets work with rows and columns, plus how to handle widgets that reside outside rows.
+
+==== Putting Cells in Rows ====
+
+Rows are declared by you, the developer, by putting widgets as children of a TableRow inside the overall TableLayout. You, therefore, control directly how many rows appear in the table.
+
+The number of columns is determined by Android; you control the number of columns in an indirect fashion. First, there will be at least one column per widget in your longest row. So if you have three rows—one with two widgets, one with three widgets, and one with four widgets—there will be at least four columns. However, a widget can take up more than one column by including the android:layout_span property, indicating the number of columns the widget spans. This is akin to the colspan attribute one finds in table cells in HTML. In this XML layout fragment, the field spans three columns:
+
+ {{{
+<TableRow>
+  <TextView android:text="URL:" />
+  <EditText
+    android:id="@+id/entry"
+    android:layout_span="3"/>
+</TableRow>
+ }}}
+
+Ordinarily, widgets are put into the first available column. In the preceding fragment, the label would go in the first column (column 0, as columns are counted starting from 0), and the field would go into a spanned set of three columns (columns 1 through 3). However, you can put a widget into a different column via the android:layout_column property, specifying the 0-based column the widget belongs to:
+
+ {{{
+<TableRow>
+  <Button
+    android:id="@+id/cancel"
+    android:layout_column="2"
+    android:text="Cancel" />
+  <Button android:id="@+id/ok" android:text="OK" />
+</TableRow>
+ }}}
+
+In the preceding XML layout fragment, the Cancel button goes in the third column (column 2). The OK button then goes into the next available column, which is the fourth column.
+
+==== Other Children of TableLayout ====
+
+Normally, TableLayout contains only TableRow elements as immediate children. However, it is possible to put other widgets in between rows. For those widgets, TableLayout behaves a bit like LinearLayout with vertical orientation. The widgets automatically have their width set to fill_parent, so they will fill the same space that the longest row does.
+
+One pattern for this is to use a plain View as a divider. For example, you could use <View android:layout_height = "2px" android:background = "#0000FF" /> for a 2-pixel-high blue bar across the width of the table.
+
+==== Stretch, Shrink, and Collapse ====
+
+By default, each column will be sized according to the natural size of the widest widget in that column (taking spanned columns into account). Sometimes, though, that does not work out very well, and you need more control over column behavior.
+
+You can place an android:stretchColumns property on the TableLayout. The value should be a single column number (again, 0-based) or a comma-delimited list of column numbers. Those columns will be stretched to take up any available space on the row. This helps if your content is narrower than the available space.
+
+Conversely, you can place a android:shrinkColumns property on the TableLayout. Again, this should be a single column number or a comma-delimited list of column numbers. The columns listed in this property will try to word-wrap their contents to reduce the effective width of the column. By default, widgets are not word-wrapped. This helps if you have columns with potentially wordy content that might cause some columns to be pushed off the right side of the screen.
+
+You can also leverage an android:collapseColumns property on the TableLayout, again with a column number or comma-delimited list of column numbers. These columns will start out collapsed, meaning that they will be part of the table information but will be invisible. Programmatically, you can collapse and uncollapse columns by calling setColumnCollapsed() on the TableLayout. You might use this to allow users to control which columns are of importance to them and should be shown versus which ones are less important and can be hidden.
+
+You can also control stretching and shrinking at runtime via setColumnStretchable() and setColumnShrinkable().
+
+=== TableLayout Example ===
+
+The XML layout fragments shown earlier, when combined, give us a TableLayout rendition of the form we created for RelativeLayout, with the addition of a divider line between the label/field and the two buttons (found in the Containers/Table demo):
+
+ {{{
+<?xml version="1.0" encoding="utf-8"?>
+<TableLayout
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="fill_parent"
+  android:layout_height="fill_parent"
+  android:stretchColumns="1">
+  <TableRow>
+    <TextView
+      android:text="URL:" />
+    <EditText android:id="@+id/entry"
+      android:layout_span="3"/>
+  </TableRow>
+  <View
+    android:layout_height="2px"
+    android:background="#0000FF" />
+  <TableRow>
+    <Button android:id="@+id/cancel"
+      android:layout_column="2"
+      android:text="Cancel" />
+    <Button android:id="@+id/ok"
+      android:text="OK" />
+  </TableRow>
+</TableLayout>
+ }}}
+
+When compiled against the generated Java code and run on the emulator, we get the result shown in Figure 6-7.
+
+{{attachment:figure_6-7.png}} <<BR>> Figure 6-7. The TableLayoutDemo sample application
+
+== Scrollwork ==
+
+Phone screens tend to be small, which requires developers to use some tricks to present a lot of information in the limited available space. One trick for doing this is to use scrolling, so only part of the information is visible at one time, and the rest is available via scrolling up or down.
+
+ScrollView is a container that provides scrolling for its contents. You can take a layout that might be too big for some screens, wrap it in a ScrollView, and still use your existing layout logic. It just so happens that the user can see only part of your layout at one time.
+
+For example, here is a ScrollView used in an XML layout file (from the Containers/Scroll demo):
+
+ {{{
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="fill_parent"
+  android:layout_height="wrap_content">
+  <TableLayout
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:stretchColumns="0">
+    <TableRow>
+      <View
+        android:layout_height="80px"
+        android:background="#000000"/>
+      <TextView android:text="#000000"
+        android:paddingLeft="4px"
+        android:layout_gravity="center_vertical" />
+    </TableRow>
+    <TableRow>
+      <View
+        android:layout_height="80px"
+        android:background="#440000" />
+      <TextView android:text="#440000"
+        android:paddingLeft="4px"
+        android:layout_gravity="center_vertical" />
+    </TableRow>
+    <TableRow>
+      <View
+        android:layout_height="80px"
+        android:background="#884400" />
+      <TextView android:text="#884400"
+        android:paddingLeft="4px"
+        android:layout_gravity="center_vertical" />
+    </TableRow>
+    <TableRow>
+      <View
+        android:layout_height="80px"
+        android:background="#aa8844" />
+      <TextView android:text="#aa8844"
+        android:paddingLeft="4px"
+        android:layout_gravity="center_vertical" />
+    </TableRow>
+    <TableRow>
+      <View
+        android:layout_height="80px"
+        android:background="#ffaa88" />
+      <TextView android:text="#ffaa88"
+        android:paddingLeft="4px"
+        android:layout_gravity="center_vertical" />
+    </TableRow>
+    <TableRow>
+      <View
+        android:layout_height="80px"
+        android:background="#ffffaa" />
+      <TextView android:text="#ffffaa"
+        android:paddingLeft="4px"
+        android:layout_gravity="center_vertical" />
+    </TableRow>
+    <TableRow>
+      <View
+        android:layout_height="80px"
+        android:background="#ffffff" />
+      <TextView android:text="#ffffff"
+        android:paddingLeft="4px"
+        android:layout_gravity="center_vertical" />
+    </TableRow>
+  </TableLayout>
+</ScrollView>
+ }}}
+
+Without the ScrollView, the table would take up at least 560 pixels (seven rows at 80 pixels each, based on the View declarations). There may be some devices with screens capable of showing that much information, but many will be smaller. The ScrollView lets us keep the table as is, but present only part of it at a time.
+
+On the stock Android emulator, when the activity is first viewed, you see the result shown in Figure 6-8.
+
+{{attachment:figure_6-8.png}} <<BR>> Figure 6-8. The ScrollViewDemo sample application
+
+Notice how only five rows and part of the sixth are visible. By pressing the up/down buttons on the D-pad, you can scroll up and down to see the remaining rows. Also note how the right side of the content is clipped by the scrollbar. Be sure to put some padding on that side or otherwise ensure your content does not get clipped in this fashion.
+
+Android 1.5 introduced HorizontalScrollView, which works like ScrollView, but horizontally. This can be useful for forms that might be too wide rather than too tall. Note that neither ScrollView nor HorizontalScrollView will give you bidirectional scrolling; you need to choose vertical or horizontal.
+
+= Chapter 7. Using Selection Widgets =
+
+Back in Chapter 5, you saw how fields could have constraints placed on them to limit possible input, such as only digits. These sorts of constraints help users “get it right” when entering information, particularly on mobile devices with cramped keyboards.
+
+Of course, the ultimate in constrained input is to allow selection only from a set of items, such as a radio button group (also discussed in Chapter 5). Classic UI toolkits have list boxes, combo boxes, drop-down lists, and the like for that very purpose. Android provides many of the same sorts of widgets, plus others of particular interest for mobile devices (e.g., the Gallery for examining saved photos).
+
+Moreover, Android offers a flexible framework for determining which choices are available in these widgets. Specifically, Android offers a framework of data adapters that provide a common interface for selection lists, ranging from static arrays to database contents. Selection views—widgets for presenting lists of choices—are handed an adapter to supply the actual choices.
+
+This chapter begins with a look at Android’s adapters, and then introduces its selection widgets.
+
+== Adapting to the Circumstances ==
+
+In the abstract, adapters provide a common interface to multiple disparate APIs. More specifically, in Android’s case, adapters provide a common interface to the data model behind a selection-style widget, such as a list box. This use of Java interfaces is fairly common (e.g., Java/Swing’s model adapters for JTable), and Java is far from the only environment offering this sort of abstraction (e.g., Flex’s XML data-binding framework accepts XML inlined as static data or retrieved from the Internet).
+
+Android’s adapters are responsible for providing the roster of data for a selection widget, as well as for converting individual elements of data into specific views to be displayed inside the selection widget. The latter facet of the adapter system may sound a little odd, but in reality, it is not that different from other GUI toolkits’ ways of overriding default display behavior. For example, in Java/Swing, if you want a JListbacked list box to actually be a checklist (where individual rows are a check box plus label, and clicks adjust the state of the check box), you inevitably wind up calling setCellRenderer() to supply your own ListCellRenderer, which in turn converts strings for the list into JCheckBox-plus-JLabel composite widgets.
+
+The easiest adapter to use is ArrayAdapter. All you need to do is wrap one of these around a Java array or java.util.List instance, and you have a fully functioning adapter:
+
+ {{{
+String[] items={"this", "is", "a", "really", "silly", "list"};
+new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, items);
+ }}}
+
+The ArrayAdapter constructor takes three parameters:
+
+ * The Context to use (typically this will be your activity instance)
+ * The resource ID of a view to use (such as a built-in system resource ID, as shown in the preceding example)
+ * The actual array or list of items to show
+
+By default, the ArrayAdapter will invoke toString() on the objects in the list and wrap each of those strings in the view designated by the supplied resource. android.R.layout.simple_list_item_1 simply turns those strings into TextView objects. Those TextView widgets, in turn, will be shown in the list, spinner, or whatever widget uses this ArrayAdapter. In Chapter 8, you’ll see how to subclass Adapter and override row creation, to give you greater control over how rows appear.
+
+Here are two other adapters in Android that you may want to use:
+
+ * CursorAdapter: Converts a Cursor, typically from a content provider, into something that can be displayed in a selection view. (We’ll look at CursorAdapter in greater detail in Chapter 22, which covers databases.)
+
+ * SimpleAdapter: Converts data found in XML resources.
+
+== Lists of Naughty and Nice ==
+
+The classic list box widget in Android is known as ListView. Include one of these in your layout, invoke setAdapter() to supply your data and child views, and attach a listener via setOnItemSelectedListener() to find out when the selection has changed. With that, you have a fully functioning list box.
+
+However, if your activity is dominated by a single list, you might consider creating your activity as a subclass of ListActivity, rather than the regular Activity base class. If your main view is just the list, you do not even need to supply a layout; ListActivity will construct a full-screen list for you. If you do want to customize the layout, you can, as long as you identify your ListView as @android:id/list, so ListActivity knows which widget is the main list for the activity.
+
+For example, here is a layout pulled from the Selection/List sample project, which is simply a list with a label on top to show the current selection:
+
+ {{{
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  android:orientation="vertical"
+  android:layout_width="fill_parent"
+  android:layout_height="fill_parent" >
+  <TextView
+    android:id="@+id/selection"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"/>
+  <ListView
+    android:id="@android:id/list"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:drawSelectorOnTop="false"
+  />
+</LinearLayout>
+ }}}
+
+The Java code to configure the list and connect the list with the label is as follows:
+
+ {{{
+public class ListViewDemo extends ListActivity {
+
+  TextView selection;
+
+  String[] items={"lorem", "ipsum", "dolor", "sit", "amet",
+                  "consectetuer", "adipiscing", "elit", "morbi", "vel",
+                  "ligula", "vitae", "arcu", "aliquet", "mollis",
+                  "etiam", "vel", "erat", "placerat", "ante",
+                  "porttitor", "sodales", "pellentesque", "augue", "purus"};
+  @Override
+  public void onCreate(Bundle icicle) {
+    super.onCreate(icicle);
+
+    setContentView(R.layout.main);
+    setListAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, items));
+    selection=(TextView)findViewById(R.id.selection);
+  }
+
+  public void onListItemClick(ListView parent, View v, int position, long id) {
+    selection.setText(items[position]);
+  }
+
+}
+ }}}
+
+With ListActivity, you can set the list adapter via setListAdapter()—in this case, providing an ArrayAdapter wrapping an array of nonsense strings. To find out when the list selection changes, override onListItemClick() and take appropriate steps based on the supplied child view and position—in this case, updating the label with the text for that position. The results are shown in Figure 7–1.
+
+{{attachment:figure_7-1.png}} <<BR>> Figure 7–1. The ListViewDemo sample application
+
+The second parameter to our ArrayAdapter, android.R.layout.simple_list_item_1, controls the appearance of the rows. The value used in the preceding example provides the standard Android list row: big font, a lot of padding, and white text.
+
+By default, ListView is set up to simply collect clicks on list entries. If you want a list that tracks a user’s selection, or possibly multiple selections, ListView can handle that as well, but it requires a few changes:
+
+ * Call setChoiceMode() on the ListView in Java code to set the choice mode, supplying either CHOICE_MODE_SINGLE or CHOICE_MODE_MULTIPLE as the value. You can get your ListView from a ListActivity via getListView().
+
+ * Rather than using android.R.layout.simple_list_item_1 as the layout for the list rows in your ArrayAdapter constructor, use either android.R.layout.simple_list_item_single_choice or android.R.layout.simple_list_item_multiple_choice for singlechoice (see Figure 7–2) or multiple-choice (see Figure 7–3) lists.
+
+ * To determine which ones the user checked, call getCheckedItemPositions() on your ListView.
+
+{{attachment:figure_7-2.png}} <<BR>> Figure 7–2. Single-select mode
+
+{{attachment:figure_7-3.png}} <<BR>> Figure 7–3. Multiple-select mode
+
+== Spin Control ==
+
+In Android, the Spinner is the equivalent of the drop-down selector you might find in other toolkits (e.g., JComboBox in Java/Swing). Pressing the center button on the D-pad pops up a selection dialog box from which the user can choose an item. You basically get the ability to select from a list without taking up all the screen space of a ListView, at the cost of an extra click or screen tap to make a change.
+
+As with ListView, you provide the adapter for data and child views via setAdapter(), and hook in a listener object for selections via setOnItemSelectedListener().
+
+If you want to tailor the view used when displaying the drop-down perspective, you need to configure the adapter, not the Spinner widget. Use the setDropDownViewResource() method to supply the resource ID of the view to use.
+
+For example, culled from the Selection/Spinner sample project, here is an XML layout for a simple view with a Spinner:
+
+ {{{
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  android:orientation="vertical"
+  android:layout_width="fill_parent"
+  android:layout_height="fill_parent" >
+  <TextView
+    android:id="@+id/selection"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content" />
+  <Spinner android:id="@+id/spinner"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:drawSelectorOnTop="true" />
+</LinearLayout>
+ }}}
+
+This is the same view as shown in the previous section, but with a Spinner instead of a ListView. The Spinner property android:drawSelectorOnTop controls whether the arrow is drawn on the selector button on the right side of the Spinner UI.
+
+To populate and use the Spinner, we need some Java code:
+
+ {{{
+public class SpinnerDemo extends Activity implements AdapterView.OnItemSelectedListener {
+
+  TextView selection;
+  String[] items={"lorem", "ipsum", "dolor", "sit", "amet",
+                  "consectetuer", "adipiscing", "elit", "morbi", "vel",
+                  "ligula", "vitae", "arcu", "aliquet", "mollis",
+                  "etiam", "vel", "erat", "placerat", "ante",
+                  "porttitor", "sodales", "pellentesque", "augue", "purus"};
+  @Override
+  public void onCreate(Bundle icicle) {
+    super.onCreate(icicle);
+
+    setContentView(R.layout.main);
+    selection=(TextView)findViewById(R.id.selection);
+
+    Spinner spin=(Spinner)findViewById(R.id.spinner);
+    spin.setOnItemSelectedListener(this);
+
+    ArrayAdapter<String> aa=new ArrayAdapter<String>(this,
+        android.R.layout.simple_spinner_item, items);
+    aa.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+    spin.setAdapter(aa);
+  }
+
+  public void onItemSelected(AdapterView<?> parent, View v, int position, long id) {
+    selection.setText(items[position]);
+  }
+
+  public void onNothingSelected(AdapterView<?> parent) {
+    selection.setText("");
+  }
+
+}
+ }}}
+
+Here, we attach the activity itself as the selection listener (spin.setOnItemSelectedListener(this)). This works because the activity implements the OnItemSelectedListener interface. We configure the adapter not only with the list of fake words, but also with a specific resource to use for the drop-down view (via aa.setDropDownViewResource()). Also notice the use of android.R.layout.simple_spinner_item as the built-in View for showing items in the spinner itself.
+
+Finally, we implement the callbacks required by OnItemSelectedListener to adjust the selection label based on user input. Figures 7–4 and 7–5 show the results.
+
+{{attachment:figure_7-4.png}} <<BR>> Figure 7–4. The SpinnerDemo sample application, as initially launched
+
+{{attachment:figure_7-5.png}} <<BR>> Figure 7–5. The same application, with the spinner drop-down list displayed
+
+== Grid Your Lions (or Something Like That...) ==
+
+As the name suggests, GridView gives you a two-dimensional grid of items from which to choose. You have moderate control over the number and size of the columns; the number of rows is dynamically determined based on the number of items the supplied adapter says are available for viewing.
+
+When combined, a few properties determine the number of columns and their sizes:
+
+ * android:numColumns: Specifies how many columns there are, or, if you supply a value of auto_fit, Android will compute the number of columns based on the available space and the following properties.
+
+ * android:verticalSpacing and android:horizontalSpacing: Indicate how much whitespace there should be between items in the grid.
+
+ * android:columnWidth: Indicates how many pixels wide each column should be.
+
+ * android:stretchMode: Indicates, for grids with auto_fit for android:numColumns, what should happen for any available space not taken up by columns or spacing. This can be columnWidth, to have the columns take up available space, or spacingWidth, to have the whitespace between columns absorb extra space.
+
+For example, suppose the screen is 320 pixels wide, and you have android:columnWidth set to 100px and android:horizontalSpacing set to 5px. Three columns would use 310 pixels (three columns of 100 pixels and two whitespace areas of 5 pixels). With android:stretchMode set to columnWidth, the three columns will each expand by 3 to 4 pixels to use up the remaining 10 pixels. With android:stretchMode set to spacingWidth, the two whitespace areas will each grow by 5 pixels to consume the remaining 10 pixels.
+
+Otherwise, the GridView works much like any other selection widget: use setAdapter() to provide the data and child views, invoke setOnItemSelectedListener() to register a selection listener, and so on.
+
+For example, here is a XML layout from the Selection/Grid sample project, showing a GridView configuration:
+
+ {{{
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  android:orientation="vertical"
+  android:layout_width="fill_parent"
+  android:layout_height="fill_parent">
+  <TextView
+    android:id="@+id/selection"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content" />
+  <GridView
+    android:id="@+id/grid"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:verticalSpacing="35px"
+    android:horizontalSpacing="5px"
+    android:numColumns="auto_fit"
+    android:columnWidth="100px"
+    android:stretchMode="columnWidth"
+    android:gravity="center" />
+</LinearLayout>
+ }}}
+
+For this grid, we take up the entire screen except for what our selection label requires. The number of columns is computed by Android (android:numColumns = "auto_fit") based on 5-pixel horizontal spacing (android:horizontalSpacing = "5px") and 100- pixel columns (android:columnWidth = "100px"), with the columns absorbing any “slop” width left over (android:stretchMode = "columnWidth").
+
+The Java code to configure the GridView is as follows:
+
+ {{{
+public class GridDemo extends Activity implements AdapterView.OnItemSelectedListener {
+
+  TextView selection;
+  String[] items={"lorem", "ipsum", "dolor", "sit", "amet",
+                  "consectetuer", "adipiscing", "elit", "morbi", "vel",
+                  "ligula", "vitae", "arcu", "aliquet", "mollis",
+                  "etiam", "vel", "erat", "placerat", "ante",
+                  "porttitor", "sodales", "pellentesque", "augue", "purus"};
+
+  @Override
+  public void onCreate(Bundle icicle) {
+    super.onCreate(icicle);
+
+    setContentView(R.layout.main);
+    selection=(TextView)findViewById(R.id.selection);
+
+    GridView g=(GridView) findViewById(R.id.grid);
+    g.setAdapter(new FunnyLookingAdapter(this, android.R.layout.simple_list_item_1, items));
+    g.setOnItemSelectedListener(this);
+  }
+
+  public void onItemSelected(AdapterView<?> parent, View v, int position, long id) {
+    selection.setText(items[position]);
+  }
+
+  public void onNothingSelected(AdapterView<?> parent) {
+    selection.setText("");
+  }
+
+  private class FunnyLookingAdapter extends ArrayAdapter {
+    Context ctxt;
+
+    FunnyLookingAdapter(Context ctxt, int resource, String[] items) {
+      super(ctxt, resource, items);
+      this.ctxt=ctxt;
+    }
+
+    public View getView(int position, View convertView, ViewGroup parent) {
+      TextView label=(TextView)convertView;
+
+      if (convertView==null) {
+        convertView=new TextView(ctxt);
+        label=(TextView)convertView;
+      }
+
+      label.setText(items[position]);
+
+      return(convertView);
+    }
+
+  }
+
+}
+ }}}
+
+For the grid cells, rather than using autogenerated TextView widgets as in the previous sections, we create our own views, by subclassing ArrayAdapter and overriding getView(). In this case, we wrap the funny-looking strings in our own TextView widgets, just to be different. If getView() receives a TextView, we just reset its text; otherwise, we create a new TextView instance and populate it.
+
+With the 35-pixel vertical spacing from the XML layout (android:verticalSpacing = "35"), the grid overflows the boundaries of the emulator’s screen, as shown in Figures 7–6 and 7–7.
+
+{{attachment:figure_7-6.png}} <<BR>> Figure 7–6. The GridDemo sample application, as initially launched
+
+{{attachment:figure_7-7.png}} <<BR>> Figure 7–7. The same application, scrolled to the bottom of the grid
+
+== Fields: Now with 35% Less Typing! ==
+
+The AutoCompleteTextView is sort of a hybrid between the EditText (field) and the Spinner. With autocompletion, as the user types, the text is treated as a prefix filter, comparing the entered text as a prefix against a list of candidates. Matches are shown in a selection list that, as with Spinner, drops down from the field. The user can either type the full entry (e.g., something not in the list) or choose an item from the list to be the value of the field.
+
+AutoCompleteTextView subclasses EditText, so you can configure all the standard lookand- feel aspects, such as font face and color. In addition, AutoCompleteTextView has an android:completionThreshold property, to indicate the minimum number of characters a user must enter before the list filtering begins.
+
+You can give AutoCompleteTextView an adapter containing the list of candidate values via setAdapter(). However, since the user could type something that is not in the list, AutoCompleteTextView does not support selection listeners. Instead, you can register a TextWatcher, as you can with any EditText widget, to be notified when the text changes. These events will occur either because of manual typing or from a selection from the drop-down list.
+
+The following is a familiar XML layout, this time containing an AutoCompleteTextView (pulled from the Selection/AutoComplete sample application):
+
+ {{{
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  android:orientation="vertical"
+  android:layout_width="fill_parent"
+  android:layout_height="fill_parent">
+  <TextView
+    android:id="@+id/selection"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content" />
+  <AutoCompleteTextView android:id="@+id/edit"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:completionThreshold="3" />
+</LinearLayout>
+ }}}
+
+The corresponding Java code is as follows:
+
+ {{{
+public class AutoCompleteDemo extends Activity implements TextWatcher {
+
+  TextView selection;
+  AutoCompleteTextView edit;
+  String[] items={"lorem", "ipsum", "dolor", "sit", "amet",
+                  "consectetuer", "adipiscing", "elit", "morbi", "vel",
+                  "ligula", "vitae", "arcu", "aliquet", "mollis",
+                  "etiam", "vel", "erat", "placerat", "ante",
+                  "porttitor", "sodales", "pellentesque", "augue", "purus"};
+
+  @Override
+  public void onCreate(Bundle icicle) {
+    super.onCreate(icicle);
+
+    setContentView(R.layout.main);
+
+    selection=(TextView)findViewById(R.id.selection);
+    edit=(AutoCompleteTextView)findViewById(R.id.edit);
+    edit.addTextChangedListener(this);
+    edit.setAdapter(new ArrayAdapter<String>(this,
+    android.R.layout.simple_dropdown_item_1line, items));
+  }
+
+  public void onTextChanged(CharSequence s, int start, int before, int count) {
+    selection.setText(edit.getText());
+  }
+
+  public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+    // needed for interface, but not used
+  }
+
+  public void afterTextChanged(Editable s) {
+    // needed for interface, but not used
+  }
+
+}
+ }}}
+
+This time, our activity implements TextWatcher, which means our callbacks are onTextChanged() and beforeTextChanged(). In this case, we are interested in only the former, and we update the selection label to match the AutoCompleteTextView’s current contents.
+
+Figures 7–8, 7–9, and 7–10 show the results.
+
+{{attachment:figure_7-8.png}} <<BR>> Figure 7–8. The AutoCompleteDemo sample application, as initially launched
+
+{{attachment:figure_7-9.png}} <<BR>> Figure 7–9. The same application, after a few matching letters were entered, showing the autocomplete dropdown
+
+{{attachment:figure_7-10.png}} <<BR>> Figure 7–10. The same application, after the autocomplete value was selected
+
+== Galleries, Give or Take the Art ==
+
+The Gallery widget is not one ordinarily found in GUI toolkits. It is, in effect, a list box that is horizontally laid out. One choice follows the next across the horizontal plane, with the currently selected item highlighted. On an Android device, the user rotates through the options via the left and right D-pad buttons.
+
+Compared to the ListView, the Gallery takes up less screen space, while still showing multiple choices at one time (assuming they are short enough). Compared to the Spinner, the Gallery always shows more than one choice at a time.
+
+The quintessential example use for the Gallery is image preview. Given a collection of photos or icons, the Gallery lets people preview the pictures in the process of choosing one.
+
+Code-wise, the Gallery works much like a Spinner or GridView. In your XML layout, you have a few properties at your disposal:
+
+ * android:spacing: Controls the number of pixels between entries in the list.
+
+ * android:spinnerSelector: Controls what is used to indicate a selection. This can either be a reference to a Drawable (see Chapter 20) or an RGB value in #AARRGGBB or similar notation.
+
+ * android:drawSelectorOnTop: Indicates if the selection bar (or Drawable) should be drawn before (false) or after (true) drawing the selected child. If you choose true, be sure that your selector has sufficient transparency to show the child through the selector; otherwise, users will not be able to read the selection.
+
+= Chapter 8. Getting Fancy with Lists =
+
+:::
+
+
+
+
+
+
+
+
+
+
+
+

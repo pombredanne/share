@@ -1,0 +1,916 @@
+   [1]Skip to main content
+   [2]IBM®
+     * Country/region
+     * [ [3]select ]
+
+   Search in: [All of dW...........] Search for: ____________________
+   Search
+     * [4]Home
+     * [5]Business solutions
+     * [6]IT services
+     * [7]Products
+     * [8]Support & downloads
+     * [9]My IBM
+
+     * [10]developerWorks
+     * [11]XML
+     * [12]Technical library
+
+XML-RPC in Java programming
+
+   The simplest route to interapplication communication
+   [13]Roy Miller ([14]roy@roywmiller.com), Independent consultant
+   Roy W. Miller has been a technology consultant, software developer and
+   coach for over ten years, first with Andersen Consulting (now
+   Accenture). He spent almost three years with RoleModel Software, Inc.
+   in North Carolina, where he focused on building Java language
+   applications using Extreme Programming (XP). He is now an independent
+   consultant and coach. He has used heavyweight methods and agile ones,
+   including XP, and co-authored a book in the Addison-Wesley XP Series
+   ([15]Extreme Programming Applied: Playing to Win). His most recent
+   book, [16]Managing Software for Growth: Without Fear, Control, and the
+   Manufacturing Mindset, discusses how complexity science can help
+   software development and other IT managers understand how to help their
+   teams create great software that real people will enjoy using, without
+   controlling or killing programmers. Contact Roy at
+   [17]roy@roywmiller.com.
+
+   Summary:  Interapplication communication can be a nasty problem for
+   programmers. Many of the available options, such as JNI, can be
+   difficult to use. XML-RPC provides a much easier solution. It's clean,
+   simple to implement, and well supported by open source libraries for
+   most popular programming languages (such as Java language and C++). If
+   you have a Java application, for example, that needs to talk to an
+   application written in C++, XML-RPC just might be the simplest
+   approach. In this article, software developer and coach Roy Miller
+   talks about what XML-RPC is and how to use it effectively.
+
+   Date:  13 Jan 2004
+   Level:  Introductory
+   Activity:  2399 views
+   Comments:
+
+   I can't tell you how many times I've heard from fellow developers that
+   the latest hot technology is the cure for what ails the software
+   development world. Many people said that when XML made its debut. I
+   wasn't as excited at that point, and my attitude hasn't changed much
+   since then. I've always thought that XML is a great way to define
+   structured data without necessarily flattening it into a relational
+   structure, which can be awkward. But XML isn't a programming language
+   -- XLST is syntactically onerous and, at least to me, kind of odd. So
+   I've waited for some time for a problem to come along that required
+   structured data exchange, which is exactly what XML was created for.
+   That specific problem came up on a recent project, and XML, as used by
+   XML-RPC, was the just the right tool for the job.
+
+   The programming challenge
+
+   Our client made a hardware device. Prior to our involvement on the
+   project, the only way a user could configure each device was with a
+   command-line interface. That's not necessarily bad, except that each
+   customer might have 20 or more (perhaps even hundreds or thousands) of
+   these hardware devices on each network. Forcing customers to configure
+   each device one by one with a command-line interface would certainly
+   hurt sales. The problem would be especially acute when customers had to
+   do initial setups and configurations of multiple devices after their
+   orders arrived. The configuration for each device was contained in an
+   XML file that the device read on startup.
+
+   Our client hired us to create a configuration app that could run on one
+   or more centrally located management machines. The app needed to
+   simplify setting up all of the devices initially, reconfiguring them as
+   necessary (with firmware upgrades, to correct errors, and so on), and
+   monitoring existing devices. What made that a somewhat sticky challenge
+   was that the software on the device was written in C, and our desktop
+   app needed to be written in the Java programming language.
+
+   We briefly considered JNI, but figured there had to be something
+   simpler -- and there was: a nifty little thing called XML-RPC.
+     __________________________________________________________________
+
+   [18]Back to top
+
+   Enter XML-RPC
+
+   The XML-RPC Web site (see [19]Resources) describes it this way:
+
+     It's a spec and a set of implementations that allow software running
+     on disparate operating systems and in different environments to make
+     procedure calls over the Internet. It's remote procedure calling
+     using HTTP as the transport and XML as the encoding. XML-RPC is
+     designed to be as simple as possible, while allowing complex data
+     structures to be transmitted, processed, and returned.
+
+   When we read that we knew we had our answer. The configuration for each
+   device was in a file (the content was XML as well, but that doesn't
+   matter for this discussion). That meant we already had the semantics
+   for telling each device how to configure itself. If we sent it the
+   configuration file it was expecting, it would be happy. But how would
+   we send it? We could just send bytes, but that posed a security risk,
+   and doing all that byte manipulation wasn't really what anybody wanted.
+   We realized we could send a string payload in a well-defined XML-RPC
+   message, which would allow us to invoke C functions in the very
+   restricted public interface of the software on each device.
+     __________________________________________________________________
+
+   [20]Back to top
+
+   XML-RPC highlights
+
+   In a nutshell, you can think of XML-RPC as a simplified SOAP. It might
+   be the only interapp communication you ever need. There's an excellent
+   "how-to" document on the XML-RPC Web site that provides some history
+   and examples in various languages. Then again, you might just want to
+   read the spec. At fewer than six pages, it is a model of simplicity.
+   We'll go over some highlights in this section to set the stage for how
+   we used XML-RPC on our project.
+
+   An XML-RPC message is an HTTP-POST request with an XML body. You need
+   an XML-RPC client to create the message, and an XML-RPC server to
+   receive it. Once the server completes the request, it sends back an
+   XML-RPC response message, also in XML. The request can contain
+   parameters (integers, strings, dates, and other types, including arrays
+   and complex records if you need those). The format of each request is
+   extremely simple, as Listing 1 shows:
+   Listing 1. Sample XML-RPC request
+   POST /RPC2 HTTP/1.0
+   User-Agent: Frontier/5.1.2 (WinNT)
+   Host: betty.userland.com
+   Content-Type: text/xml
+   Content-length: 181
+
+   <?xml version="1.0"?>
+   <methodCall>
+      <methodName>examples.getStateName</methodName>
+      <params>
+         <param>
+            <value><i4>41</i4></value>
+         </param>
+      </params>
+   </methodCall>
+
+   You need a methodName string that specifies a "handler" name (examples
+   in Listing 1) and a method to call on that handler (getStateName in
+   Listing 1). The server can interpret this name string however it wants.
+   The Java server we used, which we'll discuss a bit later, finds an
+   object with the handler name of examples, and calls the getStateName
+   method on it.
+
+   The response is just as simple, as shown in Listing 2:
+   Listing 2. Sample XML-RPC response
+   HTTP/1.1 200 OK
+   Connection: close
+   Content-Length: 158
+   Content-Type: text/xml
+   Date: Fri, 17 Jul 1998 19:55:08 GMT
+   Server: UserLand Frontier/5.1.2-WinNT
+
+   <?xml version="1.0"?>
+   <methodResponse>
+      <params>
+         <param>
+            <value><string>South Dakota</string></value>
+         </param>
+      </params>
+   </methodResponse>
+
+   When you make an XML-RPC call, you'll get an XML response, which
+   contains one <params> element, which in turn contains one <param>
+   element, which contains one <value> element, which contains a return
+   value you need to handle. In most cases, this is the response you hope
+   to get. But life is never that simple. If something goes wrong, the
+   server should return the "fault" response, which looks something like
+   Listing 3-- a fault reflecting too many parameters sent in the RPC:
+   Listing 3. Sample XML-RPC fault response
+   HTTP/1.1 200 OK
+   Connection: close
+   Content-Length: 426
+   Content-Type: text/xml
+   Date: Fri, 17 Jul 1998 19:55:02 GMT
+   Server: UserLand Frontier/5.1.2-WinNT
+
+
+   <?xml version="1.0"?>
+   <methodResponse>
+      <fault>
+         <value>
+            <struct>
+               <member>
+                  <name>faultCode</name>
+                  <value><int>4</int></value>
+                  </member>
+               <member>
+                  <name>faultString</name>
+                  <value><string>Too many parameters.</string>
+                  </value>
+                  </member>
+            </struct>
+         </value>
+      </fault>
+   </methodResponse>
+
+   The <value> element of the <fault> element contains a struct with a
+   faultCode member and a <faultString> member. This is like toString() in
+   a Java class. If something goes wrong, toString() tells you what it is,
+   complete with an error code and an error message, assuming you coded it
+   to do that. The XML-RPC fault response does the same thing.
+
+   And that's about all you need to understand what's going on with
+   XML-RPC. In fact, you really don't need to know the details of the XML
+   layout for messages. The XML-RPC implementation library you choose will
+   do all that work for you, if you provide valid inputs. So, the only
+   tool you'll lack after reading the spec is a client and server
+   implementation. In this application, we needed a Java implementation of
+   the client and a C implementation of the server.
+     __________________________________________________________________
+
+   [21]Back to top
+
+   Making it work
+
+   The XML-RPC Web site includes links for client and server
+   implementations of the spec in multiple languages, including Java
+   programming language, Ruby, Python, C/C++, and Perl.
+
+   There's an implementation written by the Apache team, and there are
+   some written by individual developers. After reviewing the code for
+   some of these, we chose the Marquee XML-RPC client implementation,
+   written by Greger Ohlson. Ohlson wrote a server as well, but the fellow
+   writing the code for the hardware device we'd be configuring chose the
+   Apache XML-RPC server. It really doesn't matter, as long as the input
+   and output are predictable.
+
+   We did all of our development in Eclipse, so we simply downloaded the
+   Marquee library, created a project for it, and loaded it into our
+   workspace. Putting it on the classpath of our app gave us access to the
+   Marquee interface. All we had to do at that point was use it. To
+   simplify our approach, we created a wrapper for the device, which let
+   the rest of the app deal with a domain object instead of worrying about
+   the minutia of XML-RPC, and created an XML-RPC object to package
+   requests and decode responses.
+
+   When the app needed to interact with a device for some reason (to check
+   its status, for example), it simply called a method on the wrapper for
+   that device, which interacted with the XML-RPC object to do the XML-RPC
+   magic. Listing 4 shows a simplified example of what our wrapper looked
+   like.
+   Listing 4. Device wrapper class
+   public class Device {
+       protected DeviceConfiguration configuration;
+       protected Status status = Status.UNREACHABLE;
+
+       protected Device(DeviceConfiguration configuration) {
+           this.configuration = configuration;
+       }
+
+       public Status getStatus() {
+           return obtainRpcClient().getStatus();
+       }
+
+       public void setStatus(Status status) {
+           if (this.status != status) {
+               this.status = status;
+           }
+       }
+
+       public void reboot() {
+           Status status;
+           try {
+               status = obtainRpcClient().reboot();
+           } finally {
+               makeUnreachable();
+           }
+           setStatus(status);
+       }
+
+       public DeviceConfiguration getConfiguration() {
+           this.configuration =
+               DeviceConfigurationBuilder.toConfig(
+                   obtainRpcClient().getDeviceConfiguration());
+           makeOk();
+           return this.configuration;
+       }
+
+       public Status putConfiguration() {
+           Status status =
+               obtainRpcClient().replaceDeviceConfiguration(
+                   DeviceConfigurationBuilder.toData(this.configuration));
+           setStatus(status);
+           return status;
+       }
+
+       protected RpcClient obtainRpcClient() {
+           return new RpcClient(
+               this.configuration.getIpAddress(),
+               80,
+               this.configuration.getUserPassword(),
+               100);
+       }
+
+       public void makeOk() {
+           setStatus(Status.OK);
+       }
+
+       public void makeUnreachable() {
+           setStatus(Status.UNREACHABLE);
+       }
+   }
+
+   The Device class uses three helper classes: DeviceConfiguration,
+   Status, and DeviceConfigurationBuilder.
+
+   Details of these three classes are beyond the scope of this article,
+   though I will say that instances of the DeviceConfiguration class hold
+   values extracted from the XML configuration for each hardware device.
+   It's just a convenient way to keep track of those values. As you can
+   see, the Device class uses DeviceConfigurationBuilder to convert from
+   raw configuration data to DeviceConfiguration instances, and vice
+   versa.
+
+   This sample includes methods to ask a device for its status, to tell a
+   device to reboot itself, and to get and put configuration data. But the
+   Device instance didn't handle talking to the device it modeled,
+   delegating to the XML-RPC wrapper class instead, where the XML-RPC
+   excitement really happened. Listing 5 shows a simplified sample of what
+   our XML-RPC wrapper class looked like. We called it RpcClient to
+   distinguish it from the Marquee XmlRpcClient.
+   Listing 5. XML-RPC client wrapper class
+  import java.util.Hashtable;
+  import marquee.xmlrpc.XmlRpcClient;
+  import marquee.xmlrpc.XmlRpcException;
+
+  public class RpcClient {
+      protected static final Object[] EMPTY_ARRAY = new Object[0];
+
+      protected XmlRpcClient xmlRpcClient;
+      protected String ipAddress;
+      protected String password;
+      protected int port;
+      protected int timeout;
+
+      public RpcClient(
+          String ipAddress,
+          int port,
+          String password,
+          int timeout) {
+          super();
+          this.ipAddress = ipAddress;
+          this.port = port;
+          this.password = password;
+          this.timeout = timeout;
+
+          xmlRpcClient = new XmlRpcClient(ipAddress, port, "/RPC2");
+      }
+
+      protected Object invoke(final String rpcMethodName) {
+          return invoke(rpcMethodName, EMPTY_ARRAY);
+      }
+
+      protected Object invoke(final String rpcMethodName, Object[] parameters) {
+          try {
+              Object result = xmlRpcClient.invoke(rpcMethodName, parameters);
+              if (result instanceof Hashtable) {
+                  Hashtable fault = (Hashtable) result;
+                  int faultCode = ((Integer) fault.get("faultCode")).intValue();
+                  throw new RuntimeException(
+                      "Unable to connect to device via XML-RPC. \nFault Code: "
+                          + faultCode
+                          + "\nFault Message: "
+                          + (String) fault.get("faultString"));
+              }
+              if (result instanceof Integer) {
+                  return Status.getStatus((Integer) result);
+              }
+              return result.toString();
+          } catch (XmlRpcException e) {
+              throw new RuntimeException(e);
+          }
+      }
+
+      public Status getStatus() {
+          return (Status) invoke("Device.getStatus");
+      }
+
+      public String getDeviceConfiguration() {
+          return (String) invoke("Device.getConfiguration");
+      }
+
+      public Status replaceDeviceConfiguration(String configurationData) {
+          return (Status) invoke(
+              "Device.replaceConfiguration",
+              new Object[] { configurationData });
+      }
+
+      public Status reboot() {
+          return (Status) invoke("Device.reboot");
+      }
+  }
+
+   Notice that RpcClient's public interface has five methods, including
+   the constructor. Each method calls a version of invoke(). One version
+   takes no parameters (called from reboot(), for example), and the other
+   takes an Object array of parameters (called from
+   replaceDeviceConfiguration(), for example).
+
+   The version that takes no parameters calls the other version with an
+   empty Object array. The invoke() method that takes parameters is the
+   only place we interact with the Marquee library. That method calls
+   invoke() on the XmlRpcClient instance contained in RpcClient. The
+   Marquee library does its magic, wrapping our method string (remember,
+   according to the spec it looks something like handlerName.methodName)
+   and our Object array of parameters in XML, which it then sends to the
+   server. The result it gives back could be a Hashtable (Marquee's choice
+   for the "fault" version of an XML-RPC response), an Integer wrapper
+   (for numeric return values), or a String (the default return type for
+   XML-RPC messages).
+
+   In our case, if we get a fault back, we throw a RuntimeException with
+   details extracted from the fault Hashtable. If we get a numeric status
+   value, which we will when we call reboot() for example, we instantiate
+   a Status object to hold it, along with a nice text translation for
+   display in our UI. If we get a String back, which we will when we call
+   getDeviceConfiguration(), we just return that.
+
+   Rebooting aDevice
+
+   Now that you have all the pieces, let's connect the dots. Let's say our
+   application tells a particular Device -- we'll call it aDevice -- to
+   reboot itself. Some class somewhere in the UI world calls reboot() on
+   aDevice. Here's what happens next:
+    1. aDevice creates an RpcClient instance, anRpcClient, to connect to
+       the XML-RPC server on the physical device (using the IP address and
+       user password from aDevice's DeviceConfiguration instance).
+    2. aDevice calls reboot() on anRpcClient.
+    3. anRpcClient calls invoke() on its Marquee XmlRpcClient instance,
+       xmlRpcClient, passing it an empty parameter list.
+    4. xmlRpcClient returns a Hashtable if it got a fault XML-RPC message
+       from the server, an Integer if it got a numeric return value, or a
+       String in all other cases.
+    5. anRpcClient returns what it got from xmlRpcClient, which in this
+       case would be simply a return code that indicates all went well
+       (that is, the server isn't giving us any data back per se).
+    6. If anything went wrong, aDevice sets its Status instance to
+       UNREACHABLE so the UI will report that.
+    7. If all went well, aDevice just updates its Status instance to
+       whatever anRpcClient gave it
+
+   Asking aDevice for its current status
+
+   The case where we asked aDevice for some data wasn't much more
+   difficult. The most basic example was when our application asked
+   aDevice for its current status. In this case, some class somewhere in
+   the UI world calls getStatus() on aDevice. Here's what happens next:
+    1. aDevice creates an RpcClient instance, anRpcClient, to connect to
+       the XML-RPC server on the physical device.
+    2. aDevice calls getStatus() on anRpcClient.
+    3. anRpcClient calls invoke() on its Marquee XmlRpcClient instance,
+       xmlRpcClient, passing it an empty parameter list.
+    4. xmlRpcClient returns a Hashtable if it got a fault XML-RPC message
+       from the server, an Integer if it got a numeric return value, or a
+       String in all other cases.
+    5. anRpcClient returns the status it got from xmlRpcClient.
+    6. If anything went wrong, aDevice sets its Status instance to
+       UNREACHABLE so the UI will report that.
+    7. If all went well, aDevice just updates its Status instance to
+       whatever anRpcClient gave it.
+
+   The case where we asked aDevice for its current configuration data was
+   virtually the same, the only difference being that we had to take the
+   raw configuration data returned by the XML-RPC call (as a String) and
+   adapt it into a DeviceConfiguration instance. When we sent new
+   configuration data to aDevice, we did the opposite by extracting the
+   configuration data from a DeviceConfiguration instance and then
+   building a string payload out of it.
+
+   Note in this sample code that we didn't have to do any XML
+   manipulation. None. The Marquee library did it all for us. Now, the
+   XML-RPC spec is rather simple, so you could probably roll your own
+   client, but there's little need to do that -- the Marquee library is
+   quite good and has capabilities I didn't explore in this article. The
+   documentation is intuitive and complete. In my opinion, it's a joy
+   never to have to parse XML.
+     __________________________________________________________________
+
+   [22]Back to top
+
+   The server side
+
+   Up to this point I haven't mentioned much about the server side of the
+   equation. That's because somebody else on the team created the XML-RPC
+   server side for this application (using the C implementation from
+   Apache). That's great, but what if we had had to develop an XML-RPC
+   server in the Java language as well? Piece of cake, actually. On our
+   project, we could have used the Marquee XML-RPC server implementation,
+   also written in the Java language (see [23]Other uses for XML-RPC to
+   see how we did in fact do this, but for another purpose).
+
+   Listing 6 shows a simple XML-RPC server that handles the requests from
+   our XML-RPC client discussed earlier. It simulates a real physical
+   device, just for example purposes. Let's dissect this code to see the
+   XML-RPC server particulars.
+   Listing 6. Simple XML-RPC server
+   import java.io.IOException;
+
+   import marquee.xmlrpc.XmlRpcServer;
+   import marquee.xmlrpc.handlers.ReflectiveInvocationHandler;
+
+   public class DeviceServer {
+       public static final String USERNAME = "username";
+       public static final String PASSWORD = "password";
+
+       protected boolean isShuttingDown;
+       protected String configuration = "initial configuration";
+       protected String host;
+       protected String password = PASSWORD;
+       protected XmlRpcServer rpcServer;
+       protected Thread rpcThread;
+
+       protected int port;
+       protected Status status = Status.OK;
+
+       public DeviceServer(String theHost, int thePort) {
+           host = theHost;
+           port = thePort;
+
+           createRpcServer();
+           startRpcServer();
+       }
+
+       public void shutDown() {
+           isShuttingDown = true;
+           if (rpcServer != null)
+               rpcServer.shutDown();
+       }
+
+       public Object getStatus() {
+           return new Integer(status.getCode());
+       }
+
+       public Object getConfiguration() {
+           return "valid configuration data";
+       }
+
+       public Object replaceConfiguration(String xml) {
+           configuration = xml;
+           return new Integer(status.getCode());
+       }
+
+       public Object reboot() {
+           return new Integer(status.getCode());
+       }
+
+       public void setStatus(Status newStatus) {
+           status = newStatus;
+       }
+
+       protected void startRpcServer() {
+           rpcThread = new Thread(new Runnable() {
+               public void run() {
+                   try {
+                       rpcServer.runAsService(port);
+                   } catch (IOException ioe) {
+                       if (!isShuttingDown)
+                           ioe.printStackTrace();
+                   }
+               }
+           });
+           rpcThread.setName("DeviceServer[" + this.host + "] on " + this.port);
+           rpcThread.start();
+       }
+
+       protected void createRpcServer() {
+           rpcServer = new XmlRpcServer();
+           rpcServer.registerInvocationHandler(
+               "Device",
+               new ReflectiveInvocationHandler(this));
+       }
+   }
+
+   The constructor for our server gives a synopsis of what happens. We
+   save the host and port information passed in, then we call
+   createRpcServer() to instantiate the Marquee XmlRpcServer and register
+   a ReflectiveInvocationHandler with it (more on this in a moment). We
+   then call startRpcServer() to give the server a helpful name and run it
+   in its own thread. The Marquee XmlRpcServer requires that you call
+   runAsService() with a port number int before you start the thread. Once
+   you start it up, the server listens for requests coming into that port
+   from any client connected to that port.
+
+   Most of that's straightforward, but what about this
+   ReflectiveInvocationHandler stuff? The XML-RPC spec doesn't spell out
+   how to implement either a client or a server. It does say that an
+   XML-RPC server has to handle an incoming request with a <methodcall>
+   element. Within that element is a call string of the form
+   handlername.methodname. When you call invoke() on a Marquee client, it
+   manufactures the correct XML to pass your method string and any
+   parameters to the server in a well-formed XML-RPC message. On the
+   server side, the Marquee XML-RPC server:
+     * Parses the method string into a handler name and a method to call
+       on that handler
+     * Finds the registered handler with the indicated name
+     * Calls the method on it, passing in any parameters you sent over in
+       the request
+     * Packages the results in an XML-RPC response and sends it back to
+       the client
+
+   To use a Marquee XML-RPC server, a running server instance has to know
+   how to decode your method string. It has to know what object
+   corresponds to the handlername key value. Having said that, it should
+   be obvious that the server will have no idea how to decode that
+   handlername unless you tell the server that the name "Device"
+   corresponds to a given object. That can be any instance. As Listing 7
+   shows, we simply had the server handle all incoming method requests. We
+   did that in this code within createRpcServer().
+   Listing 7. Simple XML-RPC server
+   rpcServer.registerInvocationHandler("Device", new
+   ReflectiveInvocationHandler(this));
+
+   Now, whenever our server gets a request with a method string that looks
+   something like Device.someMethod, it knows to find someMethod() on
+   itself to handle the request. In our sample server, all we needed was
+   the basic "find the requested method on the requested object" behavior,
+   so we used a Marquee ReflectiveInvocationHandler. The basic one that
+   comes with Marquee does just fine, so we didn't need to write our own.
+   That handler simply finds the requested method on the object with which
+   the handler was instantiated. If you look at the code, you'll see all
+   the Java Reflection logic Marquee has saved you the trouble of writing.
+
+   The handler concept isn't required by the XML-RPC spec, but Marquee is
+   built around it, and it works well. If the basic
+   ReflectiveInvocationHandler doesn't do the job for you, you can
+   subclass XmlRpcInvocationHandler to roll your own.
+     __________________________________________________________________
+
+   [24]Back to top
+
+   Other uses for XML-RPC
+
+   On the project I've described in this article, we used XML-RPC to
+   facilitate external scripting of our application for testing purposes.
+   We wrote a simple testing framework in Ruby and had it make XML-RPC
+   requests to our app, which included the Marquee Java XML-RPC server.
+   When it came time to ship the app, we simply turned off the XML-RPC
+   server.
+
+SWT meets Ruby
+
+   On a side project I worked on, we used XML-RPC to create an app with an
+   SWT UI and a Ruby back end. Ruby was simpler to use for the app we were
+   writing, but UI libraries for Ruby don't hold a candle to SWT. XML-RPC
+   allowed us to marry those worlds without too much trouble.
+     __________________________________________________________________
+
+   [25]Back to top
+
+   Summary
+
+   The example we reviewed in this article was admittedly simplistic. The
+   Marquee XML-RPC library contains many features I didn't discuss (such
+   as invocation pre-processors and serializers to translate Java objects
+   into structs for XML-RPC transmission). Those additional features are a
+   bonus, though. You don't need them to get tremendous value out of
+   XML-RPC. XML-RPC is truly simple, which makes it worth considering for
+   distributed applications. In general, if you need to communicate
+   between two applications, especially if those apps are written in
+   different languages, XML-RPC is worth a look. The XML-RPC Web site
+   quotes a Byte magazine reviewer as saying, "Does distributed computing
+   have to be any harder than this? I don't think so." I agree, at least
+   for the project I talked about here. In this case, XML-RPC let us do
+   what we needed to do, without getting in the way. Good tools are like
+   that.
+
+   Resources
+     * Find the definitive source for XML-RPC information at the
+       [26]official XML-RPC Web site.
+     * The [27]implementations page contains links to various XML-RPC
+       client and server implementations.
+     * Find information about the [28]Marquee XML-RPC client and server
+       Java implementations on sourceforge.
+     * "[29]Using XML-RPC for Web services, Part 1" and [30]Part 2 by Joe
+       Johnston (developerWorks, March 2001) discuss using XML-RPC for Web
+       services.
+     * David Mertz has written several articles on XML-RPC for the
+       [31]developerWorks XML zone. "[32]XML-RPC as object model"
+       (developerWorks, December 2001) examines XML-RPC as a way of
+       modeling object data, and compares XML-RPC as a means of
+       serializing objects with the xml_pickle module; "[33]Make your CGI
+       scripts available via XML-RPC" (developerWorks, April 2003)shows
+       how to provide a programmatic interface to Web services.
+     * If you're a Web services developer, don't miss "[34]XML-RPC for
+       Python" by Uche Ogbuji and Mike Olson (developerWorks, August
+       2002).
+     * If you still have questions regarding XML-RPC, a good place to pose
+       them is in the [35]XML and Java Technology discussion forum, hosted
+       by Brett McLaughlin.
+     * Find hundreds more Java technology resources on the
+       [36]developerWorks Java technology zone.
+
+   About the author
+
+   Roy W. Miller has been a technology consultant, software developer and
+   coach for over ten years, first with Andersen Consulting (now
+   Accenture). He spent almost three years with RoleModel Software, Inc.
+   in North Carolina, where he focused on building Java language
+   applications using Extreme Programming (XP). He is now an independent
+   consultant and coach. He has used heavyweight methods and agile ones,
+   including XP, and co-authored a book in the Addison-Wesley XP Series
+   ([37]Extreme Programming Applied: Playing to Win). His most recent
+   book, [38]Managing Software for Growth: Without Fear, Control, and the
+   Manufacturing Mindset, discusses how complexity science can help
+   software development and other IT managers understand how to help their
+   teams create great software that real people will enjoy using, without
+   controlling or killing programmers. Contact Roy at
+   [39]roy@roywmiller.com.
+
+   Comments
+     __________________________________________________________________
+     __________________________________________________________________
+
+   [40]Back to top
+
+   [41]Trademarks
+   static.content.url=/developerworks/js/artrating/
+   SITE_ID=1
+   Zone=Java technology, XML
+   ArticleID=10901
+   ArticleTitle=XML-RPC in Java programming
+   publish-date=01132004
+   author1-email=roy@roywmiller.com
+   author1-email-cc=
+
+Table of contents
+
+     * [42]The programming challenge
+     * [43]Enter XML-RPC
+     * [44]XML-RPC highlights
+     * [45]Making it work
+     * [46]The server side
+     * [47]Other uses for XML-RPC
+     * [48]Summary
+     * [49]Resources
+     * [50]About the author
+     * [51]Comments
+
+Next steps from IBM
+
+   Spring, JRuby, and Ajax development is easier with WebSphere
+   Application Server - a smart Java 5 and J2EE Web services-based
+   application server.
+     __________________________________________________________________
+
+     * [52]Try: The no-charge WebSphere Application Server Community
+       Edition is a pre-integrated, lightweight Java 5 application server
+       built on Apache Tomcat and other best-of-breed open source software
+       such as OpenEJB, Apache Axis, and Apache Derby.
+     * [53]Article: The article leverage the Spring Framework and the
+       WebSphere Application Server to improve your J2EE project
+       productivity.
+     * [54]Tutorial: See how the free WebSphere Application Server and XML
+       can improve the efficiency of your JRuby on Rails and Ajax
+       development.
+     * [55]Buy: WebSphere Application Server - Express
+
+My developerWorks community
+
+   Interact, share, and communicate with developers worldwide.
+     __________________________________________________________________
+
+     * [56]My Home
+     * [57]Profiles
+     * [58]Groups
+     * [59]Blogs
+     * [60]Bookmarks
+     * [61]Activities
+     * [62]Spaces
+     * [63]Forums
+     * [64]Wikis
+     * [65]Podcasts
+     * [66]Exchange
+     __________________________________________________________________
+
+   [67]My developerWorks overview
+
+Dig deeper into XML on developerWorks
+
+     * [68]Overview
+     * [69]New to XML
+     * [70]Downloads and products
+     * [71]Open source projects
+     * [72]Standards
+     * [73]Technical library (articles, tutorials, and more)
+     * [74]Training
+     * [75]Forums
+     * [76]Events
+
+Align with Web 2.0 best practices
+
+   Social tools: Enabling the power of participation
+
+   [77]Enabling the power of participation
+
+Special offers
+
+   [78]Mastering Ajax Making web development easier
+
+   [79]DB2 9.5 Security for Linux, UNIX, and Windows
+
+   [80]See how you can use XML as a bridge between PHP & GWT
+     __________________________________________________________________
+
+   [81]More offers
+     * [82]About IBM
+     * [83]Privacy
+     * [84]Contact
+     * [85]Terms of use
+
+References
+
+   Visible links
+   1. http://www.ibm.com/developerworks/xml/library/j-xmlrpc.html#ibm-content
+   2. http://www.ibm.com/
+   3. http://www.ibm.com/developerworks/country/
+   4. http://www.ibm.com/
+   5. http://www.ibm.com/businesssolutions/
+   6. http://www.ibm.com/technologyservices/
+   7. http://www.ibm.com/products/
+   8. http://www.ibm.com/support/
+   9. http://www.ibm.com/account/
+  10. http://www.ibm.com/developerworks/
+  11. http://www.ibm.com/developerworks/xml/
+  12. http://www.ibm.com/developerworks/views/xml/library.jsp
+  13. http://www.ibm.com/developerworks/xml/library/j-xmlrpc.html#author1
+  14. mailto:roy@roywmiller.com?subject=XML-RPC%20in%20Java%20programming
+  15. http://www.amazon.com/exec/obidos/tg/detail/-/0201616408?v=glance
+  16. http://www.amazon.com/exec/obidos/tg/detail/-/0321117433?v=glance
+  17. mailto:roy@roywmiller.com?cc=
+  18. http://www.ibm.com/developerworks/xml/library/j-xmlrpc.html#ibm-pcon
+  19. http://www.ibm.com/developerworks/xml/library/j-xmlrpc.html#resources
+  20. http://www.ibm.com/developerworks/xml/library/j-xmlrpc.html#ibm-pcon
+  21. http://www.ibm.com/developerworks/xml/library/j-xmlrpc.html#ibm-pcon
+  22. http://www.ibm.com/developerworks/xml/library/j-xmlrpc.html#ibm-pcon
+  23. http://www.ibm.com/developerworks/xml/library/j-xmlrpc.html#6.0
+  24. http://www.ibm.com/developerworks/xml/library/j-xmlrpc.html#ibm-pcon
+  25. http://www.ibm.com/developerworks/xml/library/j-xmlrpc.html#ibm-pcon
+  26. http://www.xmlrpc.com/
+  27. http://www.xmlrpc.com/directory/1568/implementations
+  28. http://xmlrpc.sourceforge.net/
+  29. http://www.ibm.com/developerworks/webservices/library/ws-xpc1/
+  30. http://www.ibm.com/developerworks/webservices/library/ws-xpc2/
+  31. http://www.ibm.com/developerworks/xml/
+  32. http://www.ibm.com/developerworks/xml/library/x-matters15.html
+  33. http://www.ibm.com/developerworks/xml/library/x-tipxmlrpc.html
+  34. http://www.ibm.com/developerworks/webservices/library/ws-pyth10.html
+  35. http://www.ibm.com/developerworks/forums/dw_forum.jsp?forum=262&cat=11
+  36. http://www.ibm.com/developerworks/java/
+  37. http://www.amazon.com/exec/obidos/tg/detail/-/0201616408?v=glance
+  38. http://www.amazon.com/exec/obidos/tg/detail/-/0321117433?v=glance
+  39. mailto:roy@roywmiller.com?cc=
+  40. http://www.ibm.com/developerworks/xml/library/j-xmlrpc.html#ibm-pcon
+  41. http://www.ibm.com/developerworks/ibm/trademarks/
+  42. http://www.ibm.com/developerworks/xml/library/j-xmlrpc.html#1.0
+  43. http://www.ibm.com/developerworks/xml/library/j-xmlrpc.html#2.0
+  44. http://www.ibm.com/developerworks/xml/library/j-xmlrpc.html#3.0
+  45. http://www.ibm.com/developerworks/xml/library/j-xmlrpc.html#4.0
+  46. http://www.ibm.com/developerworks/xml/library/j-xmlrpc.html#5.0
+  47. http://www.ibm.com/developerworks/xml/library/j-xmlrpc.html#6.0
+  48. http://www.ibm.com/developerworks/xml/library/j-xmlrpc.html#7.0
+  49. http://www.ibm.com/developerworks/xml/library/j-xmlrpc.html#resources
+  50. http://www.ibm.com/developerworks/xml/library/j-xmlrpc.html#author
+  51. http://www.ibm.com/developerworks/xml/library/j-xmlrpc.html#icomments
+  52. http://www.ibm.com/developerworks/downloads/ws/wasce/learn.html?S_TACT=105AGY17&S_CMP=TECHSUG
+  53. http://www.ibm.com/developerworks/websphere/library/techarticles/0810_asplund/0810_asplund.html?S_TACT=105AGY17&S_CMP=TECHSUG
+  54. http://www.ibm.com/developerworks/edu/x-dw-x-jrorajax.html?S_TACT=105AGY17&S_CMP=TECHSUG
+  55. http://www.ibm.com/software/dre/h2b/buildh2bpage.wss?synkey=G394201N28809H35&S_TACT=105AGY17&S_CMP=TECHSUG
+  56. https://www.ibm.com/developerworks/mydeveloperworks/homepage/web/getuserpref?ca=dma-
+  57. https://www.ibm.com/developerworks/mydeveloperworks/profiles/home.do?lang=en&ca=dma-
+  58. https://www.ibm.com/developerworks/mydeveloperworks/groups/service/html/allcommunities?ca=dma-
+  59. https://www.ibm.com/developerworks/mydeveloperworks/blogs/?ca=dma-
+  60. https://www.ibm.com/developerworks/mydeveloperworks/bookmarks/?ca=dma-
+  61. https://www.ibm.com/developerworks/mydeveloperworks/activities/service/html/mainpage?ca=dma-
+  62. http://www.ibm.com/developerworks/spaces/?ca=dma-
+  63. http://www.ibm.com/developerworks/forums/index.html?ca=dma-
+  64. http://www.ibm.com/developerworks/wikis/dashboard.action?ca=dma-
+  65. http://www.ibm.com/developerworks/podcast/?ca=dma-
+  66. http://www.ibm.com/developerworks/exchange/dw_index.jspa?ca=dma-
+  67. https://www.ibm.com/developerworks/mydeveloperworks/?ca=dma-
+  68. http://www.ibm.com/developerworks/xml/
+  69. http://www.ibm.com/developerworks/xml/newto/
+  70. http://www.ibm.com/developerworks/views/xml/downloads.jsp
+  71. http://www.ibm.com/developerworks/views/xml/projects.jsp
+  72. http://www.ibm.com/developerworks/xml/standards/
+  73. http://www.ibm.com/developerworks/views/xml/library.jsp
+  74. http://www.ibm.com/developerworks/xml/training/
+  75. http://www.ibm.com/developerworks/forums/dw_xforums.jsp
+  76. http://www.ibm.com/developerworks/views/xml/events.jsp
+  77. http://www.ibm.com/developerworks/spaces/socialtools?S_TACT=105AGX01&S_CMP=HIVISART&ca=dth-st
+  78. http://www.ibm.com/developerworks/views/web/libraryview.jsp?search_by=Mastering+Ajax&S_TACT=105AGX06&S_CMP=TILE&ca=dti-tilemasterajax
+  79. http://www.ibm.com/developerworks/exchange/dw_entryView.jspa?externalID=831&categoryID=977&S_TACT=105AGX06&S_CMP=TILE&ca=dti-tiledb2security
+  80. http://www.ibm.com/developerworks/xml/library/x-gwtphp/?S_TACT=105AGX06&S_CMP=TILE&ca=dti-tilexmlphpgwt
+  81. http://www.ibm.com/developerworks/views/global/offers.jsp
+  82. http://www.ibm.com/ibm/
+  83. http://www.ibm.com/privacy/
+  84. http://www.ibm.com/contact/
+  85. http://www.ibm.com/legal/
+
+   Hidden links:
+  86. http://www.ibm.com/developerworks/xml/library/comments

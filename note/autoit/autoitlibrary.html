@@ -1,0 +1,280 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>Using AutoIt Library</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="autoitlibrary.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>Using AutoIt Library</h1>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_安裝">安裝</h2>
+<div class="sectionbody">
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+從<a href="http://code.google.com/p/robotframework-autoitlibrary/downloads/list">這裡</a>下載 <code>AutoItLibrary-&lt;version&gt;.zip</code>，解開後從 source 安裝。
+</p>
+<div class="openblock">
+<div class="content">
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/important.png" alt="Important" />
+</td>
+<td class="content">
+<div class="paragraph"><p>在 Windows 7 下，Command Prompt 要以 Run as administrator 的方式執行，否則安裝一開始就會遇到下面的錯誤：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>%SYSTEMROOT%\system32\regsvr32.exe /S C:\Python27\Lib\site-packages\AutoItLibrary\lib\AutoItX3.dll
+Traceback (most recent call last):
+  File "setup.py", line 70, in &lt;module&gt;
+    subprocess.check_call(cmd, shell=True)
+  File "C:\Python27\lib\subprocess.py", line 511, in check_call
+    raise CalledProcessError(retcode, cmd)
+subprocess.CalledProcessError: Command '%SYSTEMROOT%\system32\regsvr32.exe /S C:\Python27\Lib\site-packages\AutoItLibrary\lib\AutoItX3.dll' returned non-zero exit status 5</code></pre>
+</div></div>
+<div class="paragraph"><p>另外 <code>AutoItLibrary-&lt;version&gt;.zip</code> 只有內附 <code>AutoItX3.dll</code>，雖然 <code>AutoItX3.dll</code> 可以在 64-bit 環境下註冊成功，但之後使用時卻會丟出下面的例外：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>Traceback (most recent call last):
+  File "autoit.py", line 3, in &lt;module&gt;
+    Auto = Dispatch("AutoItX3.Control")
+  File "C:\Python27\lib\site-packages\win32com\client\__init__.py", line 95, in Dispatch
+    dispatch, userName = dynamic._GetGoodDispatchAndUserName(dispatch,userName,clsctx)
+  File "C:\Python27\lib\site-packages\win32com\client\dynamic.py", line 108, in _GetGoodDispatchAndUserName
+    return (_GetGoodDispatch(IDispatch, clsctx), userName)
+  File "C:\Python27\lib\site-packages\win32com\client\dynamic.py", line 85, in _GetGoodDispatch
+    IDispatch = pythoncom.CoCreateInstance(IDispatch, None, clsctx, pythoncom.IID_IDispatch)
+pywintypes.com_error: (-2147221164, 'Class not registered', None, None) <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+在中文環境下會丟出 <code>com_error: (-2147221164, '\xc3\xfe\xa7O\xa5\xbc\xb5n\xbf\xfd', None, None)</code>，就是 "類別未登錄" 的意思。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>解決的方法是在安裝之前，先從官網的 Self Extracting Archive 拿到 <code>AutoItX3_x64.dll</code>，將它更名為 <code>AutoItX3.dll</code> 後置換掉 <code>AutoItLibrary-1.1\3rdPartyTools\AutoIt\AutoIt3.dll</code>。</p></div>
+</td>
+</tr></table>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre><code>C:\&gt; python setup.py install
+%SYSTEMROOT%\system32\regsvr32.exe /S C:\Python27\Lib\site-packages\AutoItLibrary\lib\AutoItX3.dll <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+python C:\Python27\Lib\site-packages\win32com\client\makepy.py C:\Python27\Lib\site-packages\AutoItLibrary\lib\AutoItX3.dll
+Generating to C:\Python27\lib\site-packages\win32com\gen_py\F8937E53-D444-4E71-9275-35B64210CC3Bx0x1x0.py
+Building definitions from type library...
+Generating...
+Importing module
+running install
+running build
+running build_py
+creating build
+creating build\lib
+creating build\lib\AutoItLibrary
+copying src\AutoItLibrary\Counter.py -&gt; build\lib\AutoItLibrary
+copying src\AutoItLibrary\Logger.py -&gt; build\lib\AutoItLibrary
+copying src\AutoItLibrary\__init__.py -&gt; build\lib\AutoItLibrary
+running install_lib
+copying build\lib\AutoItLibrary\Counter.py -&gt; C:\Python27\Lib\site-packages\AutoItLibrary
+copying build\lib\AutoItLibrary\Logger.py -&gt; C:\Python27\Lib\site-packages\AutoItLibrary
+copying build\lib\AutoItLibrary\__init__.py -&gt; C:\Python27\Lib\site-packages\AutoItLibrary
+byte-compiling C:\Python27\Lib\site-packages\AutoItLibrary\Counter.py to Counter.pyc
+byte-compiling C:\Python27\Lib\site-packages\AutoItLibrary\Logger.py to Logger.pyc
+byte-compiling C:\Python27\Lib\site-packages\AutoItLibrary\__init__.py to __init__.pyc
+running install_data
+creating C:\RobotFramework
+creating C:\RobotFramework\Extensions
+creating C:\RobotFramework\Extensions\AutoItLibrary
+copying ReadMe.txt -&gt; C:\RobotFramework\Extensions\AutoItLibrary
+copying COPYRIGHT.txt -&gt; C:\RobotFramework\Extensions\AutoItLibrary
+copying LICENSE.txt -&gt; C:\RobotFramework\Extensions\AutoItLibrary
+copying doc\AutoItLibrary.html -&gt; C:\RobotFramework\Extensions\AutoItLibrary
+copying 3rdPartyTools\AutoIt\Au3Info.exe -&gt; C:\RobotFramework\Extensions\AutoItLibrary <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+copying 3rdPartyTools\AutoIt\AutoItX.chm -&gt; C:\RobotFramework\Extensions\AutoItLibrary
+copying 3rdPartyTools\AutoIt\AutoIt_License.html -&gt; C:\RobotFramework\Extensions\AutoItLibrary
+creating C:\RobotFramework\Extensions\AutoItLibrary\tests
+copying tests\CalculatorGUIMap.py -&gt; C:\RobotFramework\Extensions\AutoItLibrary\tests
+copying tests\__init__.html -&gt; C:\RobotFramework\Extensions\AutoItLibrary\tests
+copying tests\Calculator_Test_Cases.html -&gt; C:\RobotFramework\Extensions\AutoItLibrary\tests
+copying tests\RobotIDE.bat -&gt; C:\RobotFramework\Extensions\AutoItLibrary\tests
+copying tests\RunTests.bat -&gt; C:\RobotFramework\Extensions\AutoItLibrary\tests
+running install_egg_info
+Writing C:\Python27\Lib\site-packages\AutoItLibrary-1.1-py2.7.egg-info</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+註冊 DLL，難怪 Python 可以直接透過 <code>win32com.client.Dispatch("AutoItX3.Control")</code> 取得參照。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+除了 <code>AutoItLibrary' 這個 Python module 之外，也將 `Au3Info.exe</code> 與 <code>AutoItX.chm</code> 等輔助工具安裝到了 <code>C:\RobotFramework\Extensions\AutoItLibrary</code>。
+</td></tr>
+</table></div>
+</div></div>
+</li>
+<li>
+<p>
+安裝 PIL (Python Imaging Library)。
+</p>
+<div class="openblock">
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre><code>C:\&gt; easy_install pil
+Searching for pil
+Reading http://pypi.python.org/simple/pil/
+Reading http://www.pythonware.com/products/pil
+Reading http://effbot.org/downloads/#Imaging
+Reading http://effbot.org/zone/pil-changes-115.htm
+Best match: PIL 1.1.7
+Downloading http://effbot.org/downloads/PIL-1.1.7.win32-py2.7.exe <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+Processing PIL-1.1.7.win32-py2.7.exe
+Image: module references __file__
+creating 'c:\docume~1\admini~1\locals~1\temp\easy_install-ejyb4p\PIL-1.1.7-py2.7-win32.egg' and adding 'c:\docume~1\admini~1\locals~1\temp\easy_install-ejyb4p\PIL-1.1.7-py2.7-win32.egg.tmp' to it
+creating c:\python27\lib\site-packages\PIL-1.1.7-py2.7-win32.egg
+Extracting PIL-1.1.7-py2.7-win32.egg to c:\python27\lib\site-packages
+Adding PIL 1.1.7 to easy-install.pth file
+Installing pilconvert.py script to C:\Python27\Scripts
+Installing pilconvert.pyc script to C:\Python27\Scripts
+Installing pildriver.py script to C:\Python27\Scripts
+Installing pildriver.pyc script to C:\Python27\Scripts
+Installing pilfile.py script to C:\Python27\Scripts
+Installing pilfile.pyc script to C:\Python27\Scripts
+Installing pilfont.py script to C:\Python27\Scripts
+Installing pilfont.pyc script to C:\Python27\Scripts
+Installing pilprint.py script to C:\Python27\Scripts
+Installing pilprint.pyc script to C:\Python27\Scripts
+
+Installed c:\python27\lib\site-packages\pil-1.1.7-py2.7-win32.egg
+Processing dependencies for pil
+Finished processing dependencies for pil</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+EasyInstall 實際上是從官網下載 Windows installer。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>不過這個方法並不適用 64-bit 的環境：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>C:\Users\jeremy_gau&gt;easy_install pil
+Searching for pil
+Reading http://pypi.python.org/simple/pil/
+Reading http://www.pythonware.com/products/pil
+Reading http://effbot.org/downloads/#Imaging
+Reading http://effbot.org/zone/pil-changes-115.htm
+Best match: PIL 1.1.7
+Downloading http://effbot.org/media/downloads/PIL-1.1.7.tar.gz
+Processing PIL-1.1.7.tar.gz
+Running PIL-1.1.7\setup.py -q bdist_egg --dist-dir c:\users\jeremy~1\appdata\local\temp\easy_install-z5aj8t\PIL-1.1.7\egg-dist-tmp-zqosle
+WARNING: '' not a valid package name; please use only.-separated package names in setup.py
+error: Setup script exited with error: Unable to find vcvarsall.bat</code></pre>
+</div></div>
+<div class="paragraph"><p>64-bit 環境的使用者可以到<a href="http://www.lfd.uci.edu/~gohlke/pythonlibs/">這裡</a>下載 64-bit 的 Windows installer。</p></div>
+</div></div>
+</li>
+<li>
+<p>
+用 <code>pybot C:\RobotFramework\Extensions\AutoItLibrary\tests</code> 測試安裝。
+</p>
+<div class="openblock">
+<div class="content">
+<div class="paragraph"><p>如果目前的工作目錄下有多出一支 <code>FAIL_WinWait_1.png</code> 的檔案，就代表 PIL 已經成功地跟 Robot Framework 整合在一起。</p></div>
+</div></div>
+</li>
+</ol></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.pythonware.com/products/pil/">Python Imaging Library (PIL)</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.lfd.uci.edu/~gohlke/pythonlibs/">Unofficial Windows Binaries for Python Extension Packages</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://code.google.com/p/robotframework-autoitlibrary/">AutoIt Library</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://robotframework-autoitlibrary.googlecode.com/svn/tags/robotframework-AutoItLibrary-1.1/doc/AutoItLibrary.html">Library Documentation</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:10:40 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

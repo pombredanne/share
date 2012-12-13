@@ -1,0 +1,159 @@
+= link:../unix-like.html[Unix-like] / link:commands.html[Commands] / `find` =
+:title: [Unix-like][Commands] find
+
+[quote,'http://en.wikipedia.org/wiki/Find[find - Wikipedia&#44; the free encyclopedia]']
+________________________________________________________________________________
+In Unix-like and some other operating systems, `find` is a command-line utility that searches through one or more directory trees of a file system, locates files based on some user-specified criteria and applies a user-specified action on each matched file. The possible search criteria include a pattern to match against the file name or a time range to match against the modification time or access time of the file.
+________________________________________________________________________________
+
+`find` - search for files in a directory hierarchy
+
+ find [-H] [-L] [-P] [-D debugopts] [-Olevel] [path...] [expression]
+
+以 'path...' 為起點（start points；否則以 current directory 為起點），往下尋找符合測試條件（tests）的檔案、並執行相應的動作（action）。
+
+NOTE: 注意 'path...' 在 'expression' 前面，跟一般的用法不太一樣。
+
+'expression' 由下面 3 種元素組成，中間用 operators 串接成起來（預設是 AND 運算），形成更複雜的 expression：
+
+ * options - 會影響所有的 tests。雖然 options 會優先被處理（結果固定是 true），但通常會擺在 expression 的最前面。
+ * tests - 測試檔案的特徵（檔名、路徑、大小、權限等）是否符合條件，結果可能是 true 或 false。
+ * actions - 對符合 tests 條件的檔案進行操作，例如印出檔名路徑、執行另一個 command 等，結果可能是 true 或 false。
+
+常用的 option 有：
+
+ * `-regextype type` - 指定 `-regex` 跟 `-iregex` 預設採用的 reqular expression 語法，其中 'type' 可以是 `emacs`（預設）、`posix-basic`、`posix-extended` 等。
+
+常用的 test 有：（其中 'n' 可以是 `n`、`+n` 或 `-n`，分別表示等於、大於或小於）
+
+ * `-amin n` - 檢查檔案最後存取時間（access time）距離現在有幾分鐘。例如 `-amin -10` 表示 10 分鐘內有存取過。
+ * `-atime n` - 跟 `-amin` 相同，但單位是天（24 hours）。例如 `-atime +1` 表示 2 天前有存取過。
++
+在比對之前，時間會先除以 24，並直接忽略小數的部份（rounding），所以 access time 必須 48+ hours 前，才會符合 `-atime +1` 的條件。
++
+ * `-cmin n` - 跟 `-amin` 相同，但檢查的對象是檔案屬性的變更時間（status change time）。
+ * `-ctime n` - 跟 `-cmin` 相同，但單位是天（24 hours）。
+ * `-mmin n` - 跟 `-amin` 相同，但檢查的對象是檔案內容的變更時間（modification time）。
+ * `-mtime n` - 跟 `-mmin` 相同，但單位是天（24 hours）。
+ * `-size n[cwbkMG]` - 檢查檔案的大小有 'n' 個單位。常用的單位有 `c`（bytes）、`k`（kilobytes = 1024 bytes）、`M`（megabytes） 跟 `G`（gigabytes）等。例如 `-size +2M` 表示大小超過 2M。
+ * `-type c` - 檢查檔案的型態，其中 'c' 可以是 `d`（目錄 directory）、`f`（檔案 regular file）、`l`（symbolic link）等。例如 `-type f` 表示一般的檔案。
+ * `-name pattern` - 檢查檔名本身（不含路徑）是否符合 shell pattern (`*`、`?` 跟 `[]`) ，區分大小寫；不分大小寫可以用 `-iname`。
+ * `-path pattern` - 檢查檔名路徑是否符合 shell pattern ，區分大小寫；不分大小寫可以用 `-ipath`。
+ * `-regex pattern` - 檢查檔名路徑是否符合 regex pattern ，區分大小寫；不分大小寫可以用 `-iregex`。
+
+常用的 action 有：
+
+ * `-exec command ;` - 針對符合條件的檔案執行 'command'，執行目錄是 `find` 執行的位置（start directory）。裡頭可以用 `{}` 置換成以 start points 為首的檔名路徑。
++
+注意 command 以 `;` 做為結尾（所以不能給合多個 commands？），而且 `;` 前面的空白也不能省略，否則會遇到 "missing argument to `-exec'" 的錯誤。
++
+ * `-ok command ;` - 同 `-exec`，但會先詢問要不要執行代換過的 command。
+ * `-execdir command ;` - 同 `-exec`，但執行目錄會切換到該檔案所在的目錄，裡頭一樣可以用 `{}` 置換成找到的檔名，但不含路徑的部份。
+ * `-okdir cmmand ;` - 同 `-execdir`，但會先詢問要不要執行代換過的 command。
+ * `-print` - 印出以 start points 為首的檔名路徑，並在結尾補一個 link:../../text/text-newline.html[newline]。當 'expression' 沒有其他 action 時，預設會用 `-print`。
+ * `-print0` - 跟 `-print` 相同，但結尾是補 NULL。
++
+主要是搭配 link:xargs.html[`xargs -0`] 使用，這樣就不用擔心檔名路徑可能含有 whitespace 或 newline 了。
+
+常用的 operator 有：
+
+ * `( expr )` - expression 預設是由左至右運算，用括號框起來可以提高 precedence。注意 'expr' 兩側的空白不能省略。
+ * `! expr` - NOT 運算。注意 'expr' 前面的空白不能省略。
+ * `expr1 -a expr2` - AND 運算。當 'expr1' 為 false 時，會略過 'expr2' 的檢查。
+ * `expr1 expr2` - 同 `expr1 -a expr2` 做 AND 運算。
+ * `expr1 -o expr2` - OR 運算。當 'expr1' 為 true 時，會略過 'expr2' 的檢查。
+
+--------------------------------------------------------------------------------
+$ pwd
+/tmp/find
+$ tree -a
+.
+|-- dir1
+|   |-- dir2
+|   |   |-- file2
+|   |   `-- .hidden-file2
+|   |-- file1
+|   `-- .hidden-file1
+|-- file0
+`-- .hidden-file0
+$
+$ find -type d <1>
+.
+./dir1
+./dir1/dir2
+$
+$ find dir1 -type f <2>
+dir1/.hidden-file1
+dir1/dir2/file2
+dir1/dir2/.hidden-file2
+dir1/file1
+$
+$ find dir1 -type f -path 'dir1*/file?' <2>
+dir1/dir2/file2
+dir1/file1
+$
+$ find ../find/dir1 -name '*file*' <3>
+../find/dir1/.hidden-file1
+../find/dir1/dir2/file2
+../find/dir1/dir2/.hidden-file2
+../find/dir1/file1
+--------------------------------------------------------------------------------
+<1> 預設以 current diretory (`.`) 為起點，並採用 `-print` 做為 action，印出以 start points 為首的檔名路徑。
+<2> `-path pattern` 裡 'pattern' 的寫法可以參考 `-print` 的輸出。
+<3> 這裡故意將簡單的 `dir1` 寫成 `../find/dir1`，原來 `-print` 只是單純地把 start points 串在前面而已。
+
+--------------------------------------------------------------------------------
+$ find ../find/dir1 -name 'file2' -exec pwd \;     <1>
+/tmp/find
+$ find ../find/dir1 -name 'file2' -exec echo {} \;
+../find/dir1/dir2/file2
+$
+$ find ../find/dir1 -name 'file2' -execdir pwd \;  <2>
+/tmp/find/dir1/dir2
+$ find ../find/dir1 -name 'file2' -execdir echo {} \;
+./file2
+--------------------------------------------------------------------------------
+<1> `-exec` 裡的 `{}` 被代換成以 start points 為首的檔名路徑，執行目錄是 start directory。
+<2> `-execdir` 裡的 `{}` 被代換成相對於所在目錄的檔案路徑。
+
+更複雜的 expression 可以用 operators 來串接：
+
+--------------------------------------------------------------------------------
+$ find -name '*file*'
+./dir1/.hidden-file1
+./dir1/dir2/file2
+./dir1/dir2/.hidden-file2
+./dir1/file1
+./.hidden-file0
+./file0
+$
+$ find -name '*file*' -a -name '*[12]' <1>
+./dir1/.hidden-file1
+./dir1/dir2/file2
+./dir1/dir2/.hidden-file2
+./dir1/file1
+$
+$ find \( -name '*file*' -a -name '*[12]' \) -a \! -name '.*' <2>
+./dir1/dir2/file2
+./dir1/file1
+--------------------------------------------------------------------------------
+<1> 只考慮檔名以 1 或 2 結尾。
+<2> 排除檔名以 `.` 開頭的隱藏檔。
+
+== 延伸閱讀 ==
+
+ * link:../find-files.html[找檔案]
+
+== 參考資料 ==
+
+.文件
+--
+ * http://en.wikipedia.org/wiki/Find[find - Wikipedia, the free encyclopedia]
+ * http://manpages.debian.net/cgi-bin/man.cgi?query=find[find - Debian Hypertext Man Pages]
+--
+
+.其他文件
+--
+ * https://www.linux.com/learn/tutorials/316404-10-tips-for-using-gnu-find[10 Tips for Using GNU Find | Linux.com] (2010-06-07)
+--
+

@@ -1,0 +1,585 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>Shell Scripting in Python</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="python-shell-script.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>Shell Scripting in Python</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="quoteblock">
+<div class="content">
+<div class="paragraph"><p>All you can do with a shell script is make it worse. But since this is Python, you can make it better.</p></div>
+</div>
+<div class="attribution">
+<em><a href="http://neopythonic.blogspot.com/2008/11/overheard.html">Neopythonic: Overheard</a></em><br />
+&#8212; Guido van Rossum
+</div></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>#!/usr/bin/env python <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+import subprocess, sys
+
+cmd = 'ls -l'
+retcode = subprocess.call(cmd, shell=True) <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+if retcode != 0: sys.exit(retcode)</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+Python <a href="http://en.wikipedia.org/wiki/Shebang_%28Unix%29">Shebang</a> Line。這個寫法會比 <code>#!/usr/bin/python</code> 來得好，因為前者會從 <code>$PATH</code> 找出目前採用的 Python interpreter，後者則是寫死絕對路徑。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+<code>subprocess.call()</code> 的回傳值，直接就是 <em>cmd</em> 執行過後的 <a href="http://en.wikipedia.org/wiki/Exit_status">exit status</a>。（要注意在 Windows 下，<code>.bat</code> 的副檔名不能省略，但 <code>.exe</code> 好像就沒這個問題）
+</td></tr>
+</table></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/1352922/why-is-usr-bin-env-python-supposedly-more-correct-than-just-usr-bin-pyt">bash - Why is <em>!/usr/bin/env python</em> supposedly more correct than just <em>!/usr/bin/python</em>? - Stack Overflow</a> (2009-08-30)
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_執行外部程式_或用_python_來寫_shell_scripts">執行外部程式，或用 Python 來寫 Shell Scripts</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>Python 2.4 新增了 <code>subprocess</code> 這個 module，可以用來執行外部程式（也就是 spawn 一個 subprocess 或 child process），它的出現是為了<a href="http://docs.python.org/library/subprocess.html">取代舊有</a>的 module 或 function，包括 <code>os.system()</code>、<code>os.spawn*()</code>、<code>os.popen*()</code>、<code>popen2.*</code> 與 <code>commands.*</code>。</p></div>
+<div class="paragraph"><p>最常用的就是 <code>subprocess.call()</code>，它可以帶參數執行外部程式，等外部程式結束之後再回傳 return code，可以用來判斷執行結果是成功還是失敗：</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>subprocess.call(args, executable=None, shell=False)</code></pre>
+</div></div>
+<div class="paragraph"><p>其中 <em>args</em> 可以傳入 sequence of strings 或單一個 string。注意 <code>subprocess</code> 的某些行為在 Windows 與 Unix 下會有差異：</p></div>
+<div class="listingblock">
+<div class="title">Unix</div>
+<div class="content">
+<pre><code>&gt;&gt;&gt; subprocess.call('echo Hello World')      <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+  File "/usr/lib/python2.6/subprocess.py", line 470, in call
+    return Popen(*popenargs, **kwargs).wait()
+  File "/usr/lib/python2.6/subprocess.py", line 623, in __init__
+    errread, errwrite)
+  File "/usr/lib/python2.6/subprocess.py", line 1141, in _execute_child
+    raise child_exception
+OSError: [Errno 2] No such file or directory <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+&gt;&gt;&gt; subprocess.call(['echo', 'Hello World']) <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+Hello World                                  <img src="../../_asciidoc/images/icons/callouts/4.png" alt="4" />
+0                                            <img src="../../_asciidoc/images/icons/callouts/5.png" alt="5" />
+&gt;&gt;&gt;
+&gt;&gt;&gt; subprocess.call('echo Hello World', shell=True)      <img src="../../_asciidoc/images/icons/callouts/6.png" alt="6" />
+Hello World
+0
+&gt;&gt;&gt; subprocess.call(['echo', 'Hello World'], shell=True) <img src="../../_asciidoc/images/icons/callouts/7.png" alt="7" />
+
+0
+&gt;&gt;&gt; subprocess.call(['echo Hello World', 'shell arguments'], shell=True)
+Hello World
+0</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+<code>shell=False</code> 時（預設），單一個 string 的 <em>args</em> 會被解讀成 executable（就這個例子而言，<code>echo Hello World</code> 這個執行檔並不存在）；這個用法只適用於沒有 argument 的情況。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+要執行的程式不存在時，會丟出 <code>OSError</code>。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+<code>shell=False</code> 時，把 executable 跟 argument 拆開，就可以避開上述的問題。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/4.png" alt="4" /></td><td>
+外部程式的輸出會直接寫到 standard output。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/5.png" alt="5" /></td><td>
+這是外部程式的 return code，可用來判斷執行結果是成功還是失敗。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/6.png" alt="6" /></td><td>
+<code>shell=True</code> 時，<em>executable</em> 預設是 <code>/bin/sh</code>（因此 <em>args</em> 本身或第一個 item 就不會被視為 executable），單一個 string 的 <em>args</em> 會被視為 command string 整個丟給 shell 執行。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/7.png" alt="7" /></td><td>
+<code>shell=True</code> 時，只有第一個 item 會被視為 command string 丟給 shell 執行，但剩下的 item 則當做 shell 的 argument。就這個例子而言，<code>echo</code> 沒有接任何 argument（<code>'Hello World'</code> 是給 shell 用的），因此 standard output 沒有輸出任何東西。
+</td></tr>
+</table></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/important.png" alt="Important" />
+</td>
+<td class="content">
+<div class="title">什麼時候要用 <code>shell=True</code>？又使用 <code>shell=True</code> 時要注意什麼？</div>
+<div class="paragraph"><p>從下面的執行結果來看，使用 <code>shell=False</code> 或 <code>shell=True</code> 並沒有什麼差別：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; subprocess.call(['echo', 'Hello World']) # shell=False
+Hello World
+0
+&gt;&gt;&gt;
+&gt;&gt;&gt; subprocess.call('echo Hello World', shell=True)
+Hello World
+0</code></pre>
+</div></div>
+<div class="paragraph"><p>但像 <code>fg</code> 這類 built-in command，就一定得透過 shell 來執行不可：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; subprocess.call('fg')
+Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+  File "/usr/lib/python2.6/subprocess.py", line 470, in call
+    return Popen(*popenargs, **kwargs).wait()
+  File "/usr/lib/python2.6/subprocess.py", line 623, in __init__
+    errread, errwrite)
+  File "/usr/lib/python2.6/subprocess.py", line 1141, in _execute_child
+    raise child_exception
+OSError: [Errno 2] No such file or directory
+&gt;&gt;&gt; subprocess.call('fg', shell=True)
+fg: 1: No current job
+2</code></pre>
+</div></div>
+<div class="paragraph"><p>上面提到 <code>shell=True</code> 時，<em>args</em> 本身或第一個 item 會被視為 command string 整個丟給 shell 執行。也就是說 <em>args</em> 的寫法要跟平常在 shell prompt 裡輸入指令時一樣，同樣要考慮 quoting 或 backslash escaping 的問題，command substitution、shell parameter expansion 等也都會作用&#8230; 例如：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; subprocess.call(['echo', '`whoami`'])
+`whoami` <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+0
+&gt;&gt;&gt; subprocess.call('echo `whoami`', shell=True)
+jeremy
+0
+&gt;&gt;&gt; subprocess.call('echo $LOGNAME', shell=True)
+jeremy
+0</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+顯然 <code>shell=False</code> 時，command substitution 並不會作用。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>因此透過 <code>shell=True</code> 可以很快地將現有的 shell script 轉成 Python 的版本。不過如果不需要 shell 提供 substitution 或 expansion 的支援的話，採用 <code>shell=False</code> 反而可以省去 quoting 或 backslash escaping 的麻煩。例如：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; subprocess.call("echo I'm a file", shell=True)
+/bin/sh: Syntax error: Unterminated quoted string
+2
+&gt;&gt;&gt; subprocess.call("echo \"I'm a file\"", shell=True)
+I'm file
+0
+&gt;&gt;&gt; subprocess.call(['echo', "I'm a file"])
+I'm file
+0</code></pre>
+</div></div>
+</td>
+</tr></table>
+</div>
+<div class="listingblock">
+<div class="title">Windows</div>
+<div class="content">
+<pre><code>&gt;&gt;&gt; subprocess.call('echo Hello World')                 <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+Hello World
+0
+&gt;&gt;&gt; subprocess.call('echo Hello World', shell=True)     <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+Hello World
+0
+&gt;&gt;&gt; subprocess.call(['echo', 'Hello World'])
+Hello World
+0
+&gt;&gt;&gt; subprocess.call(['echo', 'Hello World'], shell=True) <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+"Hello World"                                            <img src="../../_asciidoc/images/icons/callouts/4.png" alt="4" />
+0
+
+&gt;&gt;&gt; subprocess.call('echo %COMSPEC%')
+%COMSPEC%
+0
+&gt;&gt;&gt; subprocess.call('echo %COMSPEC%', shell=True)        <img src="../../_asciidoc/images/icons/callouts/5.png" alt="5" />
+C:\Windows\system32\cmd.exe
+0
+&gt;&gt;&gt; subprocess.call(['echo', '%COMSPEC%'], shell=True)   <img src="../../_asciidoc/images/icons/callouts/6.png" alt="6" />
+C:\Windows\system32\cmd.exe
+0
+
+&gt;&gt;&gt; subprocess.call(r'c:\Program Files\Java\jre7\bin\java.exe -version') <img src="../../_asciidoc/images/icons/callouts/7.png" alt="7" />
+java version "1.7.0"
+Java(TM) SE Runtime Environment (build 1.7.0-b147)
+Java HotSpot(TM) 64-Bit Server VM (build 21.0-b17, mixed mode)
+0
+&gt;&gt;&gt; subprocess.call(r'c:\Program Files\Java\jre7\bin\java.exe -version', shell=True)
+'c:\Program' is not recognized as an internal or external command, operable program or batch file.
+1
+&gt;&gt;&gt; subprocess.call(r'"c:\Program Files\Java\jre7\bin\java.exe" -version', shell=True) <img src="../../_asciidoc/images/icons/callouts/8.png" alt="8" />
+java version "1.7.0"
+Java(TM) SE Runtime Environment (build 1.7.0-b147)
+Java HotSpot(TM) 64-Bit Server VM (build 21.0-b17, mixed mode)
+0
+
+&gt;&gt;&gt; subprocess.call('del') <img src="../../_asciidoc/images/icons/callouts/9.png" alt="9" />
+Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+  File "C:\Python27\lib\subprocess.py", line 493, in call
+    return Popen(*popenargs, **kwargs).wait()
+  File "C:\Python27\lib\subprocess.py", line 679, in __init__
+    errread, errwrite)
+  File "C:\Python27\lib\subprocess.py", line 893, in _execute_child
+    startupinfo)
+WindowsError: [Error 2] The system cannot find the file specified
+&gt;&gt;&gt; subprocess.call('del', shell=True)
+The syntax of the command is incorrect.
+1</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+<code>shell=False</code> 時，並不會像在 Unix 一樣，將單一個 string 的 <em>args</em> 解讀成 executable。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+<code>shell=True</code> 時，<em>executable</em> 預設是環境變數 <code>COMSPEC</code> 的內容，例如 <code>"C:\Windows\system32\cmd.exe"</code>。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+看起來 <em>args</em> 的型式（單一個 string 或 sequence of strings）或 <code>shell</code> 的值，都對執行結果沒有影響？
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/4.png" alt="4" /></td><td>
+為什麼 Hello World 兩側多了雙引號？
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/5.png" alt="5" /></td><td>
+<code>shell=True</code> 時，environment variable 才會被展開（不論 <em>args</em> 的型式為何）。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/6.png" alt="6" /></td><td>
+簡單歸納一下，<code>subprocess.call()</code> 的行為並不會受 <em>args</em> 的型式影響，但 <code>shell=True</code> 與 <code>shell=False</code> 則有差異。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/7.png" alt="7" /></td><td>
+讓人比較不解的是，為什麼這個例子可以執行，反倒是加了 <code>shell=True</code> 之後才出狀況？
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/8.png" alt="8" /></td><td>
+像平常在 DOS prompt 輸入的一樣，在含有空白字元的路徑兩側加上雙引號即可。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/9.png" alt="9" /></td><td>
+跟在 Unix 一樣，像 <code>del</code>、<code>dir</code> 這類 built-in command，還是得透過 shell 來執行才行。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>從上面的測試結果來看，<code>subprocess.call()</code> 的行為在 Unix 與 Windows 下存在著一些差異。不過下面兩種用法在不同 OS 下的行為是比較一致的：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>subprocess.call(sequence_of_strings)</code> - 將個別的 argument 拆開，不用考慮 quoting 或 backslash escaping 等問題。
+</p>
+</li>
+<li>
+<p>
+<code>subprocess.call(command_string, shell=True)</code> - 其中 <em>command_string</em> 的寫法要跟平常在 shell prompt 裡輸入指令時一樣，同樣要考慮 quoting 或 backslash escaping 的問題。
+</p>
+</li>
+</ul></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">之前曾遇到某個路徑含有空白的自解安裝程式（SFX），用 <code>subprocess.Popen(installer)</code> 執行時會丟出 "[Error 193] %1 is not a valid Win32 application" 的錯誤，改放到不含空白的路徑下就沒事。根據上面的結果，改寫成 <code>subprocess.Popen([installer])</code> 就可以了。</td>
+</tr></table>
+</div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">
+<div class="paragraph"><p>除了 <code>subprocess.call()</code> 之外，另外還有 <code>check_call()</code> 跟 <code>check_output()</code>。</p></div>
+<div class="paragraph"><p><code>check_output()</code> 除了會回傳 output 之外，用法相同跟 <code>call()</code> 一樣。只不過會自動檢查 return code，如果是非零值的話，就會直接丟出 <code>CalledProcessError</code>，可以透過 <code>returncode</code> 屬性取回 return code。例如：（但是要執行的程式不存在時，還是會丟出 <code>OSError</code>）</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; subprocess.call('rm')
+rm: missing operand
+Try `rm --help' for more information.
+1
+&gt;&gt;&gt; try:
+...     subprocess.check_call('rm')
+... except Exception as e:
+...     print 'error code: %i' % e.returncode
+...
+rm: missing operand <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+Try `rm --help' for more information.
+error code: 1
+
+&gt;&gt;&gt; output = subprocess.check_output('uname -a', shell=True)
+&gt;&gt;&gt; type(output), output
+(&lt;type 'str'&gt;, 'Linux jeremy-desktop 2.6.38-13-generic #52-Ubuntu SMP Tue Nov 8 16:48:07 UTC 2011 i686 i686 i386 GNU/Linux\n')</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+發生錯誤時，外部程式的輸出還是會直接寫到 standard output。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>用 Python 來寫 shell script 時，<code>check_call()</code> 跟 <code>check_output()</code> 是簡化 error handling 的好工具（類似 shell script 裡 <code>set -o errexit</code> 的效果），省去要一直檢查 return code 的麻煩。</p></div>
+<div class="paragraph"><p>不過要注意 <code>subprocess.check_output()</code> 是 Python 2.7 才有的功能，否則就得改用 <code>Popen</code> 跟 <code>communicate()</code> 了。</p></div>
+<div class="listingblock">
+<div class="title"><code>subprocess.check_output()</code> 的原始碼</div>
+<div class="content">
+<pre><code>def check_output(*popenargs, **kwargs):
+    if 'stdout' in kwargs:
+        raise ValueError('stdout argument not allowed, it will be overridden.')
+    process = Popen(stdout=PIPE, *popenargs, **kwargs)
+    output, unused_err = process.communicate()
+    retcode = process.poll()
+    if retcode:
+        cmd = kwargs.get("args")
+        if cmd is None:
+            cmd = popenargs[0]
+        raise CalledProcessError(retcode, cmd, output=output)
+    return output</code></pre>
+</div></div>
+</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_非同步_asynchronously_執行外部程式">非同步（asynchronously）執行外部程式</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>上面的 <code>subprocess.call()</code> 雖然好用，不過控制權必須等外部程式結束之後才會回到 Python 程式。如果要非同步執行外部程式，或想在執行期與 child process 溝通，就必須直接使用 <code>subprocess.call()</code> 底層的 <code>subprocess.Pope</code> 才行。</p></div>
+<div class="paragraph"><p>事實上，<code>subprocess.call()</code> 的參數與 <code>Popen</code> 的 constructor 完全一樣，只是 <code>subprocess.call()</code> 內部在取得 <code>Popen</code> 的 instance 之後（可以將它視為與 child process 溝通的介面），會呼叫 <code>Popen.wait()</code> 等待外部程式執行結束，然後傳回 return code 而已。</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>process = subprocess.Popen(args, executable=None, shell=False)</code></pre>
+</div></div>
+<div class="paragraph"><p>在 Ubuntu 下，以 GNOME calculator 做簡單的測試：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; import subprocess
+&gt;&gt;&gt; process = subprocess.Popen('gcalctool') <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+&gt;&gt;&gt; process.wait() <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+0
+&gt;&gt;&gt; process = subprocess.Popen('gcalctool')
+&gt;&gt;&gt; process.poll() <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+&gt;&gt;&gt; process.poll() <img src="../../_asciidoc/images/icons/callouts/4.png" alt="4" />
+0</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+叫出計算機。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+程式會卡在這裡，直到手動將計算機關掉為止，才會有 return code 傳回來。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+重新開啟計算機，呼叫 <code>process.poll()</code> 傳回 <code>None</code>，表示還在執行。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/4.png" alt="4" /></td><td>
+將計算機關掉後，再呼叫 <code>process.poll()</code> 一次，傳回 return code。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>整理一下 <code>Popen</code> 幾個跟 child process 互動的方法：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>Popen.poll()</code> - 檢查 child process 是否還在執行。注意這個方法並不會回傳 <code>True</code>/<code>False</code>，而是用 <code>None</code> 來表示程式還在執行，如果程式已經結束則會傳回 return code。
+</p>
+</li>
+<li>
+<p>
+<code>Popen.wait()</code> - 等 child process 結束之後，才傳回 return code，並將控制權交回 Python。
+</p>
+</li>
+<li>
+<p>
+<code>Popen.communicate(input=None)</code> - 主要用來取回 stdout 跟 stderr 的輸出。
+</p>
+</li>
+</ul></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; import subprocess
+&gt;&gt;&gt; from subprocess import PIPE
+
+&gt;&gt;&gt; process = subprocess.Popen('uname -a', shell=True)
+&gt;&gt;&gt; Linux jeremy-laptop 2.6.35-30-generic #61-Ubuntu SMP Tue Oct 11 17:52:57 UTC 2011 x86_64 GNU/Linux <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+&gt;&gt;&gt; process.communicate()
+(None, None)
+
+&gt;&gt;&gt; process = subprocess.Popen('uname -a', shell=True, stdout=PIPE, stderr=PIPE)
+&gt;&gt;&gt; process.communicate()
+('Linux jeremy-laptop 2.6.35-30-generic #61-Ubuntu SMP Tue Oct 11 17:52:57 UTC 2011 x86_64 GNU/Linux\n', '') <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+&gt;&gt;&gt; process.returncode
+0</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+必須搭配 <code>stdout=PIPE</code> 跟 <code>stderr=PIPE</code> 使用（轉向到 Python 內部），否則會直接輸出到 stdout 或 stderr。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+傳回 2-tuple <code>(stdoutdata, stderrdata)</code>。
+</td></tr>
+</table></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/636561/how-can-i-run-an-external-command-asynchronously-from-python">asynchronous - How can I run an external command asynchronously from Python? - Stack Overflow</a> (2009-03-11)
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.python.org/dev/peps/pep-3145/">PEP 3145&#8201;&#8212;&#8201;Asynchronous I/O For subprocess.Popen</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_常見問題">常見問題</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_code_msi_code_不是可執行檔"><code>.msi</code> 不是可執行檔？</h3>
+<div class="paragraph"><p><code>.msi</code> 不能直接用 <code>subprocess</code> 執行：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; import subprocess
+&gt;&gt;&gt; subprocess.Popen(r'C:\tmp\installer.msi')
+Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+  File "C:\Python27\lib\subprocess.py", line 679, in __init__
+    errread, errwrite)
+  File "C:\Python27\lib\subprocess.py", line 893, in _execute_child
+    startupinfo)
+WindowsError: [Error 193] %1 is not a valid Win32 application</code></pre>
+</div></div>
+<div class="paragraph"><p>問題就出在 <code>.msi</code> 本身不是一個可執行檔，必須要透過 <code>msiexec</code> 執行：</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>msiexec /i installer.msi</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; import subprocess
+&gt;&gt;&gt; subprocess.Popen(['msiexec', '/i', r'C:\tmp\installer.msi'])</code></pre>
+</div></div>
+</div>
+<div class="sect2">
+<h3 id="_檔案持續被_child_process_鎖住">檔案持續被 child process 鎖住</h3>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; import subprocess, sys
+&gt;&gt;&gt; f = open(r'c:\tmp\test.txt', 'w')
+&gt;&gt;&gt; subprocess.Popen('notepad.exe')
+&lt;subprocess.Popen object at 0x00AAC790&gt;
+&gt;&gt;&gt; sys.exit(0)</code></pre>
+</div></div>
+<div class="paragraph"><p>Python 程式結束時，<code>c:\tmp\test.txt</code> 繼續被 <code>notepad.exe</code> 鎖住，等 <code>notepad.exe</code> 關掉之後，這個 lock 才會解除。</p></div>
+<div class="paragraph"><p><span class="image">
+<img src="python-shell-script/subprocess_lock.png" alt="python-shell-script/subprocess_lock.png" />
+</span></p></div>
+<div class="paragraph"><p>要避免這個問題，可以搭配 <code>close_fds=True</code> 來使用。</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>process = subprocess.Popen('notepad.exe', close_fds=True)
+#retcode = process.wait()</code></pre>
+</div></div>
+<div class="paragraph"><p>關於 <code>close_fds</code>，官方文件是這麼說的：</p></div>
+<div class="quoteblock">
+<div class="content">
+<div class="paragraph"><p>on Windows, if close_fds is true then no handles will be inherited by the child process. Note that on Windows, you cannot set close_fds to true and also redirect the standard handles by setting stdin, stdout or stderr.</p></div>
+</div>
+<div class="attribution">
+</div></div>
+<div class="paragraph"><p>雖然看不太懂它在寫什麼，但大概是單純執行外部程式，而不把它當做是一個 child process 吧？</p></div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://docs.python.org/library/subprocess.html">subprocess — Subprocess management — Python documentation</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.python.org/dev/peps/pep-0324/">PEP 324&#8201;&#8212;&#8201;subprocess - New process module</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://neopythonic.blogspot.com/2008/11/overheard.html">Neopythonic: Overheard</a> (2008-11-14)
+</p>
+</li>
+<li>
+<p>
+<a href="http://magazine.redhat.com/2008/02/07/python-for-bash-scripters-a-well-kept-secret/">Red Hat Magazine | Python for Bash scripters: A well-kept secret</a> (2008-02-07)
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:14:20 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

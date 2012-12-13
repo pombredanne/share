@@ -1,0 +1,1941 @@
+= The Spring Framework - Reference Documentation 2.5.x =
+http://static.springsource.org/spring/docs/2.5.x/reference/index.html
+<<TableOfContents>>
+
+== Preface ==
+http://static.springsource.org/spring/docs/2.5.x/reference/preface.html @2009/11/26
+
+Developing software applications is hard enough even with good tools and technologies. Implementing applications using platforms which promise everything but turn out to be heavy-weight, hard to control and not very efficient during the development cycle makes it even harder. (暗諷 J2EE Server 這隻怪獸) __Spring provides a light-weight solution for building ''enterprise-ready'' applications, while still supporting the possibility of using declarative transaction management, remote access to your logic using RMI or web services, and various options for persisting your data to a database. Spring provides a full-featured MVC framework, and transparent ways of integrating AOP into your software.__
+
+Spring could potentially be a one-stop-shop for all your enterprise applications; however, __Spring is modular, allowing you to use just those parts of it that you need, without having to bring in the rest.__ You can use the IoC container, with Struts on top, but you could also choose to use just the Hibernate integration code or the JDBC abstraction layer. __Spring has been (and continues to be) designed to be ''non-intrusive'', meaning dependencies on the framework itself are generally none (or absolutely minimal, depending on the area of use).__
+
+This document provides a reference guide to Spring's features. Since this document is still to be considered very much work-in-progress, if you have any requests or comments, please post them on the user mailing list or on the support forums at http://forum.springframework.org/.
+
+Before we go on, a few words of gratitude(感謝) are due to Christian Bauer (of the Hibernate team), __who prepared and adapted the !DocBook-XSL software in order to be able to create Hibernate's reference guide, thus also allowing us to create this one.__ Also thanks to Russell Healy for doing an extensive and valuable review of some of the material.
+
+== Chapter 1. Introduction ==
+http://static.springsource.org/spring/docs/2.5.x/reference/introduction.html @2009/08/06
+
+Java applications (a loose term which runs the gamut(整個範圍) from constrained applets to full-fledged n-tier server-side enterprise applications) typically are composed of a number of objects that collaborate with one another to form the application proper. __The objects in an application can thus be said to have dependencies between themselves.__
+
+The Java language and platform provides a wealth of functionality for architecting and building applications, ranging all the way from the very basic building blocks of primitive types and classes (and the means to define new classes), to rich full-featured application servers and web frameworks. __'''One area that is decidedly(無疑的) conspicuous(顯而易見的) by its absence is any means of taking the basic building blocks and composing them into a coherent(前後連貫的) whole;'''__ this area has typically been left to the purvey(供應) of the architects and developers tasked with building an application (or applications). Now to be fair, there are a number of design patterns devoted to the business of composing the various classes and object instances that makeup an all-singing, all-dancing application. Design patterns such as Factory, Abstract Factory, Builder, Decorator, and Service Locator (to name but a few) have widespread recognition and acceptance within the software development industry (presumably(或許) that is why these patterns have been formalized as patterns in the first place). This is all very well, but these patterns are just that: best practices given a name, typically together with a description of what the pattern does, where the pattern is typically best applied, the problems that the application of the pattern addresses, and so forth. __Notice that the last paragraph used the phrase “... a description  of what the pattern does...”; pattern books and wikis are typically listings of such formalized best practice that you can certainly take away, mull over(琢磨), and then implement yourself in your application. (我們要的是一個可以直接拿來解決問題的東西, 而不是一堆理論...)__
+
+__The ''IoC component'' of the Spring Framework (IoC 只是 Spring 的一小部份而已) addresses the enterprise concern of taking the classes, objects, and services that are to compose an application, by providing a formalized means of composing these various disparate(完全不同的) components into a fully working application ready for use. The Spring Framework takes best practices that have been proven over the years in numerous applications and formalized as design patterns, and actually '''codifies(整理) these patterns as first class objects that you as an architect and developer can take away and integrate into your own application(s).'''__ This is a Very Good Thing Indeed as attested(經檢驗證明無菌的) to by the numerous organizations and institutions that have used the Spring Framework to engineer robust, maintainable applications.
+
+'''Background'''
+
+__In early 2004, Martin Fowler asked the readers of his site: '''when talking about Inversion of Control: “the question is, what aspect of control are [they] inverting(反相的; 因為 IoC 本身並沒有點出 "dependency" 要被反向注入)?”.''' Fowler then suggested renaming the principle (or at least giving it a more self-explanatory name), and started to use the term ''Dependency Injection''. His article then continued to explain the ideas underpinning(支撐) the Inversion of Control (IoC) and Dependency Injection (DI) principle.__
+
+If you need a decent insight into IoC and DI, please do refer to said article: http://martinfowler.com/articles/injection.html.
+
+=== 1.1. Overview ===
+
+The Spring Framework contains a lot of features, which are well-organized in six modules shown in the diagram below. This chapter discusses each of the modules in turn.
+
+{{attachment:spring-overview.png}} <<BR>> Overview of the Spring Framework
+
+__The Core package (`spring-core.jar`) is the most fundamental part of the framework and provides the IoC and Dependency Injection features. The basic concept here is the `BeanFactory`, which provides a sophisticated implementation of the ''factory pattern'' which '''removes the need for ''programmatic singletons'' and allows you to decouple the configuration and specification of dependencies from your actual program logic. (著重在 object construction 的部份, 當然也包括 dependency 的處理...)'''__
+
+__The Context package (`spring-context.jar`, `spring-context-support.jar`) build on the solid base provided by the Core package: '''it provides a way to access objects in a ''framework-style manner'' in a fashion somewhat reminiscent(使人聯想到) of a JNDI-registry. (這樣是好還是不好?)''' The context package inherits its features from the beans package (`spring-beans.jar`) and adds support for internationalization (I18N) (using for example resource bundles), ''event-propagation'', resource-loading, and the ''transparent creation of contexts'' by, for example, a servlet container.__
+
+::: 底下還沒有重新整理過
+
+__The DAO package provides a JDBC-abstraction layer that removes the need to do tedious JDBC coding and parsing of database-vendor specific error codes (為什麼有這個必要[?]). Also, '''the JDBC package (`spring-jdbc.jar`) provides a way to do programmatic as well as declarative transaction management, not only for classes implementing special interfaces, but for all your POJOs (plain old Java objects; 別忘了 ORM 其實也是架構在 JDBC 之上的).'''__
+
+The ORM package (`spring-orm.jar`) provides integration layers for popular object-relational mapping APIs, including JPA, JDO, Hibernate, and iBatis. Using the ORM package you can use all those O/R-mappers in combination with all the other features Spring offers, such as the simple declarative transaction management feature mentioned previously.
+
+__Spring's AOP package (`spring-aop.jar`) provides an AOP Alliance-compliant aspect-oriented programming implementation allowing you to define, for example, method-interceptors and pointcuts[?] to '''cleanly decouple code implementing functionality that should logically speaking be separated.''' Using ''source-level metadata'' functionality you can also incorporate all kinds of behavioral information into your code, in a manner similar to that of ''.NET attributes''.__
+
+__Spring's Web package (`spring-web.jar`) provides basic web-oriented integration features, such as multipart file-upload functionality, the initialization of the IoC container using servlet listeners (為什麼不透過 servlet, 因為要與多個 web framework 共存[?]) and a web-oriented application context. When using Spring together with WebWork or Struts, this is the package to integrate with. (相當然Spring Web MVC 也是架構在這之上, 由於往下切出了 Spring Web 這一塊, 因此可以整合不同的 web frameworks)__
+
+Spring's MVC package (`spring-webmvc.jar`) provides a Model-View-Controller (MVC) implementation for web-applications. Spring's MVC framework is not just any old implementation; it provides a clean separation between ''domain model'' code and ''web forms'', and allows you to use all the other features of the Spring Framework.
+
+=== 1.2. Usage scenarios ===
+
+With the building blocks described above you can use Spring in all sorts of scenarios, from applets up to fully-fledged enterprise applications using Spring's transaction management functionality and web framework integration.
+
+{{attachment:full.gif}} <<BR>> Typical full-fledged Spring web application (Using Spring Web MVC)
+
+__'''By using Spring's ''declarative transaction'' management features the web application is fully transactional, just as it would be when using container managed transactions as provided by Enterprise JavaBeans. All your custom business logic can be implemented using simple POJOs, managed by Spring's IoC container.''' Additional services include support for sending email, and validation that is independent of the web layer enabling you to choose where to execute validation rules (這麼做有什麼好處? 跟 rule engine 有關嗎[?]). Spring's ORM support is integrated with JPA, Hibernate, JDO and iBatis; for example, when using Hibernate, you can continue to use your existing mapping files and standard Hibernate `SessionFactory` configuration. '''''Form controllers'' seamlessly integrate the web-layer with the domain model, removing the need for `ActionForm`s or other classes that transform HTTP parameters to values for your domain model. [...]'''__
+
+{{attachment:thirdparty-web.gif}} <<BR>> Spring middle-tier using a third-party web framework (同樣是架構在 Spring Web 之上)
+
+Sometimes the current circumstances do not allow you to completely switch to a different framework. The Spring Framework does not force you to use everything within it; it is not an all-or-nothing solution. __Existing front-ends built using WebWork, Struts, Tapestry, or other UI frameworks can be integrated perfectly well with a Spring-based middle-tier, allowing you to use the transaction features that Spring offers. '''The only thing you need to do is wire up your business logic using an `ApplicationContext` and integrate your web layer using a `WebApplicationContext`. [...]'''__
+
+{{attachment:remoting.gif}} <<BR>> Remoting usage scenario
+
+__'''When you need to access existing code via web services, you can use Spring's Hessian-, Burlap-, Rmi- or `JaxRpcProxyFactory` classes. (這些東西要如何與 Java Web Services 的標準接軌[?]) Enabling remote access to existing applications suddenly is not that hard anymore.'''__
+
+{{attachment:ejb.gif}} <<BR>> EJBs - Wrapping existing POJOs
+
+__The Spring Framework also provides an access- and abstraction- layer for Enterprise JavaBeans, enabling you to '''reuse your existing POJOs and wrap them in Stateless Session Beans, [...]''' for use in scalable, failsafe(失效安全) web applications that might need declarative security.__
+
+== Chapter 2. What's new in Spring 2.0 and 2.5? ==
+http://static.springsource.org/spring/docs/2.5.x/reference/new-in-2.html @2009/08/06
+
+::: 底下還沒有重新整理過
+
+=== 2.1. Introduction ===
+
+If you have been using the Spring Framework for some time, you will be aware that Spring has undergone(經歷) two major revisions: Spring 2.0, released in October 2006, and Spring 2.5, released in November 2007.
+
+This chapter is a guide to the new and improved features of Spring 2.0 and 2.5. It is intended to provide a high-level summary so that seasoned Spring architects and developers can become immediately familiar with the new Spring 2.x functionality. For more in-depth information on the features, please refer to the corresponding sections hyperlinked from within this chapter.
+
+ '''Java SE and Java EE Support'''
+
+ .The Spring Framework continues to be compatible with all versions of Java since (and including) Java 1.4.2. This means that Java 1.4.2, Java 5 and Java 6 are supported, although some advanced functionality of the Spring Framework will not be available to you if you are committed to using Java 1.4.2. __Spring 2.5 introduces dedicated support for Java 6, after Spring 2.0's in-depth support for Java 5 throughout the framework.__
+
+ .Furthermore, __Spring remains compatible with J2EE 1.3 and higher, while at the same time introducing dedicated support for Java EE 5.__ This means that Spring can be consistently used on application servers such as BEA WebLogic 8.1, 9.0, 9.2 and 10, IBM WebSphere 5.1, 6.0 and 6.1, Oracle OC4J 10.1.3 and 11, JBoss 3.2, 4.0 and 4.2, as well as Tomcat 4.1, 5.0, 5.5 and 6.0, Jetty 4.2, 5.1 and 6.1, Resin 2.1, 3.0 and 3.1 and GlassFish V1 and V2.
+
+:::
+
+== Part I. Core Technologies ==
+http://static.springsource.org/spring/docs/2.5.x/reference/spring-core.html @2009/08/06
+
+This initial part of the reference documentation covers all of those technologies that are absolutely integral to the Spring Framework.
+
+__Foremost(最重要的) amongst these is the Spring Framework's Inversion of Control (IoC) container. '''A thorough(徹底的) treatment(處理方式) of the Spring Framework's IoC container is closely followed by comprehensive(全面的) coverage of Spring's Aspect-Oriented Programming (AOP) technologies. (這裡的 "follwed by" 意指 AOP 與最底層的 IoC 一樣, 跟架構的每一個環節都有關係?)''' The Spring Framework has its own AOP framework, which is conceptually easy to understand, and which successfully addresses the 80% sweet spot(http://qualitytaiwan.atwiki.com/page/SWEET%20SPOT[需求等之要害]) of AOP requirements in Java enterprise programming. (剩下的那 20% 就得靠 AspectJ 了)__
+
+Coverage of Spring's integration with AspectJ (currently the richest - in terms of features - and certainly most mature AOP implementation in the Java enterprise space) is also provided.
+
+__Finally, the adoption of the test-driven-development (TDD) approach to software development is certainly advocated(提倡) by the Spring team, and so coverage of Spring's support for ''integration testing'' is covered (alongside best practices for unit testing). '''The Spring team have found that the correct use of IoC certainly does make both unit and integration testing easier (in that the presence of setter methods and appropriate constructors on classes makes them easier to wire together on a test without having to set up service locator registries and suchlike)...'''__ the chapter dedicated solely to testing will hopefully convince(使信服) you of this as well.
+
+ * Chapter 3, The IoC container
+ * Chapter 4, Resources
+ * Chapter 5, Validation, Data-binding, the !BeanWrapper, and !PropertyEditors
+ * Chapter 6, Aspect Oriented Programming with Spring
+ * Chapter 7, Spring AOP APIs
+ * Chapter 8, Testing
+
+== Chapter 3. The IoC container ==
+http://static.springsource.org/spring/docs/2.5.x/reference/beans.html @2009/08/06
+
+=== 3.1. Introduction ===
+
+This chapter covers the Spring Framework's implementation of the Inversion of Control (IoC) principle.
+
+The `org.springframework.beans` and `org.springframework.context` packages provide the basis for the Spring Framework's IoC container. The `BeanFactory` interface provides an advanced configuration mechanism capable of managing objects of any nature. The `ApplicationContext` interface builds on top of the `BeanFactory` (it is a sub-interface) and adds other functionality such as easier integration with Spring's AOP features, message resource handling (for use in internationalization), event propagation, and ''application-layer specific'' contexts such as the `WebApplicationContext` for use in web applications.
+
+__In short, the `BeanFactory` provides the ''configuration framework'' and basic functionality, while the `ApplicationContext` adds more ''enterprise-centric'' functionality to it.__ The `ApplicationContext` is a complete superset of the `BeanFactory`, and any description of `BeanFactory` capabilities and behavior is to be considered to apply to the `ApplicationContext` as well.
+
+This chapter is divided into two parts, with the first part covering the basic principles that apply to both the `BeanFactory` and `ApplicationContext`, and with the second part covering those features that apply only to the `ApplicationContext` interface.
+
+'''`BeanFactory` or `ApplicationContext`?'''
+
+Users are sometimes unsure whether a `BeanFactory` or an `ApplicationContext` is best suited for use in a particular situation. A `BeanFactory` pretty much just instantiates and configures beans. An `ApplicationContext` also does that, and it provides the supporting infrastructure to enable lots of enterprise-specific features such as transactions and AOP.
+
+__'''In short, favor(寧可選擇...) the use of an `ApplicationContext`. (難怪下面第一個範例 - 3.2.2. Instantiating a container - 就採用 `ApplicationContext`)'''__
+
+(For the specific details behind this recommendation, see http://static.springsource.org/spring/docs/2.5.x/reference/beans.html#context-introduction-ctx-vs-beanfactory[this section].)
+
+=== 3.2. Basics - containers and beans ===
+
+__In Spring, those objects that form the backbone of your application and that are managed by the Spring IoC container  are referred to as ''beans''. '''A bean is simply an object that is instantiated, assembled and otherwise managed by a Spring IoC container (這裡的 "otherwise" 是指從別的地方取回, 而不是由自己生成的部份);''' other than that, there is nothing special about a bean (it is in all other respects one of probably many objects in your application). '''These beans, and the dependencies between them, are reflected in the ''configuration metadata'' used by a container.'''__
+
+'''Why... bean?'''
+
+__.The motivation for using the name 'bean', as opposed to 'component' or 'object' is rooted(根深蒂固的) in the origins of the Spring Framework itself '''(it arose(崛起) partly as a response to the complexity of Enterprise !JavaBeans)'''.__
+
+==== 3.2.1. The container ====
+
+The `org.springframework.beans.factory.BeanFactory` is the actual representation of the Spring IoC container that is responsible for containing and otherwise managing the aforementioned beans.
+
+__The `BeanFactory` interface is the central IoC container interface in Spring. Its responsibilities include instantiating or ''sourcing''(自外取得; 下面 "registration of existing objects" 有提到類似的狀況) application objects, configuring such objects, and assembling the dependencies between these objects.__
+
+There are a number of implementations of the `BeanFactory` interface that come supplied straight out-of-the-box with Spring. The most commonly used `BeanFactory` implementation is the `XmlBeanFactory` class. __This implementation allows you to express the objects that compose your application, and the doubtless(無疑地) rich ''interdependencies'' between such objects, in terms of XML.__ The `XmlBeanFactory` takes this XML configuration metadata and uses it to create a fully configured system or application.
+
+{{attachment:container-magic.png}} <<BR>> The Spring IoC container
+
+===== 3.2.1.1. Configuration metadata =====
+
+__As can be seen in the above image, the Spring IoC container consumes some form of configuration metadata; (XML 只是組態方式的一種而已) '''this configuration metadata is nothing more than how you (as an application developer) inform the Spring container as to how to “instantiate, configure, and assemble [the objects in your application]”. (完全就是 Factory Pattern 的體現)''' This configuration metadata is typically supplied in a simple and intuitive XML format. When using XML-based configuration metadata, you write bean definitions for those beans that you want the Spring IoC container to manage, and then let the container do its stuff.__
+
+ '''Note'''
+
+ .XML-based metadata is by far the most commonly used form of configuration metadata. It is not however the only form of configuration metadata that is allowed. __The Spring IoC container itself is totally decoupled from the format in which this configuration metadata is actually written.__ The XML-based configuration metadata format really is simple though, and so the majority of this chapter will use the XML format to convey key concepts and features of the Spring IoC container.
+
+ .You can find details of another form of metadata that the Spring container can consume in the section entitled Section 3.11, “Annotation-based configuration”
+
+__'''In the vast majority of application scenarios, explicit user code is not required to instantiate one or more instances of a Spring IoC container. (通常只要在 entry-point 安插一個 container 即可, 就像 Tapestry 這麼大的架構, 也不過在 `ApplicationServlet` 與 `PortletServlet` 兩個地方用到而已...)''' For example, in a web application scenario, a simple eight (or so) lines of boilerplate(樣板文件) J2EE web descriptor XML in the `web.xml` file of the application will typically suffice__ (see Section 3.8.5, “Convenient !ApplicationContext instantiation for web applications”).
+
+Spring configuration consists of at least one bean definition that the container must manage, but typically there will be more than one bean definition. When using XML-based configuration metadata, these beans are configured as `<bean/>` elements inside a top-level `<beans/>` element.
+
+__These bean definitions correspond to the actual objects that make up your application. Typically you will have bean definitions for your ''service layer objects'', your data access objects (DAOs), presentation objects such as Struts Action instances, infrastructure objects such as Hibernate !SessionFactories, JMS Queues, and so forth. '''Typically one does not configure fine-grained domain objects in the container, because it is usually the responsibility of DAOs and business logic to create/load domain objects. (但 domain object 本身也會有相依性要注入, 讓如何降低這份工作的負擔[?])__
+
+Find below an example of the basic structure of XML-based configuration metadata.
+
+ {{{
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.springframework.org/schema/beans
+  http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+
+  <bean id="..." class="...">
+    <!-- collaborators and configuration for this bean go here -->
+  </bean>
+
+  <bean id="..." class="...">
+    <!-- collaborators and configuration for this bean go here -->
+  </bean>
+
+  <!-- more bean definitions go here -->
+</beans>
+ }}}
+
+==== 3.2.2. Instantiating a container ====
+
+Instantiating a Spring IoC container is straightforward.
+
+ {{{
+ApplicationContext context = new ClassPathXmlApplicationContext(new String[] {"services.xml", "daos.xml"});
+
+// an ApplicationContext is also a BeanFactory (via inheritance)
+BeanFactory factory = context;
+ }}}
+
+'''Resources'''
+
+__The location path or paths supplied to an `ApplicationContext` constructor are actually ''resource strings'' (相對於哪裡的位置?)__ that allow the container to load configuration metadata from a variety of external resources such as the local file system, from the Java `CLASSPATH`, etc.
+
+Once you have learned about Spring's IoC container, you may wish to learn a little more about Spring's `Resource` abstraction, as described in the chapter entitled Chapter 4, Resources.
+
+===== 3.2.2.1. Composing XML-based configuration metadata =====
+
+__'''It can often be useful to split up container definitions into multiple XML files.''' One way to then load an application context which is configured from all these XML fragments is to use the application context constructor which takes multiple `Resource` locations. With a bean factory, a bean definition reader can be used multiple times to read definitions from each file in turn. (這一點是 !HiveMind 辦不到的; 這種 "不需要一次完成" 的設計在 Spring 裡到處可見...)__
+
+__Generally, the Spring team prefers the above approach, since '''it keeps container configuration files unaware of the fact that they are being combined with others. (下面 `<import/>` 的用法, 則會造成 configuration file 間的相依性被寫死)''' An alternate approach is to use one or more occurrences of the `<import/>` element to load bean definitions from another file (or files).__ Let's look at a sample:
+
+ {{{
+<beans>
+  <import resource="services.xml"/>
+  <import resource="resources/messageSource.xml"/>
+  <import resource="/resources/themeSource.xml"/>
+
+  <bean id="bean1" class="..."/>
+  <bean id="bean2" class="..."/>
+</beans>
+ }}}
+
+In this example, ''external'' bean definitions are being loaded from 3 files, `services.xml`, `messageSource.xml`, and `themeSource.xml`. __All location paths are considered relative to the definition file doing the importing, (即使加了 leading slash 也一樣會被視為 relative path!!)__ so `services.xml` in this case must be in the same directory or classpath location as the file doing the importing, while `messageSource.xml` and `themeSource.xml` must be in a resources location below the location of the importing file. __'''As you can see, a leading slash is actually ignored, but given that these are considered relative paths (相對於整個 classpath 的根), it is probably better form not to use the slash at all.''' The contents of the files being imported must be valid XML bean definition files according to the Spring Schema or DTD, including the top level `<beans/>` element.__
+
+'''Note'''
+
+It is possible to reference files in parent directories using a relative "`../`" path. However, this is not recommended because it creates a dependency on a file that is outside the current application. This is in particular not recommended for "`classpath:`" URLs (e.g. "`classpath:../services.xml`") where the runtime resolution process will pick the "nearest" classpath root and then look into its parent directory. This is fragile(脆弱的) since classpath configuration changes may lead to a different directory being picked.[?]
+
+__Note that you can always use fully qualified resource locations instead of relative paths: e.g. "`file:C:/config/services.xml`" or "`classpath:/config/services.xml`". However, be aware that you are coupling your application's configuration to specific absolute locations then. '''It is generally preferable to keep an indirection(迂回) for such absolute locations, e.g. through "`${...}`" placeholders that are resolved against JVM system properties at runtime.'''__
+
+==== 3.2.3. The beans ====
+
+A Spring IoC container manages one or more beans. These beans are created using the configuration metadata that has been supplied to the container (typically in the form of XML `<bean/>` definitions).
+
+Within the container itself, these bean definitions are represented as `BeanDefinition` objects, which contain (among other information) the following metadata:
+
+ * a package-qualified class name: typically this is the actual implementation class of the bean being defined. (可以是 interface 嗎[?])
+
+ * __bean ''behavioral'' configuration elements, which state how the bean should behave in the container (scope, lifecycle callbacks, and so forth).__
+
+ * __references to other beans which are needed for the bean to do its work; these references are also called ''collaborators'' or dependencies.__
+
+ * other configuration settings to set in the newly created object. An example would be the number of connections to use in a bean that manages a connection pool, or the size limit of the pool.
+
+The concepts listed above directly translate to a set of properties that each bean definition consists of. Some of these properties are listed below, along with a link to further documentation about each of them.
+
+Table 3.1. The bean definition
+
+|| Feature || Explained in... ||
+|| class || Section 3.2.3.2, “Instantiating beans” ||
+|| name || Section 3.2.3.1, “Naming beans” ||
+|| scope || Section 3.4, “Bean scopes” ||
+|| constructor arguments || Section 3.3.1, “Injecting dependencies” ||
+|| properties || Section 3.3.1, “Injecting dependencies” ||
+|| autowiring mode || Section 3.3.5, “Autowiring collaborators” ||
+|| dependency checking mode || Section 3.3.6, “Checking for dependencies” ||
+|| lazy-initialization mode || Section 3.3.4, “Lazily-instantiated beans” ||
+|| initialization method || Section 3.5.1.1, “Initialization callbacks” ||
+|| destruction method || Section 3.5.1.2, “Destruction callbacks” ||
+
+__Besides bean definitions which contain information on how to create a specific bean, certain `BeanFactory` implementations also '''permit the registration of existing objects that have been created outside the factory (by user code).'''__ The `DefaultListableBeanFactory` class supports this through the `registerSingleton(..)` method. (Typical applications solely work with beans defined through metadata bean definitions though.)
+
+::: 以下還沒有整理過
+
+===== 3.2.3.1. Naming beans =====
+
+__Every bean has one or more ids (also called identifiers, or names; these terms refer to the same thing). These ids must be unique within the container the bean is hosted in (沒有像 HiveMind 劃分 module 嗎?). A bean will almost always have only one id, but if a bean has more than one id, the extra ones can essentially be considered ''aliases''. '''(這是個很特別的設計, 雖然說 id/name 的說法是互通的, 但 "每個 bean 都有一個 id, 以及其他 names/alias" 的說法應該會比較恰當...)'''__
+
+__When using XML-based configuration metadata, you use the `id` or `name` attributes to specify the bean identifier(s). The `id` attribute allows you to specify exactly one id, and as it is a real XML element ID attribute, '''the XML parser is able to do some extra validation when other elements reference the id; as such, it is the preferred way to specify a bean id. However, the XML specification does limit the characters which are legal in XML IDs.''' This is usually not a constraint, but if you have a need to use one of these special XML characters, or want to introduce other aliases to the bean, you may also or instead specify one or more bean ids, separated by a comma (`,`), semicolon (`;`), or whitespace in the `name` attribute. '''(按下面 "equivalent aliases" 的說法, 不論是透過 `id` 或 `name` 來組能, 就結果來看都是一樣的; 即便如此, 在慣例上還是儘可能使用 `id`, 除非狀況特殊才會採用 `name`)'''__
+
+__Please note that you are not required to supply a name for a bean. If no name is supplied explicitly, the container will generate a unique name for that bean.__ The motivations for not supplying a name for a bean will be discussed later (one use case is ''inner beans'').
+
+'''Bean naming conventions'''
+
+__'''The convention (at least amongst the Spring development team) is to use the standard Java convention for instance field names when naming beans. That is, bean names start with a lowercase letter, and are camel-cased from then on.'''__ Examples of such names would be (without quotes) `accountManager`, `accountService`, `userDao`, `loginController`, and so forth.
+
+Adopting a consistent way of naming your beans will go a long way towards making your configuration easier to read and understand; adopting such naming standards is not hard to do, and if you are using Spring AOP it can pay off handsomely(漂亮地) when it comes to applying advice to a set of beans related by name.
+
+====== 3.2.3.1.1. Aliasing beans ======
+
+__In a bean definition itself, you may supply more than one name for the bean, by using a combination of up to one name specified via the `id` attribute, and any number of other names via the `name` attribute. '''All these names can be considered ''equivalent aliases'' to the same bean, and are useful for some situations,''' such as allowing each component used in an application to refer to a common(共通的) dependency using a bean name that is specific to that component itself. (在某種程度上可以提高可讀性...)__
+
+__Having to specify all aliases when the bean is actually defined is not always adequate(足夠的) however. It is sometimes desirable to introduce an alias for a bean which is defined elsewhere. (下面的例子說明了這種命名上的彈性, 有其存在的必要性...)__ In XML-based configuration metadata this may be accomplished via the use of the `<alias/>` element.
+
+ {{{
+<alias name="fromName" alias="toName"/>
+ }}}
+
+In this case, a bean in the same container which is named `fromName`, may also after the use of this alias definition, be referred to as `toName`.
+
+As a concrete example, consider the case where component A defines a `DataSource` bean called `componentA-dataSource`, in its XML fragment. Component B would however like to refer to the `DataSource` as `componentB-dataSource` in its XML fragment. And the main application, `MyApp`, defines its own XML fragment and assembles the final application context from all three fragments, and would like to refer to the `DataSource` as `myApp-dataSource`. This scenario can be easily handled by adding to the MyApp XML fragment the following standalone aliases:
+
+ {{{
+<alias name="componentA-dataSource" alias="componentB-dataSource"/>
+<alias name="componentA-dataSource" alias="myApp-dataSource" />
+ }}}
+
+Now each component and the main application can refer to the `DataSource` via a name that is unique and guaranteed not to clash(衝突) with any other definition (effectively there is a ''namespace''[?]), yet they refer to the same bean.
+
+===== 3.2.3.2. Instantiating beans =====
+
+__A bean definition essentially is a recipe for creating one or more objects. The container looks at the recipe for a named bean when asked, and uses the configuration metadata encapsulated by that bean definition to '''create (or acquire(取得)) an actual object.'''__
+
+If you are using XML-based configuration metadata, you can specify the type (or class) of object that is to be instantiated using the `class` attribute of the `<bean/>` element. This `class` attribute (which internally eventually boils down(歸結為) to being a `Class` property on a `BeanDefinition` instance) is normally mandatory (see Section 3.2.3.2.3, “Instantiation using an instance factory method” and Section 3.6, “Bean definition inheritance” for the two exceptions) and is used for one of two purposes. __The `class` property specifies the class of the bean to be constructed in the common case where the container itself directly creates the bean by calling its constructor reflectively (somewhat equivalent to Java code using the `new` operator). In the less common case where the container invokes a static (事實上也支援 instance factory method 的用法), factory method on a class to create the bean, the `class` property specifies the actual class containing the static factory method that is to be invoked to create the object (the type of the object returned from the invocation of the static factory method may be the same class or another class entirely, it doesn't matter; 無論如何, 都不是組態最後取得的物件所應實作的介面, Spring 不是很強調 interface 的使用嗎? 未來如何達成 autowiring[?]).__
+
+ '''Inner class names'''
+
+ .__If for whatever reason you want to configure a bean definition for a static inner class, '''you have to use the ''binary name'' of the inner class. (這種方法在 HiveMind 也行得通)'''__
+
+ .For example, if you have a class called `Foo` in the `com.example` package, and this `Foo` class has a static inner class called `Bar`, the value of the `class` attribute on a bean definition would be... `com.example.Foo$Bar`
+
+ .Notice the use of the `$` character in the name to separate the inner class name from the outer class name.
+
+====== 3.2.3.2.1. Instantiation using a constructor ======
+
+When creating a bean using the constructor approach, all normal classes are usable by and compatible with Spring. That is, the class being created does not need to implement any specific interfaces or be coded in a specific fashion. Just specifying the bean class should be enough. __However, depending on what type of IoC you are going to use for that specific bean, you may need a default (empty) constructor. (Spring 本身有這個限制嗎[?])__
+
+Additionally, the Spring IoC container isn't limited to just managing true JavaBeans, it is also able to manage virtually any class you want it to manage. Most people using Spring prefer to have actual JavaBeans (having just a default (no-argument) constructor and appropriate setters and getters modeled after(依照) the properties) in the container, __but it is also possible to have more exotic(奇特的) non-bean-style classes in your container. If, for example, you need to use a legacy connection pool that absolutely does not adhere to the JavaBean specification, Spring can manage it as well.__
+
+When using XML-based configuration metadata you can specify your bean class like so:
+
+ {{{
+<bean id="exampleBean" class="examples.ExampleBean"/>
+<bean name="anotherExample" class="examples.ExampleBeanTwo"/>
+ }}}
+
+The mechanism for supplying arguments to the constructor (if required), or setting properties of the object instance after it has been constructed, is described shortly.
+
+====== 3.2.3.2.2. Instantiation using a static factory method ======
+
+When defining a bean which is to be created using a static factory method, along with the `class` attribute which specifies the class containing the static factory method, another attribute named `factory-method` is needed to specify the name of the factory method itself. __Spring expects to be able to call this method (with an optional list of arguments as described later) and get back a live object, '''which from that point on is treated as if it had been created normally via a constructor. One use for such a bean definition is to call ''static factories'' in ''legacy code'' (通常是與邪惡的 programmatic singleton 接軌)'''.__
+
+The following example shows a bean definition which specifies that the bean is to be created by calling a factory-method. __'''Note that the definition does not specify the type (class) of the returned object, only the class containing the factory method.'''__ In this example, the `createInstance()` method must be a static method.
+
+ {{{
+<bean id="exampleBean"
+      class="examples.ExampleBean2"
+      factory-method="createInstance"/>
+ }}}
+
+The mechanism for supplying (optional) arguments to the factory method, or setting properties of the object instance after it has been returned from the factory, will be described shortly.
+
+====== 3.2.3.2.3. Instantiation using an instance factory method ======
+
+__In a fashion similar to instantiation via a static factory method, '''instantiation using an instance factory method is where a non-static method of an existing bean from the container is invoked to create a new bean. (用到的機會應該比 static factory method 少很多[?])''' To use this mechanism, the `class` attribute must be left empty, and the `factory-bean` attribute must specify the name of a bean in the current (or parent/ancestor; 真會用到多個 container[?]) container that contains the instance method that is to be invoked to create the object. The name of the factory method itself must be set using the `factory-method` attribute.__
+
+ {{{
+<!-- the factory bean, which contains a method called createService() -->
+<bean id="serviceLocator" class="com.foo.DefaultServiceLocator">
+  <!-- inject any dependencies required by this locator bean -->
+</bean>
+
+<!-- the bean to be created via the factory bean -->
+<bean id="exampleBean"
+      factory-bean="serviceLocator"
+      factory-method="createService"/>
+ }}}
+
+Although the mechanisms for setting bean properties are still to be discussed, one implication of this approach is that the factory bean itself can be managed and configured via DI.
+
+ '''Note'''
+
+ .__When the Spring documentation makes mention of a ''factory bean'', this will be a reference to a bean that is configured in the Spring container that will create objects via an instance or static factory method.__ When the documentation mentions a `FactoryBean` (notice the capitalization) this is a reference to a Spring-specific `FactoryBean`.
+
+==== 3.2.4. Using the container ====
+
+__A `BeanFactory` is essentially nothing more than the interface for an advanced factory capable of '''maintaining a registry of different beans and their dependencies.'''__ The `BeanFactory` enables you to read bean definitions and access them using the bean factory. When using just the `BeanFactory` you would create one and read in some bean definitions in the XML format as follows:
+
+ {{{
+InputStream is = new FileInputStream("beans.xml");
+BeanFactory factory = new XmlBeanFactory(is); // 相對於上面 ClassPathXmlApplicationContext 的用法
+ }}}
+
+__Basically that is all there is to it. Using `getBean(String)` you can retrieve instances of your beans; the client-side view of the `BeanFactory` is simple. The `BeanFactory` interface has just a few other methods, '''but ideally your application code should never use them... indeed, your application code should have no calls to the `getBean(String)` method at all, and thus no dependency on Spring APIs at all.'''__
+
+=== 3.3. Dependencies ===
+
+Your typical enterprise application is not made up of a single object (or bean in the Spring parlance(說法)). Even the simplest of applications will no doubt have at least a handful of(一小撮) objects that work together to present what the end-user sees as a coherent(前後連貫的) application. __This next section explains how you go from defining a number of bean definitions that stand-alone, each to themselves, to a fully realized application where objects work (or collaborate) together to achieve some goal (usually an application that does what the end-user wants).__
+
+==== 3.3.1. Injecting dependencies ====
+
+__'''The basic principle behind Dependency Injection (DI) is that objects define their dependencies (that is to say the other objects they work with) only through constructor arguments, arguments to a factory method, or properties which are set on the object instance ''after'' it has been constructed or returned from a factory method.''' Then, it is the job of the container to actually inject those dependencies when it creates the bean. This is fundamentally the inverse, hence the name Inversion of Control (IoC), of the bean itself being in control of instantiating or locating its dependencies on its own using direct construction of classes, or something like the Service Locator pattern.__
+
+__'''It becomes evident(顯而易見的) upon usage that code gets much cleaner when the DI principle is applied, and reaching a higher grade of decoupling is much easier when objects do not look up their dependencies, but are provided with them (and additionally do not even know where the dependencies are located and of what concrete class they are).'''__ DI exists in two major variants, namely Constructor Injection and Setter Injection.
+
+===== 3.3.1.1. Constructor Injection =====
+
+__Constructor-based DI is effected(實行) by invoking a constructor with a number of arguments, each representing a dependency. Additionally, calling a static factory method with specific arguments to construct the bean, can be considered ''almost equivalent'' (因為 static factory method 也是用 `<constructor-arg/>` 來組態參數), and the rest of this text will consider arguments to a constructor and arguments to a static factory method similarly. (為什麼總是特別提到 static factory method, 那 instance factory method 怎麼辦[?])__ Find below an example of a class that could only be dependency injected using constructor injection. Notice that there is nothing special about this class.
+
+ {{{
+public class SimpleMovieLister {
+
+  // the SimpleMovieLister has a dependency on a MovieFinder
+  private MovieFinder movieFinder;
+
+  // a constructor so that the Spring container can 'inject' a MovieFinder
+  public SimpleMovieLister(MovieFinder movieFinder) {
+    this.movieFinder = movieFinder;
+  }
+
+  // business logic that actually 'uses' the injected MovieFinder is omitted...
+}
+ }}}
+
+====== 3.3.1.1.1. Constructor Argument Resolution ======
+
+__'''Constructor argument resolution(判定) matching occurs using the argument's type.''' If there is no potential for ambiguity in the constructor arguments of a bean definition, then the order in which the constructor arguments are defined in a bean definition is the order in which those arguments will be supplied to the appropriate constructor when it is being instantiated.__ Consider the following class:
+
+ {{{
+package x.y;
+
+public class Foo {
+
+  public Foo(Bar bar, Baz baz) {
+    // ...
+  }
+}
+ }}}
+
+There is no potential for ambiguity here (assuming of course that `Bar` and `Baz` classes are not related in an inheritance hierarchy; 即便 `Bar` 與 `Baz` 有繼承關係, 也不會有 ambiguity 的問題吧[?]). Thus the following configuration will work just fine, and you do not need to specify the constructor argument indexes and / or types explicitly (更精確的組態).
+
+ {{{
+<beans>
+  <bean name="foo" class="x.y.Foo">
+    <constructor-arg>
+      <bean class="x.y.Bar"/><!-- 這就是 inner bean -->
+    </constructor-arg>
+    <constructor-arg>
+      <bean class="x.y.Baz"/>
+    </constructor-arg>
+  </bean>
+</beans>
+ }}}
+
+__When another bean is referenced, the type is known, and matching can occur (as was the case with the preceding example). When a simple type is used, such as `<value>true<value>`, Spring cannot determine the type of the value (因為 "字面上" 可以做不同的解讀, 就這個例子而言, 可以解讀為字串 "true" 或者布林值的 `true`; 但下面不是提到內部會自動透過 `PropertyEditor` 或 reflection 來自動決定型態[?]), and so cannot match by type without help.__ Consider the following class:
+
+ {{{
+package examples;
+
+public class ExampleBean {
+
+  // No. of years to the calculate the Ultimate Answer
+  private int years;
+
+  // The Answer to Life, the Universe, and Everything
+  private String ultimateAnswer;
+
+  public ExampleBean(int years, String ultimateAnswer) {
+    this.years = years;
+    this.ultimateAnswer = ultimateAnswer;
+  }
+}
+ }}}
+
+======= 3.3.1.1.1.1. Constructor Argument Type Matching =======
+
+The above scenario can use type matching with simple types by explicitly specifying the type of the constructor argument using the `type` attribute. For example:
+
+ {{{
+<bean id="exampleBean" class="examples.ExampleBean">
+  <constructor-arg type="int" value="7500000"/>
+  <constructor-arg type="java.lang.String" value="42"/>
+</bean>
+ }}}
+
+======= 3.3.1.1.1.2. Constructor Argument Index =======
+
+Constructor arguments can have their index specified explicitly by use of the `index` attribute (以 0 為啟始). For example: (指定順序後, 就不用額外告知 type 了)
+
+<bean id="exampleBean" class="examples.ExampleBean">
+  <constructor-arg index="0" value="7500000"/>
+  <constructor-arg index="1" value="42"/>
+</bean>
+
+As well as solving the ambiguity problem of multiple simple values, specifying an index also solves the problem of ambiguity where a constructor may have two arguments of the same type (為什麼這種情況下會有 ambiguity? 不是說按照組態的順序對應嗎? 難道 "If there is no potential..." 的說法有陷阱[?]). Note that the index is 0 based.
+
+===== 3.3.1.2. Setter Injection =====
+
+__Setter-based DI is realized by calling setter methods on your beans after invoking a no-argument constructor or no-argument static factory method to instantiate your bean. (為什麼特別強調 no-argument? 但下面又提到可以混用[?])__
+
+Find below an example of a class that can only be dependency injected using pure setter injection. Note that there is nothing special about this class... it is plain old Java.
+
+ {{{
+public class SimpleMovieLister {
+
+  // the SimpleMovieLister has a dependency on the MovieFinder
+  private MovieFinder movieFinder;
+
+  // a setter method so that the Spring container can 'inject' a MovieFinder
+  public void setMovieFinder(MovieFinder movieFinder) {
+    this.movieFinder = movieFinder;
+  }
+
+  // business logic that actually 'uses' the injected MovieFinder is omitted...
+}
+ }}}
+
+ '''Constructor- or Setter-based DI?'''
+
+ .__'''The Spring team generally advocates(提倡) the usage of setter injection, since a large number of constructor arguments can get unwieldy(不易處理的), especially when some properties are optional.''' The presence of setter methods also makes objects of that class amenable to being re-configured (or re-injected) at some later time (for management via JMX MBeans is a particularly compelling(令人信服的) use case).__
+
+ .__Constructor-injection is favored by some purists(純粹主義者) though (and with good reason). Supplying all of an object's dependencies means that that object is never returned to client (calling) code in a ''less than totally initialized'' state. The flip side is that the object becomes less amenable(肯接受的) to re-configuration (or re-injection).__
+
+ .__There is no hard and fast rule here. Use whatever type of DI makes the most sense for a particular class; sometimes, '''when dealing with third party classes to which you do not have the source, the choice will already have been made for you''' - a legacy class may not expose any setter methods, and so constructor injection will be the only type of DI available to you.__
+
+__The `BeanFactory` supports both of these variants for injecting dependencies into beans it manages. (It in fact also supports injecting setter-based dependencies after some dependencies have already been supplied via the constructor approach. 真的可以混用嗎[?])__ The configuration for the dependencies comes in the form of a `BeanDefinition`, which is used together with `PropertyEditor` instances to know how to convert properties from one format to another. However, most users of Spring will not be dealing with these classes directly (that is programmatically), but rather with an XML definition file which will be converted internally into instances of these classes, and used to load an entire Spring IoC container instance.
+
+Bean dependency resolution generally happens as follows:
+
+ 1. The `BeanFactory` is created and initialized with a configuration which describes all the beans. (Most Spring users use a `BeanFactory` or `ApplicationContext` implementation that supports XML format configuration files.)
+ 2. Each bean has dependencies expressed in the form of properties, constructor arguments, or arguments to the static-factory method when that is used instead of a normal constructor. These dependencies will be provided to the bean, when the bean is actually created.
+ 3. Each property or constructor argument is either an actual definition of the value to set, or a reference to another bean in the container.
+ 4. __Each property or constructor argument which is a value must be able to be converted from whatever format it was specified in, to the actual type of that property or constructor argument. '''By default Spring can convert a value supplied in string format to all built-in types, such as `int`, `long`, `String`, `boolean`, etc. (如果真是這樣, 為什麼上面的例子需要用 `type` 來額外指定型態[?])'''__
+
+__The Spring container validates the configuration of each bean as the container is created, including the validation that properties which are bean references are actually referring to valid beans. However, '''the bean properties themselves are not set until the bean is actually created.''' For those beans that are singleton-scoped and set to be pre-instantiated (such as singleton beans in an `ApplicationContext`), creation happens at the time that the container is created, '''but otherwise this is only when the bean is requested. When a bean actually has to be created, this will potentially cause a graph of other beans to be created, as its dependencies and its dependencies' dependencies (and so on) are created and assigned. (lazy loading)'''__
+
+__You can generally trust Spring to do the right thing. It will detect misconfiguration issues, such as references to non-existent beans and ''circular dependencies'', at container load-time. It will actually set properties and resolve dependencies ''as late as possible'', which is when the bean is actually created. '''This means that a Spring container which has loaded correctly can later generate an exception when you request a bean if there is a problem creating that bean or one of its dependencies.''' This could happen if the bean throws an exception as a result of a missing or invalid property, for example. This potentially delayed visibility of some configuration issues is why `ApplicationContext` implementations by default pre-instantiate singleton beans. '''At the cost of some upfront time and memory to create these beans before they are actually needed, you find out about configuration issues when the `ApplicationContext` is created, not later. (這是 HiveMind 最大的痛!! 會不會是 proxy 所造成的? 到目前為止, Spring 都還沒有提到 proxy? 會不會實作在 AOP 裡[?] 這裡的 "upfront time" 對 client application 比較有影響, 不過可以在開發時期維持 pre-instantiated, 佈署時改用 lazy-initialize 即可)''' If you wish, you can still override this default behavior and set any of these singleton beans to lazy-initialize (that is not be pre-instantiated).__
+
+__If no circular dependencies are involved (see sidebar for a discussion of circular dependencies), when one or more collaborating beans are being injected into a dependent bean, '''each collaborating bean is totally configured prior to being passed (via one of the DI flavors) to the dependent bean. (這將成為 circular dependency 的主因)''' This means that if bean A has a dependency on bean B, the Spring IoC container will totally configure bean B prior to invoking the setter method on bean A; you can read 'totally configure' to mean that the bean will be instantiated (if not a pre-instantiated singleton), all of its dependencies will be set, and the relevant lifecycle methods (such as a configured `init` method or the `IntializingBean` callback method) will all be invoked.__
+
+ '''Circular dependencies'''
+
+ .If you are using predominantly(主要地) constructor injection it is possible to write and configure your classes and beans such that an ''unresolvable circular dependency'' scenario is created.
+
+ .Consider the scenario where you have class A, which requires an instance of class B to be provided via constructor injection, and class B, which requires an instance of class A to be provided via constructor injection. If you configure beans for classes A and B to be injected into each other, the Spring IoC container will detect this circular reference at runtime, and throw a `BeanCurrentlyInCreationException`. (如果 Spring 有採用類似 HiveMind 的 proxy 的機制, 應該就不會有這個問題了吧[?])
+
+ .__One possible solution to this issue is to edit the source code of some of your classes to be configured via setters instead of via constructors. '''Another solution is not to use constructor injection and stick to setter injection only. (採用 setter injection 時, 不代表就不可能發生, 而是比較少; 什麼情況下會發生[?])''' In other words, while it should generally be avoided in all but the rarest(稀罕的) of circumstances, it is possible to configure circular dependencies with setter injection.__
+
+ .__Unlike the typical case (with no circular dependencies), a circular dependency between bean A and bean B will force one of the beans to be injected into the other prior to being fully initialized itself '''(a classic chicken/egg scenario)'''.__
+
+===== 3.3.1.3. Some examples =====
+
+First, an example of using XML-based configuration metadata for setter-based DI. Find below a small part of a Spring XML configuration file specifying some bean definitions.
+
+ {{{
+<bean id="exampleBean" class="examples.ExampleBean">
+
+  <!-- setter injection using the nested <ref/> element; 也可以寫成 ref="..." -->
+  <property name="beanOne"><ref bean="anotherExampleBean"/></property>
+
+  <!-- setter injection using the neater 'ref' attribute -->
+  <property name="beanTwo" ref="yetAnotherBean"/>
+  <property name="integerProperty" value="1"/>
+</bean>
+
+<bean id="anotherExampleBean" class="examples.AnotherBean"/>
+<bean id="yetAnotherBean" class="examples.YetAnotherBean"/>
+ }}}
+
+ {{{
+public class ExampleBean {
+
+  private AnotherBean beanOne;
+  private YetAnotherBean beanTwo;
+  private int i;
+
+  public void setBeanOne(AnotherBean beanOne) {
+    this.beanOne = beanOne;
+  }
+
+  public void setBeanTwo(YetAnotherBean beanTwo) {
+    this.beanTwo = beanTwo;
+  }
+
+  public void setIntegerProperty(int i) {
+    this.i = i;
+  }
+}
+ }}}
+
+As you can see, setters have been declared to match against the properties specified in the XML file. Find below an example of using constructor-based DI.
+
+ {{{
+<bean id="exampleBean" class="examples.ExampleBean">
+
+  <!-- constructor injection using the nested <ref/> element -->
+  <constructor-arg>
+    <ref bean="anotherExampleBean"/>
+  </constructor-arg>
+
+  <!-- constructor injection using the neater 'ref' attribute -->
+  <constructor-arg ref="yetAnotherBean"/>
+
+  <constructor-arg type="int" value="1"/>
+</bean>
+
+<bean id="anotherExampleBean" class="examples.AnotherBean"/>
+<bean id="yetAnotherBean" class="examples.YetAnotherBean"/>
+ }}}
+
+ {{{
+public class ExampleBean {
+
+  private AnotherBean beanOne;
+  private YetAnotherBean beanTwo;
+  private int i;
+
+  public ExampleBean(
+    AnotherBean anotherBean, YetAnotherBean yetAnotherBean, int i) {
+    this.beanOne = anotherBean;
+    this.beanTwo = yetAnotherBean;
+    this.i = i;
+  }
+}
+ }}}
+
+As you can see, the constructor arguments specified in the bean definition will be used to pass in as arguments to the constructor of the `ExampleBean`.
+
+Now consider a variant of this where instead of using a constructor, Spring is told to call a static factory method to return an instance of the object: (注意參數也是用 `<constructor-arg/>` 來組態)
+
+ {{{
+<bean id="exampleBean" class="examples.ExampleBean"
+      factory-method="createInstance">
+  <constructor-arg ref="anotherExampleBean"/>
+  <constructor-arg ref="yetAnotherBean"/>
+  <constructor-arg value="1"/>
+</bean>
+
+<bean id="anotherExampleBean" class="examples.AnotherBean"/>
+<bean id="yetAnotherBean" class="examples.YetAnotherBean"/>
+ }}}
+
+ {{{
+public class ExampleBean {
+
+  // a private constructor
+  private ExampleBean(...) {
+    ...
+  }
+
+  // a static factory method; the arguments to this method can be
+  // considered the dependencies of the bean that is returned,
+  // regardless of how those arguments are actually used.
+  public static ExampleBean createInstance (
+      AnotherBean anotherBean, YetAnotherBean yetAnotherBean, int i) {
+
+    ExampleBean eb = new ExampleBean (...);
+    // some other operations...
+    return eb;
+  }
+}
+ }}}
+
+Note that arguments to the static factory method are supplied via `<constructor-arg/>` elements, exactly the same as if a constructor had actually been used. Also, it is important to realize that the type of the class being returned by the factory method does not have to be of the same type as the class which contains the static factory method, although in this example it is. __An instance (non-static) factory method would be used in an essentially identical fashion (aside from the use of the `factory-bean` attribute instead of the `class` attribute), so details will not be discussed here. (如果真是如此, 上面就不讓一直強調 static...)__
+
+==== 3.3.2. Dependencies and configuration in detail ====
+
+As mentioned in the previous section, __bean properties and constructor arguments can be defined as either references to other managed beans (collaborators), or values defined inline.__ Spring's XML-based configuration metadata supports a number of ''sub-element types'' within its `<property/>` and `<constructor-arg/>` elements for just this purpose.
+
+===== 3.3.2.1. Straight values (primitives, Strings, etc.) =====
+
+The `<value/>` element specifies a property or constructor argument as a human-readable string representation. As mentioned previously, JavaBeans `PropertyEditor`s are used to convert these string values from a `String` to the actual type of the property or argument.
+
+ {{{
+<bean id="myDataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+
+  <!-- results in a setDriverClassName(String) call -->
+  <property name="driverClassName">
+    <value>com.mysql.jdbc.Driver</value>
+  </property>
+  <property name="url">
+    <value>jdbc:mysql://localhost:3306/mydb</value>
+  </property>
+  <property name="username">
+    <value>root</value>
+  </property>
+  <property name="password">
+    <value>masterkaoli</value>
+  </property>
+</bean>
+ }}}
+
+The `<property/>` and `<constructor-arg/>` elements also support the use of the `value` attribute, which can lead to much more succinct(簡潔的) configuration. When using the `value` attribute, the above bean definition reads like so:
+
+ {{{
+<bean id="myDataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+
+  <!-- results in a setDriverClassName(String) call -->
+  <property name="driverClassName" value="com.mysql.jdbc.Driver"/>
+  <property name="url" value="jdbc:mysql://localhost:3306/mydb"/>
+  <property name="username" value="root"/>
+  <property name="password" value="masterkaoli"/>
+</bean>
+ }}}
+
+__The Spring team generally prefer the attribute style over the use of nested `<value/>` elements. (除非必要, 否則採用 attribute style 的可讀性相對較高)__ If you are reading this reference manual straight through from top to bottom (wow!) then we are getting slightly ahead of ourselves here, but you can also configure a `java.util.Properties` instance like so:
+
+ {{{
+<bean id="mappings" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+
+   <!-- typed as a java.util.Properties -->
+   <property name="properties">
+    <value>
+     jdbc.driver.className=com.mysql.jdbc.Driver
+     jdbc.url=jdbc:mysql://localhost:3306/mydb
+    </value>
+   </property>
+</bean>
+ }}}
+
+Can you see what is happening? The Spring container is converting the text inside the `<value/>` element into a `java.util.Properties` instance using the JavaBeans `PropertyEditor` mechanism. This is a nice shortcut, and is one of a few places where the Spring team do favor the use of the nested <value/> element over the `value` attribute style.
+
+====== 3.3.2.1.1. The idref element ======
+
+__The `idref` element is simply an error-proof(防差錯) way to pass the `id` of another bean in the container (to a `<constructor-arg/>` or `<property/>` element; 注意與 `<property ... ref="..."/>`, `<constructor-arg ... ref="..."/>` 間的不同; 應用在什麼地方[?]).__
+
+ {{{
+<bean id="theTargetBean" class="..."/>
+
+<bean id="theClientBean" class="...">
+    <property name="targetName">
+        <idref bean="theTargetBean" />
+    </property>
+</bean>
+ }}}
+
+The above bean definition snippet is exactly equivalent (at runtime) to the following snippet:
+
+ {{{
+<bean id="theTargetBean" class="..." />
+
+<bean id="client" class="...">
+    <property name="targetName" value="theTargetBean" />
+</bean>
+ }}}
+
+__The main reason the first form is preferable to the second is that using the `idref` tag allows the container to validate at deployment time that the referenced, named bean actually exists. In the second variation, no validation is performed on the value that is passed to the `targetName` property of the `client` bean. Any typo will only be discovered (with most likely fatal results) when the `client` bean is actually instantiated. If the `client` bean is a ''prototype bean'' (其中的 "prototype" 指的是 bean scope), this typo (and the resulting exception) may only be discovered long after the container is actually deployed. (這與 pre-instantiate singleton beans 的設計理念是一致的, 使能夠儘早發現組態上的錯誤...)__
+
+__Additionally, if the bean being referred to is in the same XML unit, and the bean name is the bean id, the `local` attribute may be used, which allows the XML parser itself to validate the bean id even earlier, at XML document parse time. (其中 `local` 的用法是 XML 支援的[?])__
+
+ {{{
+<property name="targetName">
+   <!-- a bean with an id of 'theTargetBean' must exist; otherwise an XML exception will be thrown -->
+   <idref local="theTargetBean"/>
+</property>
+ }}}
+
+By way of an example, one common place (at least in pre-Spring 2.0 configuration) where the `<idref/>` element brings value is in the configuration of AOP interceptors in a `ProxyFactoryBean` bean definition. If you use `<idref/>` elements when specifying the interceptor names, there is no chance of inadvertently(不注意地) misspelling an interceptor id.[?]
+
+===== 3.3.2.2. References to other beans (collaborators) =====
+
+The `ref` element is the final element allowed inside a `<constructor-arg/>` or `<property/>` definition element. It is used to set the value of the specified property to be a reference to another bean managed by the container (a collaborator). As mentioned in a previous section, the ''referred-to'' bean is considered to be a dependency of the bean who's property is being set, and will be initialized on demand as needed (if it is a singleton bean it may have already been initialized by the container) before the property is set. __All references are ultimately just a reference to another object, but there are 3 variations on how the id/name of the other object may be specified, which determines how scoping and validation is handled.__
+
+__Specifying the target bean by using the `bean` attribute of the `<ref/>` tag is the most general form, and will allow '''creating a reference to any bean in the same container (whether or not in the same XML file), or parent container. (一再出現多個 container 的概念, 但都還沒有解釋[?])''' The value of the `bean` attribute may be the same as either the `id` attribute of the target bean, or one of the values in the `name` attribute of the target bean.__
+
+ {{{
+<ref bean="someBean"/>
+ }}}
+
+__Specifying the target bean by using the `local` attribute leverages the ability of the XML parser to validate XML id references within the same file. The value of the `local` attribute must be the same as the `id` attribute of the target bean. (因此 `id` 與 `name` 的使用, 還是有一些差別...) The XML parser will issue an error if no matching element is found in the same file. '''As such, using the `local` variant is the best choice (in order to know about errors as early as possible) if the target bean is in the same XML file.'''__
+
+ {{{
+<ref local="someBean"/>
+ }}}
+
+Specifying the target bean by using the `parent` attribute allows a reference to be created to a bean which is in a parent container of the current container. The value of the `parent` attribute may be the same as either the `id` attribute of the target bean, or one of the values in the `name` attribute of the target bean, and the target bean must be in a parent container to the current one. __The main use of this bean reference variant is when you have a ''hierarchy of containers'' and you want to wrap an existing bean in a parent container with some sort of proxy which will have the ''same name'' as the parent bean. (有 override 的意味; 原來 namespace 就是這樣營造出來的[?])__
+
+ {{{
+<!-- in the parent context -->
+<bean id="accountService" class="com.foo.SimpleAccountService">
+  <!-- insert dependencies as required as here -->
+</bean>
+ }}}
+
+ {{{
+<!-- in the child (descendant) context -->
+<bean id="accountService"  <-- notice that the name of this bean is the same as the name of the 'parent' bean
+    class="org.springframework.aop.framework.ProxyFactoryBean">
+    <property name="target">
+      <ref parent="accountService"/>  <-- notice how we refer to the parent bean
+    </property>
+  <!-- insert other configuration and dependencies as required as here -->
+</bean>
+ }}}
+
+===== 3.3.2.3. Inner beans =====
+
+__A `<bean/>` element inside the `<property/>` or `<constructor-arg/>` elements is used to define a so-called inner bean. An inner bean definition does not need to have any `id` or `name` defined, and it is best not to even specify any id or name value because the id or name value simply will be ignored by the container.__
+
+ {{{
+<bean id="outer" class="...">
+  <!-- instead of using a reference to a target bean, simply define the target bean inline -->
+  <property name="target">
+    <bean class="com.example.Person"> <!-- this is the inner bean -->
+      <property name="name" value="Fiona Apple"/>
+      <property name="age" value="25"/>
+    </bean>
+  </property>
+</bean>
+ }}}
+
+__Note that in the specific case of inner beans, the `scope` flag and any `id` or `name` attribute are effectively ignored. '''Inner beans are always anonymous and they are always scoped as prototypes. Please also note that it is not possible to inject inner beans into collaborating beans other than the enclosing bean.'''__
+
+===== 3.3.2.4. Collections =====
+
+__The `<list/>`, `<set/>`, `<map/>`, and `<props/>` elements allow properties and arguments of the Java Collection type `List`, `Set`, `Map`, and `Properties`, respectively, to be defined and set. '''(語法上也相當直覺; 有了這麼彈性的設計, HiveMind 的 configuration-point 完完全全地被取代掉了!! 也可以應用在開發時期, 提供假資料做測試, 這方面取代了部份 XStream 的應用...)'''__
+
+ {{{
+<bean id="moreComplexObject" class="example.ComplexObject">
+  <!-- results in a setAdminEmails(java.util.Properties) call -->
+  <property name="adminEmails">
+  <props>
+    <prop key="administrator">administrator@example.org</prop>
+    <prop key="support">support@example.org</prop>
+    <prop key="development">development@example.org</prop>
+  </props>
+  </property>
+  <!-- results in a setSomeList(java.util.List) call -->
+  <property name="someList">
+  <list>
+    <value>a list element followed by a reference</value>
+    <ref bean="myDataSource" />
+  </list>
+  </property>
+  <!-- results in a setSomeMap(java.util.Map) call -->
+  <property name="someMap">
+  <map>
+    <entry>
+      <key>
+        <value>an entry</value>
+      </key>
+      <value>just some string</value>
+    </entry>
+    <entry>
+      <key>
+        <value>a ref</value>
+      </key>
+      <ref bean="myDataSource" />
+    </entry>
+  </map>
+  </property>
+  <!-- results in a setSomeSet(java.util.Set) call -->
+  <property name="someSet">
+  <set>
+    <value>just some string</value>
+    <ref bean="myDataSource" />
+  </set>
+  </property>
+</bean>
+ }}}
+
+Note that the value of a map key or value, or a set value, can also again be any of the following elements: (層層包覆, 就可以做出非常多的變化...)
+
+ {{{
+bean | ref | idref | list | set | map | props | value | null
+ }}}
+
+====== 3.3.2.4.1. Collection merging ======
+
+__As of Spring 2.0, the container also supports the merging of collections. This allows an application developer to define a ''parent-style'' `<list/>`, `<map/>`, `<set/>` or `<props/>` element, and have ''child-style'' `<list/>`, `<map/>`, `<set/>` or `<props/>` elements inherit and override values from the parent collection; that is to say the child collection's values will be the result obtained from the merging of the elements of the parent and child collections, with the child's collection elements overriding values specified in the parent collection.__
+
+Please note that this section on merging makes use of the ''parent-child bean mechanism'' (與 parent/child container 的概念不同). This concept has not yet been introduced, so readers unfamiliar with the concept of parent and child bean definitions may wish to read the http://static.springframework.org/spring/docs/2.5.x/reference/beans.html#beans-child-bean-definitions[relevant section] before continuing.
+
+Find below an example of the collection merging feature:
+
+ {{{
+<beans>
+<bean id="parent" abstract="true" class="example.ComplexObject">
+  <property name="adminEmails">
+    <props>
+      <prop key="administrator">administrator@example.com</prop>
+      <prop key="support">support@example.com</prop>
+    </props>
+  </property>
+</bean>
+<bean id="child" parent="parent">
+  <property name="adminEmails">
+    <!-- the merge is specified on the *child* collection definition -->
+    <props merge="true">
+      <prop key="sales">sales@example.com</prop>
+      <prop key="support">support@example.co.uk</prop>
+    </props>
+  </property>
+</bean>
+<beans>
+ }}}
+
+Notice the use of the `merge=true` attribute on the `<props/>` element of the `adminEmails` property of the `child` bean definition. When the `child` bean is actually resolved and instantiated by the container, the resulting instance will have an `adminEmails` `Properties` collection that contains the result of the merging of the `child`'s `adminEmails` collection with the `parent`'s `adminEmails` collection.
+
+ {{{
+administrator=administrator@example.com
+sales=sales@example.com
+support=support@example.co.uk
+ }}}
+
+Notice how the `child` `Properties` collection's value set will have inherited all the property elements from the `parent` `<props/>`. Notice also how the `child`'s value for the `support` value overrides the value in the `parent` collection.
+
+__This merging behavior applies similarly to the `<list/>`, `<map/>`, and `<set/>` collection types. '''In the specific case of the `<list/>` element, the semantics associated with the `List` collection type, that is the notion of an ordered collection of values, is maintained; the parent's values will precede all of the child list's values.''' In the case of the `Map`, `Set`, and `Properties` collection types, there is no notion of ordering and hence no ordering semantics are in effect for the collection types that underlie the associated `Map`, `Set` and `Properties` implementation types used internally by the container.__
+
+__Finally, some minor notes about the merging support are in order; you cannot merge different collection types (e.g. a `Map` and a `List`), and if you do attempt to do so an appropriate `Exception` will be thrown; and in case it is not immediately obvious, '''the `merge` attribute must be specified on the lower level, inherited, child definition; specifying the `merge` attribute on a parent collection definition is redundant and will not result in the desired merging;''' and (lastly), please note that this merging feature is only available in Spring 2.0 (and later versions).__
+
+====== 3.3.2.4.2. Strongly-typed collection (Java 5+ only) ======
+
+If you are using Java 5 or Java 6, you will be aware that it is possible to have strongly typed collections (using generic types). That is, it is possible to declare a `Collection` type such that it can only contain `String` elements (for example). __If you are using Spring to dependency inject a strongly-typed `Collection` into a bean, you can take advantage of Spring's type-conversion support such that the elements of your strongly-typed `Collection` instances will be converted to the appropriate type prior to being added to the `Collection`. (原來 generic type 在執行期是取用得到的[...])__
+
+ {{{
+public class Foo {
+
+  private Map<String, Float> accounts;
+
+  public void setAccounts(Map<String, Float> accounts) {
+    this.accounts = accounts;
+  }
+}
+ }}}
+
+ {{{
+<beans>
+  <bean id="foo" class="x.y.Foo">
+    <property name="accounts">
+      <map>
+        <entry key="one" value="9.99"/>
+        <entry key="two" value="2.75"/>
+        <entry key="six" value="3.99"/>
+      </map>
+    </property>
+  </bean>
+</beans>
+ }}}
+
+When the `accounts` property of the `foo` bean is being prepared for injection, the generics information about the element type of the strongly-typed `Map<String, Float>` is actually available via reflection, and so Spring's type conversion infrastructure will actually recognize the various value elements as being of type `Float` and so the string values '9.99', '2.75', and '3.99'  will be converted into an actual `Float` type.
+
+===== 3.3.2.5. Nulls =====
+
+The `<null/>` element is used to handle `null` values. Spring treats empty arguments for properties and the like as empty `String`s. The following XML-based configuration metadata snippet results in the email property being set to the empty String value (`""`)
+
+ {{{
+<bean class="ExampleBean">
+  <property name="email"><value/></property>
+</bean>
+ }}}
+
+This is equivalent to the following Java code: `exampleBean.setEmail("")`. The special `<null>` element may be used to indicate a `null` value. For example:
+
+ {{{
+<bean class="ExampleBean">
+  <property name="email"><null/></property>
+</bean>
+ }}}
+
+The above configuration is equivalent to the following Java code: `exampleBean.setEmail(null)`.
+
+===== 3.3.2.6. Shortcuts and other convenience options for XML-based configuration metadata =====
+
+__The configuration metadata shown so far is a tad(一點兒) verbose. That is why there are several options available for you to limit the amount of XML you have to write to configure your components. (儘可能保持文件的簡潔)__ The first is a shortcut to define values and references to other beans as part of a `<property/>` definition. The second is slightly different format of specifying properties altogether.
+
+====== 3.3.2.6.1. XML-based configuration metadata shortcuts ======
+
+The `<property/>`, `<constructor-arg/>`, and `<entry/>` elements all support a `value` attribute which may be used instead of embedding a full `<value/>` element. Therefore, the following:
+
+ {{{
+<property name="myProperty">
+  <value>hello</value>
+</property>
+ }}}
+
+ {{{
+<constructor-arg>
+  <value>hello</value>
+</constructor-arg>
+ }}}
+
+ {{{
+<entry key="myKey">
+  <value>hello</value>
+</entry>
+ }}}
+
+are equivalent to:
+
+ {{{
+<property name="myProperty" value="hello"/>
+ }}}
+
+ {{{
+<constructor-arg value="hello"/>
+ }}}
+
+ {{{
+<entry key="myKey" value="hello"/>
+ }}}
+
+The `<property/>` and `<constructor-arg/>` elements support a similar shortcut `ref` attribute which may be used instead of a full nested `<ref/>` element. Therefore, the following:
+
+ {{{
+<property name="myProperty">
+  <ref bean="myBean">
+</property>
+ }}}
+
+ {{{
+<constructor-arg>
+  <ref bean="myBean">
+</constructor-arg>
+ }}}
+
+... are equivalent to:
+
+ {{{
+<property name="myProperty" ref="myBean"/>
+ }}}
+
+ {{{
+<constructor-arg ref="myBean"/>
+ }}}
+
+__Note however that the shortcut form is equivalent to a `<ref bean="xxx">` element; there is no shortcut for `<ref local="xxx">`. To enforce a strict local reference, you must use the long form.__
+
+Finally, the `entry` element allows a shortcut form to specify the key and/or value of the map, in the form of the `key` / `key-ref` and `value` / `value-ref` attributes. Therefore, the following:
+
+ {{{
+<entry>
+  <key>
+    <ref bean="myKeyBean" />
+  </key>
+  <ref bean="myValueBean" />
+</entry>
+ }}}
+
+is equivalent to:
+
+ {{{
+<entry key-ref="myKeyBean" value-ref="myValueBean"/>
+ }}}
+
+Again, the shortcut form is equivalent to a `<ref bean="xxx">` element; there is no shortcut for `<ref local="xxx">`.
+
+====== 3.3.2.6.2. The p-namespace and how to use it to configure properties ======
+
+The second option you have to limit the amount of XML you have to write to configure your components is to use the special "p-namespace". Spring 2.0 and later features support for extensible configuration formats http://static.springframework.org/spring/docs/2.5.x/reference/xsd-config.html[using namespaces]. Those namespaces are all based on an XML Schema definition (XSD). In fact, the beans configuration format that you've been reading about is defined in an XML Schema document.
+
+__One special namespace is not defined in an XSD file, and only exists in the core of Spring itself. The so-called p-namespace doesn't need a schema definition and is an alternative way of configuring your properties differently than the way you have seen so far. Instead of using nested `<property/>` elements, using the p-namespace you can use attributes as part of the `bean` element that describe your property values. The values of the attributes will be taken as the values for your properties.__
+
+The following two XML snippets boil down(歸結為) to the same thing in the end: the first is using the standard XML format whereas the second example is using the p-namespace.
+
+ {{{
+<beans xmlns="http://www.springframework.org/schema/beans"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:p="http://www.springframework.org/schema/p" <-- 這一行是多出來的部份
+  xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+
+  <bean name="classic" class="com.example.ExampleBean">
+    <property name="email" value="foo@bar.com/>
+  </bean>
+
+  <bean name="p-namespace" class="com.example.ExampleBean"
+      p:email="foo@bar.com"/>
+</beans>
+ }}}
+
+As you can see, we are including an attribute in the `p-namespace` called `email` in the bean definition - this is telling Spring that it should include a property declaration. As previously mentioned, the p-namespace doesn't have a schema definition, so the name of the attribute can be set to whatever name your property has.
+
+This next example includes two more bean definitions that both have a reference to another bean:
+
+ {{{
+<beans xmlns="http://www.springframework.org/schema/beans"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:p="http://www.springframework.org/schema/p"
+  xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+
+  <bean name="john-classic" class="com.example.Person">
+    <property name="name" value="John Doe"/>
+    <property name="spouse" ref="jane"/>
+  </bean>
+
+  <bean name="john-modern"
+    class="com.example.Person"
+    p:name="John Doe"
+    p:spouse-ref="jane"/>
+
+  <bean name="jane" class="com.example.Person">
+    <property name="name" value="Jane Doe"/>
+  </bean>
+</beans>
+ }}}
+
+As you can see, this example doesn't only include a property value using the p-namespace, but also uses a special format to declare property references. Whereas the first bean definition uses `<property name="spouse" ref="jane"/>` to create a reference from bean `john` to bean `jane`, the second bean definition uses `p:spouse-ref="jane"` as an attribute to do the exact same thing. In this case `spouse` is the property name whereas the `-ref` part indicates that this is not a straight value but rather a reference to another bean.
+
+ '''Note'''
+
+ .__Please note that the p-namespace is not quite as flexible as the standard XML format (還是用 XML format 就好, 可讀性還是比較高一些...)__ - for example particular, the 'special' format used to declare property references will clash with properties that end in `Ref`, whereas the standard XML format would have no problem there. We recommend that you choose carefully which approach you are going to use in your projects. You should also communicate this to your team members so you won't end up with XML documents using all three approaches at the same time. This will prevent people from not understanding the application because of different ways of configuring it, and will add to the overall consistency of your codebase.
+
+===== 3.3.2.7. Compound property names =====
+
+__Compound or nested property names are perfectly legal when setting bean properties, as long as all components of the path except the final property name are not `null`. (有了這個類似於 OGNL 的描述方式, 幾乎就沒有什麼東西組態不到了...)__ Consider the following bean definition...
+
+ {{{
+<bean id="foo" class="foo.Bar">
+  <property name="fred.bob.sammy" value="123" />
+</bean>
+ }}}
+
+The `foo` bean has a `fred` property which has a `bob` property, which has a `sammy` property, and that final `sammy` property is being set to the value `123`. In order for this to work, the `fred` property of `foo`, and the `bob` property of `fred` must not be `null` be non-null after the bean is constructed, or a `NullPointerException` will be thrown.
+
+==== 3.3.3. Using depends-on ====
+
+For most situations, the fact that a bean is a dependency of another is expressed by the fact that one bean is set as a property of another. This is typically accomplished with the `<ref/>` element in XML-based configuration metadata. __For the relatively infrequent(罕見的) situations where dependencies between beans are less direct (for example, when a static initializer in a class needs to be triggered, such as database driver registration), the `depends-on` attribute may be used to explicitly force one or more beans to be initialized before the bean using this element is initialized.(所有的 singleton 不都會 pre-instantiate 嗎[?])__ Find below an example of using the `depends-on` attribute to express a dependency on a single bean.
+
+ {{{
+<bean id="beanOne" class="ExampleBean" depends-on="manager"/>
+
+<bean id="manager" class="ManagerBean" />
+ }}}
+
+If you need to express a dependency on multiple beans, you can supply a list of bean names as the value of the `depends-on` attribute, with commas, whitespace and semicolons all valid delimiters, like so:
+
+ {{{
+<bean id="beanOne" class="ExampleBean" depends-on="manager,accountDao">
+  <property name="manager" ref="manager" />
+</bean>
+
+<bean id="manager" class="ManagerBean" />
+<bean id="accountDao" class="x.y.jdbc.JdbcAccountDao" />
+ }}}
+
+ '''Note'''
+
+ .__The `depends-on` attribute and property is used not only to specify an ''initialization time dependency'', but also to specify the corresponding ''destroy time dependency'' (in the case of singleton beans only). Dependent beans that are defined in the `depends-on` attribute will be destroyed first prior to the relevant bean itself being destroyed. This thus allows you to control shutdown order too.[?]__
+
+==== 3.3.4. Lazily-instantiated beans ====
+
+__The default behavior for `ApplicationContext` implementations is to eagerly pre-instantiate all singleton beans at startup. Pre-instantiation means that an `ApplicationContext` will eagerly create and configure all of its singleton beans as part of its initialization process. '''Generally this is a good thing, because it means that any errors in the configuration or in the surrounding environment will be discovered immediately (as opposed to possibly hours or even days down the line).'''__
+
+However, there are times when this behavior is not what is wanted. If you do not want a singleton bean to be pre-instantiated when using an `ApplicationContext`, you can selectively control this by marking a bean definition as lazy-initialized. A lazily-initialized bean indicates to the IoC container whether or not a bean instance should be created at startup or when it is first requested.
+
+When configuring beans via XML, this lazy loading is controlled by the `lazy-init` attribute on the `<bean/>` element; for example:
+
+ {{{
+<bean id="lazy" class="com.foo.ExpensiveToCreateBean" lazy-init="true"/>
+
+<bean name="not.lazy" class="com.foo.AnotherBean"/>
+ }}}
+
+When the above configuration is consumed by an `ApplicationContext`, the bean named `lazy` will not be eagerly pre-instantiated when the `ApplicationContext` is starting up, whereas the `not.lazy` bean will be eagerly pre-instantiated.
+
+__One thing to understand about lazy-initialization is that even though a bean definition may be marked up as being lazy-initialized, if the lazy-initialized bean is the dependency of a singleton bean that is not lazy-initialized, when the `ApplicationContext` is eagerly pre-instantiating the singleton, it will have to satisfy all of the singletons dependencies, one of which will be the lazy-initialized bean! '''So don't be confused if the IoC container creates one of the beans that you have explicitly configured as lazy-initialized at startup; all that means is that the lazy-initialized bean is being injected into a non-lazy-initialized singleton bean elsewhere.'''__
+
+It is also possible to control lazy-initialization at the container level by using the `default-lazy-init` attribute on the `<beans/>` element; for example:
+
+ {{{
+<beans default-lazy-init="true">
+  <!-- no beans will be pre-instantiated... -->
+</beans>
+ }}}
+
+==== 3.3.5. Autowiring collaborators ====
+
+__The Spring container is able to autowire relationships between collaborating beans. (我們在談 autowiring 時都只針對 bean reference) This means that it is possible to automatically let Spring resolve collaborators (other beans) for your bean by inspecting the contents of the `BeanFactory`. The ''autowiring'' (相對於 explicit wiring 的說法) functionality has five modes. '''Autowiring is specified ''per bean'' and can thus be enabled for some beans, while other beans will not be autowired.''' Using autowiring, it is possible to reduce or eliminate the need to specify properties or constructor arguments, thus saving a significant amount of typing.__ When using XML-based configuration metadata, the autowire mode for a bean definition is specified by using the `autowire` attribute of the `<bean/>` element. The following values are allowed:
+
+Table 3.2. Autowiring modes
+
+|| Mode || Explanation ||
+|| '''`no`''' || No autowiring at all. Bean references must be defined via a `ref` element. __'''This is the default, and changing this is discouraged for larger deployments, since explicitly specifying collaborators gives greater control and clarity. To some extent(某種程度上), it is a form of documentation about the structure of a system. (原來 autowiring 是不被鼓勵的, 與 HiveMide 的立場不太一樣...)'''__ ||
+|| `byName` || Autowiring by property name. This option will inspect the container and look for a bean named exactly the same as the property which needs to be autowired. For example, if you have a bean definition which is set to autowire by name, and it contains a `master` property (that is, it has a `setMaster(..)` method), Spring will look for a bean definition named `master`, and use it to set the property. ||
+|| `byType` || __Allows a property to be autowired if there is exactly one bean of the property type in the container. If there is more than one, a fatal exception is thrown, and this indicates that you may not use `byType` autowiring for that bean. '''If there are no matching beans, nothing happens; the property is not set. If this is not desirable, setting the `dependency-check="objects"` attribute value specifies that an error should be thrown in this case.__ ||
+|| `constructor` || This is analogous to `byType`, but applies to constructor arguments. If there isn't exactly one bean of the constructor argument type in the container, a fatal error is raised. ||
+|| `autodetect` || Chooses constructor or `byType` through introspection(內省) of the bean class. If a default constructor is found, the `byType` mode will be applied. (如果有 default constructor 就直接採用, 然後再套用 setter injection...) ||
+
+__'''Note that explicit dependencies in `property` and `constructor-arg` settings always override autowiring.''' Please also note that it is not currently possible to autowire so-called simple properties such as primitives, `String`s, and `Classes` (and arrays of such simple properties). (This is by-design and should be considered a feature.) When using either the `byType` or `constructor` autowiring mode, '''it is possible to wire arrays and typed-collections. In such cases all autowire candidates within the container that match the expected type will be provided to satisfy the dependency. (用以實現 strategy pattern[?])''' Strongly-typed `Map`s can even be autowired if the expected key type is `String`. An autowired `Map`'s values will consist of all bean instances that match the expected type, and the `Map`'s keys will contain the corresponding bean names.__
+
+__Autowire behavior can be combined with ''dependency checking'', which will be performed ''after all'' autowiring has been completed.__
+
+It is important to understand the various advantages and disadvantages of autowiring. Some advantages of autowiring include:
+
+ * Autowiring can significantly reduce the volume of configuration required. However, mechanisms such as the use of a ''bean template'' (discussed elsewhere in this chapter) are also valuable in this regard.
+ * __'''Autowiring can cause configuration to keep itself up to date as your objects evolve.''' For example, if you need to add an additional dependency to a class, that dependency can be satisfied automatically without the need to modify configuration. '''Thus there may be a strong case for autowiring during development, without ruling out(排除) the option of switching to explicit wiring when the code base becomes more stable. [?]'''__
+
+Some disadvantages of autowiring:
+
+ * __Autowiring is more magical than explicit wiring. Although, as noted in the above table, Spring is careful to avoid guessing in case of ambiguity which might have unexpected results, '''the relationships between your Spring-managed objects are no longer documented explicitly.'''__
+ * __Wiring information may not be available to tools that may generate documentation from a Spring container. (有這種工具嗎[?])__
+
+Another issue to consider when autowiring by type is that multiple bean definitions within the container may match the type specified by the setter method or constructor argument to be autowired. For arrays, collections, or Maps, this is not necessarily a problem. However for dependencies that expect a single value, this ambiguity will not be arbitrarily resolved. Instead, if no unique bean definition is available, an `Exception` will be thrown. __You do have several options when confronted(面對) with this scenario. First, you may abandon ''autowiring'' in favor of ''explicit wiring''. Second, you may designate(指明) that certain bean definitions are never to be considered as candidates by setting their `autowire-candidate` attributes to `false` as described in the next section. Third, you may designate a single bean definition as the primary candidate by setting the `primary` attribute of its `<bean/>` element to `true`.__ Finally, if you are using at least Java 5, you may be interested in exploring the more fine-grained control available with annotation-based configuration as described in the section entitled Section 3.11, “Annotation-based configuration”.
+
+__When deciding whether to use autowiring, there is no wrong or right answer in all cases. A degree of consistency across a project is best though;__ for example, if autowiring is not used in general, it might be confusing to developers to use it just to wire one or two bean definitions.
+
+===== 3.3.5.1. Excluding a bean from being available for autowiring =====
+
+__'''You can also (on a per-bean basis) totally exclude a bean from being an ''autowire candidate''. (注意這裡 `autowire-candidate` 的方法剛好與 `autowire` 相反)''' When configuring beans using Spring's XML format, the `autowire-candidate` attribute of the `<bean/>` element can be set to `false` (預設為 `true`); this has the effect of making the container totally exclude that specific bean definition from being available to the autowiring infrastructure.__
+
+__Another option is to limit autowire candidates based on pattern-matching against bean names. The top-level `<beans/>` element accepts one or more patterns within its `default-autowire-candidates` attribute. For example, to limit autowire candidate status to any bean whose name ends with `Repository`, provide a value of `*Repository`. To provide multiple patterns, define them in a comma-separated list. '''(這個設定一改可能就會造成一些採用 autowiring 的 bean 無法初始化, 尤其是從外面引進來的 bean definitions, 如果另一個 XML 組態檔的 `<beans/>` 有不同的設定, 會產生什麼樣的結果? 又或者 "top-level" 有其他的意涵[?]; 對於自我要求的部份, 就是完全不要使用 autowiring!!)'''__ Note that an explicit value of `true` or `false` for a bean definition's `autowire-candidate` attribute always takes precedence, and for such beans, the pattern matching rules will not apply.
+
+__These techniques can be useful when you have one or more beans that you absolutely never ever want to have injected into other beans via autowiring. '''It does not mean that an excluded bean cannot itself be configured using autowiring... it can, it is rather that it itself will not be considered as a candidate for autowiring other beans.'''__
+
+==== 3.3.6. Checking for dependencies ====
+
+__'''The Spring IoC container also has the ability to check for the existence of ''unresolved dependencies'' of a bean deployed into the container. These are JavaBeans properties of the bean, which do not have actual values set for them in the bean definition, or alternately provided automatically by the autowiring feature. (這項功能相當重要, 搭配 pre-instantiate singleton beans 的機制, 可以在 container 啟動的同時, 就將所有組態上的錯誤給揪出來; 以往在 HiveMind 裡要自己透過 `initializeService()` 用 assertion 檢查, 相當麻煩...)'''__
+
+__This feature is sometimes useful when you want to ensure that all properties (or all properties of a certain type; 依 checking mode 區分) are set on a bean. '''Of course, in many cases a bean class will have default values for many properties, or some properties do not apply to all usage scenarios, so this feature is of ''limited use''. (如果可以控制到 property level 會更好[...])'''__ Dependency checking can also be enabled and disabled per bean, just as with the autowiring functionality. The default is to ''not'' check dependencies. Dependency checking can be handled in several different modes. When using XML-based configuration metadata, this is specified via the `dependency-check` attribute in a bean definition, which may have the following values.
+
+Table 3.3. Dependency checking modes
+
+|| Mode || Explanation ||
+|| '''`none`''' || No dependency checking. Properties of the bean which have no value specified for them are simply not set. (default) ||
+|| `simple` || Dependency checking is performed for primitive types and collections (everything except collaborators).  ||
+|| `object` || Dependency checking is performed for collaborators only. (改名為 `bean` 或許比較一致) ||
+|| `all` || Dependency checking is done for collaborators, primitive types and collections. ||
+
+If you are using Java 5 and thus have access to source-level annotations, you may find the section entitled Section 25.3.1, “@Required” to be of interest.
+
+==== 3.3.7. Method Injection ====
+
+For most application scenarios, the majority of the beans in the container will be singletons. When a singleton bean needs to collaborate with another singleton bean, or a non-singleton bean needs to collaborate with another non-singleton bean, the typical and common approach of handling this dependency by defining one bean to be a property of the other is quite adequate(足夠的). __There is a problem when the bean lifecycles are different. Consider a singleton bean A which needs to use a non-singleton (prototype) bean B, perhaps on each method invocation on A. The container will only create the singleton bean A once, and thus only get the opportunity to set the properties once. There is no opportunity for the container to provide bean A with a new instance of bean B every time one is needed.__
+
+One solution to this issue is to forego(先行) some inversion of control. Bean A can be made aware of the container by implementing the `BeanFactoryAware` interface, and use programmatic means to ask the container via a `getBean("B")` call for (a typically new) bean B instance every time it needs it. Find below an admittedly(無可否認的) somewhat contrived(不自然的) example of this approach:
+
+ {{{
+// a class that uses a stateful Command-style class to perform some processing
+package fiona.apple;
+
+// lots of Spring-API imports; 與 Spring API 產生相依, 下面會提到不相依的做法...
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.BeanFactoryAware;
+
+public class CommandManager implements BeanFactoryAware {
+
+   private BeanFactory beanFactory;
+
+   public Object process(Map commandState) {
+    // grab a new instance of the appropriate Command
+    Command command = createCommand();
+    // set the state on the (hopefully brand new) Command instance
+    command.setState(commandState);
+    return command.execute();
+   }
+
+   // the Command returned here could be an implementation that executes asynchronously, or whatever
+   protected Command createCommand() {
+    return (Command) this.beanFactory.getBean("command"); // notice the Spring API dependency
+   }
+
+   // BeanFactory 是如何注射進來的? 這在 HiveMind 下是得不到的[?]
+   public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
+    this.beanFactory = beanFactory;
+   }
+}
+ }}}
+
+The above example is generally not a desirable solution since the business code is then aware of and coupled to the Spring Framework. Method Injection, a somewhat advanced feature of the Spring IoC container, allows this use case to be handled in a clean fashion.
+
+===== 3.3.7.1. Lookup method injection =====
+
+__Lookup method injection refers to the ability of the container to ''override'' methods on container managed beans, to return the result of looking up another named bean in the container. The lookup will typically be of a ''prototype bean'' as in the scenario described above. '''The Spring Framework implements this method injection by dynamically generating a subclass overriding the method, using bytecode generation via the CGLIB library. (跟 Tapestry 中 getter-based injection 的做法很像)'''__
+
+ '''Isn't this Method Injection...'''
+
+ .... somewhat like Tapestry 4.0's pages, where folks(人們) wrote abstract properties that Tapestry would override at runtime with implementations that did stuff? It sure is (well, somewhat).
+
+ .You can read more about the motivation for Method Injection in this http://blog.springframework.com/rod/?p=1[blog entry].
+
+So if you look at the code from previous code snippet (the `CommandManager` class), the Spring container is going to dynamically override the implementation of the `createCommand()` method. Your `CommandManager` class is not going to have any Spring dependencies, as can be seen in this reworked example below:
+
+ {{{
+package fiona.apple;
+
+// no more Spring imports!
+
+public abstract class CommandManager {
+
+   public Object process(Object commandState) {
+      // grab a new instance of the appropriate Command interface
+      Command command = createCommand();
+      // set the state on the (hopefully brand new) Command instance
+      command.setState(commandState);
+      return command.execute();
+   }
+
+   // okay... but where is the implementation of this method?
+   protected abstract Command createCommand();
+}
+ }}}
+
+In the client class containing the method to be injected (the `CommandManager` in this case), the method that is to be 'injected' must have a signature of the following form:
+
+ {{{
+<public|protected> [abstract] <return-type> theMethodName(no-arguments);
+ }}}
+
+__If the method is abstract, the dynamically-generated subclass will implement the method. Otherwise, the dynamically-generated subclass will override the concrete method defined in the original class. (實務上要採用 abstract method, 還是提供一個空實作等著被 override[?])__ Let's look at an example:
+
+ {{{
+<!-- a stateful bean deployed as a prototype (non-singleton) -->
+<bean id="command" class="fiona.apple.AsyncCommand" scope="prototype">
+  <!-- inject dependencies here as required -->
+</bean>
+
+<!-- commandProcessor uses statefulCommandHelper -->
+<bean id="commandManager" class="fiona.apple.CommandManager">
+  <lookup-method name="createCommand" bean="command"/>
+</bean>
+ }}}
+
+__The bean identified as `commandManager` will call its own method `createCommand()` whenever it needs a new instance of the `command` bean. It is important to note that the person deploying the beans must be careful to deploy the command bean as a prototype (if that is actually what is needed). If it is deployed as a singleton, the same instance of the command bean will be returned each time!__
+
+__Please be aware that in order for this dynamic subclassing to work, you will need to have the CGLIB jar(s) on your classpath. Additionally, the class that the Spring container is going to subclass cannot be `final`, and the method that is being overridden cannot be `final` either. '''Also, testing a class that has an abstract method can be somewhat odd(奇特的) in that you will have to subclass the class yourself and supply a ''stub implementation'' of the abstract method.''' Finally, objects that have been the target of method injection cannot be serialized (跟 serialized 有什麼關係[?]).__
+
+ '''Tip'''
+
+ The interested reader may also find the `ServiceLocatorFactoryBean` (in the `org.springframework.beans.factory.config` package) to be of use; the approach is similar to that of the `ObjectFactoryCreatingFactoryBean`, but it allows you to specify your own lookup interface as opposed to having to use a Spring-specific lookup interface such as the `ObjectFactory`. Consult the (copious(內容豐富的)) Javadoc for the `ServiceLocatorFactoryBean` for a full treatment(處置) of this alternative approach (that does reduce the coupling to Spring).[?]
+
+===== 3.3.7.2. Arbitrary method replacement =====
+
+A less commonly useful form of method injection than Lookup Method Injection is the ability to replace arbitrary methods in a managed bean with another method implementation. Users may safely skip the rest of this section (which describes this somewhat advanced feature), until this functionality is actually needed. (太 tricky 了, 跟 Spring API 也會產生相依[?])
+
+When using XML-based configuration metadata, the `replaced-method` element may be used to replace an existing method implementation with another, for a deployed bean. Consider the following class, with a method `computeValue`, which we want to override:
+
+ {{{
+public class MyValueCalculator {
+
+  public String computeValue(String input) {
+    // some real code...
+  }
+
+  // some other methods...
+
+}
+ }}}
+
+A class implementing the `org.springframework.beans.factory.support.MethodReplacer` interface provides the new method definition.
+
+ {{{
+/** meant to be used to override the existing computeValue(String)
+  implementation in MyValueCalculator
+  */
+public class ReplacementComputeValue implements MethodReplacer {
+
+  public Object reimplement(Object o, Method m, Object[] args) throws Throwable {
+    // get the input value, work with it, and return a computed result
+    String input = (String) args[0];
+    ...
+    return ...;
+  }
+}
+ }}}
+
+The bean definition to deploy the original class and specify the method override would look like this:
+
+ {{{
+<bean id="myValueCalculator class="x.y.z.MyValueCalculator">
+  <!-- arbitrary method replacement -->
+  <replaced-method name="computeValue" replacer="replacementComputeValue">
+    <arg-type>String</arg-type>
+  </replaced-method>
+</bean>
+
+<bean id="replacementComputeValue" class="a.b.c.ReplacementComputeValue"/>
+ }}}
+
+One or more contained `<arg-type/>` elements within the `<replaced-method/>` element may be used to indicate the method signature of the method being ''overridden''. Note that the signature for the arguments is actually only needed in the case that the method is actually ''overloaded'' and there are multiple variants within the class. For convenience, the type string for an argument may be a substring of the fully qualified type name. For example, all the following would match `java.lang.String`.
+
+ {{{
+java.lang.String
+String
+Str
+ }}}
+
+Since the number of arguments is often enough to distinguish between each possible choice, this shortcut can save a lot of typing, by allowing you to type just the shortest string that will match an argument type.
+
+=== 3.4. Bean scopes ===
+
+When you create a bean definition what you are actually creating is a recipe for creating actual instances of the class defined by that bean definition. The idea that a bean definition is a recipe is important, because it means that, just like a class, you can potentially have many object instances created from a single recipe.
+
+You can control not only the various dependencies and configuration values that are to be plugged into an object that is created from a particular bean definition, but also the ''scope'' of the objects created from a particular bean definition. __This approach is very powerful and gives you the flexibility to choose the scope of the objects you create through configuration instead of having to 'bake in' the scope of an object at the Java class level.__ Beans can be defined to be deployed in one of a number of scopes: out of the box, the Spring Framework supports exactly five scopes (of which three are available only if you are using a web-aware `ApplicationContext`).
+
+The scopes supported out of the box are listed below: (HiveMind 中的 threaded/pooled models, 在 Spring 中如何實現[?])
+
+Table 3.4. Bean scopes
+
+|| Scope || Description ||
+|| singleton || Scopes a single bean definition to a single object instance per Spring IoC container. (在 parent/child container 的架構下也只會有一個[?]) ||
+|| prototype || Scopes a single bean definition to any number of object instances. ||
+|| request || Scopes a single bean definition to the lifecycle of a single HTTP request; that is each and every HTTP request will have its own instance of a bean created off the back of a single bean definition. Only valid in the context of a web-aware Spring `ApplicationContext`. ||
+|| session || Scopes a single bean definition to the lifecycle of a HTTP `Session`. Only valid in the context of a web-aware Spring `ApplicationContext`. ||
+|| global session || Scopes a single bean definition to the lifecycle of a ''global HTTP `Session`''. Typically only valid when used in a ''portlet context''. Only valid in the context of a web-aware Spring `ApplicationContext`. (這跟 `session` 有什麼差別? 其中 "global HTTP Session" 指的又是什麼[?]) ||
+
+==== 3.4.1. The singleton scope ====
+
+When a bean is a singleton, only one shared instance of the bean will be managed, and all requests for beans with an id or ids matching that bean definition will result in that one specific bean instance being returned by the Spring container.
+
+To put it another way, when you define a bean definition and it is scoped as a singleton, then the Spring IoC container will create exactly one instance of the object defined by that bean definition. This single instance will be stored in a cache of such singleton beans, and all subsequent requests and references for that named bean will result in the cached object being returned.
+
+{{attachment:singleton.png}}
+
+__Please be aware that Spring's concept of a singleton bean is quite different from the Singleton pattern as defined in the seminal Gang of Four (GoF) patterns book. '''The GoF Singleton hard codes the scope of an object such that one and only one instance of a particular class will ever be created per `ClassLoader`. The scope of the Spring singleton is best described as ''per container'' and ''per bean''.''' This means that if you define one bean for a particular class in a single Spring container, then the Spring container will create ''one and only one'' instance of the class defined by that bean definition. The singleton scope is the default scope in Spring.__ To define a bean as a singleton in XML, you would write configuration like so: (其中 `scope="singleton"` 與 `singleton="true"` 的寫法是通用的; 但最好不要再用 `singleton` 這個舊的寫法)
+
+ {{{
+<bean id="accountService" class="com.foo.DefaultAccountService"/>
+
+<!-- the following is equivalent, though redundant (singleton scope is the default); using spring-beans-2.0.dtd -->
+<bean id="accountService" class="com.foo.DefaultAccountService" scope="singleton"/>
+
+<!-- the following is equivalent and preserved for backward compatibility in spring-beans.dtd -->
+<bean id="accountService" class="com.foo.DefaultAccountService" singleton="true"/>
+ }}}
+
+==== 3.4.2. The prototype scope ====
+
+__The non-singleton, prototype scope of bean deployment results in the creation of a new bean instance every time a request for that specific bean is made (that is, it is injected into another bean or it is requested via a programmatic `getBean()` method call on the container; 參考上面 Method Injection 一節的說明). '''As a rule of thumb, you should use the prototype scope for all beans that are ''stateful'', while the singleton scope should be used for ''stateless'' beans. (其中 non-singleton 與 prototype 的說法是互通的, 這也反應在 configuration 的語法上)'''__
+
+The following diagram illustrates the Spring prototype scope. Please note that a DAO would not typically be configured as a prototype, since a typical DAO would not hold any ''conversational state''; it was just easier for this author to reuse the core of the singleton diagram.
+
+{{attachment:prototype.png}}
+
+To define a bean as a prototype in XML, you would write configuration like so: (其中 `scope="prototype"` 與 `singleton="false"` 的用法是互通的; 但最好不要再用 `singleton` 這個舊的寫法)
+
+ {{{
+<!-- using spring-beans-2.0.dtd -->
+<bean id="accountService" class="com.foo.DefaultAccountService" scope="prototype"/>
+
+<!-- the following is equivalent and preserved for backward compatibility in spring-beans.dtd -->
+<bean id="accountService" class="com.foo.DefaultAccountService" singleton="false"/>
+ }}}
+
+There is one quite important thing to be aware of when deploying a bean in the prototype scope, in that the lifecycle of the bean ''changes slightly'' (相對於 Spring 之前的版本嗎[?]). __Spring does not manage the complete lifecycle of a prototype bean: the container instantiates, configures, decorates and otherwise assembles a prototype object, '''hands it to the client and then has no further knowledge of that prototype instance.''' This means that while ''initialization lifecycle callback'' methods will be called on all objects regardless of scope, in the case of prototypes, any configured ''destruction lifecycle callbacks'' will not be called. '''It is the responsibility of the client code to clean up prototype scoped objects and release any expensive resources that the prototype bean(s) are holding onto.'''__ (One possible way to get the Spring container to release resources used by prototype-scoped beans is through the use of a custom bean ''post-processor'' which would hold a reference to the beans that need to be cleaned up.[?])
+
+__In some respects, you can think of the Spring containers role when talking about a prototype-scoped bean as somewhat of a replacement for the Java `new` operator. All lifecycle aspects past that point have to be handled by the client.__ (The lifecycle of a bean in the Spring container is further described in the section entitled Section 3.5.1, “Lifecycle callbacks”.)
+
+==== 3.4.3. Singleton beans with prototype-bean dependencies ====
+
+When using singleton-scoped beans that have dependencies on beans that are scoped as prototypes, please be aware that dependencies are resolved at instantiation time. __This means that if you dependency inject a prototype-scoped bean into a singleton-scoped bean, a brand new prototype bean will be instantiated and then dependency injected into the singleton bean... but that is all. '''That exact same prototype instance will be the sole(僅有的) instance that is ever supplied to the singleton-scoped bean,''' which is fine if that is what you want.__
+
+However, sometimes what you actually want is for the singleton-scoped bean to be able to acquire a brand new instance of the prototype-scoped bean again and again and again at runtime. In that case it is no use just dependency injecting a prototype-scoped bean into your singleton bean, because as explained above, that only happens once when the Spring container is instantiating the singleton bean and resolving and injecting its dependencies. __If you are in the scenario where you need to get a brand new instance of a (prototype) bean again and again and again at runtime, you are referred to the section entitled Section 3.3.7, “Method Injection”__
+
+ '''Backwards compatibility note: specifying the lifecycle scope in XML'''
+
+ .If you are referencing the `spring-beans.dtd` DTD in a bean definition file(s), and you are being explicit about the lifecycle scope of your beans you must use the `singleton` attribute to express the lifecycle scope (remembering that the singleton lifecycle scope is the default). __If you are referencing the `spring-beans-2.0.dtd` DTD or the Spring 2.0 XSD schema, then you will need to use the `scope` attribute '''(because the `singleton` attribute was removed from the definition of the new DTD and XSD files in favor of the `scope` attribute; 因此新的組態最好要開始改用 `scope`)'''.__
+
+ .To be totally clear about this, this means that if you use the `singleton` attribute in an XML bean definition then you must be referencing the `spring-beans.dtd` DTD in that file. If you are using the `scope` attribute then you must be referencing either the `spring-beans-2.0.dtd` DTD or the `spring-beans-2.5.xsd` XSD in that file.
+
+==== 3.4.4. The other scopes ====
+
+The other scopes, namely request, session, and global session are for use only in web-based applications (and can be used irrespective(不拘) of which particular web application framework you are using, if indeed any). In the interest of keeping related concepts together in one place in the reference documentation, these scopes are described here.
+
+ '''Note'''
+
+ .The scopes that are described in the following paragraphs are only available if you are using a web-aware Spring `ApplicationContext` implementation (such as `XmlWebApplicationContext`). If you try using these next scopes with regular Spring IoC containers such as the `XmlBeanFactory` or `ClassPathXmlApplicationContext`, you will get an `IllegalStateException` complaining about an unknown bean scope.
+
+===== 3.4.4.1. Initial web configuration =====
+
+In order to support the scoping of beans at the request, session, and global session levels (web-scoped beans), some minor initial configuration is required before you can set about defining your bean definitions. Please note that this extra setup is not required if you just want to use the 'standard' scopes (namely singleton and prototype).
+
+Now as things stand, there are a couple of ways to effect this initial setup depending on your particular Servlet environment...
+
+If you are accessing scoped beans within Spring Web MVC, i.e. within a request that is processed by the Spring `DispatcherServlet`, or `DispatcherPortlet`, then no special setup is necessary: `DispatcherServlet` and `DispatcherPortlet` already expose all relevant state.
+
+__When using a Servlet 2.4+ web container, with requests processed outside of Spring's `DispatcherServlet` (e.g. when using JSF or Struts), you need to add the following `javax.servlet.ServletRequestListener` to the declarations in your web application's `web.xml` file. (為什麼不是透過 `org.springframework.web.context.ContextLoaderListener`[?])__
+
+ {{{
+<web-app>
+  ...
+  <listener>
+    <listener-class>org.springframework.web.context.request.RequestContextListener</listener-class>
+  </listener>
+  ...
+</web-app>
+ }}}
+
+__If you are using an older web container (Servlet 2.3), you will need to use the provided `javax.servlet.Filter` implementation. (沒想到 Servlet 版本間存在著這麼大的差異...)__ Find below a snippet of XML configuration that has to be included in the `web.xml` file of your web application if you want to have access to web-scoped beans in requests outside of Spring's `DispatcherServlet` on a Servlet 2.3 container. (The filter mapping depends on the surrounding web application configuration and so you will have to change it as appropriate; 指 url pattern 的部份)
+
+ {{{
+<web-app>
+  ..
+  <filter>
+    <filter-name>requestContextFilter</filter-name>
+    <filter-class>org.springframework.web.filter.RequestContextFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>requestContextFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+  ...
+</web-app>
+ }}}
+
+__That's it. `DispatcherServlet`, `RequestContextListener` and `RequestContextFilter` all do exactly the same thing, '''''namely'' bind the HTTP request object to the `Thread` that is servicing that request. This makes beans that are request- and session-scoped available further down the call chain.[...]'''__
+
+===== 3.4.4.2. The request scope =====
+
+Consider the following bean definition:
+
+ {{{
+<bean id="loginAction" class="com.foo.LoginAction" scope="request"/>
+ }}}
+
+With the above bean definition in place, the Spring container will create a brand new instance of the `LoginAction` bean using the `loginAction` bean definition for each and every HTTP request. That is, the `loginAction` bean will be effectively scoped at the HTTP request level. You can change or dirty the internal state of the instance that is created as much as you want, safe in the knowledge that other requests that are also using instances created off the back of the same `loginAction` bean definition will not be seeing these changes in state since they are particular to an individual request. When the request is finished processing, the bean that is scoped to the request will be discarded.
+
+===== 3.4.4.3. The session scope =====
+
+Consider the following bean definition:
+
+ {{{
+<bean id="userPreferences" class="com.foo.UserPreferences" scope="session"/>
+ }}}}
+
+With the above bean definition in place, the Spring container will create a brand new instance of the `UserPreferences` bean using the `userPreferences` bean definition for the lifetime of a single HTTP Session. In other words, the `userPreferences` bean will be effectively scoped at the HTTP Session level. Just like request-scoped beans, you can change the internal state of the instance that is created as much as you want, safe in the knowledge that other HTTP Session instances that are also using instances created off the back of the same `userPreferences` bean definition will not be seeing these changes in state since they are particular to an individual HTTP Session. When the HTTP Session is eventually discarded, the bean that is scoped to that particular HTTP Session will also be discarded.
+
+===== 3.4.4.4. The global session scope =====
+
+Consider the following bean definition:
+
+ {{{
+<bean id="userPreferences" class="com.foo.UserPreferences" scope="globalSession"/>
+ }}}
+
+__The global session scope is similar to the standard HTTP Session scope (described immediately above), and really only makes sense in the context of portlet-based web applications. '''The portlet specification defines the notion of a global `Session` that is shared amongst all of the various portlets that make up a single portlet web application.''' Beans defined at the global session scope are scoped (or bound) to the lifetime of the global portlet `Session`.__
+
+__Please note that if you are writing a standard Servlet-based web application and you define one or more beans as having global session scope, the standard HTTP Session scope will be used, and no error will be raised. (應用在什麼地方[?])__
+
+===== 3.4.4.5. Scoped beans as dependencies =====
+
+Being able to define a bean scoped to a HTTP request or `Session` (or indeed a custom scope of your own devising) is all very well, but one of the main value-adds of the Spring IoC container is that it manages not only the instantiation of your objects (beans), but also the wiring up of collaborators (or dependencies). If you want to inject a (for example) HTTP request scoped bean into another bean, you will need to inject an ''AOP proxy'' in place of the scoped bean. That is, you need to inject a proxy object that exposes the same public interface as the scoped object, but that is smart enough to be able to retrieve the real, target object from the relevant scope (for example a HTTP request) and delegate method calls onto the real object.
+[Note]  Note
+
+You do not need to use the <aop:scoped-proxy/> in conjunction with beans that are scoped as singletons or prototypes. It is an error to try to create a scoped proxy for a singleton bean (and the resulting BeanCreationException will certainly set you straight in this regard).
+
+Let's look at the configuration that is required to effect this; the configuration is not hugely complex (it takes just one line), but it is important to understand the “why” as well as the “how” behind it.
+
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd">
+
+    <!-- a HTTP Session-scoped bean exposed as a proxy -->
+    <bean id="userPreferences" class="com.foo.UserPreferences" scope="session">
+
+          <!-- this next element effects the proxying of the surrounding bean -->
+          <aop:scoped-proxy/>
+    </bean>
+
+    <!-- a singleton-scoped bean injected with a proxy to the above bean -->
+    <bean id="userService" class="com.foo.SimpleUserService">
+
+        <!-- a reference to the proxied 'userPreferences' bean -->
+        <property name="userPreferences" ref="userPreferences"/>
+
+    </bean>
+</beans>
+
+To create such a proxy, you need only to insert a child <aop:scoped-proxy/> element into a scoped bean definition (you may also need the CGLIB library on your classpath so that the container can effect class-based proxying; you will also need to be using Appendix A, XML Schema-based configuration). So, just why do you need this <aop:scoped-proxy/> element in the definition of beans scoped at the request, session, globalSession and 'insert your custom scope here' level? The reason is best explained by picking apart the following bean definition (please note that the following 'userPreferences' bean definition as it stands is incomplete):
+
+<bean id="userPreferences" class="com.foo.UserPreferences" scope="session"/>
+
+<bean id="userManager" class="com.foo.UserManager">
+    <property name="userPreferences" ref="userPreferences"/>
+</bean>
+
+From the above configuration it is evident that the singleton bean 'userManager' is being injected with a reference to the HTTP Session-scoped bean 'userPreferences'. The salient point here is that the 'userManager' bean is a singleton... it will be instantiated exactly once per container, and its dependencies (in this case only one, the 'userPreferences' bean) will also only be injected (once!). This means that the 'userManager' will (conceptually) only ever operate on the exact same 'userPreferences' object, that is the one that it was originally injected with. This is not what you want when you inject a HTTP Session-scoped bean as a dependency into a collaborating object (typically). Rather, what we do want is a single 'userManager' object, and then, for the lifetime of a HTTP Session, we want to see and use a 'userPreferences' object that is specific to said HTTP Session.
+
+Rather what you need then is to inject some sort of object that exposes the exact same public interface as the UserPreferences class (ideally an object that is a UserPreferences instance) and that is smart enough to be able to go off and fetch the real UserPreferences object from whatever underlying scoping mechanism we have chosen (HTTP request, Session, etc.). We can then safely inject this proxy object into the 'userManager' bean, which will be blissfully unaware that the UserPreferences reference that it is holding onto is a proxy. In the case of this example, when a UserManager instance invokes a method on the dependency-injected UserPreferences object, it is really invoking a method on the proxy... the proxy will then go off and fetch the real UserPreferences object from (in this case) the HTTP Session, and delegate the method invocation onto the retrieved real UserPreferences object.
+
+That is why you need the following, correct and complete, configuration when injecting request-, session-, and globalSession-scoped beans into collaborating objects:
+
+<bean id="userPreferences" class="com.foo.UserPreferences" scope="session">
+    <aop:scoped-proxy/>
+</bean>
+
+<bean id="userManager" class="com.foo.UserManager">
+    <property name="userPreferences" ref="userPreferences"/>
+</bean>
+
+:::
+
+= Chapter 22. Email =
+http://static.springsource.org/spring/docs/2.5.x/reference/mail.html @2010/01/10
+
+== 22.1. Introduction ==
+
+The Spring Framework provides a helpful utility library for sending email that shields the user from the specifics of the underlying mailing system and is responsible for low level ''resource handling'' on behalf of(代表) the client.
+
+The `org.springframework.mail` package is the root level package for the Spring Framework's email support. __The central interface for sending emails is the `MailSender` interface; a simple ''value object'' encapsulating the properties of a simple mail such as from and to (plus many others) is the `SimpleMailMessage` class.__ This package also contains a hierarchy of checked exceptions which provide a higher level of abstraction over the lower level mail system exceptions with the root exception being http://static.springsource.org/spring/docs/2.5.x/api/org/springframework/mail/MailException.html[MailException]. (全部都是 Unchecked Exceptions, 為什麼上面會說 Checked?) Please refer to the Javadocs for more information on the rich mail exception hierarchy.
+
+__The `org.springframework.mail.javamail.JavaMailSender` interface adds specialized !JavaMail features such as MIME message support to the `MailSender` interface (from which it inherits). `JavaMailSender` also provides a ''callback'' interface for preparation of !JavaMail MIME messages, called `org.springframework.mail.javamail.MimeMessagePreparator` (夾檔比較耗時?)__
+
+'''Library dependencies'''
+
+The following additional jars to be on the classpath of your application in order to be able to use the Spring Framework's email library.
+
+ * The http://java.sun.com/products/javamail/[JavaMail] `mail.jar` library
+
+ * The http://java.sun.com/products/javabeans/jaf/downloads/index.html[JAF] `activation.jar` library (按官網的說法, 如果 !JavaMail 1.4.1+ 搭配 JRE 6 的環境運作時, JAF 是不需要的)
+
+All of these libraries are available in the Spring-with-dependencies distribution of the Spring Framework (in addition to also being freely available on the web).
+
+== 22.2. Usage ==
+
+Let's assume there is a business interface called `OrderManager`:
+
+ {{{
+public interface OrderManager {
+  void placeOrder(Order order);
+}
+ }}}
+
+Let us also assume that there is a requirement stating that an email message with an order number needs to be generated and sent to a customer placing the relevant order.
+
+=== 22.2.1. Basic MailSender and SimpleMailMessage usage ===
+
+ {{{
+import org.springframework.mail.MailException;
+import org.springframework.mail.MailSender;
+import org.springframework.mail.SimpleMailMessage;
+
+public class SimpleOrderManager implements OrderManager {
+  private MailSender mailSender; // 還用不到 JavaMailSender
+  private SimpleMailMessage templateMessage;
+
+  public void setMailSender(MailSender mailSender) {
+    this.mailSender = mailSender;
+  }
+
+  public void setTemplateMessage(SimpleMailMessage templateMessage) {
+    this.templateMessage = templateMessage;
+  }
+
+  public void placeOrder(Order order) {
+    // Do the business calculations...
+    // Call the collaborators to persist the order...
+
+    // Create a thread safe "copy" of the template message and customize it
+    SimpleMailMessage msg = new SimpleMailMessage(this.templateMessage);
+    msg.setTo(order.getCustomer().getEmailAddress());
+    msg.setText("Dear " + order.getCustomer().getFirstName()
+        + order.getCustomer().getLastName()
+        + ", thank you for placing order. Your order number is "
+        + order.getOrderNumber());
+
+    try {
+      this.mailSender.send(msg);
+    } catch(MailException ex) {
+      // simply log it and go on...
+      System.err.println(ex.getMessage());            
+    }
+  }
+}
+ }}}
+
+Find below the bean definitions for the above code:
+
+ {{{
+<!-- 採用 JavaMail 的實作 -->
+<bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
+  <property name="host" value="mail.mycompany.com"/>
+</bean>
+
+<!-- this is a template message that we can pre-load with default state -->
+<bean id="templateMessage" class="org.springframework.mail.SimpleMailMessage">
+  <property name="from" value="customerservice@mycompany.com"/>
+  <property name="subject" value="Your order"/>
+</bean>
+
+<bean id="orderManager" class="com.mycompany.businessapp.support.SimpleOrderManager">
+  <property name="mailSender" ref="mailSender"/>
+  <property name="templateMessage" ref="templateMessage"/>
+</bean>
+ }}}
+
+`JavaMailSenderImpl` 與 `SimpleMailMessage` 更多的 properties 請參考:
+
+ * http://static.springsource.org/spring/docs/2.5.x/api/org/springframework/mail/javamail/JavaMailSenderImpl.html
+ * http://static.springsource.org/spring/docs/2.5.x/api/org/springframework/mail/SimpleMailMessage.html
+
+ {{{
+<bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
+  <property name="host" value="..." />
+  <property name="username" value="..." />
+  <property name="password" value="..." />
+  <property name="defaultEncoding" value="UTF-8" />
+</bean>
+
+<bean id="templateMessage" class="org.springframework.mail.SimpleMailMessage">
+  <property name="from" value="..." />
+  <property name="replyTo" value="..." /> <!-- 有時候會寫 "NOREPLY" -->
+  <property name="subject" value="..." />
+</bean>
+ }}}
+
+=== 22.2.2. Using the JavaMailSender and the MimeMessagePreparator ===
+
+Here is another implementation of `OrderManager` using the `MimeMessagePreparator` callback interface. Please note in this case that the `mailSender` property is of type `JavaMailSender` so that we are able to use the !JavaMail `MimeMessage` class:
+
+ {{{
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
+
+import javax.mail.internet.MimeMessage;
+import org.springframework.mail.MailException;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessagePreparator;
+
+public class SimpleOrderManager implements OrderManager {
+  private JavaMailSender mailSender;
+
+  public void setMailSender(JavaMailSender mailSender) {
+    this.mailSender = mailSender;
+  }
+
+  public void placeOrder(final Order order) {
+    // Do the business calculations...
+    // Call the collaborators to persist the order...
+
+    MimeMessagePreparator preparator = new MimeMessagePreparator() {
+      public void prepare(javax.mail.internet.MimeMessage mimeMessage) throws Exception {
+        // MimeMessage 只能被動由 JavaMailSender 提供, 但仍可以手動將 SimpleMailMessage 的內容抄寫過來
+        mimeMessage.setRecipient(Message.RecipientType.TO, new InternetAddress(order.getCustomer().getEmailAddress()));
+        mimeMessage.setFrom(new InternetAddress("mail@mycompany.com"));
+        mimeMessage.setText("Dear " + order.getCustomer().getFirstName() + " "
+            + order.getCustomer().getLastName()
+            + ", thank you for placing order. Your order number is "
+            + order.getOrderNumber());
+      }
+    };
+
+    try {
+      this.mailSender.send(preparator);
+    } catch (MailException ex) {
+      // simply log it and go on...
+      System.err.println(ex.getMessage());            
+    }
+  }
+}
+ }}}
+
+__Note: '''The mail code is a ''crosscutting concern'' and could well be a candidate for refactoring into a custom Spring ''AOP aspect'',''' which then could be executed at appropriate ''joinpoints'' on the `OrderManager` target.[?]__
+
+The Spring Framework's mail support ships with two `MailSender` implementations. The standard !JavaMail implementation and the implementation on top of Jason Hunter's `MailMessage` class that is included in the http://servlets.com/cos[com.oreilly.servlet package]. Please refer to the relevant Javadocs for more information.
+
+== 22.3. Using the JavaMail MimeMessageHelper ==
+
+A class that comes in pretty handy when dealing with !JavaMail messages is the `org.springframework.mail.javamail.MimeMessageHelper` class, __which shields you from having to use the verbose !JavaMail API. (出了名的難用!!) Using the `MimeMessageHelper` it is pretty easy to create a `MimeMessage`:__
+
+ {{{
+// of course you would use DI in any real-world cases
+JavaMailSenderImpl sender = new JavaMailSenderImpl();
+sender.setHost("mail.host.com");
+
+MimeMessage message = sender.createMimeMessage();
+MimeMessageHelper helper = new MimeMessageHelper(message); // 把 Message 包裝起來
+helper.setTo("test@host.com");
+helper.setText("Thank you for ordering!");
+
+sender.send(message);
+ }}}
+
+=== 22.3.1. Sending attachments and inline resources ===
+
+__'''Multipart email messages allow for both ''attachments'' and ''inline resources''. Examples of inline resources would be be images or a stylesheet you want to use in your message, but that you don't want displayed as an attachment. (下面的範例充份展示了 `MimeMessageHelper` 的威力!!)'''__
+
+==== 22.3.1.1. Attachments ====
+
+The following example shows you how to use the `MimeMessageHelper` to send an email along with a single JPEG image attachment.
+
+ {{{
+JavaMailSenderImpl sender = new JavaMailSenderImpl();
+sender.setHost("mail.host.com");
+
+MimeMessage message = sender.createMimeMessage();
+
+// use the true flag to indicate you need a multipart message
+// 否則執行期會丟出 IllegalStateException: Not in multipart mode - create an appropriate MimeMessageHelper via a constructor that takes a 'multipart' flag if you need to set alternative texts or add inline elements or attachments.
+MimeMessageHelper helper = new MimeMessageHelper(message, true);
+helper.setTo("test@host.com");
+
+helper.setText("Check out this image!");
+
+// let's attach the infamous windows Sample file (this time copied to c:/)
+FileSystemResource file = new FileSystemResource(new File("c:/Sample.jpg"));
+helper.addAttachment("CoolImage.jpg", file);
+
+sender.send(message);
+ }}}
+
+==== 22.3.1.2. Inline resources ====
+
+The following example shows you how to use the `MimeMessageHelper` to send an email along with an inline image.
+
+ {{{
+JavaMailSenderImpl sender = new JavaMailSenderImpl();
+sender.setHost("mail.host.com");
+
+MimeMessage message = sender.createMimeMessage();
+
+// use the true flag to indicate you need a multipart message
+MimeMessageHelper helper = new MimeMessageHelper(message, true);
+helper.setTo("test@host.com");
+
+// use the true flag to indicate the text included is HTML
+helper.setText("<html><body><img src='cid:identifier1234'></body></html>", true);
+
+// let's include the infamous windows Sample file (this time copied to c:/)
+FileSystemResource res = new FileSystemResource(new File("c:/Sample.jpg"));
+helper.addInline("identifier1234", res);
+
+sender.send(message);
+ }}}
+
+Warning: __Inline resources are added to the mime message using the specified ''Content-ID'' (`identifier1234` in the above example). '''The order in which you are adding the text and the resource are very important. Be sure to first add the text and after that the resources.''' If you are doing it the other way around, it won't work!__
+
+=== 22.3.2. Creating email content using a templating library ===
+
+The code in the previous examples explicitly has been creating the content of the email message, using methods calls such as `message.setText(..)`. This is fine for simple cases, and it is okay in the context of the aforementioned examples, where the intent was to show you the very basics of the API.
+
+In your typical enterprise application though, you are not going to create the content of your emails using the above approach for a number of reasons.
+
+ * Creating HTML-based email content in Java code is tedious and error prone
+ * There is no clear separation between ''display logic'' and business logic
+ * Changing the display structure of the email content requires writing Java code, recompiling, redeploying...
+
+Typically the approach taken to address these issues is to use a template library such as !FreeMarker or Velocity to define the display structure of email content. __This leaves your code tasked only with creating the data that is to be rendered in the email template and sending the email.__ It is definitely a best practice for when the content of your emails becomes even moderately(適度地) complex, and with the Spring Framework's support classes for !FreeMarker and Velocity becomes quite easy to do. Find below an example of using the Velocity template library to create email content.
+
+__'''引入 !FreeMaker 或 Velocity 都不是一件小事 (環境要設定、有專用的樣板語言要學習...), 如果只是少數幾個字串的置換, 採用這些 Template Engines 更顯得有點小題大作. 建議可以從 Spring 組態檔透過 `setText()` 對 `SimpleMailMessage` 注入 "樣板" 文字, 程式只要做簡單的文串置換即可 (symbol 建議採用 "`${symbol}`" 的型式, 將來樣板複雜到一定程度要引入樣板引擎時比較好做移轉). 這麼做的壞處就是很容易破壞 XML 組態檔的可讀性. 2009-08-10'''__
+
+ {{{
+<bean id="templateMessage" class="org.springframework.mail.SimpleMailMessage">
+  <property name="from" value="customerservice@mycompany.com"/>
+  <property name="subject" value="Your order"/>
+  <property name="text">
+<value><![CDATA[
+您好,
+請按下面的連結修改密碼:
+
+${url}
+]]>
+</value>
+  </property>
+</bean>
+ }}}
+
+==== 22.3.2.1. A Velocity-based example ====
+
+To use Velocity to create your email template(s), you will need to have the Velocity libraries available on your classpath. You will also need to create one or more Velocity templates for the email content that your application needs. Find below the Velocity template that this example will be using... as you can see it is HTML-based, and since it is plain text it can be created using your favorite HTML editor without recourse to having to know Java.
+
+ {{{
+# in the com/foo/package
+<html>
+<body>
+<h3>Hi ${user.userName}, welcome to the Chipping Sodbury On-the-Hill message boards!</h3>
+
+<div>
+   Your email address is <a href="mailto:${user.emailAddress}">${user.emailAddress}</a>.
+</div>
+</body>
+
+</html>
+ }}}
+
+Find below some simple code and Spring XML configuration that makes use of the above Velocity template to create email content and send email(s).
+
+ {{{
+package com.foo;
+
+import org.apache.velocity.app.VelocityEngine;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.mail.javamail.MimeMessagePreparator;
+import org.springframework.ui.velocity.VelocityEngineUtils;
+
+import javax.mail.internet.MimeMessage;
+import java.util.HashMap;
+import java.util.Map;
+
+public class SimpleRegistrationService implements RegistrationService {
+  private JavaMailSender mailSender;
+  private VelocityEngine velocityEngine;
+
+  public void setMailSender(JavaMailSender mailSender) {
+    this.mailSender = mailSender;
+  }
+
+  public void setVelocityEngine(VelocityEngine velocityEngine) {
+    this.velocityEngine = velocityEngine;
+  }
+
+  public void register(User user) {
+    // Do the registration logic...
+    sendConfirmationEmail(user);
+  }
+
+  private void sendConfirmationEmail(final User user) {
+    MimeMessagePreparator preparator = new MimeMessagePreparator() {
+      public void prepare(MimeMessage mimeMessage) throws Exception {
+        MimeMessageHelper message = new MimeMessageHelper(mimeMessage);
+        message.setTo(user.getEmailAddress());
+        message.setFrom("webmaster@csonth.gov.uk"); // could be parameterized...
+        Map model = new HashMap();
+        model.put("user", user);
+
+        String text = VelocityEngineUtils.mergeTemplateIntoString(velocityEngine, 
+            "com/dns/registration-confirmation.vm", model);
+        message.setText(text, true);
+      }
+    };
+
+    this.mailSender.send(preparator);
+  }
+}
+ }}}
+
+ {{{
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+  <bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
+    <property name="host" value="mail.csonth.gov.uk"/>
+  </bean>
+
+  <bean id="registrationService" class="com.foo.SimpleRegistrationService">
+    <property name="mailSender" ref="mailSender"/>
+    <property name="velocityEngine" ref="velocityEngine"/>
+  </bean>
+
+  <bean id="velocityEngine" class="org.springframework.ui.velocity.VelocityEngineFactoryBean">
+    <property name="velocityProperties">
+      <value>
+        resource.loader=class
+        class.resource.loader.class=org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader
+      </value>
+    </property>
+  </bean>
+</beans>
+ }}}
+
+== Resource ==
+
+=== Reference ===
+
+=== Attachments ===
+
+|| Filename || Description ||
+||  ||  ||
+
+=== Links ===
+
+=== Search ===
+
+== Scratch ==

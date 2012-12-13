@@ -1,0 +1,85 @@
+= [Android] Application Object =
+
+Application object 會在 application/package 的 process 剛起來時被建立（在其他 link:android-app-component.html[component] 之前），而且就這麼一個（singleton），可以用來維護 global application state。
+
+預設會用 `android.app.Application`。要自訂 application object 的話，只要將類別的全名（full qualified name）填入 `<application>` (`AndroidMenifest.xml`) 的 `name` 屬性即可。
+
+ <application android:name="com.example.MyApplication" ... />
+
+.`com.example.MyApplication`
+--------------------------------------------------------------------------------
+public class MyApplication extends Application { <1>
+
+    private static MyApplication singleton;
+
+    private SharedPreferences mPrefs;
+
+    public static MyApplication getInstance() { <2>
+        return singleton;
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        singleton = this;
+
+        mPrefs = PreferenceManager.getDefaultSharedPreferences(this); <3>
+    }
+
+    public String getUsername() {
+        return mPrefs.getString("username", null);
+    }
+
+    public String getPassword() {
+        return mPrefs.getString("password", null);
+    }
+
+}
+--------------------------------------------------------------------------------
+<1> 自訂的 application object 必須要繼承自 `Application`。之後程式可以透過 `Activity.getApplication()` 或 `Service.getApplication()` 來取得：
++
+ MyApplication mApplication = (MyApplication) getApplication();
++
+<2> 只有 `Activity` 跟 `Service` 才提供有 `getApplication()`，透過 `getInstance()` 的安排，程式其他地方也可以透過下面的方式來取得 application object：
++
+ MyApplication mApplication = MyApplication.getInstance();
++
+<3> Application object 本身就是個 context，不需要煩惱要從哪裡取得。
+
+官方文件明白說了，就 link:../singleton/singleton.html[singleton] 而言，不一定要借助於 application object，因為傳統 static singleton 的做法也能達到相同的效果（甚至更好）：
+
+[quote,'http://developer.android.com/reference/android/app/Application.html[Application | Android Developers]']
+________________________________________________________________________________
+There is normally no need to subclass Application. *In most situation, static singletons can provide the same functionality in a more modular way.* If your singleton needs a global context (for example to register broadcast receivers), the function to retrieve it can be given a Context which internally uses `Context.getApplicationContext()` when first constructing the singleton.
+________________________________________________________________________________
+
+不過由於 applicatoin object 會在所有其他 component 之前完成初始化，很適合做為 link:android-di.html[dependency injection (DI)] 的基礎，例如 link:../roboguice/roboguice.html[RoboGuice] 就是以自訂的 `RoboApplication` 做為起點。
+
+== 延伸閱讀 ==
+
+ * link:android-di.html[Android 上的 Dependency Injection]
+
+== 參考資料 ==
+
+.文件
+--
+ * http://developer.android.com/reference/android/app/Application.html[Application | Android Developers]
+ * http://developer.android.com/guide/topics/manifest/application-element.html#nm[<application> | Android Developers]
+ * http://developer.android.com/reference/android/app/Activity.html#getApplication()[Activity > getApplication() | Android Developers]
+ * http://developer.android.com/reference/android/app/Service.html#getApplication()[Service > getApplication() | Android Developers]
+ * http://developer.android.com/reference/android/content/Context.html#getApplicationContext()[Context > getApplicationContext() | Android Developers]
+   ** http://developer.android.com/reference/android/content/ContextWrapper.html#getApplicationContext()[ContextWrapper > getApplicationContext() | Android Developers]
+ * http://androidcookbook.com/Recipe.seam?recipeId=1218[Android Cookbook: Recipe Android's Application Object as a "Singleton" (Recipe 1218, Revision 3940)] (2012-02-18; PDF) - 專注在 `getInstance()` 的用法，完全沒提到 `getApplication()`。
+--
+
+.書籍
+--
+ * http://shop.oreilly.com/product/0636920010883.do[O'Reilly - Learning Android > The Yamba Application Object (p102)] (2011.03)
+--
+
+.其他文件
+--
+ * http://www.intridea.com/blog/2011/5/24/how-to-use-application-object-of-android[How to use the Application object of Android | Intridea Blog] (2011-05-24) - 用 `getApplication()` 取回，最後提到 `getInstance()` 的 singleton 用法。
+ * http://stackoverflow.com/questions/5018545/getapplication-vs-getapplicationcontext[android - getApplication() vs. getApplicationContext() - Stack Overflow] (2011-02-16; PDF) - `getApplication()` 跟 `getApplicationContext()` 有什麼不同？前者又為什麼只出現在 activity 跟 service？雖然目前兩者都傳回同一個 application object，但不保證未來也是這樣，所以千萬別用 `getApplicationContext()` 來取得 application object。
+--
+

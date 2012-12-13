@@ -1,0 +1,889 @@
+= Python / Official / Library Reference - 20. Internet Protocols and Support =
+http://docs.python.org/library/internet.html
+<<TableOfContents>>
+
+== 20.5. urllib — Open arbitrary resources by URL ==
+http://docs.python.org/library/urllib.html @2010/07/22
+
+Note: The `urllib` module has been split into parts and renamed in Python 3.0 to `urllib.request`, `urllib.parse`, and `urllib.error`. The ''2to3 tool'' will automatically adapt imports when converting your sources to 3.0. Also note that the `urllib.urlopen()` function has been removed in Python 3.0 in favor of `urllib2.urlopen()`.
+
+This module provides a ''high-level interface'' for fetching data across the World Wide Web. __In particular, the `urlopen()` function is similar to the built-in function `open()`, but accepts Universal Resource Locators (URLs) instead of filenames.__ Some restrictions apply — it can only open URLs for reading, and no seek operations are available.
+
+=== 20.5.1. High-level interface ===
+
+==== urllib.urlopen(url[, data[, proxies]]) ====
+
+__Open a network object denoted by a URL for reading. If the URL does not have a scheme identifier, or if it has `file:` as its scheme identifier, this opens a local file (without universal newlines); otherwise it opens a socket to a server somewhere on the network. If the connection cannot be made the `IOError` exception is raised. If all went well, a ''file-like object'' is returned. This supports the following methods: `read()`, `readline()`, `readlines()`, `fileno()`, `close()`, `info()`, `getcode()` and `geturl()`. It also has proper support for the http://docs.python.org/glossary.html#term-iterator[iterator] protocol. One caveat: the `read()` method, if the `size` argument is omitted or negative, may not read until the end of the data stream; there is no good way to determine that the entire stream from a socket has been read in the general case.__
+
+Except for the `info()`, `getcode()` and `geturl()` methods, these methods have the ''same interface'' as for file objects — see section File Objects in this manual. (It is not a built-in `file` object, however, so it can’t be used at those few places where a true built-in `file` object is required.)
+
+__The `info()` method returns an instance of the class `mimetools.Message` containing ''meta-information'' associated with the URL. When the method is HTTP, these headers are those returned by the server at the head of the retrieved HTML page (including `Content-Length` and `Content-Type`).__ When the method is FTP, a `Content-Length` header will be present if (as is now usual) the server passed back a file length in response to the FTP retrieval request. A `Content-Type` header will be present if the MIME type can be guessed. When the method is local-file, returned headers will include a `Date` representing the file’s last-modified time, a `Content-Length` giving file size, and a `Content-Type` containing a guess at the file’s type. See also the description of the `mimetools` module.
+
+__The `geturl()` method returns the ''real URL'' of the page. In some cases, the HTTP server redirects a client to another URL. The `urlopen()` function handles this ''transparently'', but in some cases the caller needs to know which URL the client was redirected to. The `geturl()` method can be used to get at this redirected URL.__
+
+__The `getcode()` method returns the HTTP status code that was sent with the response, or `None` if the URL is no HTTP URL.__
+
+__If the `url` uses the `http:` scheme identifier, the optional `data` argument may be given to specify a POST request (normally the request type is GET). The `data` argument must be in standard `application/x-www-form-urlencoded` format;__ see the `urlencode()` function below.
+
+__The `urlopen()` function works transparently with proxies which do not require authentication.__ In a Unix or Windows environment, set the `http_proxy`, or `ftp_proxy` environment variables to a URL that identifies the proxy server before starting the Python interpreter. For example (the '%' is the command prompt):
+
+ {{{
+% http_proxy="http://www.someproxy.com:3128"
+% export http_proxy
+% python
+...
+ }}}
+
+The `no_proxy` environment variable can be used to specify hosts which shouldn’t be reached via proxy; if set, it should be a comma-separated list of hostname suffixes, optionally with `:port` appended, for example `cern.ch,ncsa.uiuc.edu,some.host:8080`.
+
+In a Windows environment, if no proxy environment variables are set, proxy settings are obtained from the registry’s Internet Settings section.
+
+In a Mac OS X environment, `urlopen()` will retrieve proxy information from the OS X System Configuration Framework, which can be managed with Network System Preferences panel.
+
+Alternatively, the optional `proxies` argument may be used to explicitly specify proxies. It must be a dictionary mapping scheme names to proxy URLs, where an empty dictionary causes no proxies to be used, and `None` (the default value) causes environmental proxy settings to be used as discussed above. For example:
+
+ {{{
+# Use http://www.someproxy.com:3128 for http proxying
+proxies = {'http': 'http://www.someproxy.com:3128'}
+filehandle = urllib.urlopen(some_url, proxies=proxies)
+# Don't use any proxies
+filehandle = urllib.urlopen(some_url, proxies={})
+# Use proxies from environment - both versions are equivalent
+filehandle = urllib.urlopen(some_url, proxies=None)
+filehandle = urllib.urlopen(some_url)
+ }}}
+
+__Proxies which require authentication for use are not currently supported; this is considered an implementation limitation.__
+
+Changed in version 2.3: Added the proxies support.
+
+Changed in version 2.6: Added `getcode()` to returned object and support for the `no_proxy` environment variable.
+
+Deprecated since version 2.6: The `urlopen()` function has been removed in Python 3.0 in favor of `urllib2.urlopen()`.
+
+==== urllib.urlretrieve(url[, filename[, reporthook[, data]]]) ====
+
+__Copy a network object denoted by a URL to a local file, ''if necessary.'' If the URL points to a local file, or a valid cached copy of the object exists, the object is not copied.__ Return a tuple `(filename, headers)` where `filename` is the local file name under which the object can be found, and `headers` is whatever the `info()` method of the object returned by `urlopen()` returned (for a remote object, possibly cached). Exceptions are the same as for `urlopen()`.
+
+:::
+
+=== 20.5.2. Utility functions ===
+
+==== urllib.quote(string[, safe]) ====
+
+__Replace special characters in `string` using the `%xx` escape. Letters, digits, and the characters `'_.-'` are never quoted. By default, this function is intended for quoting the path section of the URL. The optional `safe` parameter specifies additional characters that should not be quoted — its default value is `'/'`.__
+
+Example: `quote('/~connolly/')` yields `'/%7econnolly/'`.
+
+==== urllib.quote_plus(string[, safe]) ====
+
+__Like `quote()`, but also replaces spaces by plus signs, as required for quoting HTML form values when building up a ''query string'' to go into a URL. Plus signs in the original string are escaped unless they are included in `safe`. It also does not have `safe` default to `'/'`.__
+
+==== urllib.urlencode(query[, doseq]) ====
+
+__Convert a mapping object or a sequence of two-element tuples to a “url-encoded” string, suitable to pass to `urlopen()` above as the optional `data` argument. This is useful to pass a dictionary of form fields to a POST request. The resulting string is a series of `key=value` pairs separated by `'&'` characters, where both key and value are quoted using `quote_plus()` above.__ When a sequence of two-element tuples is used as the `query` argument, the first element of each tuple is a key and the second is a value. __The value element in itself can be a sequence and in that case, if the optional parameter `doseq` is evaluates to `True`, individual `key=value` pairs separated by `'&'` are generated for each element of the value sequence for the key. The order of parameters in the encoded string will match the order of parameter tuples in the sequence.__ The `urlparse` module provides the functions `parse_qs()` and `parse_qsl()` which are used to parse query strings into Python data structures.
+
+:::
+
+== 20.6. urllib2 — extensible library for opening URLs ==
+http://docs.python.org/library/urllib2.html @2011/03/24
+
+Note: The `urllib2` module has been split across several modules in Python 3.0 named `urllib.request` and `urllib.error`. The `2to3` tool will automatically adapt imports when converting your sources to 3.0.
+
+__The `urllib2` module defines functions and classes which help in opening URLs (mostly HTTP) in a complex world — basic and digest authentication, redirections, cookies and more.__
+
+The `urllib2` module defines the following functions:
+
+'''`urllib2.urlopen(url[, data][, timeout])`'''
+
+__Open the URL `url`, which can be either a string or a `Request` object.__
+
+__Warning: HTTPS requests do not do any verification of the server’s certificate.__
+
+__`data` may be a string specifying additional data to send to the server, or `None` if no such data is needed. Currently HTTP requests are the only ones that use `data`; the HTTP request will be a POST instead of a GET when the `data` parameter is provided. `data` should be a buffer in the standard `application/x-www-form-urlencoded` format.__ The `urllib.urlencode()` function takes a mapping or sequence of 2-tuples and returns a string in this format. `urllib2` module sends HTTP/1.1 requests with `Connection:close` header included.
+
+__The optional `timeout` parameter specifies a timeout in seconds for blocking operations like the connection attempt (if not specified, the ''global default timeout'' setting will be used). This actually only works for HTTP, HTTPS and FTP connections.__
+
+This function returns a ''file-like'' object with two additional methods:
+
+ * `geturl()` — return the URL of the resource retrieved, commonly used to determine if a redirect was followed
+
+ * __`info()` — return the meta-information of the page, such as headers, in the form of an `mimetools.Message` instance__ (see Quick Reference to HTTP Headers)
+
+__Raises `URLError` on errors.__
+
+Note that `None` may be returned if no handler handles the request (though the default installed global `OpenerDirector` uses `UnknownHandler` to ensure this never happens).
+
+In addition, default installed `ProxyHandler` makes sure the requests are handled through the proxy when they are set.
+
+__Changed in version 2.6: `timeout` was added.__
+
+'''`urllib2.install_opener(opener)`'''
+
+__Install an `OpenerDirector` instance as the ''default global opener''. Installing an opener is only necessary if you want `urlopen` to use that opener; otherwise, simply call `OpenerDirector.open()` instead of `urlopen()`.__ The code does not check for a real `OpenerDirector`, and any class with the appropriate interface will work.
+
+'''`urllib2.build_opener([handler, ...])`'''
+
+__Return an `OpenerDirector` instance, which chains the handlers in the order given. handlers can be either instances of `BaseHandler`, or subclasses of `BaseHandler` (in which case it must be possible to call the constructor without any parameters). Instances of the following classes will be ''in front of'' the handlers, unless the handlers contain them, instances of them or subclasses of them: `ProxyHandler`, `UnknownHandler`, `HTTPHandler`, `HTTPDefaultErrorHandler`, `HTTPRedirectHandler`, `FTPHandler`, `FileHandler`, `HTTPErrorProcessor`.__
+
+__If the Python installation has SSL support (i.e., if the `ssl` module can be imported), `HTTPSHandler` will also be added.__
+
+Beginning in Python 2.3, a `BaseHandler` subclass may also change its `handler_order` member variable to modify its position in the handlers list.
+
+The following exceptions are raised as appropriate:
+
+'''exception `urllib2.URLError`'''
+
+__The handlers raise this exception (or derived exceptions) when they run into a problem. It is a subclass of `IOError`.__
+
+ * `reason` - The reason for this error. It can be a message string or another exception instance (`socket.error` for remote URLs, `OSError` for local URLs).
+
+'''exception `urllib2.HTTPError`'''
+
+Though being an exception (a subclass of `URLError`), an `HTTPError` can also function as a non-exceptional file-like return value (the same thing that `urlopen()` returns). This is useful when handling exotic HTTP errors, such as requests for authentication.
+
+ * `code` - An HTTP status code as defined in RFC 2616. This numeric value corresponds to a value found in the dictionary of codes as found in `BaseHTTPServer.BaseHTTPRequestHandler.responses`.
+
+The following classes are provided:
+
+'''class `urllib2.Request(url[, data][, headers][, origin_req_host][, unverifiable])`'''
+
+__This class is an abstraction of a URL request.__
+
+`url` should be a string containing a valid URL.
+
+`data` may be a string specifying additional data to send to the server, or `None` if no such data is needed. Currently HTTP requests are the only ones that use `data`; the HTTP request will be a POST instead of a GET when the `data` parameter is provided. `data` should be a buffer in the standard `application/x-www-form-urlencoded` format. The `urllib.urlencode()` function takes a mapping or sequence of 2-tuples and returns a string in this format.
+
+__`headers` should be a dictionary, and will be treated as if `add_header()` was called with each key and value as arguments. This is often used to “spoof” the `User-Agent` header,__ which is used by a browser to identify itself – some HTTP servers only allow requests coming from common browsers as opposed to scripts. For example, Mozilla Firefox may identify itself as `"Mozilla/5.0 (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11"`, while `urllib2`‘s default user agent string is `"Python-urllib/2.6"` (on Python 2.6).
+
+The final two arguments are only of interest for correct handling of third-party HTTP cookies:[?]
+
+ * `origin_req_host` should be the request-host of the origin transaction, as defined by RFC 2965. It defaults to `cookielib.request_host(self)`. This is the host name or IP address of the original request that was initiated by the user. For example, if the request is for an image in an HTML document, this should be the request-host of the request for the page containing the image.
+
+ * `unverifiable` should indicate whether the request is unverifiable, as defined by RFC 2965. It defaults to `False`. An unverifiable request is one whose URL the user did not have the option to approve. For example, if the request is for an image in an HTML document, and the user had no option to approve the automatic fetching of the image, this should be true.
+
+'''class `urllib2.OpenerDirector`'''
+
+The `OpenerDirector` class opens URLs via `BaseHandler`s chained together. It manages the chaining of handlers, and recovery from errors.
+
+'''class `urllib2.BaseHandler`'''
+
+This is the base class for all registered handlers — and handles only the simple mechanics of registration.
+
+:::
+
+=== 20.6.2. OpenerDirector Objects ===
+
+`OpenerDirector` instances have the following methods:
+
+'''`OpenerDirector.add_handler(handler)`'''
+
+`handler` should be an instance of `BaseHandler`. __The following methods are searched, and added to the possible ''chains'' (note that HTTP errors are a special case).__
+
+ * `<protocol>_open` — signal that the handler knows ''how to'' open `protocol` URLs.
+ * `http_error_<type>` — signal that the handler knows how to handle HTTP errors with HTTP error code `type`.
+ * `<protocol>_error` — signal that the handler knows how to handle errors from (non-`http`) `protocol`.
+ * `<protocol>_request` — signal that the handler knows how to pre-process `protocol` requests.
+ * `<protocol>_response` — signal that the handler knows how to post-process `protocol` responses.
+
+'''`OpenerDirector.open(url[, data][, timeout])`'''
+
+Open the given `url` (which can be a request object or a string), optionally passing the given `data`. __Arguments, return values and exceptions raised are the same as those of `urlopen()` (which simply calls the `open()` method on the currently installed global `OpenerDirector`).__ The optional `timeout` parameter specifies a timeout in seconds for blocking operations like the connection attempt (if not specified, the global default timeout setting will be used). The timeout feature actually works only for HTTP, HTTPS and FTP connections).
+
+Changed in version 2.6: `timeout` was added.
+
+'''`OpenerDirector.error(proto[, arg[, ...]])`'''
+
+Handle an error of the given protocol. This will call the registered error handlers for the given protocol with the given arguments (which are protocol specific). The HTTP protocol is a special case which uses the HTTP response code to determine the specific error handler; refer to the `http_error_*()` methods of the handler classes.
+
+Return values and exceptions raised are the same as those of `urlopen()`.
+
+`OpenerDirector` objects open URLs in three stages:
+
+__'''The order in which these methods are called within each stage is determined by sorting the handler instances.'''__
+
+1. Every handler with a method named like `<protocol>_request` has that method called to pre-process the request.
+
+2. __Handlers with a method named like `<protocol>_open` are called to handle the request. This stage ends when a handler either returns a non-`None` value (ie. a response), or raises an exception (usually `URLError`). Exceptions are allowed to propagate.__
+
+In fact, the above algorithm is first tried for methods named `default_open()`. If all such methods return `None`, the algorithm is repeated for methods named like `<protocol>_open`. If all such methods return `None`, the algorithm is repeated for methods named `unknown_open()`.
+
+Note that the implementation of these methods may involve calls of the ''parent'' `OpenerDirector` instance’s `open()` and `error()` methods.[?]
+
+3. Every handler with a method named like `<protocol>_response` has that method called to post-process the response.
+
+=== 20.6.3. BaseHandler Objects ===
+
+:::
+
+=== 20.6.21. Examples ===
+
+This example gets the python.org main page and displays the first 100 bytes of it:
+
+ {{{
+>>> import urllib2
+>>> f = urllib2.urlopen('http://www.python.org/')
+>>> print f.read(100)
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<?xml-stylesheet href="./css/ht2html
+ }}}
+
+Here we are sending a data-stream to the stdin of a CGI and reading the data it returns to us. Note that this example will only work when the Python installation supports SSL.
+
+ {{{
+>>> import urllib2
+>>> req = urllib2.Request(url='https://localhost/cgi-bin/test.cgi',
+...                       data='This data is passed to stdin of the CGI')
+>>> f = urllib2.urlopen(req)
+>>> print f.read()
+Got Data: "This data is passed to stdin of the CGI"
+ }}}
+
+The code for the sample CGI used in the above example is:
+
+ {{{
+#!/usr/bin/env python
+import sys
+data = sys.stdin.read()
+print 'Content-type: text-plain\n\nGot Data: "%s"' % data
+ }}}
+
+Use of Basic HTTP Authentication:
+
+ {{{
+import urllib2
+# Create an OpenerDirector with support for Basic HTTP Authentication...
+auth_handler = urllib2.HTTPBasicAuthHandler()
+auth_handler.add_password(realm='PDQ Application',
+                          uri='https://mahler:8092/site-updates.py',
+                          user='klem',
+                          passwd='kadidd!ehopper')
+opener = urllib2.build_opener(auth_handler)
+# ...and install it globally so it can be used with urlopen.
+urllib2.install_opener(opener)
+urllib2.urlopen('http://www.example.com/login.html')
+ }}}
+
+`build_opener()` provides many handlers by default, including a `ProxyHandler`. __By default, `ProxyHandler` uses the environment variables named `<scheme>_proxy`, where `<scheme>` is the URL scheme involved. For example, the `http_proxy` environment variable is read to obtain the HTTP proxy’s URL.__
+
+This example replaces the default `ProxyHandler` with one that uses ''programmatically-supplied'' proxy URLs, and adds proxy authorization support with `ProxyBasicAuthHandler`.
+
+ {{{
+proxy_handler = urllib2.ProxyHandler({'http': 'http://www.example.com:3128/'})
+proxy_auth_handler = urllib2.ProxyBasicAuthHandler()
+proxy_auth_handler.add_password('realm', 'host', 'username', 'password')
+
+opener = urllib2.build_opener(proxy_handler, proxy_auth_handler)
+# This time, rather than install the OpenerDirector, we use it directly:
+opener.open('http://www.example.com/login.html')
+ }}}
+
+Adding HTTP headers:
+
+Use the `headers` argument to the `Request` constructor, or:
+
+ {{{
+import urllib2
+req = urllib2.Request('http://www.example.com/')
+req.add_header('Referer', 'http://www.python.org/')
+r = urllib2.urlopen(req)
+ }}}
+
+`OpenerDirector` automatically adds a `User-Agent` header to every `Request`. To change this:
+
+ {{{
+import urllib2
+opener = urllib2.build_opener()
+opener.addheaders = [('User-agent', 'Mozilla/5.0')] # 直接存取內部成員好嗎?
+opener.open('http://www.example.com/')
+ }}}
+
+__Also, remember that a few standard headers (`Content-Length`, `Content-Type` and `Host`) are added when the `Request` is passed to `urlopen()` (or `OpenerDirector.open()`).__
+
+== 20.9. poplib — POP3 protocol client ==
+http://docs.python.org/library/poplib.html @2010/08/03
+
+__This module defines a class, `POP3`, which encapsulates a connection to a POP3 server and implements the protocol as defined in http://tools.ietf.org/html/rfc1725.html[RFC 1725]. The `POP3` class supports both the minimal and optional ''command sets''. Additionally, this module provides a class `POP3_SSL`, which provides support for connecting to POP3 servers that use SSL as an underlying protocol layer.__
+
+Note that POP3, though widely supported, is obsolescent. The implementation quality of POP3 servers varies widely, and too many are quite poor. If your mailserver supports IMAP, you would be better off using the `imaplib.IMAP4` class, as IMAP servers tend to be better implemented.
+
+A single class is provided by the `poplib` module:
+
+'''class `poplib.POP3(host[, port[, timeout]])`'''
+
+__This class implements the actual POP3 protocol. '''The connection is created when the instance is initialized.'''__ If `port` is omitted, the standard POP3 port (110) is used. The optional `timeout` parameter specifies a timeout in seconds for the connection attempt (if not specified, the global default timeout setting will be used).
+
+Changed in version 2.6: `timeout` was added.
+
+'''class `poplib.POP3_SSL(host[, port[, keyfile[, certfile]]])`'''
+
+__This is a subclass of `POP3` that connects to the server over an SSL encrypted socket. If port is not specified, 995, the standard POP3-over-SSL port is used.__ `keyfile` and `certfile` are also optional - they can contain a PEM formatted private key and certificate chain file for the SSL connection.
+
+New in version 2.4.
+
+__One exception is defined ''as an attribute'' of the `poplib` module: (取做 "xxx_proto" 有什麼用意嗎[?])__
+
+'''exception `poplib.error_proto`'''
+
+__Exception raised on any errors from this module (errors from `socket` module are not caught).__ The reason for the exception is passed to the constructor as a string.
+
+See Also:
+
+ * Module `imaplib` - The standard Python IMAP module.
+
+ * http://www.catb.org/~esr/fetchmail/fetchmail-FAQ.html[Frequently Asked Questions About Fetchmail] - The FAQ for the fetchmail POP/IMAP client collects information on POP3 server variations and RFC noncompliance that may be useful if you need to write an application based on the POP protocol.
+
+=== 20.9.1. POP3 Objects ===
+
+__All POP3 commands are represented by methods of the same name, in lower-case; most return the response text sent by the server.__
+
+An `POP3` instance has the following methods:
+
+'''`POP3.set_debuglevel(level)`'''
+
+__Set the instance’s ''debugging level''. This controls the amount of debugging output printed. The default, 0, produces no debugging output. A value of 1 produces a moderate amount of debugging output, generally a single line per request. A value of 2 or higher produces the maximum amount of debugging output, logging each line sent and received on the ''control connection''.__
+
+'''`POP3.getwelcome()`'''
+
+Returns the greeting string sent by the POP3 server.
+
+'''`POP3.user(username)`'''
+
+Send user command, response should indicate that a password is required.
+
+'''`POP3.pass_(password)`'''
+
+Send password, response includes message count and mailbox size. __'''Note: the mailbox on the server is locked until `quit()` is called.'''__
+
+'''`POP3.apop(user, secret)`'''
+
+Use the more secure APOP authentication to log into the POP3 server.
+
+'''`POP3.rpop(user)`'''
+
+Use RPOP authentication (similar to UNIX r-commands) to log into POP3 server.
+
+'''`POP3.stat()`'''
+
+__Get mailbox status. The result is a tuple of 2 integers: `(message count, mailbox size)`.__
+
+'''`POP3.list([which])`'''
+
+__Request message list, result is in the form `(response, ['mesg_num octets', ...], octets)`.__ If `which` is set, it is the message to list.
+
+'''`POP3.retr(which)`'''
+
+__Retrieve whole message number `which`, and set its ''seen flag''. Result is in form `(response, ['line', ...], octets)`.__
+
+'''`POP3.dele(which)`'''
+
+__Flag message number `which` for deletion. On most servers deletions are not actually performed until `QUIT`__ (the major exception is Eudora QPOP, which deliberately violates the RFCs by doing pending deletes on any disconnect).
+
+'''`POP3.rset()`'''
+
+Remove any ''deletion marks'' for the mailbox.
+
+'''`POP3.noop()`'''
+
+__Do nothing. Might be used as a keep-alive.__
+
+'''`POP3.quit()`'''
+
+__Signoff: commit changes, unlock mailbox, drop connection.__
+
+'''`POP3.top(which, howmuch)`'''
+
+__Retrieves the message header plus `howmuch` lines of the message after the header of message number `which`. Result is in form `(response, ['line', ...], octets)`.__
+
+__The POP3 `TOP` command this method uses, unlike the `RETR` command, doesn’t set the message’s seen flag;__ unfortunately, `TOP` is poorly specified in the RFCs and is frequently broken in off-brand servers. Test this method by hand against the POP3 servers you will use before trusting it.
+
+'''`POP3.uidl([which])`'''
+
+__Return ''message digest (unique id)'' list. If `which` is specified, result contains the unique id for that message in the form `'response mesgnum uid'`, otherwise result is list `(response, ['mesgnum uid', ...], octets)`.__
+
+Instances of `POP3_SSL` have no additional methods. The interface of this subclass is identical to its parent.
+
+=== 20.9.2. POP3 Example ===
+
+Here is a minimal example (without error checking) that opens a mailbox and retrieves and prints all messages:
+
+ {{{
+import getpass, poplib
+
+M = poplib.POP3('localhost')
+M.user(getpass.getuser())
+M.pass_(getpass.getpass()) # 很特別的用法
+numMessages = len(M.list()[1])
+for i in range(numMessages):
+    for j in M.retr(i+1)[1]:
+        print j
+ }}}
+
+At the end of the module, there is a test section that contains a more extensive example of usage.
+
+== 20.12. smtplib — SMTP protocol client ==
+http://docs.python.org/library/smtplib.html @2010/12/10
+
+__The `smtplib` module defines an ''SMTP client session object'' that can be used to send mail to any Internet machine with an SMTP or ESMTP listener daemon.__ For details of SMTP and ESMTP operation, consult RFC 821 (Simple Mail Transfer Protocol) and RFC 1869 (SMTP Service Extensions).
+
+'''`class smtplib.SMTP([host[, port[, local_hostname[, timeout]]]])`'''
+
+__A `SMTP` instance encapsulates an ''SMTP connection''. It has methods that support a full repertoire of SMTP and ESMTP operations. If the optional `host` and `port` parameters are given, the SMTP `connect()` method is called with those parameters during initialization. An `SMTPConnectError` is raised if the specified host doesn’t respond correctly. The optional `timeout` parameter specifies a timeout in seconds for blocking operations like the connection attempt (if not specified, the ''global default timeout setting'' will be used).__
+
+__For normal use, you should only require the initialization/connect, `sendmail()`, and `quit()` methods.__ An example is included below.
+
+Changed in version 2.6: `timeout` was added.
+
+'''`class smtplib.SMTP_SSL([host[, port[, local_hostname[, keyfile[, certfile[, timeout]]]]]])`'''
+
+__A `SMTP_SSL` instance behaves exactly the same as instances of `SMTP`. `SMTP_SSL` should be used for situations where SSL is required from the beginning of the connection and using `starttls()` is not appropriate. If `host` is not specified, the local host is used. If `port` is omitted, the standard SMTP-over-SSL port (465) is used. `keyfile` and `certfile` are also optional, and can contain a PEM formatted private key and certificate chain file for the SSL connection. The optional `timeout` parameter specifies a timeout in seconds for blocking operations like the connection attempt (if not specified, the global default timeout setting will be used).__
+
+New in version 2.6.
+
+'''`class smtplib.LMTP([host[, port[, local_hostname]]])`'''
+
+:::
+
+A nice selection of exceptions is defined as well:
+
+'''`exception smtplib.SMTPException`'''
+
+__Base exception class for all exceptions raised by this module.__
+
+'''`exception smtplib.SMTPServerDisconnected`'''
+
+__This exception is raised when the server unexpectedly disconnects, or when an attempt is made to use the SMTP instance before connecting it to a server.__
+
+'''`exception smtplib.SMTPResponseException`'''
+
+__Base class for all exceptions that include an SMTP error code. These exceptions are generated in some instances when the SMTP server returns an error code. The error code is stored in the `smtp_code` attribute of the error, and the `smtp_error` attribute is set to the error message.__
+
+'''`exception smtplib.SMTPSenderRefused`'''
+
+__Sender address refused. In addition to the attributes set by on all `SMTPResponseException` exceptions, this sets `sender` to the string that the SMTP server refused.__
+
+'''`exception smtplib.SMTPRecipientsRefused`'''
+
+__All recipient addresses refused. The errors for each recipient are accessible through the attribute `recipients`, which is a dictionary of exactly the same sort as `SMTP.sendmail()` returns.__
+
+'''`exception smtplib.SMTPDataError`'''
+
+__The SMTP server refused to accept the message data.__
+
+'''`exception smtplib.SMTPConnectError`'''
+
+__Error occurred during establishment of a connection with the server.__
+
+'''`exception smtplib.SMTPHeloError`'''
+
+__The server refused our `HELO` message.__
+
+'''`exception smtplib.SMTPAuthenticationError`'''
+
+__SMTP authentication went wrong. Most probably the server didn’t accept the username/password combination provided.__
+
+See also:
+
+ * RFC 821 - Simple Mail Transfer Protocol - Protocol definition for SMTP. This document covers the model, operating procedure, and protocol details for SMTP.
+
+ * RFC 1869 - SMTP Service Extensions - Definition of the ESMTP extensions for SMTP. This describes a framework for extending SMTP with new commands, supporting dynamic discovery of the commands provided by the server, and defines a few additional commands.
+
+=== 20.12.1. SMTP Objects ===
+
+An `SMTP` instance has the following methods:
+
+'''`SMTP.set_debuglevel(level)`'''
+
+__Set the debug output level. A true value for `level` results in debug messages for connection and for all messages sent to and received from the server.__
+
+'''`SMTP.connect([host[, port]])`'''
+
+__Connect to a host on a given port. The defaults are to connect to the local host at the standard SMTP port (25). If the hostname ends with a colon (`':'`) followed by a number, that suffix will be stripped off and the number interpreted as the port number to use. This method is automatically invoked by the constructor if a host is specified during instantiation.__
+
+'''`SMTP.docmd(cmd[, argstring])`'''
+
+__Send a command `cmd` to the server. The optional argument `argstring` is simply concatenated to the command, separated by a space.__
+
+__This returns a 2-tuple composed of a numeric response code and the actual response line (multiline responses are joined into one long line.)__
+
+__In normal operation it should not be necessary to call this method explicitly. It is used to implement other methods and may be useful for testing ''private extensions''.__
+
+__If the connection to the server is lost while waiting for the reply, `SMTPServerDisconnected` will be raised.__
+
+'''`SMTP.helo([hostname])`'''
+
+__Identify yourself to the SMTP server using `HELO`. The `hostname` argument defaults to the fully qualified domain name of the local host. The message returned by the server is stored as the `helo_resp` attribute of the object.__
+
+__In normal operation it should not be necessary to call this method explicitly. It will be implicitly called by the `sendmail()` when necessary.__
+
+'''`SMTP.ehlo([hostname])`'''
+
+__Identify yourself to an ESMTP server using `EHLO`. The `hostname` argument defaults to the fully qualified domain name of the local host. Examine the response for ESMTP option and store them for use by `has_extn()`. Also sets several informational attributes: the message returned by the server is stored as the `ehlo_resp` attribute, `does_esmtp` is set to true or false depending on whether the server supports ESMTP, and `esmtp_features` will be a dictionary containing the names of the SMTP service extensions this server supports, and their parameters (if any).__
+
+__Unless you wish to use `has_extn()` before sending mail, it should not be necessary to call this method explicitly. It will be implicitly called by `sendmail()` when necessary.__
+
+'''`SMTP.ehlo_or_helo_if_needed()`'''
+
+__This method call `ehlo()` and or `helo()` if there has been no previous `EHLO` or `HELO` command this session. It tries ESMTP `EHLO` first.__
+
+__`SMTPHeloError` - The server didn’t reply properly to the `HELO` greeting.__
+
+New in version 2.6.
+
+'''`SMTP.has_extn(name)`'''
+
+__Return `True` if `name` is in the set of SMTP service extensions returned by the server, `False` otherwise. Case is ignored.__
+
+'''`SMTP.verify(address)`'''
+
+__Check the validity of an address on this server using SMTP `VRFY`. Returns a tuple consisting of code 250 and a full RFC 822 address (including human name) if the user address is valid. Otherwise returns an SMTP error code of 400 or greater and an error string.__
+
+Note: __Many sites disable SMTP `VRFY` in order to foil spammers.__
+
+'''`SMTP.login(user, password)`'''
+
+__Log in on an SMTP server that requires authentication. The arguments are the username and the password to authenticate with. If there has been no previous `EHLO` or `HELO` command this session, this method tries ESMTP `EHLO` first.__ This method will return normally if the authentication was successful, or may raise the following exceptions:
+
+ * `SMTPHeloError` - The server didn’t reply properly to the HELO greeting.
+ * `SMTPAuthenticationError` - The server didn’t accept the username/password combination.
+ * `SMTPException` - No suitable authentication method was found.
+
+'''`SMTP.starttls([keyfile[, certfile]])`'''
+
+__Put the SMTP connection in TLS (Transport Layer Security) mode. All SMTP commands that follow will be encrypted. You should then call `ehlo()` again.__
+
+__If `keyfile` and `certfile` are provided, these are passed to the `socket` module’s `ssl()` function.__
+
+__If there has been no previous `EHLO` or `HELO` command this session, this method tries ESMTP `EHLO` first.__
+
+Changed in version 2.6.
+
+ * `SMTPHeloError` - The server didn’t reply properly to the `HELO` greeting.
+ * `SMTPException` - The server does not support the `STARTTLS` extension.
+
+Changed in version 2.6.
+
+ * `RuntimeError` - SSL/TLS support is not available to your Python interpreter.
+
+'''`SMTP.sendmail(from_addr, to_addrs, msg[, mail_options, rcpt_options])`'''
+
+__Send mail. The required arguments are an RFC 822 from-address string, a list of RFC 822 to-address strings (a bare string will be treated as a list with 1 address), and a message string.__ The caller may pass a list of ESMTP options (such as `8bitmime`) to be used in `MAIL FROM` commands as `mail_options`. ESMTP options (such as `DSN` commands) that should be used with all `RCPT` commands can be passed as `rcpt_options`. (If you need to use different ESMTP options to different recipients you have to use the low-level methods such as `mail()`, `rcpt()` and `data()` to send the message.)
+
+Note: __The `from_addr` and `to_addrs` parameters are used to construct the ''message envelope'' used by the transport agents. The `SMTP` does not modify the message headers in any way.__
+
+__If there has been no previous `EHLO` or `HELO` command this session, this method tries ESMTP `EHLO` first. If the server does ESMTP, message size and each of the specified options will be passed to it (if the option is in the feature set the server advertises). If `EHLO` fails, `HELO` will be tried and ESMTP options suppressed.__
+
+__This method will return normally if the mail is accepted for ''at least one recipient''. Otherwise it will raise an exception. That is, if this method does not raise an exception, then someone should get your mail. If this method does not raise an exception, it returns a dictionary, with one entry for each recipient that was refused. Each entry contains a tuple of the SMTP error code and the accompanying error message sent by the server.__
+
+This method may raise the following exceptions:
+
+ * `SMTPRecipientsRefused` - All recipients were refused. Nobody got the mail. The `recipients` attribute of the exception object is a dictionary with information about the refused recipients (like the one returned when at least one recipient was accepted).
+
+ * `SMTPHeloError` - The server didn’t reply properly to the `HELO` greeting.
+
+ * `SMTPSenderRefused` - The server didn’t accept the `from_addr`.
+
+ * `SMTPDataError` - The server replied with an unexpected error code (other than a refusal of a recipient).
+
+__Unless otherwise noted, the connection will be open even after an exception is raised.__
+
+'''`SMTP.quit()`'''
+
+__Terminate the SMTP session and close the connection.__ Return the result of the SMTP `QUIT` command.
+
+Changed in version 2.6: Return a value.
+
+__Low-level methods corresponding to the standard SMTP/ESMTP commands `HELP`, `RSET`, `NOOP`, `MAIL`, `RCPT`, and `DATA` are also supported. Normally these do not need to be called directly, so they are not documented here. For details, consult the module code.__
+
+=== 20.12.2. SMTP Example ===
+
+This example prompts the user for addresses needed in the message envelope (‘To’ and ‘From’ addresses), and the message to be delivered. Note that the headers to be included with the message must be included in the message as entered; this example doesn’t do any processing of the RFC 822 headers. In particular, the ‘To’ and ‘From’ addresses must be included in the message headers explicitly.
+
+ {{{
+import smtplib
+
+def prompt(prompt):
+    return raw_input(prompt).strip()
+
+fromaddr = prompt("From: ")
+toaddrs  = prompt("To: ").split()
+print "Enter message, end with ^D (Unix) or ^Z (Windows):"
+
+# Add the From: and To: headers at the start!
+msg = ("From: %s\r\nTo: %s\r\n\r\n"
+       % (fromaddr, ", ".join(toaddrs)))
+while 1:
+    try:
+        line = raw_input()
+    except EOFError:
+        break
+    if not line:
+        break
+    msg = msg + line
+
+print "Message length is " + repr(len(msg))
+
+server = smtplib.SMTP('localhost')
+server.set_debuglevel(1)
+server.sendmail(fromaddr, toaddrs, msg)
+server.quit()
+ }}}
+
+Note: __In general, you will want to use the `email` package’s features to construct an email message, which you can then convert to a string and send via `sendmail()`__; see email: Examples.
+
+== 20.15. uuid — UUID objects according to RFC 4122 ==
+http://docs.python.org/library/uuid.html @2010/07/14
+
+New in version 2.5.
+
+This module provides immutable `UUID` objects (the `UUID` class) and the functions `uuid1()`, `uuid3()`, `uuid4()`, `uuid5()` for generating version 1, 3, 4, and 5 UUIDs as specified in RFC 4122.
+
+__If all you want is a unique ID, you should probably call `uuid1()` or `uuid4()`. Note that `uuid1()` may compromise privacy since it creates a UUID containing the computer’s network address. '''`uuid4()` creates a random UUID.'''__
+
+'''`class uuid.UUID([hex[, bytes[, bytes_le[, fields[, int[, version]]]]]])`'''
+
+Create a `UUID` from either a string of 32 hexadecimal digits, a string of 16 bytes as the `bytes` argument, a string of 16 bytes in little-endian order as the `bytes_le` argument, a tuple of six integers (32-bit time_low, 16-bit time_mid, 16-bit time_hi_version, 8-bit clock_seq_hi_variant, 8-bit clock_seq_low, 48-bit node) as the `fields` argument, or a single 128-bit integer as the `int` argument. __When a string of hex digits is given, curly braces, hyphens, and a URN prefix are all optional.__ For example, these expressions all yield the same UUID:
+
+ {{{
+UUID('{12345678-1234-5678-1234-567812345678}')
+UUID('12345678123456781234567812345678')
+UUID('urn:uuid:12345678-1234-5678-1234-567812345678')
+UUID(bytes='\x12\x34\x56\x78'*4)
+UUID(bytes_le='\x78\x56\x34\x12\x34\x12\x78\x56' +
+              '\x12\x34\x56\x78\x12\x34\x56\x78')
+UUID(fields=(0x12345678, 0x1234, 0x5678, 0x12, 0x34, 0x567812345678))
+UUID(int=0x12345678123456781234567812345678)
+ }}}
+
+Exactly one of `hex`, `bytes`, `bytes_le`, `fields`, or `int` must be given. The `version` argument is optional; if given, the resulting UUID will have its variant and version number set according to RFC 4122, overriding bits in the given `hex`, `bytes`, `bytes_le`, `fields`, or `int`.
+
+:::
+
+`UUID` instances have these read-only attributes:
+
+'''`UUID.bytes`'''
+
+The UUID as a 16-byte string (containing the six integer fields in big-endian byte order).
+
+'''`UUID.bytes_le`'''
+
+The UUID as a 16-byte string (with time_low, time_mid, and time_hi_version in little-endian byte order).
+
+:::
+
+The `uuid` module defines the following functions:
+
+:::
+
+'''`uuid.uuid4()`'''
+
+Generate a random UUID.
+
+'''`uuid.uuid5(namespace, name)`'''
+
+Generate a `UUID` based on the SHA-1 hash of a `namespace` identifier (which is a UUID) and a `name` (which is a string).
+
+:::
+
+== 20.21. cookielib — Cookie handling for HTTP clients ==
+http://docs.python.org/library/cookielib.html @2010/08/16
+
+Note: The `cookielib` module has been renamed to `http.cookiejar` in Python 3.0. The `2to3` tool will automatically adapt imports when converting your sources to 3.0.
+
+New in version 2.4.
+
+__The `cookielib` module defines classes for automatic handling of HTTP cookies. It is useful for accessing web sites that require small pieces of data – cookies – to be set on the client machine by an HTTP response from a web server, and then returned to the server in later HTTP requests.__
+
+Both the regular Netscape cookie protocol and the protocol defined by RFC 2965 are handled. RFC 2965 handling is switched off by default. RFC 2109 cookies are parsed as Netscape cookies and subsequently treated either as Netscape or RFC 2965 cookies according to the ‘policy’ in effect. __Note that the great majority of cookies on the Internet are Netscape cookies. `cookielib` attempts to follow the de-facto Netscape cookie protocol__ (which differs substantially from that set out in the original Netscape specification), including taking note of the `max-age` and `port` cookie-attributes introduced with RFC 2965.
+
+Note: __The various named parameters found in `Set-Cookie` and `Set-Cookie2` headers (eg. `domain` and `expires`) are conventionally referred to as ''attributes''. To distinguish them from Python attributes, the documentation for this module uses the term ''cookie-attribute'' instead.__
+
+The module defines the following exception:
+
+'''exception `cookielib.LoadError`'''
+
+Instances of `FileCookieJar` raise this exception on failure to load cookies from a file.
+
+Note: For backwards-compatibility with Python 2.4 (which raised an `IOError`), `LoadError` is a subclass of `IOError`.
+
+The following classes are provided:
+
+'''class `cookielib.CookieJar(policy=None)`'''
+
+`policy` is an object implementing the `CookiePolicy` interface.
+
+__The `CookieJar` class stores HTTP cookies. It extracts cookies from HTTP requests, and returns them in HTTP responses. (從 Client 的觀點來看, 這裡 requests/responses 的位置好像搞錯了?) `CookieJar` instances automatically expire contained cookies when necessary.__ Subclasses are also responsible for storing and retrieving cookies from a file or database.
+
+'''class `cookielib.FileCookieJar(filename, delayload=None, policy=None)`'''
+
+`policy` is an object implementing the `CookiePolicy` interface. For the other arguments, see the documentation for the corresponding attributes.
+
+__A `CookieJar` which can load cookies from, and perhaps save cookies to, a file on disk. Cookies are NOT loaded from the named file until either the `load()` or `revert()` method is called.__ Subclasses of this class are documented in section `FileCookieJar` subclasses and co-operation with web browsers.
+
+'''class `cookielib.CookiePolicy`'''
+
+__This class is responsible for deciding whether each cookie should be accepted from / returned to the server.__
+
+'''class `cookielib.DefaultCookiePolicy(blocked_domains=None, allowed_domains=None, netscape=True, rfc2965=False, rfc2109_as_netscape=None, hide_cookie2=False, strict_domain=False, strict_rfc2965_unverifiable=True, strict_ns_unverifiable=False, strict_ns_domain=DefaultCookiePolicy.DomainLiberal, strict_ns_set_initial_dollar=False, strict_ns_set_path=False)`'''
+
+Constructor arguments should be passed as keyword arguments only. `blocked_domains` is a sequence of domain names that we never accept cookies from, nor return cookies to. `allowed_domains` if not `None`, this is a sequence of the only domains for which we accept and return cookies. For all other arguments, see the documentation for `CookiePolicy` and `DefaultCookiePolicy` objects.
+
+`DefaultCookiePolicy` implements the standard accept / reject rules for Netscape and RFC 2965 cookies. By default, RFC 2109 cookies (ie. cookies received in a `Set-Cookie` header with a `version` cookie-attribute of `1`) are treated according to the RFC 2965 rules. However, if RFC 2965 handling is turned off or `rfc2109_as_netscape` is `True`, RFC 2109 cookies are ‘downgraded’ by the `CookieJar` instance to Netscape cookies, by setting the `version` attribute of the `Cookie` instance to `0`. `DefaultCookiePolicy` also provides some parameters to allow some fine-tuning of policy.
+
+'''class `cookielib.Cookie`'''
+
+This class represents Netscape, RFC 2109 and RFC 2965 cookies. __It is not expected that users of `cookielib` construct their own `Cookie` instances. Instead, if necessary, call `make_cookies()` on a `CookieJar` instance.__
+
+See also
+
+ * Module `urllib2` - URL opening with automatic cookie handling.
+
+ * Module `Cookie` - __HTTP cookie classes, principally useful for server-side code. The `cookielib` and `Cookie` modules do not depend on each other.__
+
+ * http://wp.netscape.com/newsref/std/cookie_spec.html - The specification of the original Netscape cookie protocol. Though this is still the dominant protocol, the ‘Netscape cookie protocol’ implemented by all the major browsers (and `cookielib`) only bears a passing resemblance to the one sketched out in `cookie_spec.html`.
+
+ * RFC 2109 - HTTP State Management Mechanism - Obsoleted by RFC 2965. Uses Set-Cookie with version=1.
+
+ * RFC 2965 - HTTP State Management Mechanism - The Netscape protocol with the bugs fixed. Uses `Set-Cookie2` in place of `Set-Cookie`. Not widely used.
+
+ * http://kristol.org/cookie/errata.html - Unfinished errata to RFC 2965.
+
+ * RFC 2964 - Use of HTTP State Management
+
+=== 20.21.1. CookieJar and FileCookieJar Objects ===
+
+__`CookieJar` objects support the ''iterator protocol'' for iterating over contained `Cookie` objects.__
+
+`CookieJar` has the following methods:
+
+'''`CookieJar.add_cookie_header(request)`'''
+
+Add correct `Cookie` header to `request`.
+
+If policy allows (ie. the `rfc2965` and `hide_cookie2` attributes of the `CookieJar`‘s `CookiePolicy` instance are true and false respectively), the `Cookie2` header is also added when appropriate.
+
+The `request` object (usually a `urllib2.Request` instance) must support the methods `get_full_url()`, `get_host()`, `get_type()`, `unverifiable()`, `get_origin_req_host()`, `has_header()`, `get_header()`, `header_items()`, and `add_unredirected_header()`, as documented by `urllib2`.
+
+'''`CookieJar.extract_cookies(response, request)`'''
+
+__Extract cookies from HTTP response and store them in the `CookieJar`, where allowed by policy.__
+
+The `CookieJar` will look for allowable `Set-Cookie` and `Set-Cookie2` headers in the response argument, and store cookies as appropriate (subject to the `CookiePolicy.set_ok()` method’s approval).
+
+The `response` object (usually the result of a call to `urllib2.urlopen()`, or similar) should support an `info()` method, which returns an object with a `getallmatchingheaders()` method (usually a `mimetools.Message` instance).
+
+The `request` object (usually a `urllib2.Request` instance) must support the methods `get_full_url()`, `get_host()`, `unverifiable()`, and `get_origin_req_host()`, as documented by `urllib2`. __The `request` is used to set default values for cookie-attributes as well as for checking that the cookie is allowed to be set.__
+
+'''`CookieJar.set_policy(policy)`'''
+
+Set the `CookiePolicy` instance to be used.
+
+'''`CookieJar.make_cookies(response, request)`'''
+
+__Return sequence of `Cookie` objects extracted from `response` object.__
+
+See the documentation for `extract_cookies()` for the interfaces required of the `response` and `request` arguments.
+
+'''`CookieJar.set_cookie_if_ok(cookie, request)`'''
+
+Set a `Cookie` if policy says it’s OK to do so.
+
+'''`CookieJar.set_cookie(cookie)`'''
+
+Set a `Cookie`, without checking with policy to see whether or not it should be set.
+
+'''`CookieJar.clear([domain[, path[, name]]])`'''
+
+Clear some cookies.
+
+If invoked without arguments, clear all cookies. If given a single argument, only cookies belonging to that `domain` will be removed. If given two arguments, cookies belonging to the specified `domain` and URL `path` are removed. If given three arguments, then the cookie with the specified `domain`, `path` and `name` is removed.
+
+__Raises `KeyError` if no matching cookie exists.__
+
+'''`CookieJar.clear_session_cookies()`'''
+
+Discard all session cookies.
+
+__Discards all contained cookies that have a true `discard` attribute (usually because they had either no `max-age` or `expires` cookie-attribute, or an explicit `discard` cookie-attribute). '''For interactive browsers, the end of a session usually corresponds to closing the browser window.'''__
+
+__Note that the `save()` method won’t save session cookies anyway, unless you ask otherwise by passing a true `ignore_discard` argument.__
+
+`FileCookieJar` implements the following additional methods:
+
+'''`FileCookieJar.save(filename=None, ignore_discard=False, ignore_expires=False)`'''
+
+Save cookies to a file.
+
+__This base class raises `NotImplementedError`. Subclasses may leave this method unimplemented.__
+
+`filename` is the name of file in which to save cookies. If `filename` is not specified, `self.filename` is used (whose default is the value passed to the constructor, if any); if `self.filename` is `None`, `ValueError` is raised.
+
+__`ignore_discard`: save even cookies set to be discarded. `ignore_expires`: save even cookies that have expired__
+
+The file is overwritten if it already exists, thus wiping all the cookies it contains. Saved cookies can be restored later using the `load()` or `revert()` methods.
+
+'''`FileCookieJar.load(filename=None, ignore_discard=False, ignore_expires=False)`'''
+
+Load cookies from a file.
+
+Old cookies are kept unless overwritten by newly loaded ones.
+
+Arguments are as for `save()`.
+
+The named file must be in the format understood by the class, or `LoadError` will be raised. Also, `IOError` may be raised, for example if the file does not exist.
+
+Note: For backwards-compatibility with Python 2.4 (which raised an `IOError`), `LoadError` is a subclass of `IOError`.
+
+'''`FileCookieJar.revert(filename=None, ignore_discard=False, ignore_expires=False)`'''
+
+Clear all cookies and reload cookies from a saved file.
+
+`revert()` can raise the same exceptions as `load()`. If there is a failure, the object’s state will not be altered.
+
+`FileCookieJar` instances have the following ''public attributes'':
+
+'''`FileCookieJar.filename`'''
+
+__Filename of default file in which to keep cookies. '''This attribute may be assigned to.'''__
+
+'''`FileCookieJar.delayload`'''
+
+If true, load cookies lazily from disk. This attribute should not be assigned to. This is only a hint, since this only affects performance, not behaviour (unless the cookies on disk are changing). A `CookieJar` object may ignore it. None of the `FileCookieJar` classes included in the standard library lazily loads cookies.
+
+:::
+
+=== 20.21.6. Examples ===
+
+The first example shows the most common usage of `cookielib`:
+
+ {{{
+import cookielib, urllib2
+cj = cookielib.CookieJar()
+opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
+r = opener.open("http://example.com/")
+ }}}
+
+This example illustrates how to open a URL using your Netscape, Mozilla, or Lynx cookies (assumes Unix/Netscape convention for location of the cookies file):
+
+ {{{
+import os, cookielib, urllib2
+cj = cookielib.MozillaCookieJar()
+cj.load(os.path.join(os.environ["HOME"], ".netscape/cookies.txt"))
+opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
+r = opener.open("http://example.com/")
+ }}}
+
+The next example illustrates the use of `DefaultCookiePolicy`. Turn on RFC 2965 cookies, be more strict about domains when setting and returning Netscape cookies, and block some domains from setting cookies or having them returned:
+
+ {{{
+import urllib2
+from cookielib import CookieJar, DefaultCookiePolicy
+policy = DefaultCookiePolicy(
+    rfc2965=True, strict_ns_domain=DefaultCookiePolicy.DomainStrict,
+    blocked_domains=["ads.net", ".ads.net"])
+cj = CookieJar(policy)
+opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
+r = opener.open("http://example.com/")
+ }}}
+
+

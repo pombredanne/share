@@ -1,0 +1,74 @@
+= Python Object Serialization =
+
+TIP: 由於 module 是 singleton，如果只是想要在同一個 process 裡交換資訊，module 是一個可以考慮的方式。
+
+== 在 Python 跟 Jython 間交換資料 ==
+
+.`examples/pickle/pypickle.py`
+--------------------------------------------------------------------------------
+import pickle
+
+data = [1, '2', [3, 4, 5]]
+pickle.dump(data, open('data.pickle', 'w'))
+--------------------------------------------------------------------------------
+
+.`examples/pickle/jypickle.py`
+--------------------------------------------------------------------------------
+import pickle
+
+data = pickle.load(open('data.pickle'))
+print data
+--------------------------------------------------------------------------------
+
+實驗證實，在 Python 2.6 跟 Jython 2.5 是可以交換 pickled object 的。
+
+--------------------------------------------------------------------------------
+$ python pypickle
+$ cat data.pickle 
+(lp0
+I1
+aS'2'
+p1
+a(lp2
+I3
+aI4
+aI5
+$ jython jypickle.py
+[1, '2', [3, 4, 5]]
+--------------------------------------------------------------------------------
+
+執行期，也可以透過暫存檔在 Python 與 Jython 之間交換資料：
+
+.`examples/pickle/pycaller.py` 
+--------------------------------------------------------------------------------
+import pickle, tempfile
+import os, subprocess
+
+data = [1, '2', [3, 4, 5]]
+tmp = tempfile.NamedTemporaryFile(suffix='.pickle', delete=False) <1>
+pickle.dump(data, tmp)
+tmp.close() <2>
+
+os.environ['PYTHON_PARAMS'] = tmp.name <3>
+subprocess.call(['jython', 'jycalle.py'])
+os.remove(tmp.name)
+--------------------------------------------------------------------------------
+<1> 暫存檔不要自動刪除。
+<2> 關掉暫存檔才能讓另一個 process (`jython`) 開啟。
+<3> 透過環境變數來交換暫存檔的位置。
+
+.`examples/pickle/jycalle.py`
+--------------------------------------------------------------------------------
+import os, pickle
+
+print 'File for PYTHON_PARAMS is:', os.environ['PYTHON_PARAMS']
+data = pickle.load(open(os.environ['PYTHON_PARAMS'], 'rb'))
+print 'Params:', data
+--------------------------------------------------------------------------------
+
+== 參考資料 ==
+
+ * http://en.wikipedia.org/wiki/Serialization#Python[Serialization - Wikipedia, the free encyclopedia]
+ * http://docs.python.org/library/pickle.html[pickle — Python object serialization]
+ * http://docs.python.org/library/marshal.html[marshal — Internal Python object serialization]
+

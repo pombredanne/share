@@ -1,0 +1,399 @@
+   #[1]Search within Python v2.6.1 documentation [2]About these documents
+   [3]Index [4]Search [5]Copyright [6]Python v2.6.1 documentation [7]The
+   Python Tutorial [8]Brief Tour of the Standard Library - Part II
+   [9]Classes
+
+Navigation
+
+     * [10]index
+     * [11]modules |
+     * [12]next |
+     * [13]previous |
+     *
+     * [14]Python v2.6.1 documentation »
+     * [15]The Python Tutorial »
+
+Brief Tour of the Standard Library[16]¶
+
+Operating System Interface[17]¶
+
+   The [18]os module provides dozens of functions for interacting with the
+   operating system:
+>>> import os
+>>> os.system('time 0:02')
+0
+>>> os.getcwd()      # Return the current working directory
+'C:\\Python26'
+>>> os.chdir('/server/accesslogs')
+
+   Be sure to use the import os style instead of from os import *. This
+   will keep [19]os.open() from shadowing the builtin [20]open() function
+   which operates much differently.
+
+   The builtin [21]dir() and [22]help() functions are useful as
+   interactive aids for working with large modules like [23]os:
+>>> import os
+>>> dir(os)
+<returns a list of all module functions>
+>>> help(os)
+<returns an extensive manual page created from the module's docstrings>
+
+   For daily file and directory management tasks, the [24]shutil module
+   provides a higher level interface that is easier to use:
+>>> import shutil
+>>> shutil.copyfile('data.db', 'archive.db')
+>>> shutil.move('/build/executables', 'installdir')
+
+File Wildcards[25]¶
+
+   The [26]glob module provides a function for making file lists from
+   directory wildcard searches:
+>>> import glob
+>>> glob.glob('*.py')
+['primes.py', 'random.py', 'quote.py']
+
+Command Line Arguments[27]¶
+
+   Common utility scripts often need to process command line arguments.
+   These arguments are stored in the [28]sys module's argv attribute as a
+   list. For instance the following output results from running python
+   demo.py one two three at the command line:
+>>> import sys
+>>> print sys.argv
+['demo.py', 'one', 'two', 'three']
+
+   The [29]getopt module processes sys.argv using the conventions of the
+   Unix getopt() function. More powerful and flexible command line
+   processing is provided by the [30]optparse module.
+
+Error Output Redirection and Program Termination[31]¶
+
+   The [32]sys module also has attributes for stdin, stdout, and stderr.
+   The latter is useful for emitting warnings and error messages to make
+   them visible even when stdout has been redirected:
+>>> sys.stderr.write('Warning, log file not found starting a new one\n')
+Warning, log file not found starting a new one
+
+   The most direct way to terminate a script is to use sys.exit().
+
+String Pattern Matching[33]¶
+
+   The [34]re module provides regular expression tools for advanced string
+   processing. For complex matching and manipulation, regular expressions
+   offer succinct, optimized solutions:
+>>> import re
+>>> re.findall(r'\bf[a-z]*', 'which foot or hand fell fastest')
+['foot', 'fell', 'fastest']
+>>> re.sub(r'(\b[a-z]+) \1', r'\1', 'cat in the the hat')
+'cat in the hat'
+
+   When only simple capabilities are needed, string methods are preferred
+   because they are easier to read and debug:
+>>> 'tea for too'.replace('too', 'two')
+'tea for two'
+
+Mathematics[35]¶
+
+   The [36]math module gives access to the underlying C library functions
+   for floating point math:
+>>> import math
+>>> math.cos(math.pi / 4.0)
+0.70710678118654757
+>>> math.log(1024, 2)
+10.0
+
+   The [37]random module provides tools for making random selections:
+>>> import random
+>>> random.choice(['apple', 'pear', 'banana'])
+'apple'
+>>> random.sample(xrange(100), 10)   # sampling without replacement
+[30, 83, 16, 4, 8, 81, 41, 50, 18, 33]
+>>> random.random()    # random float
+0.17970987693706186
+>>> random.randrange(6)    # random integer chosen from range(6)
+4
+
+Internet Access[38]¶
+
+   There are a number of modules for accessing the internet and processing
+   internet protocols. Two of the simplest are [39]urllib2 for retrieving
+   data from urls and [40]smtplib for sending mail:
+>>> import urllib2
+>>> for line in urllib2.urlopen('http://tycho.usno.navy.mil/cgi-bin/timer.pl'):
+...     if 'EST' in line or 'EDT' in line:  # look for Eastern Time
+...         print line
+
+<BR>Nov. 25, 09:43:32 PM EST
+
+>>> import smtplib
+>>> server = smtplib.SMTP('localhost')
+>>> server.sendmail('soothsayer@example.org', 'jcaesar@example.org',
+... """To: jcaesar@example.org
+... From: soothsayer@example.org
+...
+... Beware the Ides of March.
+... """)
+>>> server.quit()
+
+   (Note that the second example needs a mailserver running on localhost.)
+
+Dates and Times[41]¶
+
+   The [42]datetime module supplies classes for manipulating dates and
+   times in both simple and complex ways. While date and time arithmetic
+   is supported, the focus of the implementation is on efficient member
+   extraction for output formatting and manipulation. The module also
+   supports objects that are timezone aware.
+# dates are easily constructed and formatted
+>>> from datetime import date
+>>> now = date.today()
+>>> now
+datetime.date(2003, 12, 2)
+>>> now.strftime("%m-%d-%y. %d %b %Y is a %A on the %d day of %B.")
+'12-02-03. 02 Dec 2003 is a Tuesday on the 02 day of December.'
+
+# dates support calendar arithmetic
+>>> birthday = date(1964, 7, 31)
+>>> age = now - birthday
+>>> age.days
+14368
+
+Data Compression[43]¶
+
+   Common data archiving and compression formats are directly supported by
+   modules including: [44]zlib, [45]gzip, [46]bz2, [47]zipfile and
+   [48]tarfile.
+>>> import zlib
+>>> s = 'witch which has which witches wrist watch'
+>>> len(s)
+41
+>>> t = zlib.compress(s)
+>>> len(t)
+37
+>>> zlib.decompress(t)
+'witch which has which witches wrist watch'
+>>> zlib.crc32(s)
+226805979
+
+Performance Measurement[49]¶
+
+   Some Python users develop a deep interest in knowing the relative
+   performance of different approaches to the same problem. Python
+   provides a measurement tool that answers those questions immediately.
+
+   For example, it may be tempting to use the tuple packing and unpacking
+   feature instead of the traditional approach to swapping arguments. The
+   [50]timeit module quickly demonstrates a modest performance advantage:
+>>> from timeit import Timer
+>>> Timer('t=a; a=b; b=t', 'a=1; b=2').timeit()
+0.57535828626024577
+>>> Timer('a,b = b,a', 'a=1; b=2').timeit()
+0.54962537085770791
+
+   In contrast to [51]timeit`s fine level of granularity, the profile and
+   [52]pstats modules provide tools for identifying time critical sections
+   in larger blocks of code.
+
+Quality Control[53]¶
+
+   One approach for developing high quality software is to write tests for
+   each function as it is developed and to run those tests frequently
+   during the development process.
+
+   The [54]doctest module provides a tool for scanning a module and
+   validating tests embedded in a program's docstrings. Test construction
+   is as simple as cutting-and-pasting a typical call along with its
+   results into the docstring. This improves the documentation by
+   providing the user with an example and it allows the doctest module to
+   make sure the code remains true to the documentation:
+def average(values):
+    """Computes the arithmetic mean of a list of numbers.
+
+    >>> print average([20, 30, 70])
+    40.0
+    """
+    return sum(values, 0.0) / len(values)
+
+import doctest
+doctest.testmod()   # automatically validate the embedded tests
+
+   The [55]unittest module is not as effortless as the [56]doctest module,
+   but it allows a more comprehensive set of tests to be maintained in a
+   separate file:
+import unittest
+
+class TestStatisticalFunctions(unittest.TestCase):
+
+    def test_average(self):
+        self.assertEqual(average([20, 30, 70]), 40.0)
+        self.assertEqual(round(average([1, 5, 7]), 1), 4.3)
+        self.assertRaises(ZeroDivisionError, average, [])
+        self.assertRaises(TypeError, average, 20, 30, 70)
+
+unittest.main() # Calling from the command line invokes all tests
+
+Batteries Included[57]¶
+
+   Python has a "batteries included" philosophy. This is best seen through
+   the sophisticated and robust capabilities of its larger packages. For
+   example:
+     * The [58]xmlrpclib and [59]SimpleXMLRPCServer modules make
+       implementing remote procedure calls into an almost trivial task.
+       Despite the modules names, no direct knowledge or handling of XML
+       is needed.
+     * The [60]email package is a library for managing email messages,
+       including MIME and other RFC 2822-based message documents. Unlike
+       [61]smtplib and [62]poplib which actually send and receive
+       messages, the email package has a complete toolset for building or
+       decoding complex message structures (including attachments) and for
+       implementing internet encoding and header protocols.
+     * The [63]xml.dom and [64]xml.sax packages provide robust support for
+       parsing this popular data interchange format. Likewise, the [65]csv
+       module supports direct reads and writes in a common database
+       format. Together, these modules and packages greatly simplify data
+       interchange between python applications and other tools.
+     * Internationalization is supported by a number of modules including
+       [66]gettext, [67]locale, and the [68]codecs package.
+
+[69]Table Of Contents
+
+     * [70]Brief Tour of the Standard Library
+          + [71]Operating System Interface
+          + [72]File Wildcards
+          + [73]Command Line Arguments
+          + [74]Error Output Redirection and Program Termination
+          + [75]String Pattern Matching
+          + [76]Mathematics
+          + [77]Internet Access
+          + [78]Dates and Times
+          + [79]Data Compression
+          + [80]Performance Measurement
+          + [81]Quality Control
+          + [82]Batteries Included
+
+Previous topic
+
+   [83]Classes
+
+Next topic
+
+   [84]Brief Tour of the Standard Library - Part II
+
+This Page
+
+     * [85]Show Source
+
+Quick search
+
+   __________________ Go
+
+   Enter search terms or a module, class or function name.
+
+Navigation
+
+     * [86]index
+     * [87]modules |
+     * [88]next |
+     * [89]previous |
+     *
+     * [90]Python v2.6.1 documentation »
+     * [91]The Python Tutorial »
+
+   © [92]Copyright 1990-2009, Python Software Foundation. Last updated on
+   Feb 19, 2009. Created using [93]Sphinx 0.6.
+
+References
+
+   1. http://docs.python.org/_static/opensearch.xml
+   2. http://docs.python.org/about.html
+   3. http://docs.python.org/genindex.html
+   4. http://docs.python.org/search.html
+   5. http://docs.python.org/copyright.html
+   6. http://docs.python.org/index.html
+   7. http://docs.python.org/tutorial/index.html
+   8. http://docs.python.org/tutorial/stdlib2.html
+   9. http://docs.python.org/tutorial/classes.html
+  10. http://docs.python.org/genindex.html
+  11. http://docs.python.org/modindex.html
+  12. http://docs.python.org/tutorial/stdlib2.html
+  13. http://docs.python.org/tutorial/classes.html
+  14. http://docs.python.org/index.html
+  15. http://docs.python.org/tutorial/index.html
+  16. http://docs.python.org/tutorial/stdlib.html#brief-tour-of-the-standard-library
+  17. http://docs.python.org/tutorial/stdlib.html#operating-system-interface
+  18. http://docs.python.org/library/os.html#module-os
+  19. http://docs.python.org/library/os.html#os.open
+  20. http://docs.python.org/library/functions.html#open
+  21. http://docs.python.org/library/functions.html#dir
+  22. http://docs.python.org/library/functions.html#help
+  23. http://docs.python.org/library/os.html#module-os
+  24. http://docs.python.org/library/shutil.html#module-shutil
+  25. http://docs.python.org/tutorial/stdlib.html#file-wildcards
+  26. http://docs.python.org/library/glob.html#module-glob
+  27. http://docs.python.org/tutorial/stdlib.html#command-line-arguments
+  28. http://docs.python.org/library/sys.html#module-sys
+  29. http://docs.python.org/library/getopt.html#module-getopt
+  30. http://docs.python.org/library/optparse.html#module-optparse
+  31. http://docs.python.org/tutorial/stdlib.html#error-output-redirection-and-program-termination
+  32. http://docs.python.org/library/sys.html#module-sys
+  33. http://docs.python.org/tutorial/stdlib.html#string-pattern-matching
+  34. http://docs.python.org/library/re.html#module-re
+  35. http://docs.python.org/tutorial/stdlib.html#mathematics
+  36. http://docs.python.org/library/math.html#module-math
+  37. http://docs.python.org/library/random.html#module-random
+  38. http://docs.python.org/tutorial/stdlib.html#internet-access
+  39. http://docs.python.org/library/urllib2.html#module-urllib2
+  40. http://docs.python.org/library/smtplib.html#module-smtplib
+  41. http://docs.python.org/tutorial/stdlib.html#dates-and-times
+  42. http://docs.python.org/library/datetime.html#module-datetime
+  43. http://docs.python.org/tutorial/stdlib.html#data-compression
+  44. http://docs.python.org/library/zlib.html#module-zlib
+  45. http://docs.python.org/library/gzip.html#module-gzip
+  46. http://docs.python.org/library/bz2.html#module-bz2
+  47. http://docs.python.org/library/zipfile.html#module-zipfile
+  48. http://docs.python.org/library/tarfile.html#module-tarfile
+  49. http://docs.python.org/tutorial/stdlib.html#performance-measurement
+  50. http://docs.python.org/library/timeit.html#module-timeit
+  51. http://docs.python.org/library/timeit.html#module-timeit
+  52. http://docs.python.org/library/profile.html#module-pstats
+  53. http://docs.python.org/tutorial/stdlib.html#quality-control
+  54. http://docs.python.org/library/doctest.html#module-doctest
+  55. http://docs.python.org/library/unittest.html#module-unittest
+  56. http://docs.python.org/library/doctest.html#module-doctest
+  57. http://docs.python.org/tutorial/stdlib.html#batteries-included
+  58. http://docs.python.org/library/xmlrpclib.html#module-xmlrpclib
+  59. http://docs.python.org/library/simplexmlrpcserver.html#module-SimpleXMLRPCServer
+  60. http://docs.python.org/library/email.html#module-email
+  61. http://docs.python.org/library/smtplib.html#module-smtplib
+  62. http://docs.python.org/library/poplib.html#module-poplib
+  63. http://docs.python.org/library/xml.dom.html#module-xml.dom
+  64. http://docs.python.org/library/xml.sax.html#module-xml.sax
+  65. http://docs.python.org/library/csv.html#module-csv
+  66. http://docs.python.org/library/gettext.html#module-gettext
+  67. http://docs.python.org/library/locale.html#module-locale
+  68. http://docs.python.org/library/codecs.html#module-codecs
+  69. http://docs.python.org/contents.html
+  70. http://docs.python.org/tutorial/stdlib.html
+  71. http://docs.python.org/tutorial/stdlib.html#operating-system-interface
+  72. http://docs.python.org/tutorial/stdlib.html#file-wildcards
+  73. http://docs.python.org/tutorial/stdlib.html#command-line-arguments
+  74. http://docs.python.org/tutorial/stdlib.html#error-output-redirection-and-program-termination
+  75. http://docs.python.org/tutorial/stdlib.html#string-pattern-matching
+  76. http://docs.python.org/tutorial/stdlib.html#mathematics
+  77. http://docs.python.org/tutorial/stdlib.html#internet-access
+  78. http://docs.python.org/tutorial/stdlib.html#dates-and-times
+  79. http://docs.python.org/tutorial/stdlib.html#data-compression
+  80. http://docs.python.org/tutorial/stdlib.html#performance-measurement
+  81. http://docs.python.org/tutorial/stdlib.html#quality-control
+  82. http://docs.python.org/tutorial/stdlib.html#batteries-included
+  83. http://docs.python.org/tutorial/classes.html
+  84. http://docs.python.org/tutorial/stdlib2.html
+  85. http://docs.python.org/_sources/tutorial/stdlib.txt
+  86. http://docs.python.org/genindex.html
+  87. http://docs.python.org/modindex.html
+  88. http://docs.python.org/tutorial/stdlib2.html
+  89. http://docs.python.org/tutorial/classes.html
+  90. http://docs.python.org/index.html
+  91. http://docs.python.org/tutorial/index.html
+  92. http://docs.python.org/copyright.html
+  93. http://sphinx.pocoo.org/

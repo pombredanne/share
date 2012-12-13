@@ -1,0 +1,35 @@
+= Selenium Locators: Link Text =
+
+ link=<link_text>
+
+以連結的文字做為判斷的依據（區分大小寫）。如果頁面上有兩個相同字面的連結，則會取用第一個符合條件的 link。
+
+以下面的例子為例：
+
+.`link.html`
+--------------------------------------------------------------------------------
+<html>
+  <body>
+    <a href="...">Back</a> <a href="...">Forward</a> <1>
+    <ul>
+      <li>Click <a href="...">here</a> to download latest version of Selenium Server.</li>
+      <li>Please consult <a href="...">              <2>
+        <img src="http://seleniumhq.org/images/selenium-logo.png" />
+        <em>Selenium</em>
+        Documentation</a> for more information.</li>
+    </ul>
+    <a href="...">Back</a> <a href="...">Forward</a> <3>
+  </body>
+</html>
+--------------------------------------------------------------------------------
+<1> 用 `link=Back` 可以定位到 Back 的連結。
+<2> 雖然這個連結內含圖片與其他 HTML tag，但還是可以用 `link=Selenium Documentation` 定位到。
++
+用起來滿直覺的，因為使用者也是看到文字才點下去的，而且使用者並不在乎 `<a>...</a>` 裡面是怎麼組出這些字串的。感覺 Selenium 像是取出 `innerText`，去除前後的空白，然後才拿來跟 `link=` 後面的文字做比對。
++
+<3> 下面的 Back/Forward 連結都無法用 Link Text strategy 定位（通常得借助 XPath strategy 才行，例如 `//a[text()='Back'][2]`），因為第一個具有相同字面的連結會被採用。
+
+也支援 text pattern, 例如 `link=Error(*)` 可以定位到 Error(10) 或 Error(3) 等。[TBD]
+
+TIP: Link Text strategry 固然方便，但用 ID 或某些不會動的屬性會比 link text 來得好，尤其可以避開 L10n 的問題。
+

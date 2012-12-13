@@ -1,0 +1,56 @@
+= link:../unix-like.html[Unix-like] / link:commands.html[Commands] / `echo` =
+:title: [Unix-like][Commands] `echo`
+
+`echo` - display a line of text
+
+ echo [SHORT-OPTION]... [STRING]...
+ echo LONG-OPTION
+
+再簡單不過的 `echo`，使用上還是有要注意的地方，尤其是它預設會在輸出的後面補上一個link:../../text/text-newline.html[換行字元（newline）]，而且預設跳脫字元（backslash escapes）是沒有作用的。
+
+常用的 options 有：
+
+ * `-n` - 不要在後面補上一個 newline。
+ * `-e` - 對 backslash escapes 進行解讀，例如 `\t`、`\n`、\xHH` 等（例如 `\x00` 表示 NULL 字元），這個時候可以用 `\\` 來表示一個反斜線。
+
+--------------------------------------------------------------------------------
+$ echo line > echo.txt
+$ wc -c echo.txt
+5 echo.txt <1>
+$ hexdump -c echo.txt
+0000000   l   i   n   e  \n <2>
+0000005
+$
+$ echo -n line > echo.txt   <2>
+$ wc -c echo.txt
+4 echo.txt
+$ hexdump -c echo.txt 
+0000000   l   i   n   e                                                
+0000004
+--------------------------------------------------------------------------------
+<1> 為什麼 `line` 寫到檔案後會變成 5 bytes？
+<2> 原來 `echo` 預設會在輸出的後面補上一個 newline，加上 `-n` 就不會有這種狀況了。
+
+--------------------------------------------------------------------------------
+$ echo 'line1\nline2' > echo.txt
+$ hexdump -c echo.txt
+0000000   l   i   n   e   1   \   n   l   i   n   e   2  \n <1>
+000000d
+$ cat echo.txt
+line1\nline2
+$
+$ echo -e 'line1\nline2' > echo.txt
+$ cat echo.txt 
+line1
+line2
+$ hexdump -c echo.txt
+0000000   l   i   n   e   1  \n   l   i   n   e   2  \n     <2>
+000000c
+--------------------------------------------------------------------------------
+<1> `echo` 預設不會對 backslash escapes 進行解讀，所以 `\n` 在檔案裡還是 `\` 跟 `n` 兩個字元。
+<2> 透過 `-e` 可以要求 `echo` 對 backslash escapes 進行解讀，所以這一次 `\n` 在檔案裡真的是個換行字元。
+
+== 參考資料 ==
+
+ * http://manpages.debian.net/cgi-bin/man.cgi?query=echo[echo - Debian Hypertext Man Pages]
+

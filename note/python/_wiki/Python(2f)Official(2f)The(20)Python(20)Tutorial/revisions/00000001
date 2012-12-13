@@ -1,0 +1,422 @@
+= The Python Tutorial =
+http://docs.python.org/tutorial/index.html @2009/03/24
+<<TableOfContents>>
+
+__Python is an easy to learn, powerful programming language. It has efficient high-level data structures and a simple but effective approach to object-oriented programming. Python’s elegant syntax and dynamic typing, together with its ''interpreted nature'', make it an ideal language for scripting and rapid application development in many areas on most platforms.__
+
+The ''Python interpreter'' and the extensive ''standard library'' are freely available in source or binary form for all major platforms from the Python Web site, http://www.python.org/, and may be freely distributed. The same site also contains distributions of and pointers to many free third party Python modules, programs and tools, and additional documentation.
+
+__The Python interpreter is easily extended with new functions and data types implemented in C or C++ (or other languages callable from C). Python is also suitable as an ''extension language'' for customizable applications. (有許多應用程式均以 Python 來支援 scripting 功能, 例如 Blender 3D)__
+
+This tutorial introduces the reader informally(非正式地; 相對於參考手冊而言) to the basic concepts and features of the Python language and system. It helps to have a Python interpreter handy for hands-on(實地的) experience, but all examples are self-contained, so the tutorial can be read off-line as well.
+
+For a description of standard objects and modules, see the http://docs.python.org/library/index.html[Python Library Reference] document. The http://docs.python.org/reference/index.html[Python Reference Manual] gives a more formal definition of the language. To write extensions in C or C++, read http://docs.python.org/extending/index.html[Extending and Embedding the Python Interpreter] and http://docs.python.org/c-api/index.html[Python/C API Reference]. There are also several books covering Python in depth.
+
+This tutorial does not attempt to be comprehensive and cover every single feature, or even every commonly used feature. Instead, it introduces many of Python’s most noteworthy(值得注意的) features, and will give you a good idea of the language’s ''flavor and style''. After reading it, you will be able to read and write Python modules and programs, and you will be ready to learn more about the various Python library modules described in the Python Library Reference.
+
+The [http://docs.python.org/glossary.html#glossary|Glossary]] is also worth going through.
+
+== Whetting Your Appetite (刺激你的食慾) ==
+http://docs.python.org/tutorial/appetite.html @2009/03/24
+
+:::
+
+== An Informal Introduction to Python ==
+http://docs.python.org/tutorial/introduction.html @2009/03/24
+
+:::
+
+==== Strings ====
+
+Besides numbers, Python can also manipulate strings, which can be expressed in several ways. They can be enclosed in single quotes or double quotes:
+
+ {{{
+>>> 'spam eggs'
+'spam eggs'   <-- 預設用單引號來表示字串
+>>> 'doesn\'t'
+"doesn't"     <-- 外圍的引號會隨著內容自動做調整
+>>> "doesn't"
+"doesn't"
+>>> '"Yes," he said.'
+'"Yes," he said.'
+>>> "\"Yes,\" he said."
+'"Yes," he said.'
+>>> '"Isn\'t," she said.'
+'"Isn\'t," she said.'   <-- 遇到同時有單雙引號的狀況時, 外圍還是用單引號, 內部只好用跳脫字元來表現
+ }}}
+
+String literals can span multiple lines in several ways. __Continuation lines can be used, with a backslash as the last character on the line indicating that the next line is a logical continuation of the line:__
+
+ {{{
+hello = "This is a rather long string containing\n\
+several lines of text just as you would do in C.\n\
+    Note that whitespace at the beginning of the line is\
+ significant."
+
+print hello
+ }}}
+
+__Note that newlines still need to be embedded in the string using `\n`; the newline following the trailing backslash is discarded.__ This example would print the following:
+
+ {{{
+This is a rather long string containing
+several lines of text just as you would do in C.
+    Note that whitespace at the beginning of the line is significant.
+ }}}
+
+__If we make the string literal a “raw” string, however, the `\n` sequences are not converted to newlines, but the backslash at the end of the line, and the newline character in the source, are both included in the string as data.)__ Thus, the example:
+
+ {{{
+hello = r"This is a rather long string containing\n\
+several lines of text much as you would do in C."
+
+print hello
+ }}}
+
+would print:
+
+ {{{
+This is a rather long string containing\n\
+several lines of text much as you would do in C.
+ }}}
+
+__Or, strings can be surrounded in a pair of matching triple-quotes: `"""` or `'''`. End of lines do not need to be escaped when using triple-quotes, but they will be included in the string. (適合用來表示多行訊息)__
+
+ {{{
+print """
+Usage: thingy [OPTIONS]
+     -h                        Display this usage message
+     -H hostname               Hostname to connect to
+"""
+ }}}
+
+produces the following output:
+
+ {{{
+Usage: thingy [OPTIONS]
+     -h                        Display this usage message
+     -H hostname               Hostname to connect to
+ }}}
+
+__The interpreter prints the result of string operations in the same way as they are typed for input: (指沒有透過 `print` 輸出時) inside quotes, and with quotes and other funny characters escaped by backslashes, to show the precise value. The string is enclosed in double quotes if the string contains a single quote and no double quotes, else it’s enclosed in single quotes. '''(The `print` statement, described later, can be used to write strings without quotes or escapes; 因為沒有加 `print` 之前是 as-code repr 形式的輸出, 加了之後則是 user-friendly str)'''__
+
+Strings can be concatenated (glued together) with the `+` operator, and repeated with `*`:
+
+ {{{
+>>> word = 'Help' + 'A'
+>>> word
+'HelpA'
+>>> '<' + word * 5 + '>'
+'<HelpAHelpAHelpAHelpAHelpA>'
+ }}}
+
+Two string literals next to each other are automatically concatenated; the first line above could also have been written `word = 'Help' 'A';` this only works with two literals, not with arbitrary string expressions: (語法上的甜頭, 少用為妙!!)
+
+ {{{
+>>> 'str' 'ing'                   #  <-  This is ok
+'string'
+>>> 'str'.strip() + 'ing'   #  <-  This is ok
+'string'
+>>> 'str'.strip() 'ing'     #  <-  This is invalid
+  File "<stdin>", line 1, in ?
+    'str'.strip() 'ing'
+                      ^
+SyntaxError: invalid syntax
+ }}}
+
+__Strings can be subscripted (下標; indexed); like in C, the first character of a string has subscript (index) 0. '''There is no separate character type; a character is simply a string of size one.''' Like in [http://www.cs.arizona.edu/icon/ Icon], substrings can be specified with the ''slice notation'': two indices separated by a colon.__
+
+ {{{
+>>> word[4]
+'A'
+>>> word[0:2]
+'He'
+>>> word[2:4]
+'lp'
+ }}}
+
+__Slice indices have useful defaults; an omitted first index defaults to zero, an omitted second index defaults to the size of the string being sliced.__
+
+ {{{
+>>> word[:2]    # The first two characters
+'He'
+>>> word[2:]    # Everything except the first two characters
+'lpA'
+ }}}
+
+__Unlike a C string, Python strings cannot be changed. Assigning to an indexed position in the string results in an error:__
+
+ {{{
+>>> word[0] = 'x'
+Traceback (most recent call last):
+  File "<stdin>", line 1, in ?
+TypeError: object doesn't support item assignment
+>>> word[:1] = 'Splat'
+Traceback (most recent call last):
+  File "<stdin>", line 1, in ?
+TypeError: object doesn't support slice assignment
+ }}}
+
+However, creating a new string with the combined content is easy and efficient:
+
+ {{{
+>>> 'x' + word[1:]
+'xelpA'
+>>> 'Splat' + word[4]
+'SplatA'
+ }}}
+
+Here’s a useful invariant(不變式) of slice operations: `s[:i] + s[i:]` equals `s`.
+
+ {{{
+>>> word[:2] + word[2:]
+'HelpA'
+>>> word[:3] + word[3:]
+'HelpA'
+ }}}
+
+__Degenerate(變質的) slice indices are handled gracefully: an index that is too large is replaced by the string size, an upper bound smaller than the lower bound returns an empty string. (雖然沒有像 Java 那樣丟出例外, 但內部直接把錯誤壓下來的做法, 會不會讓 index 上的錯誤很難被發現?)__
+
+ {{{
+>>> word[1:100]
+'elpA'
+>>> word[10:]
+''
+>>> word[2:1]
+''
+ }}}
+
+__Indices may be negative numbers, to start counting from the right.__ For example:
+
+ {{{
+>>> word[-1]     # The last character
+'A'
+>>> word[-2]     # The last-but-one character
+'p'
+>>> word[-2:]    # The last two characters
+'pA'
+>>> word[:-2]    # Everything except the last two characters
+'Hel'
+ }}}
+
+__'''But note that -0 is really the same as 0, so it does not count from the right!'''__
+
+ {{{
+>>> word[-0]     # (since -0 equals 0)
+'H'
+ }}}
+
+__Out-of-range negative slice indices are truncated, but don’t try this for single-element (non-slice) indices: '''(事實上 positive indices 也有這個問題, 上面 "handled gracefully" 的甜頭只適用於 slice notation)'''__
+
+ {{{
+>>> word[-100:]
+'HelpA'
+>>> word[-10]    # error
+Traceback (most recent call last):
+  File "<stdin>", line 1, in ?
+IndexError: string index out of range
+ }}}
+
+__One way to remember how slices work is to think of the indices as ''pointing between characters'', with the left edge of the first character numbered 0. Then the right edge of the last character of a string of `n` characters has index `n`, for example:__
+
+ {{{
+ +---+---+---+---+---+
+ | H | e | l | p | A |
+ +---+---+---+---+---+
+ 0   1   2   3   4   5
+-5  -4  -3  -2  -1
+ }}}
+
+The first row of numbers gives the position of the indices 0...5 in the string; the second row gives the corresponding ''negative indices''. __The slice from `i` to `j` consists of all characters between the edges labeled `i` and `j`, respectively.__
+
+__For non-negative indices, the length of a slice is the difference of the indices, if both are within bounds.__ For example, the length of `word[1:3]` is 2.
+
+The built-in function `len()` returns the length of a string:
+
+ {{{
+>>> s = 'supercalifragilisticexpialidocious'
+>>> len(s)
+34
+ }}}
+
+{{{#!wiki note
+'''See also'''
+
+ * http://docs.python.org/library/stdtypes.html#typesseq[Sequence Types — str, unicode, list, tuple, buffer, xrange]
+
+ . Strings, and the Unicode strings described in the next section, are examples of sequence types, and support the common operations supported by such types.
+
+ * http://docs.python.org/library/stdtypes.html#string-methods[String Methods]
+
+ . Both strings and Unicode strings support a large number of methods for basic transformations and searching.
+
+ * http://docs.python.org/library/string.html#new-string-formatting[String Formatting]
+
+ . Information about string formatting with `str.format()` is described here.
+
+ * http://docs.python.org/library/stdtypes.html#string-formatting[String Formatting Operations]
+
+ . The old formatting operations invoked when strings and Unicode strings are the left operand of the `%` operator are described in more detail here.
+}}}
+
+==== Unicode Strings ====
+
+__Starting with Python 2.0 a new data type for storing text data is available to the programmer: the ''Unicode object''. It can be used to store and manipulate Unicode data (see http://www.unicode.org/) and integrates well with the existing string objects, providing ''auto-conversions'' where necessary.__
+
+__Unicode has the advantage of providing one ordinal(序數) for every character in every script(手寫體) used in modern and ancient texts. Previously, there were only 256 possible ordinals for script characters. Texts were typically bound to a ''code page'' which mapped the ordinals to script characters. This lead to very much confusion especially with respect to internationalization (usually written as `i18n` — '`i`' + 18 characters + '`n`') of software. '''Unicode solves these problems by defining one code page for all scripts. (還是 code page 的概念, 只不過一次涵蓋所有文字而已)'''__
+
+Creating Unicode strings in Python is just as simple as creating ''normal strings'':
+
+ {{{
+>>> u'Hello World !'
+u'Hello World !'
+ }}}
+
+The small '`u`' in front of the quote indicates that a Unicode string is supposed to(應該) be created. __If you want to include special characters in the string, you can do so by using the Python ''Unicode-Escape encoding''.__ The following example shows how:
+
+ {{{
+>>> u'Hello\u0020World !'
+u'Hello World !'
+ }}}
+
+The ''escape sequence'' `\u0020` indicates to insert the Unicode character with the ordinal value `0x0020` (the space character) at the given position.
+
+__Other characters are interpreted by using their respective ordinal values directly as Unicode ordinals. If you have literal strings in the standard Latin-1 encoding that is used in many Western countries, you will find it convenient that the lower 256 characters of Unicode are the same as the 256 characters of Latin-1.__
+
+For experts, there is also a ''raw mode'' just like the one for normal strings. __You have to prefix the opening quote with ‘`ur`’ to have Python use the ''Raw-Unicode-Escape encoding''. It will only apply the above `\uXXXX` conversion if there is an uneven(奇數的) number of backslashes in front of the small ‘`u`’.__
+
+ {{{
+>>> ur'Hello\u0020World !'
+u'Hello World !'
+>>> ur'Hello\\u0020World !'
+u'Hello\\\\u0020World !'
+>>> ur'Hello\nWorld'
+u'Hello\\nWorld' <-- 除了 unicode-escape encoding 外, 其他跳脫還是沒有作用
+ }}}
+
+__'''The ''raw mode'' is most useful when you have to enter lots of backslashes, as can be necessary in regular expressions.'''__
+
+__Apart from these standard encodings, Python provides a whole set of other ways of creating Unicode strings on the basis of a ''known encoding''.[?]__
+
+The built-in function `unicode()` provides access to all registered ''Unicode codecs'' (COders and DECoders). Some of the more well known encodings which these codecs can convert are Latin-1, ASCII, UTF-8, and UTF-16. The latter two are variable-length encodings that store each Unicode character in one or more bytes. __The ''default encoding'' is normally set to ASCII, which passes through characters in the range 0 to 127 and rejects any other characters with an error. When a Unicode string is printed, written to a file, or converted with `str()`, conversion takes place using this default encoding.__
+
+ {{{
+>>> u"abc"
+u'abc'
+>>> str(u"abc")
+'abc'
+>>> u"äöü"
+u'\xe4\xf6\xfc'
+>>> str(u"äöü") <-- 其實就是 encode 成 default encoding - ASCII
+Traceback (most recent call last):
+  File "<stdin>", line 1, in ?
+UnicodeEncodeError: 'ascii' codec can't encode characters in position 0-2: ordinal not in range(128)
+ }}}
+
+__To convert a Unicode string into an ''8-bit string'' using a specific encoding, Unicode objects provide an `encode()` method that takes one argument, the name of the encoding. Lowercase names for encodings are preferred.__
+
+ {{{
+>>> u"äöü".encode('utf-8')
+'\xc3\xa4\xc3\xb6\xc3\xbc' <-- 每一個前面都有 "\xc3"?
+ }}}
+
+__If you have data in a specific encoding and want to produce a corresponding Unicode string from it, you can use the `unicode()` function with the encoding name as the second argument.__
+
+ {{{
+>>> unicode('\xc3\xa4\xc3\xb6\xc3\xbc', 'utf-8')
+u'\xe4\xf6\xfc'
+ }}}
+
+以下針對中文做了一些實驗:
+
+ {{{
+>>> import sys
+>>> sys.stdin.encoding
+'UTF-8'
+>>> sys.stdout.encoding
+'UTF-8'
+>>> hello = "你好"
+>>> hello
+'\xe4\xbd\xa0\xe5\xa5\xbd'
+>>> str(hello)
+'\xe4\xbd\xa0\xe5\xa5\xbd'
+>>> hello[0]
+'\xe4'
+>>> uhello = unicode("\xe4\xbd\xa0\xe5\xa5\xbd", "utf-8")
+>>> uhello
+u'\u4f60\u597d'
+>>> uhello.encode("utf-8")
+'\xe4\xbd\xa0\xe5\xa5\xbd'
+>>> str(uhello)
+---------------------------------------------------------------------------
+<type 'exceptions.UnicodeEncodeError'>    Traceback (most recent call last)
+
+/home/sardine/<ipython console> in <module>()
+
+<type 'exceptions.UnicodeEncodeError'>: 'ascii' codec can't encode characters in position 0-1: ordinal not in range(128)
+>>> uhello[0]
+u'\u4f60'
+ }}}
+
+其他參考資料有:
+
+ * http://www.amk.ca/python/howto/unicode[Unicode HOWTO]
+ * http://heaven.branda.to/~thinker/GinGin_CGI.py/show_id_doc/207[再戰 Python 中文]
+
+:::
+
+== 5. Data Structures ==
+http://docs.python.org/tutorial/datastructures.html @2011/03/23
+
+=== 5.4. Sets ===
+
+__Python also includes a data type for sets. A set is an ''unordered'' collection with no duplicate elements. Basic uses include membership testing and eliminating duplicate entries. Set objects also support mathematical operations like union, intersection, difference, and symmetric difference.__
+
+Here is a brief demonstration:
+
+ {{{
+>>> basket = ['apple', 'orange', 'apple', 'pear', 'orange', 'banana']
+>>> fruit = set(basket)               # create a set without duplicates
+>>> fruit
+set(['orange', 'pear', 'apple', 'banana'])
+>>> 'orange' in fruit                 # fast membership testing
+True
+>>> 'crabgrass' in fruit
+False
+
+>>> # Demonstrate set operations on unique letters from two words
+...
+>>> a = set('abracadabra')
+>>> b = set('alacazam')
+>>> a                                  # unique letters in a
+set(['a', 'r', 'b', 'c', 'd'])
+>>> a - b                              # letters in a but not in b
+set(['r', 'd', 'b'])
+>>> a | b                              # letters in either a or b
+set(['a', 'c', 'r', 'd', 'b', 'm', 'z', 'l'])
+>>> a & b                              # letters in both a and b
+set(['a', 'c'])
+>>> a ^ b                              # letters in a or b but not both
+set(['r', 'd', 'b', 'm', 'z', 'l'])
+ }}}
+
+:::
+
+== Brief Tour of the Standard Library ==
+
+:::
+
+=== Command Line Arguments ===
+
+Common utility scripts often need to process command line arguments. These arguments are stored in the `sys` module’s `argv` attribute as a list. For instance the following output results from running `python demo.py one two three` at the command line:
+
+ {{{
+>>> import sys
+>>> print sys.argv
+['demo.py', 'one', 'two', 'three'] <-- python 程式也會變成第一個參數; 即便規劃成 executable script 也是一樣
+ }}}
+
+__The `getopt` module processes `sys.argv` using the conventions of the Unix `getopt()` function. More powerful and flexible command line processing is provided by the `optparse` module.__
+
+:::
+

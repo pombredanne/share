@@ -1,0 +1,184 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>如何偵測 Sikuli Script 執行過程中有發生錯誤？</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="cli-exit.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>如何偵測 Sikuli Script 執行過程中有發生錯誤？</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">
+<div class="title">延伸閱讀</div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+<a href="SikuliCLI.html">從 CLI 執行 Sikuli Script</a>
+</p>
+</li>
+</ol></div>
+</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>實驗發現，從 CLI 執行 Sikuli Script 的過程中如果有發生錯誤，這個錯誤並不會被反應到 <a href="../shell/exit-status.html">exit status</a>。</p></div>
+<div class="listingblock">
+<div class="title"><code>C:\tmp\error.sikuli\error.py</code> 或 <code>/tmp/error.sikuli/error.py</code></div>
+<div class="content">
+<pre><code>raise Exception()</code></pre>
+</div></div>
+<div class="paragraph"><p>分別在 Windows 跟 Linux 下做實驗，結果 exit status 都是 0：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>C:\tmp&gt; java -jar "%SIKULI_HOME%\sikuli-script.jar" c:\tmp\error.sikuli 2&gt; stderr.txt
+[info] Sikuli vision engine loaded.
+[info] Windows utilities loaded.
+[info] VDictProxy loaded.
+[error] Can't run this Sikuli script: c:\tmp\error.sikuli
+
+C:\tmp&gt; echo %ERRORLEVEL%
+0
+
+C:\tmp&gt; type stderr.txt
+Traceback (most recent call last):
+  File "c:\tmp\error.sikuli\error.py", line 1, in &amp;lt;module&gt;
+    raise Exception()
+Exception</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ java -jar $SIKULI_HOME/sikuli-script.jar /tmp/error.sikuli 2&gt; stderr.txt
+[info] Sikuli vision engine loaded.
+[info] VDictProxy loaded.
+[error] Can't run this Sikuli script: /tmp/error.sikuli
+
+$ echo $?
+0
+
+$ cat stderr.txt
+Traceback (most recent call last):
+  File "/tmp/error.sikuli/error.py", line 1, in &lt;module&gt;
+    raise Exception()
+Exception</code></pre>
+</div></div>
+<div class="paragraph"><p>還好錯誤訊息都會寫到 STDERR，可以利用這個特性間接做判斷。像上面這樣，用 <code>2&gt;</code> 將 STDERR 導到特定檔案，程式執行結束後就可以檢查檔案的內容，如果是空的就表示成功，否則表示過程中有發生錯誤。</p></div>
+<div class="paragraph"><p>相同的概念也可以套用在 Python 裡：</p></div>
+<div class="listingblock">
+<div class="title"><a href="cli-exit/run_sikuli.py"><code>run_sikuli.py</code></a></div>
+<div class="content">
+<pre><code>import sys, os, os.path as path, subprocess
+
+sikuli_script = sys.argv[1]
+sikuli_jar = path.join(os.environ['SIKULI_HOME'], 'sikuli-script.jar')
+process = subprocess.Popen(['java', '-jar', sikuli_jar, sikuli_script], stderr=subprocess.PIPE) <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+stderr = process.communicate()[1]
+
+if stderr != '': raise Exception(stderr) <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+只將 STDERR 的內容轉到 Python 內部。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+如果 <code>stderr</code> 有內容，就表示過程中有發生錯誤。
+</td></tr>
+</table></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ python run_sikuli.py /tmp/error.sikuli/
+[info] Sikuli vision engine loaded. <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+[info] VDictProxy loaded.
+[error] Can't run this Sikuli script: /tmp/error.sikuli/
+Traceback (most recent call last):
+  File "run_sikuli.py", line 8, in &lt;module&gt;
+    if stderr != '': raise Exception(stderr)
+Exception: Traceback (most recent call last):
+  File "/tmp/error.sikuli/error.py", line 1, in &lt;module&gt;
+    raise Exception()
+Exception
+
+$ echo $? <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+1</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+STDOUT 沒有被轉向，所以還是直接輸出到螢幕。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+錯誤有被反應到 exit status 了。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>不過經過一段時間的測試之後，發現某些不是錯誤的訊息也會被寫到 STDERR 去，目前的 workaround 就是進一步判斷 "Traceback (most recent call last)" 這一串字有沒有出現：</p></div>
+<div class="listingblock">
+<div class="title"><a href="cli-exit/run_sikuli2.py"><code>run_sikuli2.py</code></a></div>
+<div class="content">
+<pre><code>import sys, os, os.path as path, subprocess
+
+sikuli_script = sys.argv[1]
+sikuli_jar = path.join(os.environ['SIKULI_HOME'], 'sikuli-script.jar')
+process = subprocess.Popen(['java', '-jar', sikuli_jar, sikuli_script], stderr=subprocess.PIPE)
+stderr = process.communicate()[1]
+
+if "Traceback (most recent call last)" in stderr: raise Exception(stderr)</code></pre>
+</div></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:17:49 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

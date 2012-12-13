@@ -1,0 +1,186 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>Android: Hierarchy Viewer</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="android-hierarchyviewer.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>Android: Hierarchy Viewer</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>Hierarchy Viewer 是 <a href="android-sdk.html">Android SDK</a> 內建用來對 UI 進行除錯或最佳化的工具。</p></div>
+<div class="paragraph"><p>這個工具位在 SDK <code>tools/</code> 資料夾底下，直接執行 <code>hierarchyviewer</code> 即可：</p></div>
+<div class="listingblock" id="view-server-not-available">
+<div class="content">
+<pre><code>$ hierarchyviewer
+11:26:27 E/hierarchyviewer: Unable to get view server version from device emulator-5554
+11:26:27 E/hierarchyviewer: Unable to get view server protocol version from device emulator-5554</code></pre>
+</div></div>
+<div class="paragraph"><p>好像第一次用 Hierarchy Viewer 連接 device/emulator 時都會丟出上述 "Unable to get view server&#8230;" 的錯誤，但 Hierarchy Viewer 還是一切運作正常，之後重新執行 Hierarchy Viewer 就不會再有這類訊息。可以合理推斷 Hierarchy Viewer 是搭配 device/emulator 裡的 <a href="android-viewserver.html">View Server</a> 運作，而且第一次被存取時才會啟動&#8230;</p></div>
+<div class="admonitionblock" id="developer-version-only">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="paragraph"><p>基於安全的考量，Hierarchy Viewer 這個工具只能搭配 <a href="emulator/emulator.html">emulator</a> 或所謂的 "developer version of the Android system" 運作。</p></div>
+<div class="quoteblock">
+<div class="content">
+<div class="paragraph"><p>Connect your device or launch an emulator.</p></div>
+<div class="paragraph"><p>To preserve security, Hierarchy Viewer can only connect to devices running a developer version of the Android system.</p></div>
+</div>
+<div class="attribution">
+<em><a href="http://developer.android.com/tools/debugging/debugging-ui.html">Optimizing Your UI</a></em><br />
+&#8212; Android Developers
+</div></div>
+<div class="paragraph"><p>下面是 Hierarchy Viewer 試圖連接實體手機時丟出的錯誤：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ hierarchyviewer
+07:43:32 E/hierarchyviewer: Unable to get view server version from device HT142TJ06210
+07:43:32 E/hierarchyviewer: Unable to get view server protocol version from device HT142TJ06210
+07:43:34 E/hierarchyviewer: Unable to debug device HT142TJ06210</code></pre>
+</div></div>
+<div class="paragraph"><p>至於 <a href="android-adp.html">ADP</a>，對照 "Connect your device or&#8230;" 跟 "&#8230; " 的說法，看似可以直接搭配 Hierarchy Viewer 運作，但<a href="android-hierarchyviewer-adp.html">事實並非如此</a>&#8230;</p></div>
+</td>
+</tr></table>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="android-hierarchyviewer/activity_list.png" alt="android-hierarchyviewer/activity_list.png" />
+</div>
+<div class="title">Figure 1. 主畫面列出所有連接的 device/emulator，展開後可以看到許多 activity，粗體表示它目前顯示在畫面上，而且可以跟使用者互動。</div>
+</div>
+<div class="paragraph"><p>選定一個 activity 後，按主畫面上方的 Load View Hierary 跟 Inspect Screenshot 可以分別叫出 Layout View 跟 Pixel Perfect View。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">2012-07 用 Android SDK r20 所附的 Hierarchy Viewer 操作 Android 4.1 時，感覺一整個慢到不行，希望這個問題不會在 ADP 上發生。對照 <a href="https://groups.google.com/forum/?fromgroups#!topic/android-developers/q1lRBJacmQY">這篇討論</a>中 Romain Guy 的說法，也實際遇到 Hierarchy Viewer 跟 Viewer Server 間的連線不是很穩定，"慢" 跟 "不穩定" 或許都是為什麼現階段 Hierarchy Viewer 不能運作在一般手機上的原因？</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="layout-view">Layout View</h2>
+<div class="sectionbody">
+<div class="imageblock">
+<div class="content">
+<a class="image" href="android-hierarchyviewer/layout_view.png">
+<img src="android-hierarchyviewer/layout_view_thumb.png" alt="android-hierarchyviewer/layout_view_thumb.png" />
+</a>
+</div>
+<div class="title">Figure 2. Layout View</div>
+</div>
+<div class="ulist"><ul>
+<li>
+<p>
+左側的 Tree View 可以用滑鼠滾輪放大縮小，右小角選定元件後，右上方的縮圖會被標上綠色區塊，方便查看元件的 ID。
+</p>
+</li>
+<li>
+<p>
+索引值可以直接從 Tree View 中每個節點右下角的數字得知。
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="perfect-view">Pixel Perfect View</h2>
+<div class="sectionbody">
+<div class="imageblock">
+<div class="content">
+<a class="image" href="android-hierarchyviewer/pixel_perfect_view.png">
+<img src="android-hierarchyviewer/pixel_perfect_view_thumb.png" alt="android-hierarchyviewer/pixel_perfect_view_thumb.png" />
+</a>
+</div>
+<div class="title">Figure 3. Pixel Perfect View</div>
+</div>
+<div class="ulist"><ul>
+<li>
+<p>
+可以用來查看某個圖樣在畫面上的座標值。
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://developer.android.com/tools/help/hierarchy-viewer.html">Hierarchy Viewer | Android Developers</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://developer.android.com/tools/debugging/debugging-ui.html">Optimizing Your UI | Android Developers</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://mobile.tutsplus.com/tutorials/android/android-tools-using-the-hierarchy-viewer/">Android Tools: Using the Hierarchy Viewer</a> (2011-07-25)
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-07 22:36:59 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

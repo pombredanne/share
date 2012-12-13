@@ -1,0 +1,160 @@
+= Windows Firewall: 用 `netsh` 查看 Firewall 的設定 =
+
+link:firewall.html[Windows Firewall] 的設定可以透過 `netsh` 來查看。在 Vista 以前（也就是 Windows XP 或 Windows Server 2003），你可以用：
+
+ netsh firewall show config verbose = ENABLE
+
+[listing]
+.link:netsh-firewall/netsh_xp_firewall_enabled.txt[Windows XP SP2 上的執行結果]
+................................................................................
+C:\> netsh firewall show config verbose = ENABLE
+
+Domain profile configuration:
+-------------------------------------------------------------------
+Operational mode                  = Enable
+Exception mode                    = Enable
+Multicast/broadcast response mode = Enable
+Notification mode                 = Enable
+
+Service configuration for Domain profile:
+Mode     Customized  Name
+-------------------------------------------------------------------
+...
+
+Standard profile configuration (current):  <1>
+-------------------------------------------------------------------
+Operational mode                  = Enable <2>
+Exception mode                    = Enable <3>
+Multicast/broadcast response mode = Enable
+Notification mode                 = Enable
+
+Service configuration for Standard profile:
+Mode     Customized  Name
+-------------------------------------------------------------------
+Disable  No          File and Printer Sharing
+    Scope: LocalSubNet
+Disable  No          UPnP Framework
+    Scope: LocalSubNet
+Enable   No          Remote Desktop
+    Scope: *
+Disable  No          Remote Administration
+    Scope: *
+
+Allowed programs configuration for Standard profile:
+Mode     Name / Program
+-------------------------------------------------------------------
+Enable   Remote Assistance / C:\WINDOWS\system32\sessmgr.exe
+    Scope: *
+Enable   Java(TM) Platform SE binary / C:\Program Files\Borland\SC Test Manager 2009\lib\jre\bin\java_ExecServer.exe
+    Scope: *
+Enable   python / C:\Python27\python.exe
+    Scope: *
+Enable   Java(TM) Platform SE binary / C:\WINDOWS\system32\java.exe
+    Scope: *
+
+Port configuration for Standard profile:
+Port   Protocol  Mode     Name
+-------------------------------------------------------------------
+61117  UDP       Enable   Trend Micro Client/Server Security Agent Broadcast
+    Scope: *
+61116  TCP       Enable   Trend Micro Client/Server Security Agent Update
+    Scope: *
+21112  TCP       Enable   Trend Micro Client/Server Security Agent Listener
+    Scope: *
+139    TCP       Disable  NetBIOS Session Service <4>
+    Scope: LocalSubNet
+445    TCP       Disable  SMB over TCP
+    Scope: LocalSubNet
+137    UDP       Disable  NetBIOS Name Service
+    Scope: LocalSubNet
+138    UDP       Disable  NetBIOS Datagram Service
+    Scope: LocalSubNet
+1900   UDP       Disable  SSDP Component of UPnP Framework
+    Scope: LocalSubNet
+2869   TCP       Disable  UPnP Framework over TCP
+    Scope: LocalSubNet
+3389   TCP       Enable   Remote Desktop
+    Scope: *
+
+ICMP configuration for Standard profile:
+Mode     Type  Description
+-------------------------------------------------------------------
+Disable  2     Allow outbound packet too big
+Disable  3     Allow outbound destination unreachable
+Disable  4     Allow outbound source quench
+Disable  5     Allow redirect
+Disable  8     Allow inbound echo request
+Disable  9     Allow inbound router request
+Disable  11    Allow outbound time exceeded
+Disable  12    Allow outbound parameter problem
+Disable  13    Allow inbound timestamp request
+Disable  17    Allow inbound mask request
+
+Log configuration:
+-------------------------------------------------------------------
+File location   = C:\WINDOWS\pfirewall.log
+Max file size   = 4096 KB
+Dropped packets = Disable
+Connections     = Disable
+
+Local Area Connection firewall configuration:
+-------------------------------------------------------------------
+Operational mode                  = Enable
+
+Port configuration for Local Area Connection:
+Port   Protocol  Mode     Name
+-------------------------------------------------------------------
+143    TCP       Disable  Internet Mail Access Protocol Version 4 (IMAP4)
+3389   TCP       Disable  Remote Desktop
+25     TCP       Disable  Internet Mail Server (SMTP)
+220    TCP       Disable  Internet Mail Access Protocol Version 3 (IMAP3)
+61117  UDP       Enable   Trend Micro Client/Server Security Agent Broadcast
+61116  TCP       Enable   Trend Micro Client/Server Security Agent Update
+21     TCP       Disable  FTP Server
+23     TCP       Disable  Telnet Server
+80     TCP       Disable  Web Server (HTTP)
+110    TCP       Disable  Post-Office Protocol Version 3 (POP3)
+443    TCP       Disable  Secure Web Server (HTTPS)
+21112  TCP       Enable   Trend Micro Client/Server Security Agent Listener
+
+ICMP configuration for Local Area Connection:
+Mode     Type  Description
+-------------------------------------------------------------------
+Disable  3     Allow outbound destination unreachable
+Disable  4     Allow outbound source quench
+Disable  5     Allow redirect
+Disable  8     Allow inbound echo request
+Disable  9     Allow inbound router request
+Disable  11    Allow outbound time exceeded
+Disable  12    Allow outbound parameter problem
+Disable  13    Allow inbound timestamp request
+Disable  17    Allow inbound mask request
+................................................................................
+<1> 後面標示有 '(current)'，表示目前套用的 profile。
+<2> 對應到 firewall 整體是的設定是 On 或 Off。實驗發現，在 Off 的情況下，該 profile 相關的設定還是會逐一列出來。
+<3> 對應 Don't allow exception 有沒有被勾選。
+<4> Mode = Disable 的項目預設不會列出來，要加上 `verbose = ENABLE` 才行。
+
+另外還有link:netsh-firewall/netsh_win7_firewall_enabled.txt[在 Windows 7 上的執行結果]，基本上結果跟 Windows XP 或 Windows Server 2003 上的執行結果一樣（少了 Local Area Connection 的段落），後面附加了一段警語：
+
+--------------------------------------------------------------------------------
+C:\> netsh firewall show config verbose = ENABLE
+...
+
+IMPORTANT: Command executed successfully.
+However, "netsh firewall" is deprecated;
+use "netsh advfirewall firewall" instead.
+For more information on using "netsh advfirewall firewall" commands
+instead of "netsh firewall", see KB article 947709
+at http://go.microsoft.com/fwlink/?linkid=121488 .
+--------------------------------------------------------------------------------
+
+Vista 後加入了 link:firewall.html#advanced-security[Windows Firewall with Advanced Security]，連帶的 `netsh firewall` 的用法也http://support.microsoft.com/kb/947709[改成 `netsh advfirewall firewall`]。
+
+== 參考資料 ==
+
+ * http://support.microsoft.com/kb/947709[How to use the "netsh advfirewall firewall" context instead of the "netsh firewall" context to control Windows Firewall behavior in Windows Server 2008 and in Windows Vista]
+ * http://support.microsoft.com/kb/875357[Troubleshooting Windows Firewall settings in Windows XP Service Pack 2 for advanced users]
+ * http://technet.microsoft.com/en-us/library/dd734783[Netsh AdvFirewall Firewall Commands]
+ * http://technet.microsoft.com/en-us/library/cc771046[Netsh Commands for Windows Firewall] 
+

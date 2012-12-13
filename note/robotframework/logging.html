@@ -1,0 +1,195 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>Robot Framework: Logging</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="logging.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>Robot Framework: Logging</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>Debug file 只有明確給定 <code>--debugfile</code> (<code>-b</code>) 參數時才會建立。下面用一個簡單的範例來觀察 debug file 會記錄到什麼東西：</p></div>
+<div class="listingblock">
+<div class="title"><code>test.txt</code></div>
+<div class="content">
+<pre><code>| *Setting* | *Value*
+| Library | mylib.py
+
+| *Test Case* | *Action* | *Argument* | *Argument*
+| Test        | Do Something
+|             | Log | Log from test data (DEBUG) | DEBUG
+|             | Log | Log from test data (WARN) | WARN</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="title"><code>mylib.py</code></div>
+<div class="content">
+<pre><code>import logging
+
+_logger = logging.getLogger(__name__)
+
+def do_something():
+    _logger.debug('Log from test library (DEBUG)')
+    _logger.warning('Log from test library (WARN)')</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ pybot --debugfile debug.log test.txt
+==============================================================================
+Test
+==============================================================================
+[ WARN ] Log from test library (WARN)
+[ WARN ] Log from test data (WARN)
+...
+
+$ cat debug.log
+==============================================================================
++ START SUITE: Test [ ]
+==============================================================================
++- START TEST: Test [ ]
+------------------------------------------------------------------------------
++-- START KW: mylib.Do Something [ ]
+Log from test library (WARN) <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
++-- END KW: mylib.Do Something (1)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
++-- START KW: BuiltIn.Log [ Log from test data (DEBUG) | DEBUG ]
+Log from test data (DEBUG)   <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
++-- END KW: BuiltIn.Log (1)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
++-- START KW: BuiltIn.Log [ Log from test data (WARN) | WARN ]
+Log from test data (WARN)
++-- END KW: BuiltIn.Log (2)
+------------------------------------------------------------------------------
++- END TEST: Test (6)
+------------------------------------------------------------------------------
++ END SUITE: Test (73)
+==============================================================================</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+來自 test library 的 logs，只有 INFO level 以上被記錄下來。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+來自 test data 的 DEBUG/WARN logs 都有被記錄下來。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>加上 <code>--loglevel</code> (<code>-L</code>)，再觀察看看有什麼差別：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ pybot --debugfile debug.log --loglevel DEBUG test.txt
+==============================================================================
+Test
+==============================================================================
+[ WARN ] Log from test library (WARN) <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+[ WARN ] Log from test data (WARN)
+...
+
+$ cat debug.log
+==============================================================================
++ START SUITE: Test [ ]
+==============================================================================
++- START TEST: Test [ ]
+------------------------------------------------------------------------------
++-- START KW: mylib.Do Something [ ]
+Log from test library (DEBUG) <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+Log from test library (WARN)
++-- END KW: mylib.Do Something (4)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
++-- START KW: BuiltIn.Log [ Log from test data (DEBUG) | DEBUG ]
+Log from test data (DEBUG)
++-- END KW: BuiltIn.Log (1)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
++-- START KW: BuiltIn.Log [ Log from test data (WARN) | WARN ]
+Log from test data (WARN)
++-- END KW: BuiltIn.Log (1)
+------------------------------------------------------------------------------
++- END TEST: Test (14)
+------------------------------------------------------------------------------
++ END SUITE: Test (77)
+==============================================================================</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+Log file (<code>log.html</code>) 還是只會顯示 INFO level 以上的 log，不受 <code>--loglevel</code> 的影響。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+加上 <code>--loglevel DEBUG</code> 之後，來自 test script 的 debug logs 終於被記錄到 debug file 裡了。
+</td></tr>
+</table></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">官方文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://robotframework.googlecode.com/hg/doc/userguide/RobotFrameworkUserGuide.html#debug-file">Robot Framework User Guide &gt; Debug file</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://robotframework.googlecode.com/hg/doc/userguide/RobotFrameworkUserGuide.html#log-levels">Robot Framework User Guide &gt; Log levels</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:10:19 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

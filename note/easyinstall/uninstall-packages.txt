@@ -1,0 +1,85 @@
+= link:easyinstall.html[EasyInstall] / 移除套件 =
+:title: [EasyInstall] 移除套件
+
+EasyInstall 沒有提供移除套件的功能，必須手動來做：
+
+ 1. 執行 `easy_install -m package_name`，它會自動將 `site-packages/easy-install.pth` 裡對應的項目拿掉。
+ 2. 手動將 `site-packages/xxx.egg` 資料夾刪除。
+ 3. 手動將當初安裝時產生的 script 刪除。
+
+官網是這麼說的：
+
+[quote,'http://packages.python.org/distribute/easy_install.html#uninstalling-packages[Easy Install — Distribute documentation]']
+________________________________________________________________________________
+ easy_install -m PackageName
+
+This will ensure that Python doesn’t continue to search for a package you’re planning to remove. After you’ve done this, you can safely delete the .egg files or directories, along with any scripts you wish to remove.
+________________________________________________________________________________
+
+以 Selenium 的 link:../selenium/selenium-rc-install.html[client driver] 為例：
+
+--------------------------------------------------------------------------------
+$ cd /usr/local/lib/python2.6/dist-packages
+$ sudo easy_install selenium
+Searching for selenium
+Reading http://pypi.python.org/simple/selenium/
+Reading http://code.google.com/p/selenium/
+Reading http://seleniumhq.org/
+Reading http://www.openqa.org/
+Best match: selenium 2.27.0
+Downloading http://selenium.googlecode.com/files/selenium-2.27.0.tar.gz
+Processing selenium-2.27.0.tar.gz
+Writing /tmp/easy_install-22vaOq/selenium-2.27.0/setup.cfg
+Running selenium-2.27.0/setup.py -q bdist_egg --dist-dir /tmp/easy_install-22vaOq/selenium-2.27.0/egg-dist-tmp-csN5Yh
+warning: no files found matching 'docs/api/py/index.rst'
+Adding selenium 2.27.0 to easy-install.pth file <1>
+
+Installed /usr/local/lib/python2.6/dist-packages/selenium-2.27.0-py2.6.egg
+Processing dependencies for selenium
+Finished processing dependencies for selenium
+$
+$ sudo easy_install -m selenium <2>
+Searching for selenium
+Best match: selenium 2.27.0
+Processing selenium-2.27.0-py2.6.egg
+Removing selenium 2.27.0 from easy-install.pth file <2>
+
+Using /usr/local/lib/python2.6/dist-packages/selenium-2.27.0-py2.6.egg
+
+Because this distribution was installed --multi-version, before you can
+import modules from this package in an application, you will need to
+'import pkg_resources' and then use a 'require()' call similar to one of
+these examples, in order to select the desired version:
+
+    pkg_resources.require("selenium")  # latest installed version
+    pkg_resources.require("selenium==2.27.0")  # this exact version
+    pkg_resources.require("selenium>=2.27.0")  # this version or higher
+
+Processing dependencies for selenium
+Finished processing dependencies for selenium
+$
+$ sudo rm -rf selenium-2.27.0-py2.6.egg <3>
+--------------------------------------------------------------------------------
+<1> 安裝過程中套件會註冊到 `easy-install.pth`。
+<2> `easy_install -m` 會將套件的註冊資訊從 `easy-install.pth` 移除。這時候套件還在，只是不能直接引用而已。
+<3> 把套件的 `.egg` 資料夾，才算真正把套件移除。
+
+[[via-pip]]
+實際發現，EasyInstall 安裝的套件也可以用 link:../pip/pip.html[Pip] 來移除，也會一併更新 `easy-install.pth`：
+
+--------------------------------------------------------------------------------
+$ sudo pip uninstall selenium
+Uninstalling selenium:
+  /usr/local/lib/python2.6/dist-packages/selenium-2.27.0-py2.6.egg
+Proceed (y/n)? y
+  Successfully uninstalled selenium
+--------------------------------------------------------------------------------
+
+不過反過來的情況，Pip 安裝套件的過程中，並不會對 `easy-install.pth` 做寫入。
+
+== 參考資料 ==
+
+ * http://packages.python.org/distribute/easy_install.html#uninstalling-packages[Easy Install]- 官網也是寫要手動做，只是先跑過 `easy_install -mxN PackageName` 確認一下相依性而已。
+ * http://stackoverflow.com/questions/4358958/how-do-i-uninstall-a-python-module-egg-that-i-installed-with-easy-install[easy install - How do I uninstall a Python module (“egg”) that I installed with easy_install? - Stack Overflow] (2010-12-05) - 執行過 `easy_install -m` 就引用不到特定的套件了。
+ * http://stackoverflow.com/questions/1231688/how-do-i-remove-packages-installed-with-pythons-easy-install[How do I remove packages installed with Python's easy_install? - Stack Overflow] (2009-08-05) - 有人建議改用 pip，因為它支援 uninstall 的動作，否則就是要手動刪除 `.egg` 跟 `easy-install.pth` 的內容。
+

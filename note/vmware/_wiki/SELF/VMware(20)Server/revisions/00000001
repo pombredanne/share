@@ -1,0 +1,181 @@
+= VMware Server =
+<<TableOfContents>>
+
+== How to install vmware server 2.0.x in Ubuntu 9.10 ==
+http://www.ubuntugeek.com/how-to-install-vmware-server-2-0-x-in-ubuntu-9-10-karmic.html @2010/03/16
+
+VMware Server is a free virtualization product for Windows and Linux servers with enterprise-class support and !VirtualCenter management. VMware Server is a robust yet easy to use server virtualization product and is based on proven virtualization technology, which has been used by thousands of customers for many years.
+
+First you need to download vmware server 2.0.x from vmware website and get the vmware server installation key
+
+Currently we have a problems compiling vmware server under kernel version 2.6.31 so this tutorial will explain how to install vmware server 2.0.x in Ubuntu 9.10
+
+Now we have `VMware-server-2.0.2-203138.i386.tar.gz` file so unpack this file
+
+ {{{
+tar -zvxf VMware-server-2.0.2-203138.i386.tar.gz
+ }}}
+
+go to `vmware-server-distrib` directory
+
+ {{{
+cd vmware-server-distrib
+ }}}
+
+Run `vmware-install.pl` script using the following command
+
+ {{{
+./vmware-install.pl
+ }}}
+
+Now you might receive compilation error messages so now you need to download required patch files from http://www.ubuntugeek.com/images/vmware-server.2.0.1_x64-modules-2.6.30.4-fix.tgz[here] in `vmware-server-distrib` directory these patches from http://communities.vmware.com/thread/215985[vmware forum]
+
+You can use the following command to download patches
+
+ {{{
+wget http://www.ubuntugeek.com/images/vmware-server.2.0.1_x64-modules-2.6.30.4-fix.tgz
+ }}}
+
+After downloading extract `vmware-server.2.0.1_x64-modules-2.6.30.4-fix.tgz` file
+
+ {{{
+tar xvzf vmware-server.2.0.1_x64-modules-2.6.30.4-fix.tgz
+ }}}
+
+Now run the patch script using the following command
+
+ {{{
+sh vmware-server.2.0.1_x64-modules-2.6.30.4-fix.sh
+ }}}
+
+Note: This script will work 2.6.30, 2.6.31 kernel versions
+
+After each completing the patch installation you should see similar to the following message
+
+ {{{
+Replacing original file vmmon.tar with patched file
+Replacing original file vmnet.tar with patched file
+Replacing original file vsock.tar with patched file
+Replacing original file vmci.tar with patched file
+Done!
+
+I have changed the files in here:
+/usr/lib/vmware/modules/source
+
+I have placed a backup of the original files in here:
+/usr/lib/vmware/modules/source-backup
+
+The original VMware modules directory is still in the way.
+Please move this directory somewhere else, because it confuses VMware:
+/usr/lib/vmware/modules/binary
+
+This command should work now, to install the modules:
+vmware-config.pl -d <-- 這裡的 -d 指的是直接採用預設值而言
+ }}}
+
+After completing the patch installation you need to remove `/usr/lib/vmware/modules/binary` directory because The original VMware modules directory is still in the way so this will confuses VMware that is why we are removing this directory
+
+ {{{
+rm -rf /usr/lib/vmware/modules/binary
+ }}}
+
+Now run `vmware-config.pl` script
+
+ {{{
+vmware-config.pl
+ }}}
+
+This should complete the vmware server installation.
+
+ {{{
+Starting VMware services:
+   Virtual machine monitor                                             done
+   Virtual machine communication interface                             done
+   Virtual ethernet                                                    done
+   Bridged networking on /dev/vmnet0                                   done
+   Host-only networking on /dev/vmnet1 (background)                    done
+   DHCP server on /dev/vmnet1                                          done
+   Host-only networking on /dev/vmnet8 (background)                    done
+   DHCP server on /dev/vmnet8                                          done
+   NAT service on /dev/vmnet8                                          done
+   VMware Server Authentication Daemon (background)                    done
+   Shared Memory Available                                             done
+Starting VMware management services:
+   VMware Server Host Agent (background)                               done
+   VMware Virtual Infrastructure Web Access
+Starting VMware autostart virtual machines:
+   Virtual machines                                                    done
+
+The configuration of VMware Server 2.0.2 build-203138 for Linux for this 
+running kernel completed successfully.
+ }}}
+
+Now open your browser type https://PC-ipaddress:8333 once it opens you should see similar to the following screen
+
+Whe you try to login using your ubuntu user login details you might see “You do not have permissions to login to the server” error this is because you need to enable root account on your ubuntu machine using this http://www.ubuntugeek.com/enable-and-disable-ubuntu-root-password.html[tutorial] or login as user who is having root permissions.
+
+Once you login you should see similar to the following screen
+
+=== Reinstall Vmware server ===
+
+If you still having  problems with your vmware server installation follow these steps
+
+Delete the vmware modules using the following command
+
+ {{{
+rm -rf /usr/lib/vmware/modules/
+rm -rf /lib/modules/2.6.31-13-server/misc/vm*
+ }}}
+
+Now kill all vmware processes manually
+
+ {{{
+kill -9 $( ps -ef | awk ‘/vm/ { print $2 }’ )
+ }}}
+
+Now run `vmware-install.pl` file
+
+ {{{
+./vmware-install.pl
+ }}}
+
+at the time of installation where you see the following message type no and press enter
+
+ {{{
+Before running VMware Server for the first time, you need to configure it by
+invoking the following command: “/usr/bin/vmware-config.pl”. Do you want this
+program to invoke the command for you now? [yes] no
+ }}}
+
+Now you need to run the patch script file using the following command
+
+ {{{
+sh vmware-server.2.0.1_x64-modules-2.6.30.4-fix.sh
+ }}}
+
+After completing this you should run `vmware-config.pl`
+
+ {{{
+/usr/bin/vmware-config.pl
+ }}}
+
+=== Error message ===
+
+When i try to install vmware server 2.0.2 under ubuntu 9.10 i got the following error so i installed the patch file with the procedure specified above
+
+ {{{
+/tmp/vmware-config0/vmmon-only/linux/driver.c:2007: error: too many arguments to function ‘smp_call_function’
+make[2]: *** [/tmp/vmware-config0/vmmon-only/linux/driver.o] Error 1
+make[1]: *** [_module_/tmp/vmware-config0/vmmon-only] Error 2
+make[1]: Leaving directory `/usr/src/linux-headers-2.6.31-14-generic’
+make: *** [vmmon.ko] Error 2
+make: Leaving directory `/tmp/vmware-config0/vmmon-only’
+Unable to build the vmmon module.
+
+For more information on how to troubleshoot module-related problems, please
+visit our Web site at “http://www.vmware.com/go/unsup-linux-products” and
+“http://www.vmware.com/go/unsup-linux-tools”.
+
+Execution aborted.
+ }}}
+

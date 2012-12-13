@@ -1,0 +1,261 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>SIKULI and Robot Framework Integration</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="robotframework-integration.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>SIKULI and Robot Framework Integration</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">如果要做成像 simplesikuli，倒不如包裝成 Remote Keyword&#8230; 否則來回叫起 Sikuli 的成本還滿高的。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>如果不用 Jython 的話，SIKULI 該怎麼跟 Robot Framework 整合比較好？如果一個 <code>.sikuli</code> 可以帶參數進去、傳結果回來就太好了&#8230;</p></div>
+<div class="paragraph"><p><a href="https://answers.launchpad.net/sikuli/+questions?field.search_text=robot+framework&amp;field.sort=RELEVANCY&amp;field.sort-empty-marker=1&amp;field.actions.search=Search&amp;field.language=en&amp;field.language=zh_TW&amp;field.language-empty-marker=1&amp;field.status=OPEN&amp;field.status=NEEDSINFO&amp;field.status=ANSWERED&amp;field.status=SOLVED&amp;field.status-empty-marker=1">Questions for Sikuli</a> 有少數人在談 Robot Framework 跟 SIKULI 的整合，不過終將回歸到 <a href="http://blog.mykhailo.com/2011/02/how-to-sikuli-and-robot-framework.html">Mike&#8217;s cognition</a> 所提出的方式&#8230;</p></div>
+<div class="listingblock">
+<div class="title"><code>script.sikuli/script.py</code></div>
+<div class="content">
+<pre><code>import sys
+from sikuli.Sikuli import *
+from kwutils import sikulikw
+sikulikw = sikulikw(sys.modules[__name__]) <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+
+@sikulikw
+def click_apple():
+    click("1334552258304.png")
+
+@sikulikw
+def hover_spotlight():
+    hover("1334712441444.png")
+
+if __name__ == '__main__':
+    click_apple()
+    hover_spotlight()</code></pre>
+</div></div>
+<div class="paragraph"><p>&lt;1&gt;</p></div>
+<div class="listingblock">
+<div class="title"><code>kwutils.py</code></div>
+<div class="content">
+<pre><code>...
+
+class sikulikw():
+
+    def __init__(self, module):
+        self.module = module
+
+    def __call__(self, func):
+
+        def wrapper(*args, **kwargs):
+            if not hasattr(self.module, '__file__'): return func(*args, **kwargs)
+
+            #_logger.warn(os.path.dirname(self.module.__file__))
+            from sikuli.Sikuli import addImagePath, removeImagePath
+            imgdir = os.path.dirname(self.module.__file__)
+            try:
+                addImagePath(imgdir) <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+                result = func(*args, **kwargs)
+            finally:
+                removeImagePath(imgdir)
+            return result
+
+        return wrapper</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+實驗發現，改變 CWD 沒有作用，還是得透過 <code>addImagePath</code> 跟 <code>removeImagePath</code> 來調整 image search path 才行
+</td></tr>
+</table></div>
+<div class="listingblock">
+<div class="title"><code>mybot.sh</code></div>
+<div class="content">
+<pre><code>#!/bin/sh
+
+source `dirname $0`/auto_env.sh
+LIB_DIR=$AUTO_DIR/svn/lib
+
+export JYTHONPATH=$LIB_DIR:$RESOURCE_DIR/lib:$LIB_DIR/robotframework.jar/Lib:$LIB_DIR/sikuli-script.jar/Lib
+export CLASSPATH=$LIB_DIR/jython.jar:$LIB_DIR/robotframework.jar:$LIB_DIR/sikuli-script.jar
+java org.robotframework.RobotFramework $*</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="title"><code>auto_env.sh</code></div>
+<div class="content">
+<pre><code>#!/bin/sh
+
+AUTO_DIR=/auto
+
+export SCRIPT_DIR=$AUTO_DIR/svn/bin
+export TEST_DIR=$AUTO_DIR/svn/test
+export RESOURCE_DIR=$AUTO_DIR/svn/res</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">工具</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://code.google.com/p/simplesikuli/">simplesikuli - Simple wrapper library for Sikuli for Robot Framework and command line interface to Sikuli</a> - 已經有人把 generic keyword library 寫出來了。
+</p>
+</li>
+<li>
+<p>
+<a href="http://code.google.com/p/rguils/">rguils - robust GUI automation library for Sikuli - Google Project Hosting</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://blog.mykhailo.com/2011/02/how-to-sikuli-and-robot-framework.html">Mike&#8217;s cognition: How-To: Sikuli and Robot Framework Integration</a> (2011-02-07) - 完整介紹如何將 Sikuli Script 裡的 method 直接變成 Robot Framework 可以引用的 keyword。
+</p>
+</li>
+<li>
+<p>
+<a href="http://ccaloha.cc/blog/2012/01/05/how-to-using-sikuli-and-robotframework-in-linux-platform/">HOW-TO: Using Sikuli and RobotFramework in Linux Platform - AlohaCC</a> (2012-01-05)
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.51testing.com/?uid-49689-action-viewspace-itemid-247881">Sikuli+RobotFramework集成 - Quality Trackers</a> (2011-10-27)
+</p>
+</li>
+<li>
+<p>
+<a href="https://answers.launchpad.net/sikuli/+faq/1110">Building Large-scale Testing framework Using Sikuli</a> (2010-05-16)
+</p>
+</li>
+<li>
+<p>
+<a href="http://groups.google.com/group/robotframework-users/browse_thread/thread/d92ce2ec8b530d42?pli=1">Sikuli integration into robotframework - robotframework-users | Google Groups</a> (2010-12-24)
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_學習筆記">學習筆記</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+2011/12/14 前幾天 Joshua 提到他認為將 Sikuli API 提出成為 Robot Framework keyword 的做法，會完全利用不到 Sikuli IDE 的優勢，除非 IDE 的功能可以整合到 RIDE 裡面去。
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+但如果不這麼做，Robot Framework 第一層口語化的描述就得要遷就 Python function name？
+</p>
+</li>
+<li>
+<p>
+想到第一層口語化，多少都會有參數要提出成為參數，再轉入 Python function，所以這樣的整合方式很 okay，回頭看將 Sikuli/Robot Framework 直接對應的做法有點太 over 了？
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+如果想用 RemoteLibrary 來整合 Sikuli，在實務上可能會遇到一些困難：
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+首先遇到的問題就是，到底要不要發展出 generic keywords？好處是 Sikuli 可以跟其他 library 的 keyword 混用，但缺點是 Sikuli IDE 就沒有太大的用處了。&#8594; 但還是可以用來做為 keyword 背後的實作。
+</p>
+</li>
+<li>
+<p>
+如果不用 generic keywords，就是走上把 Sikuli scripts 直接拿來當做 keyword library 一途；拆出多個對應不同 step 的 function，而每個 function 都是一個 keyword，一直無法說服自己，這樣做到底有什麼意義，這些 function 又不能被共用？如果這些 function 是連續被呼叫的，倒不如以外部程式的方式來整合 Sikuli&#8230; 但如果不是連續被呼叫，其他 library 的 keyword 就有機會介入完成同一個測試。
+</p>
+</li>
+<li>
+<p>
+但 Sikuli scripts 為數眾多，每個 script 都得帶出一個 remote server 才行；remote server 很多是一個問題，但更大的問題是，誰來啟動這些 remote servers？有沒有可能讓所有的 Sikuli scripts 共用一個 remote server 呢？這將會是一個很大的突破&#8230; 改寫一個 SikuliScript 直接引入 Sikuli scripts 的 <code>.py</code>? 例如 <code>| Library | SikuliScript | ${CURDIR}/xxx.py | WITH NAME | ` (不同於 `| Library | SikuliLibrary</code> 用在 generic keyword，如果值得發展的話？)
+</p>
+</li>
+<li>
+<p>
+官方文件提到可以用 OperatingSystem 或 SSHLibrary 來啟動 remote server，然後再用 <code>Import Library</code> 動態引入 remote library。而且 remote server 也提供有 <code>Stop Remote Server</code> 來停止服務（因為 <code>robotremoteserver.py</code> 固定會將 <code>stop_remote_server()</code> 加到 remote library 的 keyword 清單裡）。不過這種用法不適合從 SCTM 觸發的用法。
+</p>
+</li>
+<li>
+<p>
+<code>| Library | xxx.py</code> 時，可以判斷 runtime 是 CPython 或 Jython。如果是 CPython 時，透過 decorator 轉呼叫 remote server 去執行真正的實作？
+</p>
+</li>
+</ul></div>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:16:03 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

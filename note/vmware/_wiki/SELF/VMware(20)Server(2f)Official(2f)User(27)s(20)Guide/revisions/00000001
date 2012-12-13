@@ -1,0 +1,343 @@
+= VMware Server / Official / User's Guide =
+<<TableOfContents>>
+
+:::
+
+= Installing VMware Server =
+
+:::
+
+== Installing VMware Server on a Linux Host ==
+
+Before you begin, read the following notes and make adjustments to your host system:
+
+ * The real-time clock function must be compiled in your Linux kernel.
+
+ * The parallel port PC-style hardware option (`CONFIG_PARPORT_PC`) must be built and loaded as a kernel module (that is, it must be set to m when the kernel is compiled).
+
+To install VMware Server on a Linux host using a tar installation file
+
+ 1. Log in with the user name you plan to use when running VMware Server.
+
+ 2. In a terminal window, use the command to become root, for example:
+
+ {{{
+su -
+ }}}
+
+ On Ubuntu hosts, use the command:
+
+ {{{
+sudo -s -H
+ }}}
+
+ 3. If you have a previous tar installation, delete the `vmware-server-distrib` directory before installing from a tar file again. The location of this directory is usually `/tmp/vmware-server-distrib`.
+
+ 4. Change to the temporary directory where you copied or saved the installation file:
+
+ {{{
+cd /tmp
+ }}}
+
+ 5. Unpack the archive:
+
+ {{{
+tar zxpf VMware-server-<xxxx>.tar.gz
+ }}}
+
+ 6. Change to the installation directory:
+
+ {{{
+cd vmware-server-distrib
+ }}}
+
+ 7. Run the installation script:
+
+ {{{
+./vmware-install.pl
+ }}}
+
+ 8. Respond to the prompts for the directory locations for binary files, initialization scripts, daemon files, library files, manual files, and documentation files. __In most cases, the default response is appropriate.__
+
+ 9. Enter Yes when prompted to run `vmware-config.pl`.
+
+ 10. Respond to the prompts, as described in “Configuring VMware Server on a Linux Host Using vmware-config.pl” on page 42.
+
+To install on a Linux host using the RPM installation file
+
+ 1. Log in with the user name you plan to use when running VMware Server.
+
+ 2. In a terminal window, use the command to become root, for example:
+
+ {{{
+su -
+ }}}
+
+ 3. Run RPM and specify the installation file:
+
+ {{{
+rpm -Uhv VMware-server-<xxxx>.rpm
+ }}}
+
+ In place of `<xxxx>` the filename contains numbers that correspond to the version and build.
+
+ 4. Run the configuration script:
+
+ {{{
+./vmware-config.pl
+ }}}
+
+ 5. Respond to the prompts, as described in “Configuring VMware Server on a Linux Host Using vmware-config.pl” on page 42.
+
+== Configuring VMware Server on a Linux Host Using vmware-config.pl ==
+
+This section describes how to use `vmware-config.pl` to configure your installation of VMware Server.
+
+Configuration with `vmware-config.pl` is required in the following circumstances:
+
+ * When you install VMware Server for the first time.
+ * When you upgrade your version of VMware Server.
+ * When you upgrade your host operating system kernel. (It is not necessary to reinstall VMware Server after you upgrade your kernel.)
+ * __To reconfigure the networking options for VMware Server. For example, to add or remove a virtual network.__
+
+NOTE: If you use the RPM installer, you need to run the configuration program separately from the command line. If you install from the tar archive, the installer offers to launch the configuration program for you. Answer Yes when you see the prompt.
+
+If you have not already done so, open a terminal window and log in as the root user before performing the following procedure.
+
+To configure VMware Server using `vmware-config.pl`
+
+ 1. If `vmware-config.pl` is not started by the installation script, enter the following command to run the script:
+
+ {{{
+vmware-config.pl
+ }}}
+
+ The script is located in `/usr/bin`. If this directory is not in your default path, enter the following command to run the script:
+
+ {{{
+/usr/bin/vmware-config.pl
+ }}}
+
+ 2. Respond to the prompts. In most cases, the default response is appropriate. <<BR>> __The following ports are used by default: port 902 for the VMware Authorization Service, port 8222 for http connections, and port 8333 for secure http (https) connections.__If you do not want to use the default value, change the port number when prompted. <<BR>> If you do not specify port 80 for http connections, you must include the port number when you connect to VMware Server using VI Web Access. See “Logging In to VMware Server Using VI Web Access” on page 48. <<BR>> __If the configuration program does not display a message saying that the configuration completed successfully, run the configuration program again.__
+
+ 3. When done, exit from the root account:
+
+ {{{
+exit
+ }}}
+
+== Uninstalling VMware Server on a Linux Host ==
+
+This section provides instructions for uninstalling a tar installation and an RPM installation.
+
+=== Uninstalling a tar Installation of VMware Server ===
+
+If you used the tar installer to install VMware Server, remove the software from your system using the following command:
+
+ {{{
+vmware-uninstall.pl
+ }}}
+
+=== Uninstalling an RPM Installation of VMware Server ===
+
+If you used the RPM installer to install VMware Server, remove the software from your system using the following command:
+
+ {{{
+rpm -e VMware-server-<xxxx>
+ }}}
+
+In place of `<xxxx>` the filename contains numbers that correspond to the version and build. If you have VMware Server properly installed, you can find the VMware Server build number by running:
+
+ {{{
+rpm -qa | grep VM
+ }}}
+
+== Upgrading from VMware Server 1 ==
+
+:::
+
+= Configuring a Virtual Network =
+
+The first topics in this chapter introduce the virtual networking components that VMware Server provides and describe how you can use them with your virtual machine. The rest of the chapter provides more detail on networking capabilities and specialized configurations.
+
+This chapter includes the following topics:
+
+ * “Network Basics” on page 212
+ * “Components of the Virtual Network” on page 213
+ * “Common Networking Configurations” on page 215
+ * “Example Custom Networking Configuration” on page 219
+ * “Changing the Networking Configuration” on page 222
+ * “Advanced Networking Topics” on page 230
+ * “Understanding NAT” on page 248
+ * “Using Samba for File Sharing on a Linux Host” on page 258
+ * “Using the Virtual Network Editor” on page 267
+
+== Network Basics ==
+
+VMware Server provides multiple ways you can configure a virtual machine for virtual networking:
+
+ * Bridged networking — __Configures your virtual machine as a unique identity on the network, separate from and unrelated to its host. Other computers on the network can communicate directly with the virtual machine. '''Bridged networking works with Ethernet, DSL, cable, wireless, and legacy phone modems.'''__ See “Bridged Networking” on page 215.
+
+ * Network address translation (NAT) — __Configures your virtual machine to share the IP and MAC addresses of the host. The virtual machine shares the host’s public network identity, and has a private identity that is not visible beyond the host. NAT can be useful when you are allowed a single IP address or MAC address by your network administrator.__ You might also use NAT to configure separate virtual machines for handling HTTP and FTP requests, with both virtual machines running off the same IP address or domain. <<BR>> NAT works with Ethernet, DSL, and legacy phone modems. (不含 Cable 與 Wireless?) See “Network Address Translation (NAT)” on page 216.
+
+ * Host-only networking — __Configures your virtual machine to allow network access only to a ''private network'' on the host. With host-only networking, the virtual machine can communicate only with the host and other virtual machines in the host-only network. This can be useful when you want a secure virtual machine that is connected to the host network, but available only through the host machine. In this configuration, the virtual machine cannot connect to the Internet.__ See “Host-Only Networking” on page 218.
+
+__You can set up specialized configurations using the virtual network editor on Windows hosts and `vmware-config.pl` on Linux hosts.__ See “Example Custom Networking Configuration” on page 219.
+
+On a Windows host, the software needed for bridged, NAT, and host-only networking configurations is installed when you install VMware Server. The New Virtual Machine wizard connects the virtual machine to the virtual network you select: the bridged VMnet0 virtual network (named Bridged) is the default selection. You can later set up more specialized configurations by configuring the appropriate settings in the virtual network editor and on your host computer.
+
+On a Linux host, when you install and configure VMware Server, you can choose to have bridged, host-only, and NAT networking available to your virtual machines by configuring each option when you run `vmware-config.pl`. You can later reconfigure networking to add, delete, or modify virtual networks by rerunning `vmware-config.pl`.
+
+== Components of the Virtual Network ==
+
+The following sections describe the devices that make up a virtual network.
+
+=== Virtual Network Switch ===
+
+__The ''virtual switch'' works like a physical switch(交換器), but it is used by virtual machines. Like a physical switch, a virtual switch lets you connect other networking components together. Virtual switches are created as needed by VMware Server, up to a total of 10 virtual switches on Windows and 255 on Linux.__ Virtual switches can be used in bridged, host-only, and NAT network configurations.
+
+You can connect one or more virtual machines to a switch. __On a Windows host, you can connect an unlimited number of ports to a virtual switch. On a Linux host, you can connect up to 32 ports.__
+
+A few networks have default names and switches associated with them:
+
+ * The Bridged network uses VMnet0, as described in “Bridged Networking” on page 215.
+ * The !HostOnly network uses VMnet1, as described in “Host-Only Networking” on page 218.
+ * The NAT network uses VMnet8, as described in “Network Address Translation (NAT)” on page 216.
+
+The other available switches are VMnet2, VMnet3, VMnet4, and so on.
+
+To find out what ''networks'' are configured on the VMware Server host, select the host in VI Web Access. __The Networks section of the host’s Summary tab lists the name, VMnet number, and network type for each virtual network.__
+
+To find out which networks a virtual machine is using, select the virtual machine. The network name and type are displayed in the Hardware section of the Summary tab.
+
+To view or modify network properties, click the Network Adapter you want to modify and select Edit. For additional information, see “Editing a Virtual Network Adapter” on page 224. To add another adapter, see “Adding a Network Adapter to a Virtual Machine” on page 223.
+
+=== Internal DHCP Server ===
+
+__The VMware internal DHCP (dynamic host configuration protocol) server provides IP network addresses to virtual machines in configurations that are not bridged to an external network. Host-only and NAT network configurations use the DHCP server (bridged configurations do not).__
+
+=== Virtual Network Adapter ===
+
+One virtual network adapter (also known as a ''virtual NIC'') is set up for your virtual machine when you create it with the New Virtual Machine wizard. The virtual network adapter uses the Bridged virtual network unless you change the default selection.
+
+The network adapter appears to the guest operating system as an AMD PCNet Adapter adapter for 32-bit guests or as an Intel Pro/1000 MT Server Adapter for 64-bit and Windows Vista guests. VMware Server automatically selects the network driver based on the configuration on your virtual machine.
+
+__For 32-bit guest systems, VMware Server supports network adapter morphing(變形) to dynamically select the driver.__ The `vlance` driver is automatically installed when you install a guest operating system. The `vmxnet` driver is automatically installed when you reboot the guest after installing VMware Tools. When you edit the network adapter, the device type is displayed as Flexible.
+
+For 64-bit and Windows Vista guest systems, the network adapter uses the `e1000` device driver.
+
+__You can create and configure up to 10 virtual network adapters in VMware Server 2 and Workstation 6 virtual machines. The limit is four adapters for VMware Server 1 and other older virtual machine versions.__ For more information, see “Adding a Network Adapter to a Virtual Machine” on page 223.
+
+=== Host Virtual Adapter ===
+
+__Host virtual adapters allow communication between the host computer and the virtual machines on the host computer. A host virtual adapter is used in host-only and NAT configurations.__
+
+When you install VMware Server, two network adapters are added to the configuration of your host operating system — one that allows the host to connect to the host-only virtual network and one that allows the host to connect to the NAT virtual network.
+
+The host virtual adapter is not connected to any external network (針對 Host-Only Networking?) unless you set up special software on the host computer — such as a proxy server — to connect the host-only adapter to the physical network adapter.
+
+__On a Windows host, the software that creates the host virtual adapter is installed when you install VMware Server. On a Linux host, you must select host-only networking when you run `vmware-config.pl` to install the host virtual adapter.__
+
+== Common Networking Configurations ==
+
+The following sections illustrate the networking configurations that are set up when you select one of the standard networking options in the New Virtual Machine wizard or when you add or edit a virtual network adapter.
+
+=== Bridged Networking ===
+
+__Bridged networking connects a virtual machine to a network by using the host computer’s network adapter. (注意下圖有個 Virtual Bridge 的東西; 橋接器可以將兩個 Network 串接起來, 就像在 Windows 底下可以用橋接器將多個 NIC 串接起來一樣)__ If your host computer is on an Ethernet network, this is often the easiest way to give your virtual machine access to that network. The virtual network adapter in the virtual machine connects to the physical network adapter in your host computer, allowing it to connect to the LAN used by the host computer.
+
+__Bridged networking makes the virtual machine visible to other computers on the network, and they can communicate directly with the virtual machine.__
+
+attachment:figure_11-1.png <<BR>> Figure 11-1. Bridged Networking Setup
+
+==== How to Set Up Bridged Networking ====
+
+Bridged networking is set up automatically if you select Bridged in the New Virtual Machine wizard. On Linux hosts, this selection is available only if you enable the bridged networking option when you run `vmware-config.pl`. __You can set up additional ''virtual bridges'' for custom configurations that require connections to more than one physical network adapter on the host computer. '''Linux and Windows hosts can use bridged networking to connect to both wired and wireless networks.'''__
+
+==== Requirements for IP Addresses ====
+
+__If you use bridged networking, your virtual machine must have its own identity on the network. For example, on a TCP/IP network, the virtual machine needs its own IP address.__ Your network administrator can tell you whether IP addresses are available for your virtual machine and which networking settings to use in the guest operating system. Generally, your guest operating system can acquire an IP address and other network details automatically from a DHCP server, or you might need to set the IP address and other details manually in the guest operating system.
+
+__If you use bridged networking, the virtual machine is a full participant(參與者) in the network. It has access to other machines on the network and can be contacted by other machines on the network as if it were a physical computer on the network.__
+
+Be aware that if the host computer is set up to boot multiple operating systems and you run one or more of them in virtual machines, you need to configure each operating system with a unique network address. People who boot multiple operating systems often assign all systems the same address, because they assume only one operating system will be running at a time. If you use one or more of the operating systems in a virtual machine, this assumption is no longer true.
+
+==== How to Edit the Setting Later ====
+
+If you make another selection in the New Virtual Machine wizard and later decide you want to use bridged networking, make that change as described in “Changing the Networking Configuration” on page 222.
+
+=== Network Address Translation (NAT) ===
+
+NAT gives a virtual machine access to network resources by using the host computer’s IP address. __If you are not able to give your virtual machine an IP address on the external network, you might find that NAT is the easiest way to give your virtual machine access to the Internet or other TCP/IP network.__ NAT uses the host computer’s dial-up networking or broadband connection.
+
+attachment:figure_11-2.png <<BR>> Figure 11-2. Network Address Translation Setup
+
+__If you select NAT, the virtual machine can use many standard TCP/IP protocols to connect to other machines on the external network.__ For example, you can use HTTP to browse Web sites, FTP to transfer files, and Telnet to log on to other computers. NAT also allows you to connect to a TCP/IP network using a ''Token Ring adapter'' on the host computer.
+
+__In the default NAT configuration, computers on the external network cannot initiate connections to the virtual machine. That means, for example, that the default configuration does not let you use the virtual machine as a Web server to send Web pages to computers on the external network. '''This configuration has the advantage of protecting the guest operating system from being compromised(危害) before you have a chance to install security software.''' For example, it is often recommended that for Windows guest operating systems, you use NAT until you install antivirus software.__
+
+==== How to Set Up NAT ====
+
+A network address translation connection is set up automatically if you select NAT in the New Virtual Machine wizard. On Linux hosts, this selection is available only if you enable the NAT option when you run `vmware-config.pl`.
+
+==== Requirements for IP Addresses ====
+
+If you use NAT, your virtual machine does not have its own IP address on the external network. __Instead, a separate private network is set up on the host computer. Your virtual machine gets an address on that network from the VMware internal DHCP server.__ The VMware NAT device passes network data between one or more virtual machines and the external network, using a host network adapter that is visible to the host operating system. __It identifies incoming data packets intended for(打算送給) each virtual machine and sends them to the correct destination.__
+
+==== How to Edit the Setting Later ====
+
+If you make some other selection in the New Virtual Machine wizard and later decide you want to use NAT, you can make that change as described in “Changing the Networking Configuration” on page 222.
+
+For a more thorough discussion of NAT, see “Understanding NAT” on page 248.
+
+=== Host-Only Networking ===
+
+__Host-only networking creates a network that is ''completely contained within'' the host computer. Host-only networking provides a network connection between the virtual machine and the host computer, using a host network adapter that is visible to the host operating system. '''This approach can be useful if you need to set up an ''isolated'' virtual network.'''__
+
+attachment:figure_11-3.png <<BR>> Figure 11-3. Host-Only Networking Setup
+
+A host-only network is set up automatically if you select HostOnly in the New Virtual Machine wizard. On Linux hosts, this selection is available only if you enable the host-only networking option when you run `vmware-config.pl`.
+
+==== Requirements for IP Addresses ====
+
+If you use host-only networking, your virtual machine and the host network adapter are connected to a private Ethernet network. Addresses on this network are provided by the VMware internal DHCP server.
+
+==== How to Edit the Setting Later ====
+
+If you make another selection in the New Virtual Machine wizard and later want to use host-only networking, you can make that change as described in “Changing the Networking Configuration” on page 222.
+
+==== Routing and Connection Sharing ====
+
+__If you install the proper routing or proxy software on your host computer, you can establish a connection between the virtual network adapter and a physical network adapter on the host computer.[?]__ This allows you, for example, to connect the virtual machine to a Token Ring or other non-Ethernet network.
+
+__On a Windows host computer, you can use host-only networking in combination with the Internet connection sharing feature in Windows to allow a virtual machine to use the host’s dial-up networking adapter or other connection to the Internet.__ See your Windows documentation for details on configuring Internet connection sharing.
+
+== Example Custom Networking Configuration ==
+
+The virtual networking components provided by VMware Server make it possible for you to create sophisticated virtual networks. The virtual networks can be connected to one or more external networks, or they can run entirely on the host computer.
+
+Before attempting to set up complex virtual networks, you must have a good understanding of how to configure ''network devices'' in your host and guest operating systems.
+
+The example described in this section illustrates many of the ways you can combine devices on a virtual network. Other custom configurations are described in “Advanced Networking Topics” on page 230 and “Understanding NAT” on page 248.
+
+__In this configuration, a Web server connects through a firewall to an external network. An administrator’s computer connects to the Web server through a second firewall. (其中 Firewall 不過是一台配有兩片 NIC 的 VM 而已)__
+
+attachment:figure_11-4.png <<BR>> Figure 11-4. Custom Configuration That Uses Two Firewalls (建議先用 Dia 之類的工具做好規劃)
+
+=== To set up a virtual network that connects to an external network ===
+
+1. Configure VMnet2 and VMnet3 host-only networks.
+
+ * On Windows, use the virtual network editor (from the Windows Start menu, select Programs > VMware Server > Manage Virtual Networks) to add host virtual adapters for VMnet2 and VMnet3. <<BR>> __After you make changes using the virtual network editor, you must restart your network using the Refresh Network System (應該是 Refresh Network List) command in the Host Summary tab of VI Web Access.__ Then you can add these networks to virtual machines.
+
+ * On Linux, run `vmware-config.pl` to configure VMnet2 and VMnet3 networks. The script automatically refreshes the network when it completes the configuration changes.
+
+----
+
+2. Set up four virtual machines using the New Virtual Machine wizard as described in Chapter 4, “Creating and Upgrading Virtual Machines,” on page 59:
+
+ * Create the first virtual machine using the default bridged network (VMnet0), so it can connect to an external network with the host computer’s network adapter. This virtual machine acts as the ''outside firewall for the DMZ'', and is named `FW-1` in this procedure.
+
+ * Create the other three virtual machines without networking. The virtual machine with the Web Server is named `WS` in this procedure. The virtual machine that acts as an ''internal firewall'' is named `FW-2` in this procedure. You will set up their virtual network adapters in later steps. <<BR>> You will not install the operating systems until Step 8.
+
+

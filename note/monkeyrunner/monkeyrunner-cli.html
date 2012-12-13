@@ -1,0 +1,118 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>monkeyrunner CLI</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="monkeyrunner-cli.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>monkeyrunner CLI</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre><code>$ cat `which monkeyrunner`
+...
+# need to use "java.ext.dirs" because "-jar" causes classpath to be ignored <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+# might need more memory, e.g. -Xmx128M
+exec java -Xmx128M $os_opts $java_debug -Djava.ext.dirs="$frameworkdir:$swtpath" -Djava.library.path="$libdir" -Dcom.android.monkeyrunner.bindir="$progdir" -jar "$jarpath" "$@" <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+$
+$ monkeyrunner
+Jython 2.5.0 (Release_2_5_0:6476, Jun 16 2009, 13:33:26) <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+[OpenJDK 64-Bit Server VM (Sun Microsystems Inc.)] on java1.6.0_20
+&gt;&gt;&gt; import sys; sys.path
+['/home/jeremy/dev/android/tools/lib/monkeyrunner.jar', '/storage/dev/android-sdk-r16-linux/tools/lib/Lib', '/storage/dev/android-sdk-r16-linux/tools/lib/jython.jar/Lib', '__classpath__', '__pyclasspath__/'] <img src="../../_asciidoc/images/icons/callouts/4.png" alt="4" />
+&gt;&gt;&gt;</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+寫明了因為採用 <code>-jar</code> 的關係，所以 <code>-cp</code> 或 <code>$CLASSPATH</code> 都不會吃。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+這裡的 <code>$frameworkdir</code> 其實是 <code>$ANDROID_HOME/tools/lib</code>，只要把其他要出現在 classpath 裡的 Jar 檔丟到這裡面就可以了。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+<code>monkeyrunner</code> 預設搭配內附的 Jython 2.5.0，可以換掉 <code>$ANDROID_HOME/tools/lib/jython.jar</code> 自行昇級。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/4.png" alt="4" /></td><td>
+<code>$ANDROID_HOME/tools/lib/Lib</code> 固定會出現在 <code>PYTHONPATH</code> 裡 （雖然 <code>Lib/</code> 這個子資料夾預設不存在），只要把 <code>.py</code> 放進那裡就可以進行擴充。
+</td></tr>
+</table></div>
+<div class="listingblock">
+<div class="title"><code>monkeyrunner.bat</code></div>
+<div class="content">
+<pre><code>call %java_exe% -Xmx512m -Djava.ext.dirs=%frameworkdir%;%swt_path% -Dcom.android.monkeyrunner.bindir=..\framework -jar %jarpath% %* <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+Windows 下的 <code>monkeyrunner.bat</code> 使用起來很麻煩，<code>.py</code> 要給絕對路徑，而且中間不能有空白才行。
+</td></tr>
+</table></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://developer.android.com/guide/developing/tools/monkeyrunner_concepts.html">monkeyrunner</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:09:17 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

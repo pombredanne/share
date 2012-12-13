@@ -1,0 +1,96 @@
+= Temporary Files =
+
+== 暫存檔案 ==
+
+ tempfile.NamedTemporaryFile([mode='w+b', bufsize=-1, suffix='', prefix='tmp', dir=None, delete=True])
+
+--------------------------------------------------------------------------------
+$ python
+>>> import os.path as path, tempfile <1>
+>>> tmp = tempfile.NamedTemporaryFile(prefix='abc', suffix='.txt') <2>
+>>> print tmp.name <3>
+/tmp/abcip8K3y.txt
+>>>
+>>> tmp.write('hello')
+>>> tmp.flush()
+>>> f = open(tmp.name, 'rb') <4>
+>>> print r.read()
+hello
+>>>
+>>> path.exists(tmp.name)
+True
+>>> tmp.close()
+>>> path.exists(tmp.name) <5>
+False
+--------------------------------------------------------------------------------
+<1> 暫存檔跟目錄的支援，都是透過 `tempfile` 模組。
+<2> `NamedTemporaryFile()` 跟 `open()` 類似，支援預設為 `w+b` 的 'mode' 參數，傳回一個 link:python-file.html[file-like]，只是多了一個 `name` 屬性而已。
+<3> 暫存檔名可以從 `name` 屬性取得，是 'prefix' 加上 6 個亂數字元，再串上 'suffix'。
+<4> 在 Linux 下可以開啟還在寫入中的暫存檔，但這個動作在 Windows 下是行不通的。
+<5> 檔案關閉後就不見了。
+
+在 Windows 下也是相同的操作方式，只不過暫存檔還在寫入的過程中，不能另外開啟它做讀取的動作：
+
+--------------------------------------------------------------------------------
+C:\> python
+>>> import tempfile
+>>> tmp = tempfile.NamedTemporaryFile(prefix='abc', suffix='.txt')
+>>> print tmp.name
+c:\users\jeremy~1\appdata\local\temp\abciblk12.txt
+>>> tmp.write('hello')
+>>> tmp.flush()
+>>> f = open(tmp.name, 'rb') <1>
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+IOError: [Errno 13] Permission denied: 'c:\\users\\jeremy~1\\appdata\\local\\tem
+p\\abciblk12.txt'
+>>> tmp.close()
+>>> f = open(tmp.name, 'rb') <2>
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+IOError: [Errno 2] No such file or directory: 'c:\\users\\jeremy~1\\appdata\\loc
+al\\temp\\abciblk12.txt'
+>>>
+>>> tmp = tempfile.NamedTemporaryFile(prefix='abc', suffix='.txt', delete=False) <3>
+>>> tmp.write('hello')
+>>> tmp.close()
+>>> f = open(tmp.name, 'rb')
+>>> print f.read()
+hello
+--------------------------------------------------------------------------------
+<1> 因為暫存檔被鎖定中，所以不能另外做開啟的動作。
+<2> 關閉暫存檔後又被刪除了。
+<3> 解決的方法是一開始就設定關閉暫存檔時不要將它刪除（`delete=False`）。
+
+== 暫存目錄 ==
+
+單純要取得系統的暫存目錄，呼叫 `tempfile.gettempdir()` 即可。
+
+--------------------------------------------------------------------------------
+>>> import tempfile # Linux
+>>> tempfile.gettempdir() <1>
+'/tmp'
+>>> 
+
+>>> import tempfile # Windows
+>>> print tempfile.gettempdir()
+c:\docume~1\user\locals~1\temp
+>>>
+--------------------------------------------------------------------------------
+<1> 傳回值的型態是字串。
+
+但有時候為了保有原來的檔名，也為了避開相同檔名的衝突，把檔案放在某個暫存目錄下是個不錯的做法。
+
+ tempfile.mkdtemp([sufﬁx='' [, preﬁx='tmp' [, dir=None]]])
+
+--------------------------------------------------------------------------------
+>>> d = tempfile.mkdtemp()
+>>> type(d), d
+(<type 'str'>, '/tmp/tmplpylEJ') <1>
+--------------------------------------------------------------------------------
+<1> 傳回暫存目錄的絕對路徑。跟 `NamedTemporaryFile` 一樣，是 'prefix' 加上 6 個亂數字元，再串上 'suffix'。
+
+== 參考資料 ==
+
+ * http://docs.python.org/library/tempfile.html[tempfile — Generate temporary files and directories]
+

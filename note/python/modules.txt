@@ -1,0 +1,57 @@
+= link:python.html[Python] / Modules =
+:title: [Python] Modules
+
+[quote,,'http://www.python.org/dev/peps/pep-0008/[PEP 8 -- Style Guide for Python Code]']
+________________________________________________________________________________
+Modules should have short, all-lowercase names. Underscores can be used in the module name if it improves readability. Python packages should also have short, all-lowercase names, although the use of underscores is discouraged.
+________________________________________________________________________________
+
+其實 package 跟 module 在使用上沒有什麼差別，所以還是像 package 一樣，少用底線好了。從 http://docs.python.org/modindex.html[built-in module] 看起來，
+
+module 會自成一個 namespace，內部用一個 global symbol table 維護所有的 names。
+
+--------------------------------------------------------------------------------
+>>> import sys
+>>> mod = sys.modules[__name__] <1>
+>>>
+>>> globals() <2>
+{'__builtins__': <module '__builtin__' (built-in)>, '__package__': None, 'sys': <module 'sys' (built-in)>, '__name__': '__main__', '__doc__': None, 'mod': <module '__main__' (built-in)>}
+>>> globals() is mod.__dict__ <3>
+True
+--------------------------------------------------------------------------------
+<1> 取得 main module。
+<2> `globals()` 可以取得所在 module（就這個例子而言，就是 main module）的 global symbol table。
+<3> 所謂的 global symbol table，其實就是 `__dict__`。
+
+[TIP]
+.取得目前 module 的參照
+================================================================================
+`sys.modules` 存放有目前已載入的 module 清單，`__name__` 則存放有目前 module 的名稱，因此透過下面的方法就可以簡單取得目前 module 的參照：
+
+ sys.modules[__name__]
+================================================================================
+
+http://www.python.org/dev/peps/pep-0008/[PEP 8] 建議 module 的名稱全由小寫字母組成（不含底線），另外 module 的名稱其實對應 `.py` 的主檔名，考量不同檔案系統對檔名長度的限制，也不宜過長（可讀性不是主要的考量）。
+
+== 延伸閱讀 ==
+
+ * link:import-modules.html[Import Modules]
+ * link:reload-modules.html[Reload Modules]
+
+== 參考資料 ==
+
+.書籍
+--
+ * http://oreilly.com/catalog/9780596158071/[O'Reilly - Learning Python, Fourth Edition] (2009.09)
+   ** Chapter 21 Modules: The Big Picture
+--
+
+.文件
+--
+ * http://docs.python.org/2/tutorial/modules.html[Modules — The Python Tutorial]
+ * http://docs.python.org/2/reference/datamodel.html#the-standard-type-hierarchy[Data model > The standard type hierarchy — The Python Language Reference]
+ * http://docs.python.org/2/library/functions.html#globals[Built-in Functions > globals() — The Python Standard Library]
+ * http://www.diveintopython.net/html_processing/locals_and_globals.html[locals and globals — Dive Into Python]
+ * http://www.python.org/dev/peps/pep-0008/#package-and-module-names[PEP 8 -- Style Guide for Python Code > Package and Module Names]
+--
+

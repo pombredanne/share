@@ -1,0 +1,131 @@
+= link:python.html[Python] / link:python-ini.html[INI] / ConfigParser =
+:title: [Python] ConfigParser
+
+Python Standard Library 內含 `ConfigParser` 模組可以用來讀寫 INI 檔。（很少看到 module name 會用駱駝文，所以 Python 3 被更名成 `configparser`）
+
+TIP: 整個 Python 都習慣用 INI 檔來做組態 (例如 `logging` 內部就是用 `ConfigParser` 來讀取 INI 格式的 configuration files), 也難怪這個 module 的名稱裡完全沒提到 INI。
+
+從http://docs.python.org/library/configparser.html[官方文件]開頭幾段文字的說明，可以發現 `ConfigParser` 在 link:../ini/ini-format.html[INI 基本的格式]上，增加了許多彈性的做法，例如：
+
+ * `#` 也可以用來表示註解，甚至 `;` 也可以接在 section header 或 option value 的後面，達到 inline comment 的效果。
+ * 支援插值（interpolation）代換 format string。
+ * 支援 global section 的概念，也就是 option 可以不屬於任何一個 section（出現在第一個 section header 之前），用來做為 option 的預設值。
+ * option value 有多行時，遵循 http://tools.ietf.org/html/rfc822.html[RFC 822] 3.1.1 節 LONG HEADER FIELDS 的做法。
+
+NOTE: `ConfigParser` 習慣將 property 習慣被稱做 option。
+
+如果不需要這些多出來的彈性，`ConfigConfig.RawConfigParser` 的做法最 “單純”。以讀取 Windows 底下的 `system.ini` 來做說明：
+
+.`system.ini`
+--------------------------------------------------------------------------------
+; for 16-bit app support <1>
+
+[drivers] <2>
+wave=mmdrv.dll <3>
+timer=timer.drv
+
+[mci]
+[driver32]
+[386Enh]
+woafont=dosapp.fon
+EGA80WOA.FON=EGA80WOA.FON
+EGA40WOA.FON=EGA40WOA.FON
+CGA80WOA.FON=CGA80WOA.FON
+CGA40WOA.FON=CGA40WOA.FON
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+>>> from ConfigParser import RawConfigParser
+>>> cfg = RawConfigParser()
+>>> with open('system.ini', 'rb') as fp:
+...     cfg.readfp(fp, 'system.ini') <1>
+...
+>>> 
+>>> cfg.sections() <2>
+['drivers', 'driver32', 'mci', '386Enh']
+>>> cfg.has_section('386Enh'), cfg.has_section('386enh')
+(True, False)
+>>> cfg.options('386Enh') <3>
+['ega80woa.fon', 'ega40woa.fon', 'cga80woa.fon', 'cga40woa.fon', 'woafont']
+>>> cfg.get('386Enh', 'EGA80WOA.FON')
+'EGA80WOA.FON'
+>>> cfg.items('drivers') <4>
+[('timer', 'timer.drv'), ('wave', 'mmdrv.dll')]
+--------------------------------------------------------------------------------
+<1> `readfp(fp[, filename])` 可以將 INI 檔 'fp' 讀進來。
+<2> `sections()` 可以取得 section 的清單，但順序不保證跟 INI 裡出現的順序相同，而且 section name 大小寫有別。
+<3> `options(section)` 可以取得某 'section' 下的 option name 清單。
++
+注意 option name 都被轉成小寫，那是因為過程中所有的 option name 都會先經過 `ConfigParser.optionxform(option)` 處理過，預設的實作會將 option name 轉成小寫（在這之前，option name 兩側的空白已經被去掉）。也就是說，內部是以小寫來儲存 option name，另外像 `has_option(section, option)`、`get(section, option)` 或 `set(section, option)` 傳入的 option，也會先經過 `optionxform()` 處理再儲存或比對，結果就是 “option name 不分大小寫”。
++
+<4> 也可以用 `items(section)` 一次取回 name-value pairs。
+
+接著示範改寫 `system.ini` 的方法：
+
+--------------------------------------------------------------------------------
+>>> cfg = RawConfigParser()
+>>> cfg.optionxform = str <1>
+>>> with open('system.ini', 'rb') as fp:
+...     cfg.readfp(fp, 'system.ini')
+...
+>>> cfg.options('386Enh')
+['EGA80WOA.FON', 'EGA40WOA.FON', 'CGA80WOA.FON', 'CGA40WOA.FON', 'woafont']
+>>> cfg.add_section('general') <2>
+>>> cfg.add_section('General') 
+>>> cfg.sections()
+['mci', 'drivers', '386Enh', 'general', 'General', 'driver32']
+>>> cfg.remove_section('General')
+True
+>>> cfg.sections()
+['mci', 'drivers', '386Enh', 'general', 'driver32']
+>>>
+>>> cfg.set('general', 'Option1', 'Value1') <3>
+>>> cfg.set('general', 'Option2', 'Value2')
+>>> cfg.remove_option('general', 'option2') <4>
+False
+>>> cfg.options('general')
+['Option2', 'Option1']
+>>>
+>>> import shutil, os
+>>> shutil.copy('system.ini', 'system.ini.bak') <5>
+>>> with open('system.ini', 'wb') as fp:
+...     cfg.write(fp) <6>
+...
+>>> with open('system.ini', 'rb') as fp:
+...     print fp.read()
+...
+[mci]
+
+[drivers]
+timer = timer.drv
+wave = mmdrv.dll
+
+[386Enh]
+EGA80WOA.FON = EGA80WOA.FON <7>
+EGA40WOA.FON = EGA40WOA.FON
+woafont = dosapp.fon
+CGA80WOA.FON = CGA80WOA.FON
+CGA40WOA.FON = CGA40WOA.FON
+
+[general]
+Option2 = Value2
+Option1 = Value1
+
+[driver32]
+
+
+>>> shutil.copy('system.ini.bak', 'system.ini')
+>>> os.remove('system.ini.bak')
+--------------------------------------------------------------------------------
+<1> 將 `ConfigParser.optionxform` 會將 option name 轉成小寫的實作換掉，才不會改寫後 option name 全變了樣。
+<2> `add_section(section)` 跟 `remove_section(section)` 可以分別用來新增或刪除 section。`remove_section()` 回傳的佈林值，表示要刪除的 section 是否存在，就結果來看就是 “有沒有刪到東西“。
+<3> `set(section, option, value)` 可以用來新增或修改 option。
+<4> `remove_option(section, option)` 可以刪除 option，回傳的佈林值表示要刪除的 option 是否存在（如果 section 不存在，會直接丟出 `NoSectionError`），就結果來看就是 “有沒有刪到東西“。
+<5> 備份檔案內容，最後才能回復檔案內容（檔案本身的屬性不會受到影響）。
+<6> `write(fp)` 可以將修改後的組態寫回檔案。
+<7> 很顯然地，雖然 section/option name 的大小寫都沒有受到影影，但 section 跟 option 的順序全變了。
+
+== 參考資料 ==
+
+ * http://docs.python.org/library/configparser.html[ConfigParser — Configuration file parser]
+

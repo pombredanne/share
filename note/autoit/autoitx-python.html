@@ -1,0 +1,221 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>從 Python 叫用 AutoItX</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="autoitx-python.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>從 Python 叫用 AutoItX</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">
+<div class="title">延伸閱讀</div>
+</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>安裝 <a href="../pywin32/pywin32.html">PyWin32</a> 後，用下面的程式做測試：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>from win32com.client import Dispatch
+
+autoit = Dispatch("AutoItX3.Control")
+autoit.Run("notepad.exe")
+autoit.WinWaitActive("Untitled - Notepad")
+autoit.Send("This is some text.")</code></pre>
+</div></div>
+<div class="paragraph"><p>由下面的實驗得知，多個 <code>Dispatch</code> 背後其實是分享同一個 COM 元件。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; from win32com.client import Dispatch
+&gt;&gt;&gt; autoit_default = Dispatch("AutoItX3.Control")
+&gt;&gt;&gt; autoit = Dispatch("AutoItX3.Control")
+&gt;&gt;&gt; autoit.AutoItSetOption('WinWaitDelay', 5)
+250
+&gt;&gt;&gt; autoit_default.AutoItSetOption('WinWaitDelay', 10)
+5</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://python.net/crew/mhammond/win32/">PyWin32</a>
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+PyWin32 CHM &gt; Quick Start to Client side COM and Python
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+<a href="http://sebsauvage.net/python/snyppets/#autoit">http://sebsauvage.net/python/snyppets/#autoit[Using AutoIt from Python</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.devshed.com/c/a/Python/Windows-Programming-in-Python/2/">Calling COM components from Python - Python</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_雜記">雜記</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.autoitscript.com/forum/topic/13058-can-i-run-au3-script-files/">Can I run .AU3 script files? - AutoIt Forums</a> (2005-06-30) - 提到 AutoItX 只支援 AutoIt3.exe 的子集，所以不能用來執行 <code>.au3</code>。
+</p>
+</li>
+<li>
+<p>
+ActiveX 透過 Python 來叫用並不是很直覺，有必要再往上包一層 py-autoit。
+</p>
+</li>
+<li>
+<p>
+WinWait 的 timeout 給 0 好像是永遠等待？
+</p>
+</li>
+<li>
+<p>
+ControlClick 要傳入 "main" 比較妥當，尤其是左右鍵可能被對調時。
+</p>
+</li>
+<li>
+<p>
+感覺 AutoIt 應該要被重新包裝過（更 OO 一點）
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+採用 Python 的命名慣例，例如 win_wait 或 send 等
+</p>
+</li>
+<li>
+<p>
+可以為 win_wait 建立舊有命名的 alias，方便從 AU3 migrate 過來。
+</p>
+</li>
+<li>
+<p>
+例如 WinWait 跟 WinActivate 還滿常用的，可以考慮開發一個 WinWaitAndActivate 的功能。
+</p>
+</li>
+<li>
+<p>
+WinWait 不會傳回 handle，要另外用 WinGetHandle 才能取得。可以考慮內部都用 handle 來識別單一個視窗。control 也可以用相同的方式處理。
+</p>
+</li>
+<li>
+<p>
+取得 window handle 之後，好像又不能等某個字串出現在視窗裡？
+</p>
+</li>
+<li>
+<p>
+可以調整執行的速度（打字或按鈕之前，至少要停 0.5 秒），避免按太快的 timing issue。
+</p>
+</li>
+<li>
+<p>
+拋出例外，而非以特殊值來表示
+</p>
+</li>
+<li>
+<p>
+也要有 exception/block handler 的設計，主要排除 security warning 的問題
+</p>
+</li>
+<li>
+<p>
+判斷 return value 很麻煩，應該重新丟出 exception 才好做 error handling.
+</p>
+</li>
+<li>
+<p>
+用 Send 來操作 UI 時，非常倚重環境（瀏覽器版本、作業系統等），所以要直接提供判斷這些資訊的工具
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+Text 不能傳 None，如果要略過，要傳入空字串才行。
+</p>
+</li>
+<li>
+<p>
+發現 Send(<em>!d</em>) 跟 Send(<em>!D</em>) 是不同的，用它來選 browser 的 address bar 時，只有前者才 work。
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:11:08 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

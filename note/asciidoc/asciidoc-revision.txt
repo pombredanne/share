@@ -1,0 +1,73 @@
+= link:asciidoc.html[AsciiDoc] / 版本修訂（Revisions） =
+:title: [AsciiDoc] 版本修訂（Revisions）
+
+image:asciidoc-revision/last_updated.png[]
+
+{doctime}             document last modified time
+{docdate}             document last modified date
+{localdate}           the current date
+{localtime}           the current time
+{revdate}             document revision date (from document header)
+{revnumber}           document revision number (from document header)
+
+.`lang-en.conf`
+--------------------------------------------------------------------------------
+[footer-text]
+Version {revnumber}{basebackend-xhtml11?<br />}{basebackend-xhtml11=<br>}
+Last updated {docdate} {doctime}
+--------------------------------------------------------------------------------
+
+.`xhtml11.conf`
+--------------------------------------------------------------------------------
+[footer]
+</div>
+{disable-javascript%<div id="footnotes"><hr /></div>}
+<div id="footer">
+<div id="footer-text">
+template::[footer-text]
+</div>
+--------------------------------------------------------------------------------
+
+為什麼設定 `docdate` 跟 `doctime` 都沒有作用？
+
+--------------------------------------------------------------------------------
+1479         if self.infile is not None:
+1480             if self.infile and os.path.exists(self.infile):
+1481                 t = os.path.getmtime(self.infile) <1>
+1482             elif self.infile == '<stdin>':
+1483                 t = time.time()
+1484             else:
+1485                 t = None
+1486             if t:
+1487                 self.attributes['doctime'] = time_str(t) <2>
+1488                 self.attributes['docdate'] = date_str(t)
+1489             if self.infile != '<stdin>':
+1490                 self.attributes['infile'] = self.infile
+1491                 self.attributes['indir'] = os.path.dirname(self.infile)
+1492                 self.attributes['docfile'] = self.infile
+1493                 self.attributes['docdir'] = os.path.dirname(self.infile)
+1494                 self.attributes['docname'] = os.path.splitext(
+1495                         os.path.basename(self.infile))[0]
+--------------------------------------------------------------------------------
+<1> 預設會抓檔案的最後修改時間。
+<2> 這是 `asciidoc.py` 唯一對 `docdate` 跟 `doctime` 寫入的地方，難怪從 command line 怎麼指定都沒用。
+
+== 參考資料 ==
+
+.文件
+--
+ * http://www.methods.co.nz/asciidoc/userguide.html#X95[AsciiDoc User Guide > Headers]
+--
+
+.其他文件
+--
+ * http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=656736#5[#656736 - [asciidoc] option to keep the date in the converted document - Debian Bug report logs] (2012-01-21)
+ * http://git.661346.n2.nabble.com/git-check-out-file-time-td5382996.html[git - git check out file time] (2010-08-07) - 提到 clone 下來的 mtime 是 checkout time，可以用 http://david.hardeman.nu/software.php[metastore]、http://joeyh.name/code/etckeeper/[etckeeper]、https://gist.github.com/1978266[git-cache-meta] 等可以幫忙。
+ * http://stackoverflow.com/questions/2458042/restore-files-modification-time-in-git[Restore file's modification time in git - Stack Overflow] (2010-03-16)
+ * https://groups.google.com/group/asciidoc/browse_thread/thread/7174cb7598993c72[xhtml11 configuration file and footer - asciidoc | Google 網上論壇] (2010-01-19) - 作者回說把 `[footer-text]` 提出到 `lang-xx.conf` 底下。
+ * http://stackoverflow.com/questions/1964470/whats-the-equivalent-of-use-commit-times-for-git[What's the equivalent of use-commit-times for git? - Stack Overflow] (2009-12-26) - 把 mtime 變成 commit time。
+ * https://groups.google.com/forum/?fromgroups=#!msg/asciidoc/KFpEXmdzj_A/Q3xcWkK57PUJ[Revision History - Google Groups] (2009-05-01) - 
+ * https://groups.google.com/forum/m/?fromgroups#!topic/asciidoc/RkPAakYoa_4[Request for a "Last updated" caption | Google Groups] (2009-02-24)
+ * https://groups.google.com/group/asciidoc/browse_thread/thread/67f9082d32a325af[Last updated: mtime or localtime? - asciidoc | Google 網上論壇] (2009-02-03) - 作者回說可以用 `localdate` 跟 `localtime` 來指定 "last updated" 的時間。
+--
+

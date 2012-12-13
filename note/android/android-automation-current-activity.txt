@@ -1,0 +1,40 @@
+= [Android] 如何得知目前畫面上呈現的 Activity =
+
+link:../monkeyrunner/monkeyrunner-property.html[`MonkeyDevice.getProperty()`] 雖然提供了 `am.current.package` 這個 key (property name)，可以得知目前畫面上顯示的 activity 是屬於哪個 package，但卻沒有提供類似的 key 可以用來取得該 activity 的 component name。
+
+--------------------------------------------------------------------------------
+>>> from com.android.monkeyrunner import MonkeyRunner
+>>> device = MonkeyRunner.waitForConnection()
+>>> device.getProperty('am.current.package') <1>
+u''
+>>> device.getProperty('am.current.package')
+u''
+>>> device.startActivity('market://details?id=org.jtb.alogcat') <2>
+>>> device.getProperty('am.current.package')
+u'com.android.vending' <3>
+--------------------------------------------------------------------------------
+<1> 不知道為什麼第一次連線後，如果畫面沒有變化，從 'am.current.package' 就會取不到東西？
+<2> 叫出 Google Play 安裝 aLogcat (`org.jtb.alogcat`)。
+<3> Google Play 的 package 名稱是 `com.android.vending`。
+
+還好 link:android-adb-dumpsys.html[`dumpsys`] 這個 shell command 的輸出，可以用來取得 running activities 的一些線索：（而且也沒有 `getProperty('am.current.package')` 連線後取不到東西的問題）
+
+--------------------------------------------------------------------------------
+$ dumpsys activity
+...
+  Running activities (most recent first):
+    TaskRecord{40dadb38 #176 A com.android.vending}
+      Run #8: HistoryRecord{40a571d8 com.android.vending/com.google.android.finsky.activities.MainActivity}
+...
+ 
+  mPausingActivity: null
+  mResumedActivity: HistoryRecord{40a571d8 com.android.vending/com.google.android.finsky.activities.MainActivity}
+  mFocusedActivity: HistoryRecord{40a571d8 com.android.vending/com.google.android.finsky.activities.MainActivity}
+  mLastPausedActivity: HistoryRecord{405d6328 com.android.vending/com.google.android.finsky.activities.LaunchUrlHandlerActivity}
+--------------------------------------------------------------------------------
+
+其中 `mFocusedActivity` 後面跟著的資訊，正是目前 activity 的 component name。
+
+== 參考資料 ==
+
+

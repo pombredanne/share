@@ -1,0 +1,2161 @@
+= Python / Learning Python, Fourth Edition =
+http://oreilly.com/catalog/9780596158071/
+<<TableOfContents>>
+
+= Chapter 15. The Documentation Interlude =
+
+This part of the book concludes with a look at techniques and tools used for documenting Python code. Although Python code is designed to be readable, a few well-placed human-readable comments can do much to help others understand the workings of your programs. Python includes syntax and tools to make documentation easier.
+
+Although this is something of a tools-related concept, the topic is presented here partly because it involves Python’s syntax model, and partly as a resource for readers struggling to understand Python’s toolset. For the latter purpose, I’ll expand here on documentation pointers first given in Chapter 4. As usual, in addition to the chapter quiz this concluding chapter ends with some warnings about common pitfalls and a set of exercises for this part of the text.
+
+== Python Documentation Sources ==
+
+By this point in the book, you’re probably starting to realize that Python comes with an amazing amount of prebuilt functionality—built-in functions and exceptions, predefined object attributes and methods, standard library modules, and more. And we’ve really only scratched the surface of each of these categories.
+
+One of the first questions that bewildered beginners often ask is: how do I find information on all the built-in tools? (那為何要等到 Chapter 15 才講? 不過 Function/Class 真的還沒講到呢...) This section provides hints on the various documentation sources available in Python. __It also presents ''documentation strings (docstrings)'' and the !PyDoc system that makes use of them.__ These topics are somewhat peripheral to the core language itself, but they become essential knowledge as soon as your code reaches the level of the examples and exercises in this part of the book.
+
+As summarized in Table 15-1, there are a variety of places to look for information on Python, with generally increasing verbosity. Because documentation is such a crucial tool in practical programming, we’ll explore each of these categories in the sections that follow.
+
+Table 15-1. Python documentation sources
+
+|| Form || Role ||
+|| `#` comments || In-file documentation ||
+|| The `dir` function || Lists of attributes available in objects ||
+|| Docstrings: `__doc__` || In-file documentation attached to objects ||
+|| !PyDoc: The `help` function || Interactive help for objects ||
+|| !PyDoc: HTML reports || Module documentation in a browser ||
+|| The standard manual set || Official language and library descriptions ||
+|| Web resources || Online tutorials, examples, and so on ||
+|| Published books || Commercially available reference texts ||
+
+=== # Comments ===
+
+Hash-mark comments are the most basic way to document your code. Python simply ignores all the text following a `#` (as long as it’s not inside a string literal), so you can follow this character with words and descriptions meaningful to programmers. __Such comments are accessible only in your source files, though; to code comments that are more widely available, you’ll need to use docstrings.__
+
+__In fact, current best practice generally dictates that '''docstrings are best for larger functional documentation (e.g., “my file does this”), and `#` comments are best limited to smaller code documentation (e.g., “this strange expression does that”).'''__ More on docstrings in a moment.
+
+=== The dir Function ===
+
+__The built-in `dir` function is an easy way to grab a list of all the ''attributes'' available inside an object (i.e., its methods and simpler ''data items''). It can be called on any object that has attributes.__ For example, to find out what’s available in the standard library’s `sys` module, import it and pass it to `dir` (these results are from Python 3.0; they might vary slightly on 2.6):
+
+ {{{
+>>> import sys
+>>> dir(sys)
+['__displayhook__', '__doc__', '__excepthook__', '__name__', '__package__',
+'__stderr__', '__stdin__', '__stdout__', '_clear_type_cache', '_current_frames',
+'_getframe', 'api_version', 'argv', 'builtin_module_names', 'byteorder',
+'call_tracing', 'callstats', 'copyright', 'displayhook', 'dllhandle',
+'dont_write_bytecode', 'exc_info', 'excepthook', 'exec_prefix', 'executable',
+'exit', 'flags', 'float_info', 'getcheckinterval', 'getdefaultencoding',
+...more names omitted...]
+ }}}
+
+Only some of the many ''names'' are displayed here; run these statements on your machine to see the full list.
+
+__To find out what attributes are provided in built-in object types, run `dir` on a literal (or existing instance) of the desired type.__ For example, to see `list` and `string` attributes, you can pass empty objects:
+
+ {{{
+>>> dir([])
+['__add__', '__class__', '__contains__', ...more...
+'append', 'count', 'extend', 'index', 'insert', 'pop', 'remove',
+'reverse', 'sort']
+
+>>> dir('')
+['__add__', '__class__', '__contains__', ...more...
+'capitalize', 'center', 'count', 'encode', 'endswith', 'expandtabs',
+'find', 'format', 'index', 'isalnum', 'isalpha', 'isdecimal',
+'isdigit', 'isidentifier', 'islower', 'isnumeric', 'isprintable',
+'isspace', 'istitle', 'isupper', 'join', 'ljust', 'lower', 'lstrip', '
+maketrans', 'partition', 'replace', 'rfind', 'rindex', 'rjust',
+...more names omitted...]
+ }}}
+
+__`dir` results for any built-in type include a set of attributes that are related to the ''implementation'' of that type (technically, ''operator overloading'' methods); they all begin and end with double underscores to make them distinct,__ and you can safely ignore them at this point in the book.
+
+Incidentally, you can achieve the same effect by passing a type name to `dir` instead of a literal:
+
+ {{{
+>>> dir(str) == dir('') # Same result as prior example
+True
+>>> dir(list) == dir([])
+True
+ }}}
+
+__This works because names like `str` and `list` that were once type converter functions are actually names of types in Python today; calling one of these invokes its constructor to generate an instance of that type.__ I’ll have more to say about constructors and operator overloading methods when we discuss classes in Part VI.
+
+__The `dir` function serves as a sort of ''memory-jogger (可以喚起記憶的東西)''—it provides a list of attribute names, but it does not tell you anything about what those names mean.__ For such extra information, we need to move on to the next documentation source.
+
+=== Docstrings: __doc__ ===
+
+__Besides `#` comments, Python supports documentation that is automatically ''attached'' to objects and retained at runtime for inspection. Syntactically, such comments are ''coded as strings'' at the tops of module files and function and class statements, before any other executable code (`#` comments are OK before them). Python automatically stuffs the strings, known as docstrings, into the `__doc__` attributes of the corresponding objects.__
+
+==== User-defined docstrings ====
+
+For example, consider the following file, `docstrings.py`. Its docstrings appear at the beginning of the file and at the start of a function and a class within it. Here, I’ve used triple-quoted block strings for multiline comments in the file and the function, but any sort of string will work. We haven’t studied the `def` or `class` statements in detail yet, so ignore everything about them except the strings at their tops:
+
+ {{{
+"""
+Module documentation
+Words Go Here
+"""
+
+spam = 40
+
+def square(x):
+    """
+    function documentation
+    can we have your liver then?
+    """
+    return x ** 2 # square
+
+class Employee:
+    "class documentation"
+    pass
+
+print(square(4))
+print(square.__doc__)
+ }}}
+
+__The whole point of this ''documentation protocol'' is that your comments are retained for inspection in `__doc__` attributes after the file is imported.__ Thus, to display the docstrings associated with the module and its objects, we simply import the file and print their `__doc__` attributes, where Python has saved the text:
+
+ {{{
+>>> import docstrings
+16
+
+    function documentation <-- 注意前面的縮排
+    can we have your liver then?
+
+>>> print(docstrings.__doc__)
+
+Module documentation
+Words Go Here
+
+>>> print(docstrings.square.__doc__)
+
+    function documentation
+    can we have your liver then?
+
+>>> print(docstrings.Employee.__doc__)
+    class documentation
+ }}}
+
+__Note that you will generally want to use `print` to print docstrings; otherwise, you’ll get a single string with embedded newline characters.__
+
+You can also attach docstrings to methods of classes (covered in Part VI), but because these are just `def` statements nested in `class` statements, they’re not a special case. __To fetch the docstring of a method function inside a class within a module, you would simply extend the path to go through the class: `module.class.method.__doc__`__ (we’ll see an example of method docstrings in Chapter 28).
+
+==== Docstring standards ====
+
+__There is no broad standard about what should go into the text of a docstring (although some companies have internal standards).__ There have been various markup language and ''template proposals'' (e.g., HTML or XML), but they don’t seem to have caught on in the Python world. And frankly, convincing Python programmers to document their code using handcoded HTML is probably not going to happen in our lifetimes!
+
+__'''Documentation tends to have a low priority amongst programmers in general. Usually, if you get any comments in a file at all, you count yourself lucky. (本來以來 Built-In Docstrings 就是可循的慣例, 不料也寫得滿糟的!!)''' I strongly encourage you to document your code liberally, though—it really is an important part of wellwritten programs. The point here is that there is presently no standard on the structure of docstrings; if you want to use them, anything goes today.__
+
+==== Built-in docstrings ====
+
+As it turns out, built-in modules and objects in Python use similar techniques to attach documentation above and beyond the attribute lists returned by `dir`. For example, to see an actual human-readable description of a built-in module, import it and print its `__doc__` string:
+
+ {{{
+>>> import sys
+>>> print(sys.__doc__)
+This module provides access to some objects used or maintained by the
+interpreter and to functions that interact strongly with the interpreter.
+
+Dynamic objects:
+
+argv -- command line arguments; argv[0] is the script pathname if known
+path -- module search path; path[0] is the script directory, else ''
+modules -- dictionary of loaded modules
+...more text omitted...
+ }}}
+
+Functions, classes, and methods within built-in modules have attached descriptions in their `__doc__` attributes as well:
+
+ {{{
+>>> print(sys.getrefcount.__doc__)
+getrefcount(object) -> integer
+
+Return the reference count of object. The count returned is generally
+one higher than you might expect, because it includes the (temporary)
+...more text omitted...
+ }}}
+
+You can also read about built-in functions via their docstrings:
+
+ {{{
+>>> print(int.__doc__)
+int(x[, base]) -> integer
+
+Convert a string or number to an integer, if possible. A floating
+point argument will be truncated towards zero (this does not include a
+...more text omitted...
+
+>>> print(map.__doc__)
+map(func, *iterables) --> map object
+
+Make an iterator that computes the function using arguments from
+each of the iterables. Stops when the shortest iterable is exhausted.
+ }}}
+
+You can get a wealth of information about built-in tools by inspecting their docstrings this way, but you don’t have to—the `help` function, the topic of the next section, does this automatically for you.
+
+=== PyDoc: The help Function ===
+
+The docstring technique proved to be so useful that Python now ships with a tool that makes docstrings even easier to display. __The standard !PyDoc tool is Python code that knows how to extract docstrings and associated ''structural information'' and format them into nicely arranged reports of various types.__ Additional tools for extracting and formatting docstrings are available in the open source domain (including tools that may support structured text—search the Web for pointers), but Python ships with !PyDoc in its standard library.
+
+There are a variety of ways to launch !PyDoc, including command-line script options (see the Python library manual for details). __Perhaps the two most prominent !PyDoc interfaces are the built-in `help` function and the !PyDoc GUI/HTML interface. The `help` function invokes !PyDoc to generate a simple textual report (which looks much like a “manpage” on Unix-like systems):__
+
+ {{{
+>>> import sys
+>>> help(sys.getrefcount)
+Help on built-in function getrefcount in module sys:
+
+getrefcount(...)
+    getrefcount(object) -> integer
+
+    Return the reference count of object. The count returned is generally
+    one higher than you might expect, because it includes the (temporary)
+    ...more omitted...
+ }}}
+
+__Note that you do not have to import `sys` in order to call `help`, but you do have to import `sys` to get help on `sys`; it expects an ''object reference'' to be passed in. For larger objects such as modules and classes, the `help` display is broken down into multiple sections,__ a few of which are shown here. Run this interactively to see the full report:
+
+ {{{
+>>> help(sys)
+Help on built-in module sys:
+
+NAME
+    sys
+
+FILE
+    (built-in)
+
+MODULE DOCS
+    http://docs.python.org/library/sys
+
+DESCRIPTION
+    This module provides access to some objects used or maintained by the
+    interpreter and to functions that interact strongly with the interpreter.
+    ...more omitted...
+
+FUNCTIONS
+    __displayhook__ = displayhook(...)
+        displayhook(object) -> None
+
+        Print an object to sys.stdout and also save it in builtins.
+        ...more omitted...
+
+DATA
+    __stderr__ = <io.TextIOWrapper object at 0x0236E950>
+    __stdin__ = <io.TextIOWrapper object at 0x02366550>
+    __stdout__ = <io.TextIOWrapper object at 0x02366E30>
+    ...more omitted...
+ }}}
+
+__Some of the information in this report is docstrings, and some of it (e.g., function call patterns) is structural information that !PyDoc gleans automatically by inspecting objects’ internals, when available. (用來觀察自己寫的 Function/Class 在 Runtime 會是什麼樣子還滿方便的...)__ You can also use `help` on built-in functions, methods, and types. To get help for a built-in type, use the type name (e.g., `dict` for dictionary, `str` for string, `list` for list). You’ll get a large display that describes all the methods available for that type:
+
+ {{{
+>>> help(dict)
+Help on class dict in module builtins:
+
+class dict(object)
+ | dict() -> new empty dictionary.
+ | dict(mapping) -> new dictionary initialized from a mapping object's
+ ...more omitted...
+
+>>> help(str.replace)
+Help on method_descriptor:
+
+replace(...)
+    S.replace (old, new[, count]) -> str
+
+    Return a copy of S with all occurrences of substring
+    ...more omitted...
+
+>>> help(ord)
+Help on built-in function ord in module builtins:
+
+ord(...)
+    ord(c) -> integer
+
+    Return the integer ordinal of a one-character string.
+ }}}
+
+Finally, the `help` function works just as well on your modules as it does on built-ins. Here it is reporting on the `docstrings.py` file we coded earlier. Again, some of this is docstrings, and some is information automatically extracted by inspecting objects’ structures:
+
+ {{{
+>>> import docstrings
+>>> help(docstrings.square)
+Help on function square in module docstrings:
+
+square(x)
+    function documentation
+    can we have your liver then?
+
+>>> help(docstrings.Employee)
+Help on class Employee in module docstrings:
+
+class Employee(builtins.object)
+ | class documentation
+ |
+ | Data descriptors defined here:
+ ...more omitted...
+
+>>> help(docstrings)
+Help on module docstrings:
+
+NAME
+    docstrings
+
+FILE
+    c:\misc\docstrings.py
+
+DESCRIPTION
+    Module documentation
+    Words Go Here
+
+CLASSES
+    builtins.object
+        Employee
+
+    class Employee(builtins.object)
+     | class documentation
+     |
+     | Data descriptors defined here:
+     ...more omitted...
+
+FUNCTIONS
+    square(x)
+        function documentation
+        can we have your liver then?
+DATA
+    spam = 40
+ }}}
+
+=== PyDoc: HTML Reports ===
+
+The `help` function is nice for grabbing documentation when working interactively. For a more grandiose display, however, !PyDoc also provides a GUI interface (a simple but portable Python/tkinter script) and can render its report in HTML page format, viewable in any web browser. __In this mode, !PyDoc can run locally or as a remote server in client/server mode; reports contain automatically created hyperlinks that allow you to click your way through the documentation of related components in your application.__
+
+To start !PyDoc in this mode, you generally first launch the search engine GUI captured in Figure 15-1. __You can start this either by selecting the “Module Docs” item in Python’s Start button menu on Windows, or by launching the `pydoc.py` script in Python’s standard library directory: Lib on Windows (run `pydoc.py` with a `-g` command-line argument; 在 Ubuntu 下只要執行 `pydoc -g` 即可, 可以用 `-p <port>` 來指定埠號).__ Enter the name of a module you’re interested in (只能輸入 Module, 不能是 Class/Function 等), and press the Enter key; !PyDoc will march down your ''module import search path'' (`sys.path`) looking for references to the requested module.
+
+{{attachment:figure_15-1.png}} <<BR>> Figure 15-1. The !PyDoc top-level search engine GUI: type the name of a module you want documentation for, press Enter, select the module, and then press “go to selected” (or omit the module name and press “open browser” to see all available modules).
+
+Once you’ve found a promising entry, select it and click “go to selected.” !PyDoc will spawn a web browser on your machine to display the report rendered in HTML format. Figure 15-2 shows the information !PyDoc displays for the built-in `glob` module.
+
+{{attachment:figure_15-2.png}} <<BR>> Figure 15-2. When you find a module in the Figure 15-1 GUI (such as this built-in standard library module) and press “go to selected,” the module’s documentation is rendered in HTML and displayed in a web browser window like this one.
+
+__Notice the hyperlinks in the Modules section of this page—you can click these to jump to the !PyDoc pages for related (imported) modules.__ For larger pages, !PyDoc also generates hyperlinks to sections within the page.
+
+Like the `help` function interface, the GUI interface works on user-defined modules as well as built-ins. Figure 15-3 shows the page generated for our `docstrings.py` module file.
+
+{{attachment:figure_15-3.png}} <<BR>> Figure 15-3. !PyDoc can serve up documentation pages for both built-in and user-coded modules. Here is the page for a user-defined module, showing all its documentation strings (docstrings) extracted from the source file.
+ 
+!PyDoc can be customized and launched in various ways we won’t cover here; see its entry in Python’s standard library manual for more details. The main thing to take away from this section is that !PyDoc essentially gives you implementation reports “for free”—if you are good about using docstrings in your files, !PyDoc does all the work of collecting and formatting them for display. __!PyDoc only helps for objects like functions and modules, but it provides an easy way to access a middle level of documentation for such tools—its reports are more useful than raw attribute lists, and less exhaustive than the standard manuals.__
+
+Cool !PyDoc trick of the day: If you leave the module name empty in the top input field of the window in Figure 15-1 and press the “open browser” button, !PyDoc will produce a web page containing a hyperlink to every module you can possibly import on your computer. __This includes Python standard library modules, modules of third-party extensions you may have installed, user-defined modules on your import search path, and even statically or dynamically linked-in C-coded modules.__ Such information is hard to come by otherwise without writing code that inspects a set of module sources.
+
+!PyDoc can also be run to save the HTML documentation for a module in a file for later viewing or printing; see its documentation for pointers. Also, note that !PyDoc might not work well if run on scripts that read from standard input—!PyDoc imports the target module to inspect its contents, and there may be no connection for standard input text when it is run in GUI mode. Modules that can be imported without immediate input requirements will always work under !PyDoc, though.
+
+=== The Standard Manual Set ===
+
+For the complete and most up-to-date description of the language and its toolset, Python’s standard manuals stand ready to serve. Python’s manuals ship in HTML and other formats, and they are installed with the Python system on Windows—they are available in your Start button’s menu for Python, and they can also be opened from the Help menu within IDLE. You can also fetch the manual set separately from http://www.python.org in a variety of formats, or read them online at that site (follow the Documentation link). __On Windows, the manuals are a compiled help file to support searches, and the online versions at the Python website include a web-based search page.__
+
+When opened, the Windows format of the manuals displays a root page like that in Figure 15-4. The two most important entries here are most likely the Library Reference (which documents built-in types, functions, exceptions, and standard library modules) and the Language Reference (which provides a formal description of language-level details). The tutorial listed on this page also provides a brief introduction for newcomers.
+
+{{attachment:figure_15-4.png}} <<BR>> Figure 15-4. Python’s standard manual set, available online at http://www.python.org, from IDLE’s Help menu, and in the Windows Start button menu. It’s a searchable help file on Windows, and there is a search engine for the online version. Of these, the Library Reference is the one you’ll want to use most of the time.
+
+=== Web Resources ===
+
+At the official Python website (http://www.python.org), you’ll find links to various Python resources, some of which cover special topics or domains. Click the Documentation link to access an online tutorial and the Beginners Guide to Python. The site also lists non-English Python resources.
+
+You will find numerous Python wikis, blogs, websites, and a host of other resources on the Web today. To sample the online community, try searching for a term like “Python programming” in Google.
+
+=== Published Books ===
+
+As a final resource, you can choose from a large collection of reference books for Python. Bear in mind that books tend to lag behind the cutting edge of Python changes, partly because of the work involved in writing, and partly because of the natural delays built into the publishing cycle. __Usually, by the time a book comes out, it’s three or more months behind the current Python state.__ Unlike standard manuals, books are also generally not free.
+
+Still, for many, the convenience and quality of a professionally published text is worth the cost. Moreover, Python changes so slowly that books are usually still relevant years after they are published, especially if their authors post updates on the Web. See the Preface for pointers to other Python books.
+
+== Common Coding Gotchas ==
+
+Before the programming exercises for this part of the book, let’s run through some of the most common mistakes beginners make when coding Python statements and programs. Many of these are warnings I’ve thrown out earlier in this part of the book, collected here for ease of reference. You’ll learn to avoid these pitfalls once you’ve gained a bit of Python coding experience, but a few words now might help you avoid falling into some of these traps initially:
+
+ * Don’t forget the colons. Always remember to type a `:` at the end of ''compound statement headers'' (the first line of an `if`, `while`, `for`, etc.). You’ll probably forget at first (I did, and so have most of my 3,000 Python students over the years), but you can take some comfort from the fact that it will soon become an unconscious habit.
+
+ * Start in column 1. Be sure to start top-level (unnested) code in column 1. That includes unnested code typed into module files, as well as unnested code typed at the interactive prompt.
+
+ * Blank lines matter at the interactive prompt. Blank lines in compound statements are always ignored in module files, but when you’re typing code at the interactive prompt, they end the statement. __In other words, blank lines tell the interactive command line that you’ve finished a compound statement; if you want to continue, don’t hit the Enter key at the `...` prompt (or in IDLE) until you’re really done.__
+
+ * Indent consistently. Avoid mixing tabs and spaces in the indentation of a block, unless you know what your text editor does with tabs. __Otherwise, '''what you see in your editor may not be what Python sees when it counts tabs as a number of spaces.''' This is true in any block-structured language, not just Python—if the next programmer has her tabs set differently, she will not understand the structure of your code. It’s safer to use all tabs or all spaces for each block.__
+
+ * Don’t code C in Python. A reminder for C/C++ programmers: __you don’t need to type parentheses around tests in `if` and `while` headers (e.g., `if (X==1):`). You can, if you like (any expression can be enclosed in parentheses), but they are fully superfluous in this context. Also, do not terminate all your statements with semicolons; it’s technically legal to do this in Python as well, but it’s totally useless unless you’re placing more than one statement on a single line (the end of a line normally terminates a statement).__ And remember, don’t embed assignment statements in `while` loop tests, and don’t use `{}` around blocks (indent your nested code blocks consistently instead).
+
+ * Use simple `for` loops instead of `while` or `range`. Another reminder: a simple `for` loop (e.g., `for x in seq:`) is almost always simpler to code and quicker to run than a `while-` or ''range-based counter loop''. __Because Python handles indexing internally for a simple `for`, it can sometimes be twice as fast as the equivalent `while`. Avoid the temptation to count things in Python!__
+
+ • Beware of mutables in assignments. I mentioned this in Chapter 11: you need to be careful about using mutables in a multiple-target assignment (`a = b = []`), as well as in an augmented assignment (`a += [1, 2]`). In both cases, in-place changes may impact other variables. See Chapter 11 for details.[?]
+
+ * __'''Don’t expect results from functions that change objects in-place.''' We encountered this one earlier, too: in-place change operations like the `list.append` and `list.sort` methods introduced in Chapter 8 do not return values (other than `None`), so you should call them without assigning the result.__ It’s not uncommon for beginners to say something like `mylist = mylist.append(X)` to try to get the result of an append, but what this actually does is assign `mylist` to `None`, not to the modified list (in fact, you’ll lose your reference to the list altogether). <<BR>> A more devious example of this pops up in Python 2.X code when trying to step through dictionary items in a sorted fashion. It’s fairly common to see code like `for k in D.keys().sort():`. This almost works—the `keys` method builds a keys list, and the `sort` method orders it—but because the `sort` method returns `None`, the loop fails because it is ultimately a loop over `None` (a nonsequence). This fails even sooner in Python 3.0, because dictionary keys are ''views'', not lists! To code this correctly, either use the newer `sorted` built-in function, which returns the sorted list, or `split` the method calls out to statements: `Ks = list(D.keys())`, then `Ks.sort()`, and finally, for `k in Ks:`. This, by the way, is one case where you’ll still want to call the `keys` method explicitly for looping, instead of relying on the dictionary iterators—iterators do not sort.
+
+ * __Always use parentheses to call a function. You must add parentheses after a function name to call it, whether it takes arguments or not (e.g., use `function()`, not `function`). In Part IV, we’ll see that functions are simply objects that have a special operation—a call that you trigger with the parentheses.__ In classes, this problem seems to occur most often with files; it’s common to see beginners type `file.close` to close a file, rather than `file.close()`. __Because it’s legal to reference a function without calling it, the first version with no parentheses succeeds silently, but it does not close the file!__
+
+ * Don’t use extensions or paths in imports and reloads. Omit directory paths and file suffixes in `import` statements (e.g., say `import mod`, not `import mod.py`). (We discussed module basics in Chapter 3 and will continue studying modules in Part V.) __Because modules may have other suffixes besides `.py` (`.pyc`, for instance), hardcoding a particular suffix is not only illegal syntax, but doesn’t make sense.__ Any platform-specific directory path syntax comes from module search path settings, not the `import` statement.
+
+== Chapter Summary ==
+
+This chapter took us on a tour of program documentation—both documentation we write ourselves for our own programs, and documentation available for built-in tools. We met docstrings, explored the online and manual resources for Python reference, and learned how !PyDoc’s `help` function and web page interface provide extra sources of documentation. Because this is the last chapter in this part of the book, we also reviewed common coding mistakes to help you avoid them.
+
+In the next part of this book, we’ll start applying what we already know to larger program constructs: functions. Before moving on, however, be sure to work through the set of lab exercises for this part of the book that appear at the end of this chapter. And even before that, let’s run through this chapter’s quiz.
+
+= Chapter 24. Advanced Module Topics =
+
+:::
+
+== Mixed Usage Modes: __name__ and __main__ ==
+
+Here’s another module-related trick that lets you both import a file as a module and run it as a standalone program. Each module has a built-in attribute called `__name__`, which Python sets automatically as follows:
+
+ * __If the file is being run as a top-level program file, `__name__` is set to the string `"__main__"` when it starts.__
+ * __If the file is being imported instead, `__name__` is set to the module’s name as known by its clients.__
+
+__The upshot is that a module can test its own `__name__` to determine whether it’s being run or imported.__ For example, suppose we create the following module file, named `runme.py`, to export a single function called `tester`:
+
+ {{{
+def tester():
+    print("It's Christmas in Heaven...")
+
+if __name__ == '__main__': # Only when run
+    tester() # Not when imported
+ }}}
+
+This module defines a function for clients to import and use as usual:
+
+ {{{
+% python
+>>> import runme
+>>> runme.tester()
+It's Christmas in Heaven...
+ }}}
+
+But, the module also includes code at the bottom that is set up to call the function when this file is run as a program:
+
+ {{{
+% python runme.py
+It's Christmas in Heaven...
+ }}}
+
+__In effect, a module’s `__name__` variable serves as a ''usage mode flag'', allowing its code to be leveraged as both an importable library and a top-level script.__ Though simple, you’ll see this hook used in nearly every realistic Python program file you are likely to encounter.
+
+Perhaps the most common way you’ll see the `__name__` test applied is for ''self-test code''. In short, you can package code that tests a module’s exports in the module itself by wrapping it in a `__name__` test at the bottom of the file. This way, you can use the file in clients by importing it, but also test its logic by running it from the system shell or via another launching scheme. __In practice, self-test code at the bottom of a file under the `__name__` test is probably the most common and simplest unit-testing protocol in Python. (Chapter 35 will discuss other commonly used options for testing Python code—as you’ll see, the `unittest` and `doctest` standard library modules provide more advanced testing tools.)__
+
+__The `__name__` trick is also commonly used when writing files that can be used both as command-line utilities and as tool libraries.__ For instance, suppose you write a file-finder script in Python. You can get more mileage out of your code if you package it in functions and add a `__name__` test in the file to automatically call those functions when the file is run standalone. That way, the script’s code becomes reusable in other programs.
+
+=== Unit Tests with __name__ ===
+
+In fact, we’ve already seen a prime example in this book of an instance where the `__name__` check could be useful. In the section on arguments in Chapter 18, we coded a script that computed the minimum value from the set of arguments sent in:
+
+ {{{
+def minmax(test, *args):
+    res = args[0]
+    for arg in args[1:]:
+        if test(arg, res):
+            res = arg
+    return res
+
+def lessthan(x, y): return x < y
+def grtrthan(x, y): return x > y
+
+print(minmax(lessthan, 4, 2, 1, 5, 6, 3)) # Self-test code
+print(minmax(grtrthan, 4, 2, 1, 5, 6, 3))
+ }}}
+
+This script includes self-test code at the bottom, so we can test it without having to retype everything at the interactive command line each time we run it. The problem with the way it is currently coded, however, is that the output of the self-test call will appear every time this file is imported from another file to be used as a tool—not exactly a user-friendly feature! To improve it, we can wrap up the self-test call in a `__name__` check, so that it will be launched only when the file is run as a top-level script, not when it is imported:
+
+ {{{
+print('I am:', __name__)
+
+def minmax(test, *args):
+    res = args[0]
+    for arg in args[1:]:
+        if test(arg, res):
+            res = arg
+    return res
+
+def lessthan(x, y): return x < y
+def grtrthan(x, y): return x > y
+
+if __name__ == '__main__':
+    print(minmax(lessthan, 4, 2, 1, 5, 6, 3)) # Self-test code
+    print(minmax(grtrthan, 4, 2, 1, 5, 6, 3))
+ }}}
+
+We’re also printing the value of `__name__` at the top here to trace its value. Python creates and assigns this usage-mode variable as soon as it starts loading a file. When we run this file as a top-level script, its name is set to `__main__`, so its self-test code kicks in automatically:
+
+ {{{
+% python min.py
+I am: __main__
+1
+6
+ }}}
+
+But, if we import the file, its name is not `__main__`, so we must explicitly call the function to make it run:
+
+ {{{
+>>> import min
+I am: min
+>>> min.minmax(min.lessthan, 's', 'p', 'a', 'm')
+'a'
+ }}}
+
+Again, regardless of whether this is used for testing, the net effect is that we get to use our code in two different roles—as a library module of tools, or as an executable program.
+
+=== Using Command-Line Arguments with __name__ ===
+
+:::
+
+= Chapter 25. OOP: The Big Picture =
+
+So far in this book, we’ve been using the term “object” generically. Really, the code written up to this point has been object-based—we’ve passed objects around our scripts, used them in expressions, called their methods, and so on. For our code to qualify as being truly object-oriented (OO), though, our objects will generally need to also participate in something called an ''inheritance hierarchy''.
+
+This chapter begins our exploration of the Python class—a device used to implement new kinds of objects in Python that support inheritance. Classes are Python’s main object-oriented programming (OOP) tool, so we’ll also look at OOP basics along the way in this part of the book. OOP offers a different and often more effective way of looking at programming, in which we factor code to minimize redundancy, and write new programs by customizing existing code instead of changing it in-place.
+
+__In Python, classes are created with a new statement: the `class` statement. As you’ll see, the objects defined with classes can look a lot like the built-in types we studied earlier in the book. In fact, classes really just apply and extend the ideas we’ve already covered; roughly, they are packages of functions that use and process built-in object types. Classes, though, are designed to create and manage new objects, and they also support inheritance—a mechanism of code customization and reuse above and beyond anything we’ve seen so far.__
+
+__One note up front: in Python, OOP is entirely optional, and you don’t need to use classes just to get started. In fact, you can get plenty of work done with simpler constructs such as functions, or even simple ''top-level script code''. Because using classes well requires some up-front planning, they tend to be of more interest to people who work in ''strategic mode'' (doing long-term product development) than to people who work in ''tactical mode'' (where time is in very short supply).__
+
+Still, as you’ll see in this part of the book, classes turn out to be one of the most useful tools Python provides. __When used well, classes can actually cut development time radically. They’re also employed in popular Python tools like the tkinter GUI API,__ so most Python programmers will usually find at least a working knowledge of class basics helpful.
+
+== Why Use Classes? ==
+
+Remember when I told you that programs “do things with stuff”? __In simple terms, classes are just a way to define new sorts of stuff, reflecting real objects in a ''program’s domain''.__ For instance, suppose we decide to implement that hypothetical pizza-making robot we used as an example in Chapter 16. If we implement it using classes, we can model more of its real-world structure and relationships. Two aspects of OOP prove useful here:
+
+ * Inheritance - Pizza-making robots are kinds of robots, so they possess the usual robot-y properties. In OOP terms, we say they “inherit” properties from the general category of all robots. These common properties need to be implemented only once for the general case and can be reused by all types of robots we may build in the future.
+
+ * Composition - __Pizza-making robots are really collections of components that work together as a team.__ For instance, for our robot to be successful, it might need arms to roll dough, motors to maneuver to the oven, and so on. In OOP parlance, our robot is an example of composition; it contains other objects that it activates to do its bidding. Each component might be coded as a class, which defines its own behavior and relationships.
+
+__General OOP ideas like inheritance and composition apply to any application that can be decomposed into a set of objects.__ For example, in typical GUI systems, interfaces are written as collections of widgets—buttons, labels, and so on—which are all drawn when their container is drawn (composition). Moreover, we may be able to write our own custom widgets—buttons with unique fonts, labels with new color schemes, and the like—which are specialized versions of more general interface devices (inheritance).
+
+__From a more concrete programming perspective, classes are Python ''program units'', just like functions and modules: they are another compartment for packaging logic and data. In fact, classes also define new namespaces, much like modules. But, compared to other program units we’ve already seen, classes have three critical distinctions that make them more useful when it comes to building new objects:__
+
+ * Multiple instances - __Classes are essentially ''factories'' for generating one or more objects. Every time we ''call'' a class, we generate a new object with a distinct namespace.__ Each object generated from a class has access to the class’s attributes and gets a namespace of its own for data that varies per object.
+
+ * Customization via inheritance - __Classes also support the OOP notion of inheritance; we can extend a class by redefining its attributes outside the class itself. More generally, classes can build up ''namespace hierarchies'',__ which define names to be used by objects created from classes in the hierarchy.
+
+ * Operator overloading - __By providing special ''protocol methods'', classes can define objects that respond to the sorts of operations we saw at work on built-in types.__ For instance, objects made with classes can be sliced, concatenated, indexed, and so on. Python provides ''hooks'' that classes can use to intercept and implement any built-in type operation.
+
+== OOP from 30,000 Feet ==
+
+Before we see what this all means in terms of code, I’d like to say a few words about the general ideas behind OOP. If you’ve never done anything object-oriented in your life before now, some of the terminology in this chapter may seem a bit perplexing on the first pass. Moreover, the motivation for these terms may be elusive until you’ve had a chance to study the ways that programmers apply them in larger systems. __OOP is as much an experience as a technology.__
+
+=== Attribute Inheritance Search ===
+
+The good news is that OOP is much simpler to understand and use in Python than in other languages, such as C++ or Java. As a dynamically typed scripting language, Python removes much of the syntactic clutter and complexity that clouds OOP in other tools. In fact, most of the OOP story in Python boils down to this expression:
+
+ {{{
+object.attribute
+ }}}
+
+We’ve been using this expression throughout the book to access module attributes, call methods of objects, and so on. __When we say this to an object that is derived from a `class` statement, however, the expression kicks off a ''search'' in Python—it searches ''a tree of linked objects'', looking for the first appearance of `attribute` that it can find.__ When classes are involved, the preceding Python expression effectively translates to the following in natural language:
+
+ Find the first occurrence of `attribute` by looking in `object`, then in all classes above it, from bottom to top and left to right. (這裡 "left to right" 跟多重繼承時宣告的順序有關, 參考下面 "Coding Class Trees" 一節的說明)
+
+__In other words, ''attribute fetches'' are simply ''tree searches''. The term inheritance is applied because objects lower in a tree inherit attributes ''attached'' to objects higher in that tree. As the search proceeds from the bottom up, in a sense, the objects linked into a tree are the union of all the attributes defined in all their tree parents, all the way up the tree.__
+
+__In Python, this is all very literal: we really do build up trees of linked objects with code, and Python really does climb this tree at runtime searching for attributes every time we use the `object.attribute` expression.__ To make this more concrete, Figure 25-1 sketches an example of one of these trees.
+
+{{attachment:figure_25-1.png}} <<BR>> Figure 25-1. __A ''class tree'', with two instances at the bottom (`I1` and `I2`), a class above them (`C1`), and two ''superclasses'' at the top (`C2` and `C3`). All of these objects are ''namespaces (packages of variables)'', and the ''inheritance search'' is simply a search of the tree from bottom to top looking for the lowest occurrence of an attribute name. Code implies the shape of such trees.__
+
+In this figure, there is a tree of five objects labeled with variables, all of which have attached attributes, ready to be searched. __More specifically, this tree links together three ''class objects'' (the ovals `C1`, `C2`, and `C3`) and two ''instance objects'' (the rectangles `I1` and `I2`) into an inheritance search tree.__ Notice that in the Python ''object model'', classes and the instances you generate from them are two distinct object types:
+
+ * Classes - __Serve as ''instance factories''. Their attributes provide ''behavior—data and functions''—that is inherited by all the instances generated from them (為什麼 behavior 會包含 data[?])__ (e.g., a function to compute an employee’s salary from pay and hours).
+
+ * Instances - __Represent the concrete items in a program’s domain. Their attributes record data that varies per specific object__ (e.g., an employee’s Social Security number).
+
+__In terms of search trees, an instance inherits attributes from its class, and a class inherits attributes from all classes above it in the tree.__
+
+In Figure 25-1, we can further categorize the ovals by their relative positions in the tree. __We usually call classes higher in the tree (like `C2` and `C3`) ''superclasses''; classes lower in the tree (like `C1`) are known as ''subclasses''. (In other literature, you may also occasionally see the terms ''base classes'' and ''derived classes'' used to describe superclasses and subclasses, respectively.) These terms refer to relative tree positions and roles. '''Superclasses provide behavior shared by all their subclasses, but because the search proceeds from the bottom up, subclasses may override behavior defined in their superclasses by redefining superclass names lower in the tree.'''__
+
+As these last few words are really the crux of the matter of software customization in OOP, let’s expand on this concept. Suppose we build up the tree in Figure 25-1, and then say this:
+
+ {{{
+I2.w
+ }}}
+
+Right away, this code invokes inheritance. Because this is an `object.attribute` expression, it triggers a search of the tree in Figure 25-1—Python will search for the attribute `w` by looking in `I2` and above. Specifically, it will search the ''linked objects'' in this order:
+
+ {{{
+I2, C1, C2, C3
+ }}}
+
+__and stop at the first attached `w` it finds (or raise an error if `w` isn’t found at all). In this case, `w` won’t be found until `C3` is searched because it appears only in that object. In other words, `I2.w` resolves to `C3.w` by virtue of the automatic search. '''In OOP terminology, I2 “inherits” the attribute `w` from `C3`. (由下往上先從誰的身上找到, 就是由誰繼承而來)'''__
+
+Ultimately, the two instances inherit four attributes from their classes: `w`, `x`, `y`, and `z`. Other ''attribute references'' will wind up following different paths in the tree. For example:
+
+ * `I1.x` and `I2.x` both find `x` in `C1` and stop because `C1` is lower than `C2`.
+ * `I1.y` and `I2.y` both find `y` in `C1` because that’s the only place `y` appears.
+ * `I1.z` and `I2.z` both find `z` in `C2` because `C2` is further to the left than `C3`.
+ * `I2.name` finds `name` in `I2` without climbing the tree at all.
+
+Trace these searches through the tree in Figure 25-1 to get a feel for how inheritance searches work in Python.
+
+The first item in the preceding list is perhaps the most important to notice—because `C1` redefines the attribute `x` lower in the tree, it effectively replaces the version above it in `C2`. As you’ll see in a moment, such redefinitions are at the heart of software customization in OOP—by redefining and replacing the attribute, `C1` effectively customizes what it inherits from its superclasses.
+
+=== Classes and Instances ===
+
+Although they are technically two separate object types in the Python model, the classes and instances we put in these trees are almost identical—__each type’s main purpose is to serve as another kind of namespace—a package of variables, and a place where we can ''attach attributes''.__ If classes and instances therefore sound like modules, they should; however, the objects in class trees also have automatically searched links to other namespace objects, and classes correspond to statements, not entire files. (參考下面 Classes Are Attributes in Modules 最後一段的說明)
+
+The primary difference between classes and instances is that classes are a kind of factory for generating instances. For example, in a realistic application, we might have an `Employee` class that defines what it means to be an employee; from that class, we generate actual `Employee` instances. __This is another difference between classes and modules: we only ever have one instance of a given module in memory (that’s why we have to reload a module to get its new code), but with classes, we can make as many instances as we need.__
+
+__Operationally, classes will usually have functions ''attached'' to them (e.g., `computeSalary`), and the instances will have more basic data items used by the class’ functions (e.g., `hoursWorked`). In fact, the object-oriented model is not that different from the classic data-processing model of programs plus records; '''in OOP, instances are like records with “data,” and classes are the “programs” for processing those records.'''__ In OOP, though, we also have the notion of an inheritance hierarchy, which supports software customization better than earlier models.
+
+=== Class Method Calls ===
+
+In the prior section, we saw how the attribute reference `I2.w` in our example class tree was translated to `C3.w` by the inheritance search procedure in Python. Perhaps just as important to understand as the inheritance of attributes, though, is what happens when we try to call methods (i.e., functions attached to classes as attributes; 所以 attribute 可以泛指 function/data itme? 跟 name 有什麼不同[?]).
+
+__If this `I2.w` reference is a function call, what it really means is “call the C3.w function to process I2.” That is, '''Python will automatically map the call `I2.w()` into the call `C3.w(I2)`, passing in the instance as the first argument to the inherited function.'''__
+
+__In fact, whenever we call a function attached to a class in this fashion, an instance of the class is always implied. This implied subject or context is part of the reason we refer to this as an object-oriented model—there is always a ''subject object'' when an operation is run.__ In a more realistic example, we might invoke a method called `giveRaise` attached as an attribute to an `Employee` class; such a call has no meaning unless qualified with the employee to whom the raise should be given.
+
+__As we’ll see later, Python passes in the implied instance to a special first argument in the method, called `self` by convention.__ As we’ll also learn, methods can be called through either an instance (e.g., `bob.giveRaise()`) or a class (e.g., `Employee.giveRaise(bob)`), and both forms serve purposes in our scripts. To see how methods receive their subjects, though, we need to move on to some code.
+
+=== Coding Class Trees ===
+
+Although we are speaking in the abstract here, there is tangible code behind all these ideas. We construct trees, and their objects with `class` statements and class calls, which we’ll meet in more detail later. In short:
+
+ * Each `class` statement generates a new class object.
+
+ * Each time a class is ''called'', it generates a new instance object.
+
+ * __Instances are automatically linked to the classes from which they are created.__
+
+ * __Classes are linked to their superclasses by listing them in parentheses in a `class` ''header line''; '''the left-to-right order there gives the order in the tree.'''__
+
+To build the tree in Figure 25-1, for example, we would run Python code of this form (I’ve omitted the guts of the `class` statements here):
+
+ {{{
+class C2: ... # Make class objects (ovals)
+class C3: ...
+class C1(C2, C3): ... # Linked to superclasses
+
+I1 = C1() # Make instance objects (rectangles)
+I2 = C1() # Linked to their classes
+ }}}
+
+Here, we build the three class objects by running three `class` statements, and make the two instance objects by calling the class `C1` twice, ''as though it were a function''. The instances remember the class they were made from, and the class `C1` remembers its listed superclasses.
+
+__Technically, this example is using something called ''multiple inheritance'', which simply means that a class has more than one superclass above it in the class tree. In Python, if there is more than one superclass listed in parentheses in a `class` statement (like `C1`’s here), their left-to-right order gives the order in which those superclasses will be searched for attributes.__
+
+__Because of the way inheritance searches proceed, the object to which you attach an attribute turns out to be crucial—it determines the name’s ''scope''. Attributes attached to instances pertain only to those single instances, but attributes attached to classes are shared by all their subclasses and instances.__ Later, we’ll study the code that ''hangs'' attributes on these objects in depth. As we’ll find:
+
+ * __'''Attributes are usually attached to ''classes'' by assignments made within `class` statements, and not nested inside function `def` statements.'''__
+
+ * __'''Attributes are usually attached to ''instances'' by assignments to a special argument passed to functions inside classes, called `self`.'''__
+
+For example, classes provide behavior for their instances with functions created by coding `def` statements inside `class` statements. Because such nested `def`s assign names within the class, they wind up attaching attributes to the class object that will be inherited by all instances and subclasses:
+
+ {{{
+class C1(C2, C3): # Make and link class C1
+    def setname(self, who): # Assign name: C1.setname
+        self.name = who # Self is either I1 or I2
+
+I1 = C1() # Make two instances
+I2 = C1()
+I1.setname('bob') # Sets I1.name to 'bob'
+I2.setname('mel') # Sets I2.name to 'mel'
+print(I1.name) # Prints 'bob'
+ }}}
+
+__There’s nothing syntactically unique about `def` in this context. Operationally, when a `def` appears inside a class like this, it is usually known as a ''method'', and it automatically receives a special first argument—called `self` by convention—that provides a handle back to the instance to be processed. (If you’ve ever used C++ or Java, you’ll recognize that Python’s `self` is the same as the `this` pointer, '''but `self` is always explicit in Python to make attribute accesses more obvious.''')__
+
+Because classes are factories for multiple instances, their methods usually go through this automatically passed-in `self` argument whenever they need to fetch or set attributes of the particular instance being processed by a method call. In the preceding code, `self` is used to store a name in one of two instances.
+
+__Like simple variables, attributes of classes and instances are not declared ahead of time, but spring into existence the first time they are assigned values. '''When a method assigns to a `self` attribute, it creates or changes an attribute in an instance at the bottom of the class tree''' (i.e., one of the rectangles) because `self` automatically refers to the instance being processed.__
+
+__In fact, because all the objects in class trees are just ''namespace objects'', we can fetch or set any of their attributes by going through the appropriate names.__ Saying `C1.setname` is as valid as saying `I1.setname`, as long as the names `C1` and `I1` are in your code’s scopes.
+
+As currently coded, our `C1` class doesn’t attach a `name` attribute to an instance until the `setname` method is called. In fact, referencing `I1.name` before `calling I1.setname` would produce an undefined name error. If a class wants to guarantee that an attribute like `name` is always set in its instances, it more typically will fill out the attribute at construction time, like this:
+
+ {{{
+class C1(C2, C3):
+    def __init__(self, who): # Set name when constructed
+        self.name = who # Self is either I1 or I2
+
+I1 = C1('bob') # Sets I1.name to 'bob'
+I2 = C1('mel') # Sets I2.name to 'mel'
+print(I1.name) # Prints 'bob'
+ }}}
+
+__If it’s coded and inherited, Python automatically calls a method named `__init__` each time an instance is generated from a class. The new instance is passed in to the `self` argument of `__init__` as usual, and any values listed in parentheses in the class call go to arguments ''two'' and beyond. '''(生成 Instance 之後才透過 `self` 傳入 `__init__`, 另外 `__init__` 也是一種 Operator Overloading)'''__ The effect here is to initialize instances when they are made, without requiring extra method calls.
+
+__The `__init__` method is known as the ''constructor'' because of when it is run.__ It’s the most commonly used representative of a larger class of methods called operator overloading methods, which we’ll discuss in more detail in the chapters that follow. Such methods are inherited in class trees as usual and have double underscores at the start and end of their names to make them distinct. Python runs them automatically when instances that support them appear in the corresponding operations, and they are mostly an alternative to using simple method calls. They’re also optional: if omitted, the operations are not supported.
+
+For example, to implement set intersection, a class might either provide a method named `intersect`, or overload the `&` expression operator to dispatch to the required logic by coding a method named `__and__`. __Because the operator scheme makes instances look and feel more like built-in types, it allows some classes to provide a consistent and natural interface, and be compatible with code that expects a built-in type.__
+
+=== OOP Is About Code Reuse ===
+
+And that, along with a few syntax details, is most of the OOP story in Python. Of course, there’s a bit more to it than just inheritance. For example, operator overloading is much more general than I’ve described so far—classes may also provide their own implementations of operations such as indexing, fetching attributes, printing, and more. By and large, though, OOP is about looking up attributes in trees.
+
+So why would we be interested in building and searching trees of objects? Although it takes some experience to see how, when used well, classes support code reuse in ways that other Python program components cannot. With classes, we code by customizing existing software, instead of either changing existing code in-place or starting from scratch for each new project.
+
+__At a fundamental level, classes are really just packages of functions and other ''names'', much like modules.__ However, the automatic attribute inheritance search that we get with classes supports customization of software above and beyond what we can do with modules and functions. __Moreover, classes provide a natural structure for code that ''localizes'' logic and names, and so aids in debugging.__
+
+For instance, because methods are simply functions with a special first argument, we can mimic some of their behavior by manually passing objects to be processed to simple functions. The participation of methods in class inheritance, though, allows us to naturally customize existing software by coding subclasses with new method definitions, rather than changing existing code in-place. There is really no such concept with modules and functions.
+
+As an example, suppose you’re assigned the task of implementing an employee database application. As a Python OOP programmer, you might begin by coding a general superclass that defines default behavior common to all the kinds of employees in your organization:
+
+ {{{
+class Employee: # General superclass
+    def computeSalary(self): ... # Common or default behavior
+    def giveRaise(self): ...
+    def promote(self): ...
+    def retire(self): ...
+ }}}
+
+Once you’ve coded this general behavior, you can specialize it for each specific kind of employee to reflect how the various types differ from the norm. That is, you can code subclasses that customize just the bits of behavior that differ per employee type; the rest of the employee types’ behavior will be inherited from the more general class. For example, if engineers have a unique salary computation rule (i.e., not hours times rate), you can replace just that one method in a subclass:
+
+ {{{
+class Engineer(Employee): # Specialized subclass
+    def computeSalary(self): ... # Something custom here
+ }}}
+
+Because the `computeSalary` version here appears lower in the class tree, it will replace (override) the general version in `Employee`. You then create instances of the kinds of employee classes that the real employees belong to, to get the correct behavior:
+
+ {{{
+bob = Employee() # Default behavior
+mel = Engineer() # Custom salary calculator
+ }}}
+
+__Notice that you can make instances of any class in a tree, not just the ones at the bottom—'''the class you make an instance from determines the level at which the attribute search will begin.'''__ Ultimately, these two instance objects might wind up embedded in a larger ''container object'' (e.g., a list, or an instance of another class) that represents a department or company using the composition idea mentioned at the start of this chapter.
+
+When you later ask for these employees’ salaries, they will be computed according to the classes from which the objects were made, due to the principles of the inheritance search: __(Note that the `company` list in this example could be stored in a file with Python object `pickling`, introduced in Chapter 9 when we met files, to yield a persistent employee database. Python also comes with a module named `shelve`, which would allow you to store the pickled representation of the class instances in an ''access-by-key filesystem''; the third-party open source ZODB system does the same but has better support for production-quality object-oriented databases.)__
+
+ {{{
+company = [bob, mel] # A composite object
+for emp in company:
+    print(emp.computeSalary()) # Run this object's version
+ }}}
+
+This is yet another instance of the idea of polymorphism introduced in Chapter 4 and revisited in Chapter 16. __Recall that polymorphism means that the meaning of an operation depends on the object being operated on. Here, the method `computeSalary` is located by inheritance search in each object before it is called. In other applications, polymorphism might also be used to hide (i.e., encapsulate) interface differences.__ For example, a program that processes data streams might be coded to expect objects with input and output methods, without caring what those methods actually do:
+
+ {{{
+def processor(reader, converter, writer):
+    while 1:
+        data = reader.read()
+        if not data: break
+        data = converter(data)
+        writer.write(data)
+ }}}
+
+By passing in instances of subclasses that specialize the required `read` and `write` method interfaces for various data sources, we can reuse the `processor` function for any data source we need to use, both now and in the future:
+
+ {{{
+class Reader:
+    def read(self): ... # Default behavior and tools
+    def other(self): ...
+class FileReader(Reader):
+    def read(self): ... # Read from a local file
+class SocketReader(Reader):
+    def read(self): ... # Read from a network socket
+...
+processor(FileReader(...), Converter, FileWriter(...))
+processor(SocketReader(...), Converter, TapeWriter(...))
+processor(FtpReader(...), Converter, XmlWriter(...))
+ }}}
+
+__Moreover, because the internal implementations of those `read` and `write` methods have been factored into single locations, they can be changed without impacting code such as this that uses them.__ In fact, the `processor` function might itself be a class to allow the conversion logic of converter to be filled in by inheritance, and to allow readers and writers to be embedded by composition (we’ll see how this works later in this part of the book).
+
+Once you get used to programming this way (by software customization), you’ll find that when it’s time to write a new program, much of your work may already be done— your task largely becomes one of mixing together existing superclasses that already implement the behavior required by your program. For example, someone else might have written the `Employee`, `Reader`, and `Writer` classes in this example for use in a completely different program. If so, you get all of that person’s code “for free.”
+
+In fact, in many application domains, you can fetch or purchase collections of superclasses, known as frameworks, that implement common programming tasks as classes, ready to be mixed into your applications. These frameworks might provide database interfaces, testing protocols, GUI toolkits, and so on. __With frameworks, you often simply code a subclass that fills in an expected method or two; the framework classes higher in the tree do most of the work for you. Programming in such an OOP world is just a matter of combining and specializing already debugged code by writing subclasses of your own.__
+
+Of course, it takes a while to learn how to leverage classes to achieve such OOP utopia. In practice, object-oriented work also entails substantial design work to fully realize the code reuse benefits of classes—to this end, programmers have begun cataloging common OOP structures, known as design patterns, to help with design issues. The actual code you write to do OOP in Python, though, is so simple that it will not in itself pose an additional obstacle to your OOP quest. To see why, you’ll have to move on to Chapter 26.
+
+== Chapter Summary ==
+
+We took an abstract look at classes and OOP in this chapter, taking in the big picture before we dive into syntax details. __As we’ve seen, OOP is mostly about looking up attributes in trees of linked objects; we call this lookup an inheritance search. (跟 !JavaScript 的做法很像)__ Objects at the bottom of the tree inherit attributes from objects higher up in the tree—a feature that enables us to program by customizing code, rather than changing it, or starting from scratch. When used well, this model of programming can cut development time radically.
+
+The next chapter will begin to fill in the coding details behind the picture painted here. As we get deeper into Python classes, though, keep in mind that the OOP model in Python is very simple; as I’ve already stated, it’s really just about looking up attributes in object trees. Before we move on, here’s a quick quiz to review what we’ve covered here.
+
+= Chapter 26. Class Coding Basics =
+
+Now that we’ve talked about OOP in the abstract, it’s time to see how this translates to actual code. This chapter begins to fill in the syntax details behind the ''class model'' in Python.
+
+If you’ve never been exposed to OOP in the past, classes can seem somewhat complicated if taken in a single dose. To make class coding easier to absorb, we’ll begin our detailed exploration of OOP by taking a first look at some basic classes in action in this chapter. We’ll expand on the details introduced here in later chapters of this part of the book, but in their basic form, Python classes are easy to understand.
+
+__In fact, classes have just three primary distinctions. At a base level, they are mostly just namespaces, much like the modules we studied in Part V. Unlike modules, though, classes also have support for generating multiple objects, for namespace inheritance, and for operator overloading.__ Let’s begin our `class` statement tour by exploring each of these three distinctions in turn.
+
+== Classes Generate Multiple Instance Objects ==
+
+__To understand how the multiple objects idea works, you have to first understand that there are two kinds of objects in Python’s OOP model: class objects and instance objects. Class objects provide ''default behavior'' and serve as factories for instance objects. Instance objects are the real objects your programs process—each is a namespace in its own right, but inherits (i.e., has automatic access to) names in the class from which it was created. '''Class objects come from statements, and instances come from calls; each time you call a class, you get a new instance of that class.'''__
+
+This object-generation concept is very different from any of the other program constructs we’ve seen so far in this book. In effect, classes are essentially factories for generating multiple instances. By contrast, only one copy of each module is ever imported into a single program (in fact, one reason that we have to call `imp.reload` is to update the single module object so that changes are reflected once they’ve been made).
+
+The following is a quick summary of the bare essentials of Python OOP. As you’ll see, Python classes are in some ways similar to both `def`s and modules, but they may be quite different from what you’re used to in other languages.
+
+=== Class Objects Provide Default Behavior ===
+
+__When we run a `class` statement, we get a class object.__ Here’s a rundown of the main properties of Python classes:
+
+ * __'''The `class` statement creates a class object and ''assigns it a name''.''' Just like the function `def` statement, the Python `class` statement is an ''executable statement''. When reached and run, it generates a new class object and assigns it to the name in the `class` header. Also, like `def`s, `class` statements typically run when the files they are coded in are first imported.__
+
+ * __Assignments inside `class` statements make ''class attributes''.__ Just like in module files, top-level assignments within a `class` statement (not nested in a `def`) generate attributes in a class object. __Technically, the `class` statement scope morphs into the ''attribute namespace'' of the class object, just like a module’s ''global scope''. After running a `class` statement, class attributes are accessed by name qualification: `object.name`.__
+
+ * __'''Class attributes provide object state and behavior. (注意這裡 Attribute 泛指 State 與 Behavior)''' Attributes of a class object record state information and behavior to be shared by all instances created from the class; function `def` statements nested inside a `class` generate methods, which ''process instances''.__
+
+=== Instance Objects Are Concrete Items ===
+
+__When we ''call'' a class object, we get an instance object.__ Here’s an overview of the key points behind class instances:
+
+ * Calling a class object like a function makes a new instance object. Each time a class is called, it creates and returns a new instance object. Instances represent concrete items in your program’s domain.
+
+ * __Each instance object inherits class attributes and gets its own namespace. Instance objects created from classes are new namespaces; they start out empty but inherit attributes that live in the class objects from which they were generated.__
+
+ * __Assignments to attributes of `self` in methods make ''per-instance attributes''. Inside class method functions, the first argument (called `self` by convention) references the instance object being processed; assignments to attributes of `self` create or change data in the instance, not the class.__
+
+=== A First Example ===
+
+Let’s turn to a real example to show how these ideas work in practice. To begin, let’s define a class named `FirstClass` by running a Python `class` statement interactively:
+
+ {{{
+>>> class FirstClass: # Define a class object
+...     def setdata(self, value): # Define class methods
+...         self.data = value # self is the instance
+...     def display(self):
+...         print(self.data) # self.data: per instance
+...
+ }}}
+
+We’re working interactively here, but typically, __'''such a statement would be run when the module file it is coded in is imported. Like functions created with `def`s, this class won’t even exist until Python reaches and runs this statement.'''__
+
+Like all compound statements, the `class` starts with a header line that lists the class name, followed by a body of one or more nested and (usually) indented statements. Here, the nested statements are `def`s; they define functions that implement the behavior the class means to export.
+
+__'''As we learned in Part IV, `def` is really an assignment.''' Here, it assigns ''function objects'' to the names `setdata` and `display` in the `class` statement’s scope, and so generates attributes attached to the class: `FirstClass.setdata` and `FirstClass.display`. In fact, any name assigned at the top level of the class’s nested block becomes an attribute of the class.__
+
+Functions inside a class are usually called methods. They’re coded with normal `def`s, and they support everything we’ve learned about functions already (they can have defaults, return values, and so on). __But in a method function, the first argument automatically receives an implied instance object when called—the subject of the call.__ We need to create a couple of instances to see how this works:
+
+ {{{
+>>> x = FirstClass() # Make two instances
+>>> y = FirstClass() # Each is a new namespace
+ }}}
+
+By calling the class this way (notice the parentheses), we generate instance objects, which are just namespaces that have access to their classes’ attributes. __Properly speaking, at this point, we have three objects: two instances and a class. Really, we have three ''linked namespaces'', as sketched in Figure 26-1.__ In OOP terms, we say that `x` “is a” `FirstClass`, as is `y`.
+
+{{attachment:figure_26-1.png}} <<BR>> Figure 26-1. Classes and instances are linked namespace objects in a class tree that is searched by inheritance. Here, the “`data`” attribute is found in instances, but “`setdata`” and “`display`” are in the class above them.
+
+__The two instances start out empty but have links back to the class from which they were generated.__ If we qualify an instance with the name of an attribute that lives in the class object, Python fetches the name from the class by inheritance search (unless it also lives in the instance):
+
+ {{{
+>>> x.setdata("King Arthur") # Call methods: self is x
+>>> y.setdata(3.14159) # Runs: FirstClass.setdata(y, 3.14159)
+ }}}
+
+Neither `x` nor `y` has a `setdata` attribute of its own, so to find it, Python follows the link from instance to class. And that’s about all there is to inheritance in Python: __it happens at ''attribute qualification time'', and it just involves looking up names in linked objects (e.g., by following the is-a links in Figure 26-1).__
+
+In the `setdata` function inside `FirstClass`, the value passed in is assigned to `self.data`. Within a method, `self`—the name given to the leftmost argument by convention— automatically refers to the instance being processed (`x` or `y`), so the assignments store values in the ''instances’ namespaces'', not the class’s (that’s how the data names in Figure 26-1 are created).
+
+Because classes can generate multiple instances, methods must go through the `self` argument to get to the instance to be processed. When we call the class’s `display` method to print `self.data`, we see that it’s different in each instance; on the other hand, the name `display` itself is the same in `x` and `y`, as it comes (is inherited) from the class:
+
+ {{{
+>>> x.display() # self.data differs in each instance
+King Arthur
+>>> y.display()
+3.14159
+ }}}
+
+Notice that we stored different object types in the ''data member'' in each instance (a string, and a floating point). As with everything else in Python, there are no declarations for instance attributes (sometimes called ''members''); they spring into existence the first time they are assigned values, just like simple variables. In fact, if we were to call `display` on one of our instances before calling `setdata`, we would trigger an undefined name error—the attribute named `data` doesn’t even exist in memory until it is assigned within the `setdata` method.
+
+As another way to appreciate how dynamic this model is, consider that we can change instance attributes in the class itself, by assigning to `self` in methods, or outside the class, by assigning to an explicit instance object: (必要時, 要如何保護這些資料[?])
+
+ {{{
+>>> x.data = "New value" # Can get/set attributes
+>>> x.display() # Outside the class too
+New value
+ }}}
+
+Although less common, we could even generate a brand new attribute in the instance’s namespace by assigning to its name outside the class’s method functions:
+
+ {{{
+>>> x.anothername = "spam" # Can set new attributes here too!
+ }}}
+
+This would attach a new attribute called `anothername`, which may or may not be used by any of the class’s methods, to the instance object `x`. __Classes usually create all of the instance’s attributes by assignment to the `self` argument, but they don’t have to; programs can fetch, change, or create attributes on any objects to which they have references.__
+
+== Classes Are Customized by Inheritance ==
+
+Besides serving as factories for generating multiple instance objects, classes also allow us to make changes by introducing new components (called subclasses), instead of changing existing components in-place. Instance objects generated from a class inherit the class’s attributes. __Python also allows classes to inherit from other classes, opening the door to coding hierarchies of classes that specialize behavior—'''by redefining attributes in subclasses that appear lower in the hierarchy, we override the more general definitions of those attributes higher in the tree.''' In effect, the further down the hierarchy we go, the more specific the software becomes. Here, too, there is no parallel with modules: their attributes live in a ''single, flat'' namespace that is not as amenable to customization.__
+
+__'''In Python, instances inherit from classes, and classes inherit from superclasses.'''__ Here are the key ideas behind the machinery of attribute inheritance:
+
+ * Superclasses are listed in parentheses in a `class` header. __To inherit attributes from another class, just list the class in parentheses in a `class` statement’s header. (如果沒有繼承, 不用加括號)__ The class that inherits is usually called a subclass, and the class that is inherited from is its superclass.
+
+ * Classes inherit attributes from their superclasses. Just as instances inherit the attribute names defined in their classes, classes inherit all the attribute names defined in their superclasses; Python finds them automatically when they’re accessed, if they don’t exist in the subclasses.
+
+ * Instances inherit attributes from all accessible classes. Each instance gets names from the class it’s generated from, as well as all of that class’s superclasses. __When looking for a name, Python checks the instance, then its class, then all superclasses.__
+
+ * __'''Each `object.attribute` reference invokes a new, independent search.''' Python performs an independent search of the class tree for each ''attribute fetch expression''.__ This includes references to instances and classes made outside `class` statements (e.g., `X.attr`), as well as references to attributes of the `self` instance argument in class method functions. Each `self.attr` expression in a method invokes a new search for `attr` in `self` and above.
+
+ * __Logic changes are made by subclassing, not by changing superclasses. By redefining superclass names in subclasses lower in the hierarchy (class tree), subclasses replace and thus customize inherited behavior.__
+
+The net effect, and the main purpose of all this searching, is that classes support factoring and customization of code better than any other language tool we’ve seen so far. On the one hand, they allow us to minimize code redundancy (and so reduce maintenance costs) by factoring operations into a single, shared implementation; on the other, they allow us to program by customizing what already exists, rather than changing it in-place or starting from scratch.
+
+=== A Second Example ===
+
+To illustrate the role of inheritance, this next example builds on the previous one. First, we’ll define a new class, `SecondClass`, that inherits all of `FirstClass`’s names and provides one of its own:
+
+ {{{
+>>> class SecondClass(FirstClass): # Inherits setdata
+...     def display(self): # Changes display
+...     print('Current value = "%s"' % self.data)
+...
+ }}}
+
+`SecondClass` defines the `display` method to print with a different format. By defining an attribute with the same name as an attribute in `FirstClass`, `SecondClass` effectively replaces the `display` attribute in its superclass.
+
+__Recall that inheritance searches proceed upward from instances, to subclasses, to superclasses, stopping at the first appearance of the attribute name that it finds. In this case, since the `display` name in `SecondClass` will be found before the one in `FirstClass`, we say that `SecondClass` overrides `FirstClass`’s `display`. Sometimes we call this act of replacing attributes by redefining them lower in the tree ''overloading''. (跟 Java 的用法完全不同!!)__
+
+The net effect here is that `SecondClass` specializes `FirstClass` by changing the behavior of the `display` method. On the other hand, `SecondClass` (and any instances created from it) still inherits the `setdata` method in `FirstClass` verbatim. Let’s make an instance to demonstrate:
+
+ {{{
+>>> z = SecondClass()
+>>> z.setdata(42) # Finds setdata in FirstClass
+>>> z.display() # Finds overridden method in SecondClass
+Current value = "42"
+ }}}
+
+As before, we make a `SecondClass` instance object by calling it. The `setdata` call still runs the version in `FirstClass`, but this time the `display` attribute comes from `SecondClass` and prints a custom message. Figure 26-2 sketches the namespaces involved.
+
+{{attachment:figure_26-2.png}} <<BR>> Figure 26-2. Specialization by overriding inherited names by redefining them in extensions lower in the class tree. Here, `SecondClass` redefines and so customizes the “`display`” method for its instances.
+
+Now, here’s a very important thing to notice about OOP: the specialization introduced in `SecondClass` is completely external to `FirstClass`. That is, it doesn’t affect existing or future `FirstClass` objects, like the `x` from the prior example:
+
+ {{{
+>>> x.display() # x is still a FirstClass instance (old message)
+New value
+ }}}
+
+Rather than changing `FirstClass`, we customized it. Naturally, this is an artificial example, but as a rule, __because inheritance allows us to make changes like this in ''external components'' (i.e., in subclasses), classes often support extension and reuse better than functions or modules can.__
+
+=== Classes Are Attributes in Modules ===
+
+__Before we move on, remember that there’s nothing magic about a class name. It’s just a variable assigned to an object when the `class` statement runs, and the object can be referenced with any normal expression.__ For instance, if our `FirstClass` was coded in a module file instead of being typed interactively, we could import it and use its name normally in a class header line:
+
+ {{{
+from modulename import FirstClass # Copy name into my scope
+class SecondClass(FirstClass): # Use class name directly
+    def display(self): ...
+ }}}
+
+Or, equivalently:
+
+ {{{
+import modulename # Access the whole module
+class SecondClass(modulename.FirstClass): # Qualify to reference
+    def display(self): ...
+ }}}
+
+Like everything else, class names always live within a module, so they must follow all the rules we studied in Part V. For example, more than one class can be coded in a single module file—like other statements in a module, __`class` statements are run during imports to define names, and these names become distinct module attributes. More generally, each module may arbitrarily mix any number of variables, functions, and classes, and '''all names in a module behave the same way.'''__ The file `food.py` demonstrates:
+
+ {{{
+# food.py
+var = 1 # food.var
+def func(): # food.func
+    ...
+class spam: # food.spam
+    ...
+class ham: # food.ham
+    ...
+class eggs: # food.eggs
+    ...
+ }}}
+
+This holds true even if the module and class happen to have the same name. For example, given the following file, `person.py`:
+
+ {{{
+class person:
+    ...
+ }}}
+
+we need to go through the module to fetch the class as usual:
+
+ {{{
+import person # Import module
+x = person.person() # Class within module
+ }}}
+
+__Although this path may look redundant, it’s required: `person.person` refers to the `person` class inside the `person` module.__ Saying just `person` gets the module, not the class, unless the `from` statement is used:
+
+ {{{
+from person import person # Get class from module
+x = person() # Use class name
+ }}}
+
+As with any other variable, we can never see a class in a file without first importing and somehow fetching it from its enclosing file. __'''If this seems confusing, don’t use the same name for a module and a class within it.''' In fact, common convention in Python dictates that class names should begin with an uppercase letter, to help make them more distinct:__
+
+ {{{
+import person # Lowercase for modules
+x = person.Person() # Uppercase for classes
+ }}}
+
+__Also, keep in mind that although classes and modules are both namespaces for attaching attributes, they correspond to very different source code structures: a module reflects an entire file, but a class is a statement within a file.__ We’ll say more about such distinctions later in this part of the book.
+
+== Classes Can Intercept Python Operators ==
+
+Let’s move on to the third major difference between classes and modules: operator overloading. In simple terms, operator overloading lets objects coded with classes intercept and respond to operations that work on built-in types: addition, slicing, printing, qualification, and so on. __It’s mostly just an ''automatic dispatch'' mechanism— expressions and other built-in operations route control to implementations in classes.__ Here, too, there is nothing similar in modules: modules can implement function calls, but not the behavior of expressions.
+
+Although we could implement all class behavior as method functions, __operator overloading lets objects be more tightly integrated with Python’s object model. Moreover, because operator overloading makes our own objects act like built-ins, it tends to foster object interfaces that are more consistent and easier to learn, and it allows class-based objects to be processed by code written to expect a built-in type’s interface.__ Here is a quick rundown of the main ideas behind overloading operators:
+
+ * __Methods named with double underscores (`__X__`) are special ''hooks''. Python operator overloading is implemented by providing specially named methods to intercept operations. The Python language defines a fixed and unchangeable mapping from each of these operations to a specially named method.__
+
+ * __Such methods are called automatically when instances appear in built-in operations.__ For instance, if an instance object inherits an `__add__` method, that method is called whenever the object appears in a `+` expression. __The method’s return value becomes the result of the corresponding expression.__
+
+ * Classes may override most built-in type operations. There are dozens of special operator overloading method names for intercepting and implementing nearly every operation available for built-in types. This includes expressions, but also basic operations like printing and ''object creation''. (分別指 `__str__` 與 `__init__`)
+
+ * __There are no defaults for operator overloading methods, and none are required. If a class does not define or inherit an operator overloading method, it just means that the corresponding operation is not supported for the class’s instances.__ If there is no `__add__`, for example, `+` expressions raise exceptions.
+
+ * Operators allow classes to integrate with Python’s object model. By overloading type operations, user-defined objects implemented with classes can act just like built-ins, and so provide consistency as well as compatibility with expected interfaces.
+
+Operator overloading is an optional feature; it’s used primarily by people developing tools for other Python programmers, not by application developers. And, candidly, you probably shouldn’t try to use it just because it seems “cool.” __Unless a class needs to mimic built-in type interfaces, it should usually stick to simpler named methods.__ Why would an employee database application support expressions like `*` and `+`, for example? Named methods like `giveRaise` and `promote` would usually make more sense.
+
+Because of this, we won’t go into details on every operator overloading method available in Python in this book. __Still, there is one operator overloading method you are likely to see in almost every realistic Python class: the `__init__` method, which is known as the constructor method and is used to initialize objects’ state.__ You should pay special attention to this method, because `__init__`, along with the `self` argument, turns out to be a key requirement to understanding most OOP code in Python.
+
+=== A Third Example ===
+
+On to another example. This time, we’ll define a subclass of `SecondClass` that implements three specially named attributes that Python will call automatically:
+
+ * __`__init__` is run when a new instance object is created (`self` is the new `ThirdClass` object). Not to be confused with the `__init__.py` files in module packages!__ See Chapter 23 for more details.
+
+ * `__add__` is run when a `ThirdClass` instance appears in a `+` expression.
+
+ * __`__str__` is run when an object is printed (technically, when it’s converted to its print string by the `str` built-in function or its Python internals equivalent).__
+
+Our new subclass also defines a normally named method named `mul`, which changes the instance object in-place. Here’s the new subclass:
+
+ {{{
+>>> class ThirdClass(SecondClass): # Inherit from SecondClass
+...     def __init__(self, value): # On "ThirdClass(value)"
+...         self.data = value
+...     def __add__(self, other): # On "self + other"
+...         return ThirdClass(self.data + other)
+...     def __str__(self): # On "print(self)", "str()"
+...         return '[ThirdClass: %s]' % self.data
+...     def mul(self, other): # In-place change: named
+...         self.data *= other
+...
+>>> a = ThirdClass('abc') # __init__ called
+>>> a.display() # Inherited method called
+Current value = "abc"
+>>> print(a) # __str__: returns display string
+[ThirdClass: abc]
+
+>>> b = a + 'xyz' # __add__: makes a new instance
+>>> b.display() # b has all ThirdClass methods
+Current value = "abcxyz"
+>>> print(b) # __str__: returns display string
+[ThirdClass: abcxyz]
+
+>>> a.mul(3) # mul: changes instance in-place
+>>> print(a)
+[ThirdClass: abcabcabc]
+ }}}
+
+`ThirdClass` “is a” `SecondClass`, so its instances inherit the customized `display` method from `SecondClass`. This time, though, `ThirdClass` creation calls pass an argument (e.g., “abc”). This argument is passed to the `value` argument in the `__init__` constructor and assigned to `self.data` there. The net effect is that `ThirdClass` arranges to set the `data` attribute automatically at construction time, instead of requiring `setdata` calls after the fact.
+
+Further, `ThirdClass` objects can now show up in `+` expressions and `print` calls. __For `+`, Python passes the instance object on the left to the `self` argument in `__add__` and the value on the right to `other`, as illustrated in Figure 26-3; whatever `__add__` returns becomes the result of the `+` expression. For `print`, Python passes the object being printed to `self` in `__str__`; whatever string this method returns is taken to be the print string for the object. With `__str__` we can use a normal `print` to display objects of this class, instead of calling the special `display` method.__
+
+{{attachment:figure_26-3.png}} <<BR>> Figure 26-3. In operator overloading, expression operators and other built-in operations performed on class instances are mapped back to specially named methods in the class. These special methods are optional and may be inherited as usual. Here, a `+` expression triggers the `__add__` method.
+
+Specially named methods such as `__init__`, `__add__`, and `__str__` are inherited by subclasses and instances, just like any other names assigned in a class. If they’re not coded in a class, Python looks for such names in all its superclasses, as usual. __Operator overloading method names are also not built-in or reserved words; they are just attributes that Python looks for when objects appear in various contexts. Python usually calls them automatically, but they may occasionally be called by your code as well; '''the `__init__` method, for example, is often called manually to trigger superclass constructors''' (more on this later).__
+
+Notice that the `__add__` method makes and returns a new instance object of its class, by calling `ThirdClass` with the result value. By contrast, `mul` changes the current instance object in-place, by reassigning the `self` attribute. __We could overload the `*` expression to do the latter, but this would be too different from the behavior of `*` for built-in types such as numbers and strings, for which it always makes new objects. '''Common practice dictates that overloaded operators should work the same way that built-in operator implementations do.''' Because operator overloading is really just an expression-tomethod[?] dispatch mechanism, though, you can interpret operators any way you like in your own class objects.__
+
+=== Why Use Operator Overloading? ===
+
+As a class designer, you can choose to use operator overloading or not. __Your choice simply depends on how much you want your object to look and feel like built-in types.__ As mentioned earlier, if you omit an operator overloading method and do not inherit it from a superclass, the corresponding operation will not be supported for your instances; if it’s attempted, an exception will be thrown (or a standard default will be used).
+
+Frankly, many operator overloading methods tend to be used only when implementing objects that are mathematical in nature; a vector or matrix class may overload the addition operator, for example, but an employee class likely would not. For simpler classes, you might not use overloading at all, and would rely instead on explicit method calls to implement your objects’ behavior.
+
+On the other hand, you might decide to use operator overloading if you need to pass a user-defined object to a function that was coded to expect the operators available on a built-in type like a list or a dictionary. Implementing the same operator set in your class will ensure that your objects support the same expected object interface and so are compatible with the function. Although we won’t cover every operator overloading method in this book, we’ll see some additional operator overloading techniques in action in Chapter 29.
+
+One overloading method we will explore here is the `__init__` constructor method, which seems to show up in almost every realistic class. Because it allows classes to fill out the attributes in their newly created instances immediately, the constructor is useful for almost every kind of class you might code. __'''In fact, even though instance attributes are not declared in Python, you can usually find out which attributes an instance will have by inspecting its class’s `__init__` method.'''__
+
+== The World’s Simplest Python Class ==
+
+We’ve begun studying `class` statement syntax in detail in this chapter, but I’d again like to remind you that the basic inheritance model that classes produce is very simple— all it really involves is searching for attributes in trees of linked objects. In fact, we can create a class with nothing in it at all. The following statement makes a class with no attributes attached (an ''empty namespace object''):
+
+ {{{
+>>> class rec: pass # Empty namespace object
+ }}}
+
+We need the no-operation `pass` statement (discussed in Chapter 13) here because we don’t have any methods to code. After we make the class by running this statement interactively, we can start attaching attributes to the class by assigning names to it completely outside of the original `class` statement:
+
+ {{{
+>>> rec.name = 'Bob' # Just objects with attributes
+>>> rec.age = 40
+ }}}
+
+And, after we’ve created these attributes by assignment, we can fetch them with the usual syntax. __When used this way, a class is roughly similar to a “struct” in C, or a “record” in Pascal.__ It’s basically an object with field names attached to it (we can do similar work with dictionary keys, but it requires extra characters):
+
+ {{{
+>>> print(rec.name) # Like a C struct or a record
+Bob
+ }}}
+
+__Notice that this works even though there are no instances of the class yet; '''classes are objects in their own right, even without instances.''' In fact, they are just self-contained namespaces, so as long as we have a reference to a class, we can set or change its attributes anytime we wish.__ Watch what happens when we do create two instances, though:
+
+ {{{
+>>> x = rec() # Instances inherit class names
+>>> y = rec()
+ }}}
+
+These instances begin their lives as completely empty namespace objects. Because they remember the class from which they were made, though, they will obtain the attributes we attached to the class by inheritance:
+
+ {{{
+>>> x.name, y.name # name is stored on the class only
+('Bob', 'Bob')
+ }}}
+
+Really, these instances have no attributes of their own; they simply fetch the `name` attribute from the class object where it is stored. If we do assign an attribute to an instance, though, it creates (or changes) the attribute in that object, and no other—attribute references kick off inheritance searches, but attribute assignments affect only the objects in which the assignments are made. Here, `x` gets its own name, but `y` still inherits the `name` attached to the class above it:
+
+ {{{
+>>> x.name = 'Sue' # But assignment changes x only
+>>> rec.name, x.name, y.name
+('Bob', 'Sue', 'Bob')
+ }}}
+
+In fact, as we’ll explore in more detail in Chapter 28, __'''the attributes of a namespace object are usually implemented as dictionaries''', and class inheritance trees are (generally speaking) just dictionaries with links to other dictionaries.__ If you know where to look, you can see this explicitly.
+
+For example, the `__dict__` attribute is the namespace dictionary for most class-based objects (some classes may also define attributes in `__slots__`, an advanced and seldomused feature that we’ll study in Chapters 30 and 31). The following was run in Python 3.0; the order of names and set of `__X__` internal names present can vary from release to release, but the names we assigned are present in all:
+
+ {{{
+>>> rec.__dict__.keys()
+['__module__', 'name', 'age', '__dict__', '__weakref__', '__doc__']
+
+>>> list(x.__dict__.keys()) <-- 只列出 Customized 的部份
+['name']
+
+>>> list(y.__dict__.keys()) # list() not required in Python 2.6
+[]
+ }}}
+
+Here, the ''class’s namespace'' dictionary shows the `name` and `age` attributes we assigned to it, `x` has its own `name`, and `y` is still empty. __'''Each instance has a link to its class for inheritance, though—it’s called `__class__`, (有時候 `type()` 會傳回 `<type 'instance'>`, 反倒是 `__class__` 總能傳回正確的型態)''' if you want to inspect it:__
+
+ {{{
+>>> x.__class__
+<class '__main__.rec'>
+ }}}
+
+__'''Classes also have a `__bases__` attribute, which is a tuple of their superclasses:'''__
+
+ {{{
+>>> rec.__bases__ # () empty tuple in Python 2.6
+(<class 'object'>,)
+ }}}
+
+__These two attributes are how class trees are literally represented in memory by Python. (指的正是 `__class__` 與 `__bases__`)__
+
+__The main point to take away from this look under the hood is that Python’s class model is extremely dynamic. '''Classes and instances are just namespace objects, with attributes created on the fly by assignment.''' Those assignments usually happen within the `class` statements you code, but they can occur anywhere you have a reference to one of the objects in the tree.__
+
+Even methods, normally created by a `def` nested in a class, can be created completely independently of any class object. The following, for example, defines a simple function outside of any class that takes one argument:
+
+ {{{
+>>> def upperName(self):
+... return self.name.upper() # Still needs a self
+ }}}
+
+__There is nothing about a class here yet—it’s a simple function, and it can be called as such at this point, provided we pass in an object with a `name` attribute '''(the name `self` does not make this special in any way)''':__
+
+ {{{
+>>> upperName(x) # Call as a simple function
+'SUE'
+ }}}
+
+__'''If we assign this simple function to an attribute of our class, though, it becomes a method,''' callable through any instance (as well as through the class name itself, as long as we pass in an instance manually):__
+
+ {{{
+>>> rec.method = upperName
+>>> x.method() # Run method to process x
+'SUE'
+
+>>> y.method() # Same, but pass y to self
+'BOB'
+
+>>> rec.method(x) # Can call through instance or class
+'SUE'
+ }}}
+
+__In fact, this is one of the reasons the `self` argument must always be explicit in Python methods—because methods can be created as simple functions independent of a class, '''they need to make the implied instance argument explicit.''' They can be called as either functions or methods, and Python can neither guess nor assume that a simple function might eventually become a class method. The main reason for the explicit `self` argument, though, is to make the meanings of names more obvious: names not referenced through `self` are simple variables, while names referenced through `self` are obviously instance attributes. (如果要存取 class attributes, 是要透過 `self` 還是 class name? 用 `self.` 存取似乎會比透過 Class Name 來得好, 沒有 Rename 的問題[?])__
+
+Normally, classes are filled out by `class` statements, and instance attributes are created by assignments to `self` attributes in method functions. The point again, though, is that they don’t have to be; OOP in Python really is mostly about looking up attributes in linked namespace objects. (跟其他 Languages 的 OO 真的很不一樣!! Extremely Dynamic!!)
+
+=== Classes Versus Dictionaries ===
+
+Although the simple classes of the prior section are meant to illustrate class model basics, the techniques they employ can also be used for real work. For example, Chapter 8 showed how to use dictionaries to record properties of entities in our programs. It turns out that classes can serve this role, too—they package information like dictionaries, but can also bundle processing logic in the form of methods. For reference, here is the example for dictionary-based records we used earlier in the book:
+
+ {{{
+>>> rec = {}
+>>> rec['name'] = 'mel' # Dictionary-based record
+>>> rec['age'] = 45
+>>> rec['job'] = 'trainer/writer'
+>>>
+>>> print(rec['name'])
+mel
+ }}}
+
+This code emulates tools like records in other languages. As we just saw, though, there are also multiple ways to do the same with classes. Perhaps the simplest is this—trading keys for attributes:
+
+ {{{
+>>> class rec: pass
+...
+>>> rec.name = 'mel' # Class-based record
+>>> rec.age = 45
+>>> rec.job = 'trainer/writer'
+>>>
+>>> print(rec.age)
+40
+ }}}
+
+This code has substantially less syntax than the dictionary equivalent. It uses an empty `class` statement to generate an empty namespace object. Once we make the empty class, we fill it out by assigning class attributes over time, as before.
+
+This works, but a new `class` statement will be required for each distinct record we will need. Perhaps more typically, we can instead generate instances of an empty class to represent each distinct entity:
+
+ {{{
+>>> class rec: pass
+...
+>>> pers1 = rec() # Instance-based records
+>>> pers1.name = 'mel'
+>>> pers1.job = 'trainer'
+>>> pers1.age = 40
+>>>
+>>> pers2 = rec()
+>>> pers2.name = 'vls'
+>>> pers2.job = 'developer'
+>>>
+>>> pers1.name, pers2.name
+('mel', 'vls')
+ }}}
+
+Here, we make two records from the same class. Instances start out life empty, just like classes. We then fill in the records by assigning to attributes. This time, though, there are two separate objects, and hence two separate `name` attributes. __In fact, instances of the same class don’t even have to have the same set of attribute names; in this example, one has a unique `age` name. Instances really are distinct namespaces, so each has a distinct attribute dictionary. Although they are normally filled out consistently by class methods, '''they are more flexible than you might expect.'''__
+
+Finally, we might instead code a more full-blown class to implement the record and its processing:
+
+ {{{
+>>> class Person:
+...     def __init__(self, name, job): # Class = Data + Logic
+...         self.name = name
+...         self.job = job
+...     def info(self):
+...         return (self.name, self.job)
+...
+>>> rec1 = Person('mel', 'trainer')
+>>> rec2 = Person('vls', 'developer')
+>>>
+>>> rec1.job, rec2.info()
+('trainer', ('vls', 'developer'))
+ }}}
+
+This scheme also makes multiple instances, but the class is not empty this time: we’ve added logic (methods) to initialize instances at construction time and collect attributes into a tuple. The constructor imposes some consistency on instances here by always setting the `name` and `job` attributes. __Together, the class’s methods and instance attributes create a ''package'', which combines both data and logic.__
+
+We could further extend this code by adding logic to compute salaries, parse names, and so on. Ultimately, we might link the class into a larger hierarchy to inherit an existing set of methods via the automatic attribute search of classes, or perhaps even store instances of the class in a file with Python object `pickling` to make them persistent. In fact, we will—in the next chapter, we’ll expand on this analogy between classes and records with a more realistic running example that demonstrates class basics in action.
+
+__In the end, although types like dictionaries are flexible, classes allow us to add behavior to objects in ways that built-in types and simple functions do not directly support.__ Although we can store functions in dictionaries, too, using them to process implied instances is nowhere near as natural as it is in classes.
+
+== Chapter Summary ==
+
+This chapter introduced the basics of coding classes in Python. We studied the syntax of the `class` statement, and we saw how to use it to build up a class inheritance tree. We also studied how Python automatically fills in the first argument in method functions, how attributes are attached to objects in a class tree by simple assignment, and how specially named operator overloading methods intercept and implement built-in operations for our instances (e.g., expressions and printing).
+
+Now that we’ve learned all about the mechanics of coding classes in Python, the next chapter turns to a larger and more realistic example that ties together much of what we’ve learned about OOP so far. After that, we’ll continue our look at class coding, taking a second pass over the model to fill in some of the details that were omitted here to keep things simple. First, though, let’s work through a quiz to review the basics we’ve covered so far.
+
+= Chapter 27. A More Realistic Example =
+
+We’ll dig into more class syntax details in the next chapter. Before we do, though, I’d like to show you a more realistic example of classes in action that’s more practical than what we’ve seen so far. In this chapter, we’re going to build a set of classes that do something more concrete—recording and processing information about people. As you’ll see, what we call instances and classes in Python programming can often serve the same roles as records and programs in more traditional terms.
+
+Specifically, in this chapter we’re going to code two classes:
+
+ * `Person`—a class that creates and processes information about people
+ * `Manager`—a customization of `Person` that modifies inherited behavior
+
+Along the way, we’ll make instances of both classes and test out their functionality. When we’re done, I’ll show you a nice example use case for classes—we’ll store our instances in a http://docs.python.org/library/shelve.html[shelve] object-oriented database, to make them permanent. That way, you can use this code as a template for fleshing out a full-blown personal database written entirely in Python.
+
+Besides actual utility, though, our aim here is also educational: this chapter provides a tutorial on object-oriented programming in Python. Often, people grasp the last chapter’s class syntax on paper, but have trouble seeing how to get started when confronted with having to code a new class from scratch. Toward this end, we’ll take it one step at a time here, to help you learn the basics; we’ll build up the classes gradually, so you can see how their features come together in complete programs.
+
+In the end, our classes will still be relatively small in terms of code, but they will demonstrate all of the main ideas in Python’s OOP model. __Despite its syntax details, Python’s class system really is largely just a matter of searching for an attribute in a tree of objects, along with a special first argument for functions.__
+
+== Step 1: Making Instances ==
+
+OK, so much for the design phase—let’s move on to implementation. Our first task is to start coding the main class, `Person`. In your favorite text editor, open a new file for the code we’ll be writing. __It’s a fairly strong convention in Python to '''begin module names with a lowercase letter and class names with an uppercase letter;''' like the name of `self` arguments in methods, this is not required by the language, but it’s so common that deviating might be confusing to people who later read your code.__ To conform, we’ll call our new module file `person.py` and our class within it `Person`, like this:
+
+ {{{
+# File person.py (start)
+class Person:
+ }}}
+
+All our work will be done in this file until later in this chapter. We can code any number of functions and classes in a single module file in Python, and this one’s `person.py` name might not make much sense if we add unrelated components to it later. For now, we’ll assume everything in it will be Person-related. It probably should be anyhow—as we’ve learned, modules tend to work best when they have a single, cohesive purpose.
+
+=== Coding Constructors===
+
+Now, the first thing we want to do with our `Person` class is record basic information about people—to fill out record fields, if you will. Of course, these are known as instance object attributes in Python-speak, and they generally are created by assignment to `self` attributes in class method functions. The normal way to give instance attributes their first values is to assign them to `self` in the `__init__` constructor method, which contains code run automatically by Python each time an instance is created. Let’s add one to our class:
+
+ {{{
+# Add record field initialization
+class Person:
+    def __init__(self, name, job, pay): # Constructor takes 3 arguments
+        self.name = name # Fill out fields when created
+        self.job = job # self is the new instance object
+        self.pay = pay
+ }}}
+
+__This is a very common coding pattern: we pass in the data to be attached to an instance as arguments to the constructor method and assign them to `self` to retain them permanently.__ In OO terms, `self` is the newly created instance object, and `name`, `job`, and `pay` become state information—descriptive data saved on an object for later use. Although other techniques (such as ''enclosing scope references''[?]) can save details, too, instance attributes make this very explicit and easy to understand.
+
+Notice that the argument names appear twice here. This code might seem a bit redundant at first, but it’s not. __The `job` argument, for example, is a ''local variable'' in the scope of the `__init__` function, but `self.job` is an attribute of the instance that’s the implied subject of the method call.__ They are two different variables, which happen to have the same name. By assigning the `job` local to the `self.job` attribute with `self.job=job`, we save the passed-in `job` on the instance for later use. As usual in Python, where a name is assigned (or what object it is assigned to) determines what it means.
+
+Speaking of arguments, there’s really nothing magical about `__init__`, apart from the fact that it’s called automatically when an instance is made and has a special first argument. Despite its weird name, it’s a normal function and supports all the features of functions we’ve already covered. We can, for example, provide defaults for some of its arguments, so they need not be provided in cases where their values aren’t available or useful.
+
+To demonstrate, let’s make the `job` argument optional—it will default to `None`, meaning the person being created is not (currently) employed. If `job` defaults to `None`, we’ll probably want to default `pay` to `0`, too, for consistency (unless some of the people you know manage to get paid without having jobs!). __In fact, we have to specify a default for `pay` because according to Python’s syntax rules, any arguments in a function’s header after the first default must all have defaults, too:[?]__
+
+ {{{
+# Add defaults for constructor arguments
+class Person:
+    def __init__(self, name, job=None, pay=0): # Normal function args
+        self.name = name
+        self.job = job
+        self.pay = pay
+ }}}
+
+What this code means is that we’ll need to pass in a `name` when making `Person`s, but `job` and `pay` are now optional; they’ll default to `None` and `0` if omitted. The `self` argument, as usual, is filled in by Python automatically to refer to the instance object— assigning values to attributes of `self` attaches them to the new instance.
+
+=== Testing As You Go ===
+
+This class doesn’t do much yet—it essentially just fills out the fields of a new record— but it’s a real working class. At this point we could add more code to it for more features, but we won’t do that yet. __As you’ve probably begun to appreciate already, programming in Python is really a matter of ''incremental prototyping''—you write some code, test it, write more code, test again, and so on.__ Because Python provides both an interactive session and nearly immediate turnaround after code changes, it’s more natural to test as you go than to write a huge amount of code to test all at once.
+
+Before adding more features, then, let’s test what we’ve got so far by making a few instances of our class and displaying their attributes as created by the constructor. __We could do this interactively, but as you’ve also probably surmised by now, interactive testing has its limits—it gets tedious to have to reimport modules and retype test cases each time you start a new testing session. More commonly, Python programmers use the interactive prompt for simple ''one-off tests'' but do more substantial testing by writing code at the bottom of the file that contains the objects to be tested,__ like this:
+
+ {{{
+# Add incremental self-test code
+class Person:
+    def __init__(self, name, job=None, pay=0):
+        self.name = name
+        self.job = job
+        self.pay = pay
+
+bob = Person('Bob Smith') # Test the class
+sue = Person('Sue Jones', job='dev', pay=100000) # Runs __init__ automatically
+print(bob.name, bob.pay) # Fetch attached attributes
+print(sue.name, sue.pay) # sue's and bob's attrs differ
+ }}}
+
+Notice here that the `bob` object accepts the defaults for `job` and `pay`, but `sue` provides values explicitly. __Also note how we use ''keyword arguments'' when making `sue`; we could ''pass by position'' instead, but the keywords may help remind us later what the data is (and they allow us to pass the arguments in any left-to-right order we like).__ Again, despite its unusual name, `__init__` is a normal function, supporting everything you already know about functions—including both defaults and pass-by-name keyword arguments.
+
+When this file runs as a script, the test code at the bottom makes two instances of our class and prints two attributes of each (`name` and `pay`):
+
+ {{{
+C:\misc> person.py
+Bob Smith 0
+Sue Jones 100000
+ }}}
+
+You can also type this file’s test code at Python’s interactive prompt (assuming you import the `Person` class there first), but coding canned tests inside the module file like this makes it much easier to rerun them in the future.
+
+Although this is fairly simple code, it’s already demonstrating something important. Notice that `bob`’s `name` is not `sue`’s, and `sue`’s `pay` is not `bob`’s. Each is an independent record of information. Technically, `bob` and `sue` are both namespace objects—like all class instances, they each have their own independent copy of the state information created by the class. Because each instance of a class has its own set of `self` attributes, classes are a natural for recording information for multiple objects this way; just like built-in types, classes serve as a sort of object factory. Other Python program structures, such as functions and modules, have no such concept.
+
+=== Using Code Two Ways ===
+
+As is, the test code at the bottom of the file works, but there’s a big catch—its top-level `print` statements run both when the file is run as a script and when it is imported as a module. This means if we ever decide to import the class in this file in order to use it somewhere else (and we will later in this chapter), we’ll see the output of its test code every time the file is imported. That’s not very good software citizenship, though: client programs probably don’t care about our internal tests and won’t want to see our output mixed in with their own.
+
+__Although we could split the test code off into a separate file, it’s often more convenient to code tests in the same file as the items to be tested. (方便? 但把測試程式跟受測程式寫在一起好像不太好[?]) It would be better to arrange to run the test statements at the bottom only when the file is run for testing, not when the file is imported.__ That’s exactly what the module `__name__` check is designed for, as you learned in the preceding part of this book. Here’s what this addition looks like:
+
+ {{{
+# Allow this file to be imported as well as run/tested
+class Person:
+    def __init__(self, name, job=None, pay=0):
+      self.name = name
+      self.job = job
+      self.pay = pay
+
+if __name__ == '__main__': # When run for testing only
+    # self-test code
+    bob = Person('Bob Smith')
+    sue = Person('Sue Jones', job='dev', pay=100000)
+    print(bob.name, bob.pay)
+    print(sue.name, sue.pay)
+ }}}
+
+Now, we get exactly the behavior we’re after—running the file as a top-level script tests it because its `__name__` is `__main__`, but importing it as a library of classes later does not:
+
+ {{{
+C:\misc> person.py
+Bob Smith 0
+Sue Jones 100000
+
+c:\misc> python
+Python 3.0.1 (r301:69561, Feb 13 2009, 20:04:18) ...
+>>> import person
+>>>
+ }}}
+
+When imported, the file now defines the class, but does not use it. When run directly, this file creates two instances of our class as before, and prints two attributes of each; again, because each instance is an independent namespace object, the values of their attributes differ.
+
+=== Version Portability Note ===
+
+I’m running all the code in this chapter under Python 3.0, and using the 3.0 `print` function call syntax. If you run under 2.6 the code will work as-is, but you’ll notice parentheses around some output lines because the extra parentheses in `print`s turn multiple items into a tuple:
+
+ {{{
+c:\misc> c:\python26\python person.py
+('Bob Smith', 0)
+('Sue Jones', 100000)
+ }}}
+
+If this difference is the sort of detail that might keep you awake at nights, simply remove the parentheses to use 2.6 `print` statements. You can also avoid the extra parentheses portably by using formatting to yield a single object to print. Either of the following works in both 2.6 and 3.0, though the method form is newer:
+
+ {{{
+print('{0} {1}'.format(bob.name, bob.pay)) # New format method
+print('%s %s' % (bob.name, bob.pay)) # Format expression
+ }}}
+
+== Step 2: Adding Behavior Methods ==
+
+Everything looks good so far—at this point, our class is essentially a record factory; it creates and fills out fields of records (attributes of instances, in more Pythonic terms). Even as limited as it is, though, we can still run some operations on its objects. __Although classes add an extra layer of structure, they ultimately do most of their work by embedding and processing basic core data types like lists and strings.__ In other words, if you already know how to use Python’s simple core types, you already know much of the Python class story; classes are really just a minor structural extension.
+
+For example, the `name` field of our objects is a simple string, so we can extract last names from our objects by splitting on spaces and indexing. These are all core data type operations, which work whether their subjects are embedded in class instances or not:
+
+ {{{
+>>> name = 'Bob Smith' # Simple string, outside class
+>>> name.split() # Extract last name
+['Bob', 'Smith']
+>>> name.split()[-1] # Or [1], if always just two parts
+'Smith'
+ }}}
+
+Similarly, we can give an object a pay raise by updating its `pay` field—that is, by changing its state information in-place with an assignment. This task also involves basic operations that work on Python’s core objects, regardless of whether they are standalone or embedded in a class structure:
+
+ {{{
+>>> pay = 100000 # Simple variable, outside class
+>>> pay *= 1.10 # Give a 10% raise
+>>> print(pay) # Or: pay = pay * 1.10, if you like to type
+110000.0 # Or: pay = pay + (pay * .10), if you _really_ do!
+ }}}
+
+To apply these operations to the `Person` objects created by our script, simply do to `bob.name` and `sue.pay` what we just did to `name` and `pay`. The operations are the same, but the subject objects are attached to attributes in our class structure:
+
+ {{{
+# Process embedded built-in types: strings, mutability
+class Person:
+    def __init__(self, name, job=None, pay=0):
+        self.name = name
+        self.job = job
+        self.pay = pay
+
+if __name__ == '__main__':
+    bob = Person('Bob Smith')
+    sue = Person('Sue Jones', job='dev', pay=100000)
+    print(bob.name, bob.pay)
+    print(sue.name, sue.pay)
+    print(bob.name.split()[-1]) # Extract object's last name
+    sue.pay *= 1.10 # Give this object a raise
+    print(sue.pay)
+ }}}
+
+We’ve added the last two lines here; when they’re run, we extract `bob`’s last name by using basic string and list operations and give `sue` a pay raise by modifying her `pay` attribute in-place with basic number operations. __In a sense, `sue` is also a ''mutable'' object—her state changes in-place__ just like a list after an `append` call:
+
+ {{{
+Bob Smith 0
+Sue Jones 100000
+Smith
+110000.0
+ }}}
+
+The preceding code works as planned, but if you show it to a veteran software developer he’ll probably tell you that its general approach is not a great idea in practice. Hardcoding operations like these outside of the class can lead to maintenance problems in the future.
+
+For example, what if you’ve hardcoded the last-name-extraction formula at many different places in your program? If you ever need to change the way it works (to support a new name structure, for instance), you’ll need to hunt down and update every occurrence. Similarly, if the pay-raise code ever changes (e.g., to require approval or database updates), you may have multiple copies to modify. Just finding all the appearances of such code may be problematic in larger programs—they may be scattered across many files, split into individual steps, and so on.
+
+=== Coding Methods ===
+
+__What we really want to do here is employ a software design concept known as ''encapsulation''. The idea with encapsulation is to wrap up operation logic behind interfaces, such that each operation is coded only once in our program.__ That way, if our needs change in the future, there is just one copy to update. Moreover, we’re free to change the single copy’s internals almost arbitrarily, without breaking the code that uses it.
+
+In Python terms, we want to code operations on objects in class methods, instead of littering them throughout our program. In fact, this is one of the things that classes are very good at—factoring code to remove redundancy and thus optimize maintainability. As an added bonus, turning operations into methods enables them to be applied to any instance of the class, not just those that they’ve been hardcoded to process.
+
+This is all simpler in code than it may sound in theory. The following achieves encapsulation by moving the two operations from code outside the class into class methods. While we’re at it, let’s change our self-test code at the bottom to use the new methods we’re creating, instead of hardcoding operations:
+
+ {{{
+# Add methods to encapsulate operations for maintainability
+class Person:
+    def __init__(self, name, job=None, pay=0):
+        self.name = name
+        self.job = job
+        self.pay = pay
+    def lastName(self): # Behavior methods
+        return self.name.split()[-1] # self is implied subject
+    def giveRaise(self, percent):
+        self.pay = int(self.pay * (1 + percent)) # Must change here only
+
+if __name__ == '__main__':
+    bob = Person('Bob Smith')
+    sue = Person('Sue Jones', job='dev', pay=100000)
+    print(bob.name, bob.pay)
+    print(sue.name, sue.pay)
+    print(bob.lastName(), sue.lastName()) # Use the new methods
+    sue.giveRaise(.10) # instead of hardcoding
+    print(sue.pay)
+ }}}
+
+As we’ve learned, methods are simply normal functions that are attached to classes and designed to process instances of those classes. The instance is the subject of the method call and is passed to the method’s `self` argument automatically.
+
+The transformation to the methods in this version is straightforward. The new `lastName` method, for example, simply does to `self` what the previous version hardcoded for `bob`, because `self` is the implied subject when the method is called. `lastName` also returns the result, because this operation is a called function now; it computes a value for its caller to use, even if it is just to be printed. Similarly, the new `giveRaise` method just does to `self` what we did to `sue` before.
+
+When run now, our file’s output is similar to before—we’ve mostly just refactored the code to allow for easier changes in the future, not altered its behavior:
+
+ {{{
+Bob Smith 0
+Sue Jones 100000
+Smith Jones
+110000
+ }}}
+
+A few coding details are worth pointing out here. First, notice that `sue`’s `pay` is now still an integer after a pay raise—we convert the math result back to an integer by calling the `int` built-in within the method. Changing the value to either `int` or `float` is probably not a significant concern for most purposes (integer and floating-point objects have the same interfaces and can be mixed within expressions), but we may need to address rounding issues in a real system (money probably matters to `Person`s!).
+
+As we learned in Chapter 5, we might handle this by using the `round(N, 2)` built-in to round and retain cents, using the decimal type to fix precision, or storing monetary values as full floating-point numbers and displaying them with a `%.2f` or `{0:.2f}` formatting string to show cents. For this example, we’ll simply truncate any cents with `int`. (For another idea, also see the `money` function in the `formats.py` module of Chapter 24; you can import this tool to show `pay` with commas, cents, and dollar signs.)
+
+Second, notice that we’re also printing `sue`’s last name this time—because the last-name logic has been encapsulated in a method, we get to use it on any instance of the class. As we’ve seen, Python tells a method which instance to process by automatically passing it in to the first argument, usually called `self`. Specifically:
+
+ * In the first call, `bob.lastName()`, `bob` is the implied subject passed to `self`.
+ * In the second call, `sue.lastName()`, `sue` goes to `self` instead.
+
+Trace through these calls to see how the instance winds up in `self`. The net effect is that the method fetches the `name` of the implied subject each time. The same happens for `giveRaise`. We could, for example, give `bob` a raise by calling `giveRaise` for both instances this way, too; but unfortunately, `bob`’s zero pay will prevent him from getting a raise as the program is currently coded (something we may want to address in a future 2.0 release of our software).
+
+Finally, notice that the `giveRaise` method assumes that percent is passed in as a floating point number between zero and one. That may be too radical an assumption in the real world (a 1000% raise would probably be a bug for most of us!); __we’ll let it pass for this prototype, but we might want to test or at least document this in a future iteration of this code. Stay tuned for a rehash of this idea in a later chapter in this book, where we’ll code something called ''function decorators'' and explore Python’s `assert` statement— alternatives that can do the validity test for us automatically during development.__
+
+== Step 3: Operator Overloading ==
+
+At this point, we have a fairly full-featured class that generates and initializes instances, along with two new bits of behavior for processing instances (in the form of methods). So far, so good.
+
+As it stands, though, testing is still a bit less convenient than it needs to be—to trace our objects, we have to manually fetch and print individual attributes (e.g., `bob.name`, `sue.pay`). It would be nice if displaying an instance all at once actually gave us some useful information. __Unfortunately, the default display format for an instance object isn’t very good—it displays the object’s class name, and its ''address in memory'' (which is essentially useless in Python, except as a unique identifier).__
+
+To see this, change the last line in the script to `print(sue)` so it displays the object ''as a whole''. Here’s what you’ll get (the output says that sue is an “object” in 3.0 and an “instance” in 2.6):
+
+ {{{
+Bob Smith 0
+Sue Jones 100000
+Smith Jones
+<__main__.Person object at 0x02614430>
+ }}}
+
+=== Providing Print Displays ===
+
+Fortunately, it’s easy to do better by employing operator overloading—coding methods in a class that intercept and process built-in operations when run on the class’s instances. Specifically, we can make use of what is probably the second most commonly used operator overloading method in Python, after `__init__`: the `__str__` method introduced in the preceding chapter. __`__str__` is run automatically every time an instance is converted to its print string.__ Because that’s what printing an object does, the net transitive effect is that printing an object displays whatever is returned by the object’s `__str__` method, if it either defines one itself or inherits one from a superclass (double underscored names are inherited just like any other).
+
+Technically speaking, the `__init__` constructor method we’ve already coded is operator overloading too—it is run automatically at construction time to initialize a newly created instance. __Constructors are so common, though, that they almost seem like a special case. More focused methods like `__str__` allow us to tap into specific operations and provide specialized behavior when our objects are used in those contexts.__
+
+Let’s put this into code. The following extends our class to give a custom display that lists attributes when our class’s instances are displayed as a whole, instead of relying on the less useful default display:
+
+ {{{
+# Add __str__ overload method for printing objects
+class Person:
+    def __init__(self, name, job=None, pay=0):
+        self.name = name
+        self.job = job
+        self.pay = pay
+    def lastName(self):
+        return self.name.split()[-1]
+    def giveRaise(self, percent):
+        self.pay = int(self.pay * (1 + percent))
+    def __str__(self): # Added method
+        return '[Person: %s, %s]' % (self.name, self.pay) # String to print
+
+if __name__ == '__main__':
+    bob = Person('Bob Smith')
+    sue = Person('Sue Jones', job='dev', pay=100000)
+    print(bob)
+    print(sue)
+    print(bob.lastName(), sue.lastName())
+    sue.giveRaise(.10)
+    print(sue)
+ }}}
+
+Notice that we’re doing string `%` formatting to build the display string in `__str__` here; at the bottom, classes use built-in type objects and operations like these to get their work done. __Again, everything you’ve already learned about both built-in types and functions applies to class-based code. '''Classes largely just add an additional layer of structure that packages functions and data together and supports extensions.'''__
+
+We’ve also changed our self-test code to print objects directly, instead of printing individual attributes. When run, the output is more coherent and meaningful now; the “[...]” lines are returned by our new `__str__`, run automatically by print operations:
+
+ {{{
+[Person: Bob Smith, 0]
+[Person: Sue Jones, 100000]
+Smith Jones
+[Person: Sue Jones, 110000]
+ }}}
+
+Here’s a subtle point: as we’ll learn in the next chapter, __a related overloading method, `__repr__`, provides an ''as-code low-level display'' of an object when present. Sometimes classes provide both a `__str__` for user-friendly displays and a `__repr__` with extra details for developers to view. Because printing runs `__str__` and the interactive prompt echoes results with `__repr__`, '''this can provide both target audiences with an appropriate display.'''__ Since we’re not interested in displaying an as-code format, `__str__` is sufficient for our class.
+
+== Step 4: Customizing Behavior by Subclassing ==
+
+At this point, our class captures much of the OOP machinery in Python: it makes instances, provides behavior in methods, and even does a bit of operator overloading now to intercept print operations in `__str__`. __It effectively packages our data and logic together into a single, self-contained software component, making it easy to locate code and straightforward to change it in the future.__ By allowing us to encapsulate behavior, it also allows us to factor that code to avoid redundancy and its associated maintenance headaches.
+
+The only major OOP concept it does not yet capture is customization by inheritance. In some sense, we’re already doing inheritance, because instances inherit methods from their classes. To demonstrate the real power of OOP, though, we need to define a superclass/subclass relationship that allows us to extend our software and replace bits of inherited behavior. That’s the main idea behind OOP, after all; by fostering a coding model based upon customization of work already done, it can dramatically cut development time.
+
+=== Coding Subclasses ===
+
+As a next step, then, let’s put OOP’s methodology to use and customize our `Person` class by extending our software hierarchy. For the purpose of this tutorial, we’ll define a subclass of `Person` called `Manager` that replaces the inherited `giveRaise` method with a more specialized version. Our new class begins as follows:
+
+ {{{
+class Manager(Person): # Define a subclass of Person
+ }}}
+
+This code means that we’re defining a new class named `Manager`, which inherits from and may add customizations to the superclass `Person`. In plain terms, a `Manager` is almost like a `Person` (admittedly, a very long journey for a very small joke...), but `Manager` has a custom way to give raises.
+
+For the sake of argument, let’s assume that when a `Manager` gets a raise, it receives the passed-in percentage as usual, but also gets an extra bonus that defaults to 10%. For instance, if a `Manager`’s raise is specified as 10%, it will really get 20%. (Any relation to `Person`s living or dead is, of course, strictly coincidental.) Our new method begins as follows; because this redefinition of `giveRaise` will be closer in the class tree to `Manager` instances than the original version in `Person`, __it effectively replaces, and thereby customizes, the operation. Recall that according to the inheritance search rules, the lowest version of the name wins: (即便參數不同也可以有 Replace 的效果)__
+
+ {{{
+class Manager(Person): # Inherit Person attrs
+    def giveRaise(self, percent, bonus=.10): # Redefine to customize
+ }}}
+
+=== Augmenting Methods: The Bad Way ===
+
+Now, there are two ways we might code this `Manager` customization: a good way and a bad way. Let’s start with the bad way, since it might be a bit easier to understand. The bad way is to cut and paste the code of `giveRaise` in `Person` and modify it for `Manager`, like this:
+
+ {{{
+class Manager(Person):
+    def giveRaise(self, percent, bonus=.10):
+        self.pay = int(self.pay * (1 + percent + bonus)) # Bad: cut-and-paste
+ }}}
+
+This works as advertised—when we later call the `giveRaise` method of a `Manager` instance, it will run this custom version, which tacks on the extra bonus. So what’s wrong with something that runs correctly?
+
+__The problem here is a very general one: '''any time you copy code with cut and paste, you essentially double your maintenance effort in the future.'''__ Think about it: because we copied the original version, if we ever have to change the way raises are given (and we probably will), we’ll have to change the code in two places, not one. Although this is a small and artificial example, it’s also representative of a universal issue—any time you’re tempted to program by copying code this way, you probably want to look for a better approach.
+
+=== Augmenting Methods: The Good Way ===
+
+What we really want to do here is somehow augment the original `giveRaise`, instead of replacing it altogether. The good way to do that in Python is by calling to the original version directly, with augmented arguments, like this:
+
+ {{{
+class Manager(Person):
+    def giveRaise(self, percent, bonus=.10):
+        Person.giveRaise(self, percent + bonus) # Good: augment original
+ }}}
+
+__This code leverages the fact that a class method can always be called either through an instance (the usual way, where Python sends the instance to the `self` argument automatically) or through the class '''(the less common scheme, where you must pass the instance manually)'''.__ In more symbolic terms, recall that a normal method call of this form:
+
+ {{{
+instance.method(args...)
+ }}}
+
+is automatically translated by Python into this equivalent form:
+
+ {{{
+class.method(instance, args...)
+ }}}
+
+__where the class containing the method to be run is determined by the inheritance search rule applied to the method’s name.__ You can code either form in your script, but there is a slight asymmetry between the two—you must remember to pass along the instance manually if you call through the class directly. The method always needs a subject instance one way or another, and Python provides it automatically only for calls made through an instance. __For calls through the class name, you need to send an instance to `self` yourself; for code inside a method like `giveRaise`, `self` already is the subject of the call, and hence the instance to pass along.__
+
+__Calling through the class directly effectively subverts inheritance and kicks the call higher up the class tree to run a specific version. In our case, we can use this technique to invoke the default `giveRaise` in `Person`, even though it’s been redefined at the `Manager` level.__ In some sense, we must call through `Person` this way, because a `self.giveRaise()` inside `Manager`’s `giveRaise` code would loop—since `self` already is a `Manager`, `self.giveRaise()` would resolve again to `Manager.giveRaise`, and so on and so forth until available memory is exhausted.
+
+This “good” version may seem like a small difference in code, but it can make a huge difference for future code maintenance—because the `giveRaise` logic lives in just one place now (`Person`’s method), we have only one version to change in the future as needs evolve. __And really, '''this form captures our intent more directly anyhow'''—we want to perform the standard `giveRaise` operation, but simply tack on an extra bonus.__ Here’s our entire module file with this step applied:
+
+ {{{
+# Add customization of one behavior in a subclass
+class Person:
+    def __init__(self, name, job=None, pay=0):
+        self.name = name
+        self.job = job
+        self.pay = pay
+    def lastName(self):
+        return self.name.split()[-1]
+    def giveRaise(self, percent):
+        self.pay = int(self.pay * (1 + percent))
+    def __str__(self):
+        return '[Person: %s, %s]' % (self.name, self.pay)
+
+class Manager(Person):
+    def giveRaise(self, percent, bonus=.10): # Redefine at this level
+        Person.giveRaise(self, percent + bonus) # Call Person's version
+
+if __name__ == '__main__':
+    bob = Person('Bob Smith')
+    sue = Person('Sue Jones', job='dev', pay=100000)
+    print(bob)
+    print(sue)
+    print(bob.lastName(), sue.lastName())
+    sue.giveRaise(.10)
+    print(sue)
+    tom = Manager('Tom Jones', 'mgr', 50000) # Make a Manager: __init__
+    tom.giveRaise(.10) # Runs custom version
+    print(tom.lastName()) # Runs inherited method
+    print(tom) # Runs inherited __str__
+ }}}
+
+To test our `Manager` subclass customization, we’ve also added self-test code that makes a `Manager`, calls its methods, and prints it. Here’s the new version’s output:
+
+ {{{
+[Person: Bob Smith, 0]
+[Person: Sue Jones, 100000]
+Smith Jones
+[Person: Sue Jones, 110000]
+Jones
+[Person: Tom Jones, 60000]
+ }}}
+
+Everything looks good here: `bob` and `sue` are as before, and when `tom` the `Manager` is given a 10% raise, he really gets 20% (his pay goes from $50K to $60K), because the customized `giveRaise` in `Manager` is run for him only. Also notice how printing `tom` as a whole at the end of the test code displays the nice format defined in `Person`’s `__str__`: __`Manager` objects get this, `lastName`, and the `__init__` constructor method’s code “for free” from `Person`, by inheritance. '''(注意 Constructor 也會被繼承, 這跟 Java 是很不一樣的!!)'''__
+
+=== Polymorphism in Action ===
+
+To make this acquisition of inherited behavior even more striking, we can add the following code at the end of our file:
+
+ {{{
+if __name__ == '__main__':
+    ...
+    print('--All three--')
+    for object in (bob, sue, tom): # Process objects generically
+        object.giveRaise(.10) # Run this object's giveRaise
+        print(object) # Run the common __str__
+ }}}
+
+Here’s the resulting output:
+
+ {{{
+[Person: Bob Smith, 0]
+[Person: Sue Jones, 100000]
+Smith Jones
+[Person: Sue Jones, 110000]
+Jones
+[Person: Tom Jones, 60000]
+--All three--
+[Person: Bob Smith, 0]
+[Person: Sue Jones, 121000]
+[Person: Tom Jones, 72000]
+ }}}
+
+In the added code, object is either a `Person` or a `Manager`, and Python runs the appropriate `giveRaise` automatically—our original version in `Person` for `bob` and `sue`, and our customized version in `Manager` for `tom`. Trace the method calls yourself to see how Python selects the right `giveRaise` method for each object.
+
+This is just Python’s notion of ''polymorphism'', which we met earlier in the book, at work again—what `giveRaise` does depends on what you do it to. Here, it’s made all the more obvious when it selects from code we’ve written ourselves in classes. The practical effect in this code is that `sue` gets another 10% but `tom` gets another 20%, because `giveRaise` is dispatched based upon the object’s type. __As we’ve learned, polymorphism is at the heart of Python’s flexibility. Passing any of our three objects to a function that calls a `giveRaise` method, for example, would have the same effect: the appropriate version would be run automatically, depending on which ''type of object'' was passed.__
+
+On the other hand, printing runs the same `__str__` for all three objects, because it’s coded just once in `Person`. `Manager` both specializes and applies the code we originally wrote in `Person`. Although this example is small, it’s already leveraging OOP’s talent for code customization and reuse; with classes, this almost seems automatic at times.
+
+=== Inherit, Customize, and Extend ===
+
+In fact, classes can be even more flexible than our example implies. In general, classes can inherit, customize, or extend existing code in superclasses. For example, although we’re focused on customization here, we can also add unique methods to `Manager` that are not present in `Person`, if `Manager`s require something completely different (Python namesake reference intended). The following snippet illustrates. Here, `giveRaise` redefines a superclass method to customize it, but `someThingElse` defines something new to extend:
+
+ {{{
+class Person:
+    def lastName(self): ...
+    def giveRaise(self): ...
+    def __str__(self): ...
+
+class Manager(Person): # Inherit
+    def giveRaise(self, ...): ... # Customize
+    def someThingElse(self, ...): ... # Extend
+
+tom = Manager()
+tom.lastName() # Inherited verbatim
+tom.giveRaise() # Customized version
+tom.someThingElse() # Extension here
+print(tom) # Inherited overload method
+ }}}
+
+Extra methods like this code’s `someThingElse` extend the existing software and are available on `Manager` objects only, not on `Person`s. For the purposes of this tutorial, however, we’ll limit our scope to customizing some of `Person`’s behavior by redefining it, not adding to it.
+
+=== OOP: The Big Idea ===
+
+As is, our code may be small, but it’s fairly functional. And really, it already illustrates the main point behind OOP in general: in OOP, we program by customizing what has already been done, rather than copying or changing existing code. This isn’t always an obvious win to newcomers at first glance, especially given the extra coding requirements of classes. But overall, the programming style implied by classes can cut development time radically compared to other approaches.
+
+For instance, in our example we could theoretically have implemented a custom `giveRaise` operation without subclassing, but none of the other options yield code as optimal as ours:
+
+ * Although we could have simply coded `Manager` from scratch as new, independent code, we would have had to reimplement all the behaviors in `Person` that are the same for `Manager`s.
+
+ * Although we could have simply changed the existing `Person` class in-place for the requirements of `Manager`’s `giveRaise`, doing so would probably break the places where we still need the original `Person` behavior.
+
+ * Although we could have simply copied the `Person` class in its entirety, renamed the copy to `Manager`, and changed its `giveRaise`, doing so would introduce code redundancy that would double our work in the future—changes made to `Person` in the future would not be picked up automatically, but would have to be manually propagated to `Manager`’s code. __As usual, the cut-and-paste approach may seem quick now, but it doubles your work in the future.__
+
+The customizable hierarchies we can build with classes provide a much better solution for software that will evolve over time. No other tools in Python support this development mode. Because we can tailor and extend our prior work by coding new subclasses, we can leverage what we’ve already done, rather than starting from scratch each time, breaking what already works, or introducing multiple copies of code that may all have to be updated in the future. When done right, OOP is a powerful programmer’s ally.
+
+== Step 5: Customizing Constructors, Too ==
+
+Our code works as it is, but if you study the current version closely, you may be struck by something a bit odd—it seems pointless to have to provide a `mgr` job name for `Manager` objects when we create them: this is already implied by the class itself. It would be better if we could somehow fill in this value automatically when a `Manager` is made.
+
+The trick we need to improve on this turns out to be the same as the one we employed in the prior section: we want to customize the constructor logic for `Manager`s in such a way as to provide a job name automatically. In terms of code, we want to redefine an `__init__` method in `Manager` that provides the `mgr` string for us. And like with the `giveRaise` customization, we also want to run the original `__init__` in `Person` by calling through the class name, so it still initializes our objects’ state information attributes.
+
+The following extension will do the job—we’ve coded the new `Manager` constructor and changed the call that creates `tom` to not pass in the `mgr` job name:
+
+ {{{
+# Add customization of constructor in a subclass
+class Person:
+    def __init__(self, name, job=None, pay=0):
+        self.name = name
+        self.job = job
+        self.pay = pay
+    def lastName(self):
+        return self.name.split()[-1]
+    def giveRaise(self, percent):
+        self.pay = int(self.pay * (1 + percent))
+    def __str__(self):
+        return '[Person: %s, %s]' % (self.name, self.pay)
+
+class Manager(Person):
+    def __init__(self, name, pay): # Redefine constructor
+        Person.__init__(self, name, 'mgr', pay) # Run original with 'mgr'
+    def giveRaise(self, percent, bonus=.10):
+        Person.giveRaise(self, percent + bonus)
+
+if __name__ == '__main__':
+    bob = Person('Bob Smith')
+    sue = Person('Sue Jones', job='dev', pay=100000)
+    print(bob)
+    print(sue)
+    print(bob.lastName(), sue.lastName())
+    sue.giveRaise(.10)
+    print(sue)
+    tom = Manager('Tom Jones', 50000) # Job name not needed:
+    tom.giveRaise(.10) # Implied/set by class
+    print(tom.lastName())
+    print(tom)
+ }}}
+
+Again, we’re using the same technique to augment the `__init__` constructor here that we used for `giveRaise` earlier—running the superclass version by calling through the class name directly and passing the `self` instance along explicitly. Although the constructor has a strange name, the effect is identical. Because we need `Person`’s construction logic to run too (to initialize instance attributes), we really have to call it this way; otherwise, instances would not have any attributes attached.
+
+__'''Calling superclass constructors from redefinitions this way turns out to be a very common coding pattern in Python.''' By itself, Python uses inheritance to look for and call only one `__init__` method at construction time—the lowest one in the class tree. If you need higher `__init__` methods to be run at construction time (and you usually do), you must call them manually through the superclass’s name. The upside to this is that you can be explicit about which argument to pass up to the superclass’s constructor and can choose to not call it at all: not calling the superclass constructor allows you to replace its logic altogether, rather than ''augmenting'' it.__
+
+The output of this file’s self-test code is the same as before—we haven’t changed what it does, we’ve simply restructured to get rid of some logical redundancy:
+
+ {{{
+[Person: Bob Smith, 0]
+[Person: Sue Jones, 100000]
+Smith Jones
+[Person: Sue Jones, 110000]
+Jones
+[Person: Tom Jones, 60000]
+ }}}
+
+=== OOP Is Simpler Than You May Think ===
+
+In this complete form, despite their sizes, our classes capture nearly all the important concepts in Python’s OOP machinery:
+
+ * Instance creation—filling out instance attributes
+ * Behavior methods—encapsulating logic in class methods
+ * Operator overloading—providing behavior for built-in operations like printing
+ * Customizing behavior—redefining methods in subclasses to specialize them
+ * Customizing constructors—adding initialization logic to superclass steps
+
+__Most of these concepts are based upon just three simple ideas: the inheritance search for attributes in object trees, the special `self` argument in methods, and operator overloading’s automatic dispatch to methods.__
+
+Along the way, we’ve also made our code easy to change in the future, by harnessing the class’s propensity for factoring code to reduce redundancy. For example, we wrapped up logic in methods and called back to superclass methods from extensions to avoid having multiple copies of the same code. Most of these steps were a natural outgrowth of the structuring power of classes.
+
+By and large, that’s all there is to OOP in Python. Classes certainly can become larger than this, and there are some more advanced class concepts, such as ''decorators'' and ''metaclasses'', which we will meet in later chapters. In terms of the basics, though, our classes already do it all. In fact, if you’ve grasped the workings of the classes we’ve written, most OOP Python code should now be within your reach.
+
+=== Other Ways to Combine Classes ===
+
+Having said that, I should also tell you that although the basic mechanics of OOP are simple in Python, some of the art in larger programs lies in the way that classes are put together. We’re focusing on inheritance in this tutorial because that’s the mechanism the Python language provides, but programmers sometimes combine classes in other ways, too. __For example, a common coding pattern involves nesting objects inside each other to build up ''composites''. (跟 GWT 的用語一樣)__ We’ll explore this pattern in more detail in Chapter 30, which is really more about design than about Python; as a quick example, though, we could use this composition idea to code our `Manager` extension by embedding a `Person`, instead of inheriting from it.
+
+__The following alternative does so by using the `__getattr__` operator overloading method we will meet in Chapter 29 to intercept ''undefined attribute fetches'' and delegate them to the embedded object with the `getattr` built-in.__ The `giveRaise` method here still achieves customization, by changing the argument passed along to the embedded object. In effect, `Manager` becomes a ''controller layer'' that passes calls down to the embedded object, rather than up to superclass methods:
+
+ {{{
+# Embedding-based Manager alternative
+class Person:
+    ...same...
+
+class Manager:
+    def __init__(self, name, pay):
+        self.person = Person(name, 'mgr', pay) # Embed a Person object
+    def giveRaise(self, percent, bonus=.10):
+        self.person.giveRaise(percent + bonus) # Intercept and delegate
+    def __getattr__(self, attr):
+        return getattr(self.person, attr) # Delegate all other attrs
+    def __str__(self):
+        return str(self.person) # Must overload again (in 3.0)
+
+if __name__ == '__main__':
+    ...same...
+ }}}
+
+__In fact, this `Manager` alternative is representative of a general coding pattern usually known as ''delegation''—a composite-based structure that manages a wrapped object and propagates method calls to it.__ This pattern works in our example, but it requires about twice as much code and is less well suited than inheritance to the kinds of direct customizations we meant to express (in fact, no reasonable Python programmer would code this example this way in practice, except perhaps those writing general tutorials). `Manager` isn’t really a `Person` here, so we need extra code to manually dispatch method calls to the embedded object; operator overloading methods like `__str__` must be redefined (in 3.0, at least, as noted in the upcoming sidebar “Catching Built-in Attributes in 3.0” on page 662), and adding new `Manager` behavior is less straightforward since state information is one level removed.
+
+__Still, object embedding, and design patterns based upon it, can be a very good fit when embedded objects require more limited interaction with the container than direct customization implies.__ A controller layer like this alternative `Manager`, for example, might come in handy if we want to trace or validate calls to another object’s methods (indeed, we will use a nearly identical coding pattern when we study class decorators later in the book). Moreover, a hypothetical `Department` class like the following could aggregate other objects in order to treat them as a set. Add this to the bottom of the `person.py` file to try this on your own:
+
+ {{{
+# Aggregate embedded objects into a composite
+...
+bob = Person(...)
+sue = Person(...)
+tom = Manager(...)
+
+class Department:
+    def __init__(self, *args):
+        self.members = list(args)
+    def addMember(self, person):
+        self.members.append(person)
+    def giveRaises(self, percent):
+        for person in self.members:
+            person.giveRaise(percent)
+    def showAll(self):
+        for person in self.members:
+            print(person)
+
+development = Department(bob, sue) # Embed objects in a composite
+development.addMember(tom)
+development.giveRaises(.10) # Runs embedded objects' giveRaise
+development.showAll() # Runs embedded objects' __str__s
+ }}}
+
+Interestingly, this code uses both inheritance and composition—`Department` is a composite that embeds and controls other objects to aggregate, but the embedded `Person` and `Manager` objects themselves use inheritance to customize. __As another example, a GUI might similarly use inheritance to customize the behavior or appearance of labels and buttons, but also composition to build up larger packages of embedded widgets, such as input forms, calculators, and text editors.__ The class structure to use depends on the objects you are trying to model.
+
+Design issues like composition are explored in Chapter 30, so we’ll postpone further investigations for now. But again, in terms of the basic mechanics of OOP in Python, our `Person` and `Manager` classes already tell the entire story. Having mastered the basics of OOP, though, developing general tools for applying it more easily in your scripts is often a natural next step—and the topic of the next section.
+
+=== Catching Built-in Attributes in 3.0 [?] ===
+
+In Python 3.0 (and 2.6 if new-style classes are used), the alternative delegation-based `Manager` class we just coded will not be able to intercept and delegate operator overloading method attributes like `__str__` without redefining them. Although we know that `__str__` is the only such name used in our specific example, this a general issue for delegation-based classes.
+
+Recall that built-in operations like printing and indexing implicitly invoke operator overloading methods such as `__str__` and `__getitem__`. In 3.0, built-in operations like these do not route their implicit attribute fetches through generic attribute managers: neither `__getattr__` (run for undefined attributes) nor its cousin `__getattribute__` (run for all attributes) is invoked. This is why we have to redefine `__str__` redundantly in the alternative `Manager`, in order to ensure that printing is routed to the embedded `Person` object when run in Python 3.0.
+
+Technically, this happens because classic classes normally look up operator overloading names in instances at runtime, but new-style classes do not—they skip the instance entirely and look up such methods in classes. In 2.6 classic classes, built-ins do route attributes generically—printing, for example, routes `__str__` through `__getattr__`. New-style classes also inherit a default for `__str__` that would foil `__getattr__`, but `__getattribute__` doesn’t intercept the name in 3.0 either.
+
+This is a change, but isn’t a show-stopper—delegation-based classes can generally redefine operator overloading methods to delegate them to wrapped objects in 3.0, either manually or via tools or superclasses. This topic is too advanced to explore further in this tutorial, though, so don’t sweat the details too much here. Watch for it to be revisited in the attribute management coverage of Chapter 37, and again in the context of `Private` class decorators in Chapter 38.
+
+== Step 6: Using Introspection Tools ==
+
+Let’s make one final tweak before we throw our objects onto a database. As they are, our classes are complete and demonstrate most of the basics of OOP in Python. They still have two remaining issues we probably should iron out, though, before we go live with them:
+
+ * First, if you look at the display of the objects as they are right now, you’ll notice that when you print `tom` the `Manager` labels him as a `Person`. That’s not technically incorrect, since `Manager` is a kind of customized and specialized `Person`. Still, it would be more accurate to display objects with the most specific (that is, lowest) classes possible.
+
+ * Second, and perhaps more importantly, the current display format shows only the attributes we include in our `__str__`, and that might not account for future goals. For example, we can’t yet verify that `tom`’s job name has been set to `mgr` correctly by `Manager`’s constructor, because the `__str__` we coded for `Person` does not print this field. __Worse, if we ever expand or otherwise change the set of attributes assigned to our objects in `__init__`, we’ll have to remember to also update `__str__` for new names to be displayed, or it will become out of sync over time. (反觀 Java 這類強型態的語言就沒有這個問題, 編譯就不會過了...)__
+
+The last point means that, yet again, we’ve made potential extra work for ourselves in the future by introducing redundancy in our code. Because any disparity in `__str__` will be reflected in the program’s output, this redundancy may be more obvious than the other forms we addressed earlier; __still, avoiding extra work in the future is generally a good thing.__
+
+=== Special Class Attributes ===
+
+__We can address both issues with Python’s ''introspection'' tools—special attributes and functions that give us access to some of the internals of objects’ implementations.__ These tools are somewhat advanced and generally used more by people writing tools for other programmers to use than by programmers developing applications. __Even so, a basic knowledge of some of these tools is useful because they allow us to write code that processes classes ''in generic ways''.__ In our code, for example, there are two hooks that can help us out, both of which were introduced near the end of the preceding chapter:
+
+ * __The built-in `instance.__class__` attribute provides a link from an instance to the class from which it was created. Classes in turn have a `__name__` (不含 Module 的部份), just like modules, and a `__bases__` sequence that provides access to superclasses.__ We can use these here to print the name of the class from which an instance is made rather than one we’ve hardcoded.
+
+ * __The built-in `object.__dict__` attribute provides a dictionary with one key/value pair for every attribute attached to a namespace object (including modules, classes, and instances).__ Because it is a dictionary, we can fetch its keys list, index by key, iterate over its keys, and so on, to process all attributes generically. We can use this here to print every attribute in any instance, not just those we hardcode in custom displays.
+
+Here’s what these tools look like in action at Python’s interactive prompt. Notice how we load `Person` at the interactive prompt with a `from` statement here—class names live in and are imported from modules, exactly like function names and other variables:
+
+ {{{
+>>> from person import Person
+>>> bob = Person('Bob Smith')
+>>> print(bob) # Show bob's __str__
+[Person: Bob Smith, 0]
+
+>>> bob.__class__ # Show bob's class and its name
+<class 'person.Person'>
+>>> bob.__class__.__name__
+'Person'
+
+>>> list(bob.__dict__.keys()) # Attributes are really dict keys
+['pay', 'job', 'name'] # Use list to force list in 3.0
+>>> for key in bob.__dict__:
+        print(key, '=>', bob.__dict__[key]) # Index manually
+
+pay => 0
+job => None
+name => Bob Smith
+
+>>> for key in bob.__dict__:
+        print(key, '=>', getattr(bob, key)) # obj.attr, but attr is a var
+
+pay => 0
+job => None
+name => Bob Smith
+ }}}
+
+As noted briefly in the prior chapter, some attributes accessible from an instance might not be stored in the `__dict__` dictionary if the instance’s class defines `__slots__`, an optional and relatively obscure feature of new-style classes (and all classes in Python 3.0[?]) that stores attributes in an array and that we’ll discuss in Chapters 30 and 31. __Since slots really belong to classes instead of instances, and since they are very rarely used in any event, we can safely ignore them here and focus on the normal `__dict__`.__
+
+=== A Generic Display Tool ===
+
+We can put these interfaces to work in a superclass that displays accurate class names and formats all attributes of an instance of any class. Open a new file in your text editor to code the following—it’s a new, independent module named `classtools.py` that implements just such a class. __Because its `__str__` print overload uses ''generic introspection tools'', it will work on any instance, regardless of its attributes set. And because this is a class, it automatically becomes a general formatting tool: thanks to inheritance, it can be mixed into any class that wishes to use its display format.__ As an added bonus, if we ever want to change how instances are displayed we need only change this class, as every class that inherits its `__str__` will automatically pick up the new format when it’s next run:
+
+ {{{
+# File classtools.py (new)
+"Assorted class utilities and tools"
+
+class AttrDisplay:
+    """
+    Provides an inheritable print overload method that displays
+    instances with their class names and a name=value pair for
+    each attribute stored on the instance itself (but not attrs
+    inherited from its classes). Can be mixed into any class,
+    and will work on any instance.
+    """
+    def gatherAttrs(self):
+        attrs = []
+        for key in sorted(self.__dict__):
+            attrs.append('%s=%s' % (key, getattr(self, key)))
+        return ', '.join(attrs)
+    def __str__(self):
+        return '[%s: %s]' % (self.__class__.__name__, self.gatherAttrs())
+
+    if __name__ == '__main__':
+        class TopTest(AttrDisplay):
+            count = 0
+            def __init__(self):
+                self.attr1 = TopTest.count
+                self.attr2 = TopTest.count+1
+                TopTest.count += 2
+
+        class SubTest(TopTest):
+            pass
+
+        X, Y = TopTest(), SubTest()
+        print(X) # Show all instance attrs
+        print(Y) # Show lowest class name
+ }}}
+
+Notice the docstrings here—as a general-purpose tool, we want to add some functional documentation for potential users to read. As we saw in Chapter 15, docstrings can be placed at the top of simple functions and modules, and also at the start of classes and their methods; the `help` function and the !PyDoc tool extracts and displays these automatically (we’ll look at docstrings again in Chapter 28).
+
+When run directly, this module’s self-test makes two instances and prints them; the `__str__` defined here shows the instance’s class, and all its attributes names and values, in sorted attribute name order:
+
+ {{{
+C:\misc> classtools.py
+[TopTest: attr1=0, attr2=1]
+[SubTest: attr1=2, attr2=3]
+ }}}
+
+=== Instance Versus Class Attributes ===
+
+If you study the `classtools` module’s self-test code long enough, you’ll notice that its class displays only instance attributes, attached to the `self` object at the bottom of the inheritance tree; that’s what self’s `__dict__` contains. As an intended consequence, we don’t see attributes inherited by the instance from classes above it in the tree (e.g., `count` in this file’s self-test code). Inherited class attributes are attached to the class only, not copied down to instances.
+
+__If you ever do wish to include inherited attributes too, you can climb the `__class__` link to the instance’s class, use the `__dict__` there to fetch class attributes, and then iterate through the class’s `__bases__` attribute to climb to even higher superclasses (repeating as necessary). If you’re a fan of simple code, running a built-in `dir` call on the instance instead of using `__dict__` and climbing would have much the same effect, since `dir` results include inherited names in the sorted results list:__
+
+ {{{
+>>> from person import Person
+>>> bob = Person('Bob Smith')
+
+# In Python 2.6:
+>>> bob.__dict__.keys() # Instance attrs only
+['pay', 'job', 'name']
+>>> dir(bob) # + inherited attrs in classes
+['__doc__', '__init__', '__module__', '__str__', 'giveRaise', 'job',
+'lastName', 'name', 'pay']
+
+# In Python 3.0:
+>>> list(bob.__dict__.keys()) # 3.0 keys is a view, not a list
+['pay', 'job', 'name']
+>>> dir(bob) # 3.0 includes class type methods
+['__class__', '__delattr__', '__dict__', '__doc__', '__eq__', '__format__',
+'__ge__', '__getattribute__', '__gt__', '__hash__', '__init__', '__le__',
+...more lines omitted...
+'__setattr__', '__sizeof__', '__str__', '__subclasshook__', '__weakref__',
+'giveRaise', 'job', 'lastName', 'name', 'pay']
+ }}}
+
+The output here varies between Python 2.6 and 3.0, because 3.0’s `dict.keys` is not a list, and 3.0’s `dir` returns extra class-type implementation attributes. Technically, `dir` returns more in 3.0 because classes are all “new style” and inherit a large set of operator overloading names from the class type.[?] In fact, you’ll probably want to filter out most of the `__X__` names in the 3.0 `dir` result, since they are internal implementation details and not something you’d normally want to display.
+
+In the interest of space, we’ll leave optional display of inherited class attributes with either tree climbs or `dir` as suggested experiments for now. For more hints on this front, though, watch for the `classtree.py` inheritance tree climber we will write in Chapter 28, and the `lister.py` attribute listers and climbers we’ll code in Chapter 30.
+
+=== Name Considerations in Tool Classes ===
+
+One last subtlety here: because our `AttrDisplay` class in the `classtools` module is a general tool designed to be mixed into other arbitrary classes, __we have to be aware of the potential for ''unintended name collisions'' with client classes.__ As is, I’ve assumed that client subclasses may want to use both its `__str__` and `gatherAttrs`, but the latter of these may be more than a subclass expects—if a subclass innocently defines a `gatherAttrs` name of its own, it will likely break our class, because the lower version in the subclass will be used instead of ours.
+
+To see this for yourself, add a `gatherAttrs` to `TopTest` in the file’s self-test code; unless the new method is identical, or intentionally customizes the original, our tool class will no longer work as planned:
+
+ {{{
+class TopTest(AttrDisplay):
+    ....
+    def gatherAttrs(self): # Replaces method in AttrDisplay!
+        return 'Spam'
+ }}}
+
+This isn’t necessarily bad—sometimes we want other methods to be available to subclasses, either for direct calls or for customization. If we really meant to provide a `__str__` only, though, this is less than ideal.
+
+__To minimize the chances of name collisions like this, '''Python programmers often prefix methods not meant for external use with a single underscore (跟 Operator Overloading 的雙底線不同; Java 也有類似的問題, 透過 Naming Conventions 來解決不失為一個好方法)''': `_gatherAttrs` in our case. This isn’t foolproof (what if another class defines `_gatherAttrs`, too?), but it’s usually sufficient, and it’s a common Python naming convention for methods internal to a class.__
+
+A better and less commonly used solution would be to use two underscores at the front of the method name only: `__gatherAttrs` for us. __Python automatically expands such names to include the enclosing class’s name, which makes them truly unique. This is a feature usually called ''pseudoprivate'' class attributes,[?]__ which we’ll expand on in Chapter 30. For now, we’ll make both our methods available.
+
+=== Our Classes’ Final Form ===
+
+Now, to use this generic tool in our classes, all we need to do is import it from its module, mix it in by inheritance in our top-level class, and get rid of the more specific `__str__` we coded before. The new print overload method will be inherited by instances of `Person`, as well as `Manager`; `Manager` gets `__str__` from `Person`, which now obtains it from the `AttrDisplay` coded in another module. Here is the final version of our `person.py` file with these changes applied:
+
+ {{{
+# File person.py (final)
+from classtools import AttrDisplay # Use generic display tool
+class Person(AttrDisplay):
+    """
+    Create and process person records
+    """
+    def __init__(self, name, job=None, pay=0):
+        self.name = name
+        self.job = job
+        self.pay = pay
+    def lastName(self): # Assumes last is last
+        return self.name.split()[-1]
+    def giveRaise(self, percent): # Percent must be 0..1
+        self.pay = int(self.pay * (1 + percent))
+
+class Manager(Person):
+    """
+    A customized Person with special requirements
+    """
+    def __init__(self, name, pay):
+        Person.__init__(self, name, 'mgr', pay)
+    def giveRaise(self, percent, bonus=.10):
+        Person.giveRaise(self, percent + bonus)
+
+if __name__ == '__main__':
+    bob = Person('Bob Smith')
+    sue = Person('Sue Jones', job='dev', pay=100000)
+    print(bob)
+    print(sue)
+    print(bob.lastName(), sue.lastName())
+    sue.giveRaise(.10)
+    print(sue)
+    tom = Manager('Tom Jones', 50000)
+    tom.giveRaise(.10)
+    print(tom.lastName())
+    print(tom)
+ }}}
+
+__As this is the final revision, we’ve added a few comments here to document our work— docstrings for ''functional descriptions'' and `#` for smaller notes, per best-practice conventions.__ When we run this code now, we see all the attributes of our objects, not just the ones we hardcoded in the original `__str__`. And our final issue is resolved: because `AttrDisplay` takes class names off the `self` instance directly, each object is shown with the name of its closest (lowest) class—`tom` displays as a `Manager` now, not a Person, and we can finally verify that his job name has been correctly filled in by the Manager constructor:
+
+ {{{
+C:\misc> person.py
+[Person: job=None, name=Bob Smith, pay=0]
+[Person: job=dev, name=Sue Jones, pay=100000]
+Smith Jones
+[Person: job=dev, name=Sue Jones, pay=110000]
+Jones
+[Manager: job=mgr, name=Tom Jones, pay=60000]
+ }}}
+
+This is the more useful display we were after. From a larger perspective, though, our attribute display class has become a general tool, which we can mix into any class by inheritance to leverage the display format it defines. Further, all its clients will automatically pick up future changes in our tool. __Later in the book, we’ll meet even more powerful class tool concepts, such as decorators and metaclasses; along with Python’s introspection tools, they allow us to write code that augments and manages classes in structured and maintainable ways.__
+
+== Step 7 (Final): Storing Objects in a Database ==
+
+:::
+
+== Future Directions ==
+
+And that’s a wrap for this tutorial. At this point, you’ve seen all the basics of Python’s OOP machinery in action, and you’ve learned ways to avoid redundancy and its associated maintenance issues in your code. You’ve built full-featured classes that do real work. As an added bonus, you’ve made them real database records by storing them in a Python `shelve`, so their information lives on persistently.
+
+There is much more we could explore here, of course. For example, we could extend our classes to make them more realistic, add new kinds of behavior to them, and so on. Giving a raise, for instance, should in practice verify that pay increase rates are between zero and one—an extension we’ll add when we meet decorators later in this book. You might also mutate this example into a personal contacts database, by changing the state information stored on objects, as well as the class methods used to process it. We’ll leave this a suggested exercise open to your imagination.
+
+We could also expand our scope to use tools that either come with Python or are freely available in the open source world:
+
+ * GUIs - As is, we can only process our database with the interactive prompt’s command-based interface, and scripts. We could also work on expanding our object database’s usability by adding a graphical user interface for browsing and updating its records. __GUIs can be built portably with either Python’s tkinter (Tkinter in 2.6) standard library support, or third-party toolkits such as WxPython and PyQt. tkinter ships with Python, lets you build simple GUIs quickly, and is ideal for learning GUI programming techniques; WxPython and PyQt tend to be more complex to use but often produce higher-grade GUIs in the end.__
+
+ * Websites - Although GUIs are convenient and fast, the Web is hard to beat in terms of accessibility. We might also implement a website for browsing and updating records, instead of or in addition to GUIs and the interactive prompt. __Websites can be constructed with either basic CGI scripting tools that come with Python, or fullfeatured third-party web frameworks such as Django, !TurboGears, Pylons, web2Py, Zope, or Google’s App Engine.__ On the Web, your data can still be stored in a `shelve`, pickle file, or other Python-based medium; the scripts that process it are simply run automatically on a server in response to requests from web browsers and other clients, and they produce HTML to interact with a user, either directly or by interfacing with Framework APIs.
+
+ * Web services - __Although web clients can often parse information in the replies from websites (a technique colorfully known as “screen scraping”), we might go further and provide a more direct way to fetch records on the Web via a web services interface such as SOAP or XML-RPC calls—APIs supported by either Python itself or the third-party open source domain. Such APIs return data in a more direct form, rather than embedded in the HTML of a reply page.__
+
+ * Databases - If our database becomes higher-volume or critical, we might eventually move it from `shelve`s to a more full-featured storage mechanism such as the open source ZODB ''object-oriented database system (OODB)'', or a more traditional SQL-based relational database system such as MySQL, Oracle, PostgreSQL, or SQLite. __Python itself comes with the in-process SQLite database system built-in, but other open source options are freely available on the Web.__ ZODB, for example, is similar to Python’s `shelve` but addresses many of its limitations, supporting larger databases, concurrent updates, transaction processing, and automatic write-through on inmemory changes. SQL-based systems like MySQL offer enterprise-level tools for database storage and may be directly used from a within a Python script.
+
+ * ORMs - If we do migrate to a relational database system for storage, we don’t have to sacrifice Python’s OOP tools. __Object-relational mappers (ORMs) like SQLObject and SQLAlchemy can automatically map relational tables and rows to and from Python classes and instances, such that we can process the stored data using normal Python class syntax.__ This approach provides an alternative to OODBs like `shelve` and ZODB and leverages the power of both relational databases and Python’s class model.
+
+While I hope this introduction whets your appetite for future exploration, all of these topics are of course far beyond the scope of this tutorial and this book at large. If you want to explore any of them on your own, see the Web, Python’s standard library manuals, and application-focused books such as Programming Python. In the latter I pick up this example where we’ve stopped here, showing how to add both a GUI and a website on top of the database to allow for browsing and updating instance records. I hope to see you there eventually, but first, let’s return to class fundamentals and finish up the rest of the core Python language story.
+
+== Chapter Summary ==
+
+In this chapter, we explored all the fundamentals of Python classes and OOP in action, by building upon a simple but real example, step by step. We added constructors, methods, operator overloading, customization with subclasses, and introspection tools, and we met other concepts (such as composition, delegation, and polymorphism) along the way.
+
+In the end, we took objects created by our classes and made them persistent by storing them on a `shelve` object database—an easy-to-use system for saving and retrieving native Python objects by key. While exploring class basics, we also encountered multiple ways to factor our code to reduce redundancy and minimize future maintenance costs. Finally, we briefly previewed ways to extend our code with application-programming tools such as GUIs and databases, covered in follow-up books.
+
+In the next chapters of this part of the book we’ll return to our study of the details behind Python’s class model and investigate its application to some of the design concepts used to combine classes in larger programs. Before we move ahead, though, let’s work through this chapter’s quiz to review what we covered here. Since we’ve already done a lot of hands-on work in this chapter, we’ll close with a set of mostly theory-oriented questions designed to make you trace through some of the code and ponder some of the bigger ideas behind it.
+
+= Chapter 28. Class Coding Details =
+
+:::
+
+= Chapter 35. Designing with Exceptions =
+
+:::
+
+=== Development Tools for Larger Projects ===
+
+:::
+
+'''PyUnit (a.k.a. unittest)'''
+
+In Chapter 24, we learned how to add self-test code to a Python file by using the `__name__ == '__main__'` trick at the bottom of the file. For more advanced testing purposes, Python comes with two testing support tools. The first (那第二個呢?), !PyUnit (called `unittest` in the library manual), provides an object-oriented class framework for specifying and customizing test cases and expected results. It mimics the JUnit framework for Java. This is a sophisticated class-based unit testing system; see the Python library manual for details.
+
+:::

@@ -1,0 +1,67 @@
+= Linux System Administration =
+
+== 查看記憶體用量 ==
+
+`free` 可以查看記憶體的配置跟用量，例如：
+
+--------------------------------------------------------------------------------
+$ free -m <1>
+             total       used       free     shared    buffers     cached
+Mem:           494         90        403          0         12         36
+-/+ buffers/cache:         42        452
+Swap:          462          0        462
+--------------------------------------------------------------------------------
+<1> `-m` 會以 MB 為單位顯示用量。
+
+== 查看磁碟用量 ==
+
+`df` 可以用來顯示各磁碟分割的配置跟用量。
+
+ df [OPTION]... [FILE]...
+
+例如：
+
+--------------------------------------------------------------------------------
+$ df -h <1>
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/sda1             7.5G  1.7G  5.5G  24% /
+udev                  248M  148K  247M   1% /dev
+none                  248M     0  248M   0% /dev/shm
+none                  248M   56K  247M   1% /var/run
+none                  248M     0  248M   0% /var/lock
+none                  248M     0  248M   0% /lib/init/rw
+$
+$ df -h /var/www/ <2>
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/sda1             7.5G  1.7G  5.5G  24% /
+--------------------------------------------------------------------------------
+<1> 沒有給定 'FILE' 時，會列出所有磁碟。其中 `-h` 或 `--human-readable` 會以最適合的單位顯示用量。
+<2> 顯示某 'FILE' 所在碟碟的用量，可以間接得知某個目錄或檔案是落在哪個分割上。
+
+TIP: `df` 只會列出有 mount 上來的磁碟，如果要看所有的磁碟機，可以使用 `fdisk`。
+
+== 查看磁碟分割 ==
+
+`fdisk -l` 可以列出分割情形：
+
+--------------------------------------------------------------------------------
+$ sudo fdisk -l <1>
+Disk /dev/sda: 8589 MB, 8589934592 bytes
+255 heads, 63 sectors/track, 1044 cylinders
+Units = cylinders of 16065 * 512 = 8225280 bytes
+Disk identifier: 0x00014203
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sda1   *           1         985     7911981   83  Linux
+/dev/sda2             986        1044      473917+  82  Linux swap / Solaris
+
+Disk /dev/sdb: 21.5 GB, 21474836480 bytes
+255 heads, 63 sectors/track, 2610 cylinders
+Units = cylinders of 16065 * 512 = 8225280 bytes
+Disk identifier: 0x4460d599
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sdb1               1        2610    20964793+  83  Linux
+--------------------------------------------------------------------------------
+<1> 沒有加 `sudo` 的話 `fdisk -l` 完全沒反應。
+

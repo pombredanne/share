@@ -1,0 +1,300 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Robot Framework][RemoteLibrary] Python Remote Server</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="python-remote-server.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="../index.html">Robot Framework</a> / <a href="remote-library.html">RemoteLibrary</a> / <a href="remote-servers.html">Remote Servers</a> / Python</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>Python 版本的 remote server 直接內建在 Robot Framework 裡，可以從<a href="http://robotframework.googlecode.com/hg/tools/remoteserver/">這裡</a>下載 <code>robotremoteserver.py</code>。</p></div>
+<div class="listingblock">
+<div class="title"><code>robotremoteserver.py</code></div>
+<div class="content">
+<pre><code>...
+015 import sys
+016 import inspect
+017 import traceback
+018 from StringIO import StringIO
+019 from SimpleXMLRPCServer import SimpleXMLRPCServer <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+020 try:
+021     import signal
+022 except ImportError:
+023     signal = None
+024
+025
+026 class RobotRemoteServer(SimpleXMLRPCServer):
+027     allow_reuse_address = True
+028
+029     def __init__(self, library, host='localhost', port=8270, allow_stop=True): <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+030         SimpleXMLRPCServer.__init__(self, (host, int(port)), logRequests=False)
+031         self._library = library
+032         self._allow_stop = allow_stop
+033         self._register_functions()
+034         self._register_signal_handlers()
+035         self._log('Robot Framework remote server starting at %s:%s'
+036                   % (host, port))
+037         self.serve_forever()</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+<code>SimpleXMLRPCServer</code> 是 Python Standard Library 的一員。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+由 <code>library</code> 參數傳入 library 的實作（module 或 class），預設在 8270 埠服務。
+</td></tr>
+</table></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>039     def _register_functions(self): <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+040         self.register_function(self.get_keyword_names)
+041         self.register_function(self.run_keyword)
+042         self.register_function(self.get_keyword_arguments)
+043         self.register_function(self.get_keyword_documentation)
+044         self.register_function(self.stop_remote_server)
+045
+046     def _register_signal_handlers(self):
+047         def stop_with_signal(signum, frame):
+048             self._allow_stop = True <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+049             self.stop_remote_server()
+050         if hasattr(signal, 'SIGHUP'):
+051             signal.signal(signal.SIGHUP, stop_with_signal)
+052         if hasattr(signal, 'SIGINT'):
+053             signal.signal(signal.SIGINT, stop_with_signal)
+054
+055     def serve_forever(self):
+056         self._shutdown = False
+057         while not self._shutdown:
+058             self.handle_request()
+059
+060     def stop_remote_server(self):
+061         prefix = 'Robot Framework remote server at %s:%s ' % self.server_address
+062         if self._allow_stop:
+063             self._log(prefix + 'stopping')
+064             self._shutdown = True
+065         else:
+066             self._log(prefix + 'does not allow stopping', 'WARN')
+067         return True</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+註冊 XML-RPC server 對外提供的服務，其中 <code>run_keyword</code> 所有 keyword 執行的進入點。另外 <code>stop_remote_server</code> 則是固定會有的 keyword，下面 <code>get_keyword_names()</code> 固定把 <code>stop_remote_server</code> 加到 keyword 的清單裡。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+本機要求 stop server 時，會強制將 <code>allow_stop</code> 打開。
+</td></tr>
+</table></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>069     def get_keyword_names(self):
+070         get_kw_names = getattr(self._library, 'get_keyword_names', None) or \
+071                        getattr(self._library, 'getKeywordNames', None)
+072         if inspect.isroutine(get_kw_names):
+073             names = get_kw_names()
+074         else:
+075             names = [attr for attr in dir(self._library) if attr[0] != '_'
+076                      and inspect.isroutine(getattr(self._library, attr))]
+077         return names + ['stop_remote_server']
+078
+079     def run_keyword(self, name, args): <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+080         result = {'status': 'PASS', 'return': '', 'output': '', <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+081                   'error': '', 'traceback': ''}
+082         self._intercept_stdout()       <img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+083         try:
+084             return_value = self._get_keyword(name)(*args)
+085         except:
+086             result['status'] = 'FAIL'
+087             result['error'], result['traceback'] = self._get_error_details()
+088         else:
+089             result['return'] = self._handle_return_value(return_value)
+090         result['output'] = self._restore_stdout()
+091         return result
+092
+093     def get_keyword_arguments(self, name):
+094         kw = self._get_keyword(name)
+095         if not kw:
+096             return []
+097         return self._arguments_from_kw(kw)</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+除了 <code>stop_remote_server</code> 之後，其他的 keyword 都是由 <code>run_keyword</code> 做為進入點。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+回應的資料帶有 status、return、output、error、traceback 等 5 項重要的資訊。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+攔截 STDOUT 的輸出，結束時再由 <code>_restore_stdout()</code> 取得內容。
+</td></tr>
+</table></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>099     def _arguments_from_kw(self, kw):
+100         args, varargs, _, defaults = inspect.getargspec(kw)
+101         if inspect.ismethod(kw):
+102             args = args[1:]  # drop 'self'
+103         if defaults:
+104             args, names = args[:-len(defaults)], args[-len(defaults):]
+105             args += ['%s=%s' % (n, d) for n, d in zip(names, defaults)]
+106         if varargs:
+107             args.append('*%s' % varargs)
+108         return args
+109
+110     def get_keyword_documentation(self, name):
+111         if name == '__intro__':
+112             return inspect.getdoc(self._library) or ''
+113         if name == '__init__' and inspect.ismodule(self._library):
+114             return ''
+115         return inspect.getdoc(self._get_keyword(name)) or ''
+116
+117     def _get_keyword(self, name):
+118         if name == 'stop_remote_server':
+119             return self.stop_remote_server
+120         kw = getattr(self._library, name, None)
+121         if inspect.isroutine(kw):
+122             return kw
+123         return None
+124
+125     def _get_error_details(self):
+126         exc_type, exc_value, exc_tb = sys.exc_info()
+127         if exc_type in (SystemExit, KeyboardInterrupt):
+128             self._restore_stdout()
+129             raise
+130         return (self._get_error_message(exc_type, exc_value),
+131                 self._get_error_traceback(exc_tb))
+132
+133     def _get_error_message(self, exc_type, exc_value):
+134         name = exc_type.__name__
+135         message = str(exc_value)
+136         if not message:
+137             return name
+138         if name in ('AssertionError', 'RuntimeError', 'Exception'):
+139             return message
+140         return '%s: %s' % (name, message)
+141
+142     def _get_error_traceback(self, exc_tb):
+143         # Latest entry originates from this class so it can be removed
+144         entries = traceback.extract_tb(exc_tb)[1:]
+145         trace = ''.join(traceback.format_list(entries))
+146         return 'Traceback (most recent call last):\n' + trace
+147
+148     def _handle_return_value(self, ret): <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+149         if isinstance(ret, (basestring, int, long, float)):
+150             return ret
+151         if isinstance(ret, (tuple, list)):
+152             return [self._handle_return_value(item) for item in ret]
+153         if isinstance(ret, dict):
+154             return dict([(self._str(key), self._handle_return_value(value))
+155                          for key, value in ret.items()])
+156         return self._str(ret)
+157
+158     def _str(self, item):
+159         if item is None:
+160             return ''
+161         return str(item)
+162
+163     def _intercept_stdout(self):
+164         # TODO: What about stderr?
+165         sys.stdout = StringIO()
+166
+167     def _restore_stdout(self):
+168         output = sys.stdout.getvalue()
+169         sys.stdout.close()
+170         sys.stdout = sys.__stdout__
+171         return output
+172
+173     def _log(self, msg, level=None):
+174         if level:
+175             msg = '*%s* %s' % (level.upper(), msg)
+176         print msg</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+確保複雜的資料也可以透過 XML-RPC 交換回呼叫端。
+</td></tr>
+</table></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">網站</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://robotframework.googlecode.com/hg/tools/remoteserver/">/tools/remoteserver</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://docs.python.org/2/library/simplexmlrpcserver.html">SimpleXMLRPCServer — Basic XML-RPC server — The Python Standard Library</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 16:40:39 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

@@ -1,0 +1,376 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Unix-like][Commands] find</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="find.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="../unix-like.html">Unix-like</a> / <a href="commands.html">Commands</a> / <code>find</code></h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="quoteblock">
+<div class="content">
+<div class="paragraph"><p>In Unix-like and some other operating systems, <code>find</code> is a command-line utility that searches through one or more directory trees of a file system, locates files based on some user-specified criteria and applies a user-specified action on each matched file. The possible search criteria include a pattern to match against the file name or a time range to match against the modification time or access time of the file.</p></div>
+</div>
+<div class="attribution">
+&#8212; <a href="http://en.wikipedia.org/wiki/Find">find - Wikipedia&#44; the free encyclopedia</a>
+</div></div>
+<div class="paragraph"><p><code>find</code> - search for files in a directory hierarchy</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>find [-H] [-L] [-P] [-D debugopts] [-Olevel] [path...] [expression]</code></pre>
+</div></div>
+<div class="paragraph"><p>以 <em>path&#8230;</em> 為起點（start points；否則以 current directory 為起點），往下尋找符合測試條件（tests）的檔案、並執行相應的動作（action）。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">注意 <em>path&#8230;</em> 在 <em>expression</em> 前面，跟一般的用法不太一樣。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p><em>expression</em> 由下面 3 種元素組成，中間用 operators 串接成起來（預設是 AND 運算），形成更複雜的 expression：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+options - 會影響所有的 tests。雖然 options 會優先被處理（結果固定是 true），但通常會擺在 expression 的最前面。
+</p>
+</li>
+<li>
+<p>
+tests - 測試檔案的特徵（檔名、路徑、大小、權限等）是否符合條件，結果可能是 true 或 false。
+</p>
+</li>
+<li>
+<p>
+actions - 對符合 tests 條件的檔案進行操作，例如印出檔名路徑、執行另一個 command 等，結果可能是 true 或 false。
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>常用的 option 有：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>-regextype type</code> - 指定 <code>-regex</code> 跟 <code>-iregex</code> 預設採用的 reqular expression 語法，其中 <em>type</em> 可以是 <code>emacs</code>（預設）、<code>posix-basic</code>、<code>posix-extended</code> 等。
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>常用的 test 有：（其中 <em>n</em> 可以是 <code>n</code>、<code>+n</code> 或 <code>-n</code>，分別表示等於、大於或小於）</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>-amin n</code> - 檢查檔案最後存取時間（access time）距離現在有幾分鐘。例如 <code>-amin -10</code> 表示 10 分鐘內有存取過。
+</p>
+</li>
+<li>
+<p>
+<code>-atime n</code> - 跟 <code>-amin</code> 相同，但單位是天（24 hours）。例如 <code>-atime +1</code> 表示 2 天前有存取過。
+</p>
+<div class="paragraph"><p>在比對之前，時間會先除以 24，並直接忽略小數的部份（rounding），所以 access time 必須 48+ hours 前，才會符合 <code>-atime +1</code> 的條件。</p></div>
+</li>
+<li>
+<p>
+<code>-cmin n</code> - 跟 <code>-amin</code> 相同，但檢查的對象是檔案屬性的變更時間（status change time）。
+</p>
+</li>
+<li>
+<p>
+<code>-ctime n</code> - 跟 <code>-cmin</code> 相同，但單位是天（24 hours）。
+</p>
+</li>
+<li>
+<p>
+<code>-mmin n</code> - 跟 <code>-amin</code> 相同，但檢查的對象是檔案內容的變更時間（modification time）。
+</p>
+</li>
+<li>
+<p>
+<code>-mtime n</code> - 跟 <code>-mmin</code> 相同，但單位是天（24 hours）。
+</p>
+</li>
+<li>
+<p>
+<code>-size n[cwbkMG]</code> - 檢查檔案的大小有 <em>n</em> 個單位。常用的單位有 <code>c</code>（bytes）、<code>k</code>（kilobytes = 1024 bytes）、<code>M</code>（megabytes） 跟 <code>G</code>（gigabytes）等。例如 <code>-size +2M</code> 表示大小超過 2M。
+</p>
+</li>
+<li>
+<p>
+<code>-type c</code> - 檢查檔案的型態，其中 <em>c</em> 可以是 <code>d</code>（目錄 directory）、<code>f</code>（檔案 regular file）、<code>l</code>（symbolic link）等。例如 <code>-type f</code> 表示一般的檔案。
+</p>
+</li>
+<li>
+<p>
+<code>-name pattern</code> - 檢查檔名本身（不含路徑）是否符合 shell pattern (<code>*</code>、<code>?</code> 跟 <code>[]</code>) ，區分大小寫；不分大小寫可以用 <code>-iname</code>。
+</p>
+</li>
+<li>
+<p>
+<code>-path pattern</code> - 檢查檔名路徑是否符合 shell pattern ，區分大小寫；不分大小寫可以用 <code>-ipath</code>。
+</p>
+</li>
+<li>
+<p>
+<code>-regex pattern</code> - 檢查檔名路徑是否符合 regex pattern ，區分大小寫；不分大小寫可以用 <code>-iregex</code>。
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>常用的 action 有：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>-exec command ;</code> - 針對符合條件的檔案執行 <em>command</em>，執行目錄是 <code>find</code> 執行的位置（start directory）。裡頭可以用 <code>{}</code> 置換成以 start points 為首的檔名路徑。
+</p>
+<div class="paragraph"><p>注意 command 以 &#8216;;` 做為結尾（所以不能給合多個 commands？），而且 <code>;</code> 前面的空白也不能省略，否則會遇到 "missing argument to `-exec&#8217;" 的錯誤。</p></div>
+</li>
+<li>
+<p>
+<code>-ok command ;</code> - 同 <code>-exec</code>，但會先詢問要不要執行代換過的 command。
+</p>
+</li>
+<li>
+<p>
+<code>-execdir command ;</code> - 同 <code>-exec</code>，但執行目錄會切換到該檔案所在的目錄，裡頭一樣可以用 <code>{}</code> 置換成找到的檔名，但不含路徑的部份。
+</p>
+</li>
+<li>
+<p>
+<code>-okdir cmmand ;</code> - 同 <code>-execdir</code>，但會先詢問要不要執行代換過的 command。
+</p>
+</li>
+<li>
+<p>
+<code>-print</code> - 印出以 start points 為首的檔名路徑，並在結尾補一個 <a href="../../text/text-newline.html">newline</a>。當 <em>expression</em> 沒有其他 action 時，預設會用 <code>-print</code>。
+</p>
+</li>
+<li>
+<p>
+<code>-print0</code> - 跟 <code>-print</code> 相同，但結尾是補 NULL。
+</p>
+<div class="paragraph"><p>主要是搭配 <a href="xargs.html"><code>xargs -0</code></a> 使用，這樣就不用擔心檔名路徑可能含有 whitespace 或 newline 了。</p></div>
+</li>
+</ul></div>
+<div class="paragraph"><p>常用的 operator 有：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>( expr )</code> - expression 預設是由左至右運算，用括號框起來可以提高 precedence。注意 <em>expr</em> 兩側的空白不能省略。
+</p>
+</li>
+<li>
+<p>
+<code>! expr</code> - NOT 運算。注意 <em>expr</em> 前面的空白不能省略。
+</p>
+</li>
+<li>
+<p>
+<code>expr1 -a expr2</code> - AND 運算。當 <em>expr1</em> 為 false 時，會略過 <em>expr2</em> 的檢查。
+</p>
+</li>
+<li>
+<p>
+<code>expr1 expr2</code> - 同 <code>expr1 -a expr2</code> 做 AND 運算。
+</p>
+</li>
+<li>
+<p>
+<code>expr1 -o expr2</code> - OR 運算。當 <em>expr1</em> 為 true 時，會略過 <em>expr2</em> 的檢查。
+</p>
+</li>
+</ul></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ pwd
+/tmp/find
+$ tree -a
+.
+|-- dir1
+|   |-- dir2
+|   |   |-- file2
+|   |   `-- .hidden-file2
+|   |-- file1
+|   `-- .hidden-file1
+|-- file0
+`-- .hidden-file0
+$
+$ find -type d <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+.
+./dir1
+./dir1/dir2
+$
+$ find dir1 -type f <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+dir1/.hidden-file1
+dir1/dir2/file2
+dir1/dir2/.hidden-file2
+dir1/file1
+$
+$ find dir1 -type f -path 'dir1*/file?' <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+dir1/dir2/file2
+dir1/file1
+$
+$ find ../find/dir1 -name '*file*' <img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+../find/dir1/.hidden-file1
+../find/dir1/dir2/file2
+../find/dir1/dir2/.hidden-file2
+../find/dir1/file1</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+預設以 current diretory (<code>.</code>) 為起點，並採用 <code>-print</code> 做為 action，印出以 start points 為首的檔名路徑。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+<code>-path pattern</code> 裡 <em>pattern</em> 的寫法可以參考 <code>-print</code> 的輸出。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+這裡故意將簡單的 <code>dir1</code> 寫成 <code>../find/dir1</code>，原來 <code>-print</code> 只是單純地把 start points 串在前面而已。
+</td></tr>
+</table></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ find ../find/dir1 -name 'file2' -exec pwd \;     <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+/tmp/find
+$ find ../find/dir1 -name 'file2' -exec echo {} \;
+../find/dir1/dir2/file2
+$
+$ find ../find/dir1 -name 'file2' -execdir pwd \;  <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+/tmp/find/dir1/dir2
+$ find ../find/dir1 -name 'file2' -execdir echo {} \;
+./file2</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+<code>-exec</code> 裡的 <code>{}</code> 被代換成以 start points 為首的檔名路徑，執行目錄是 start directory。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+<code>-execdir</code> 裡的 <code>{}</code> 被代換成相對於所在目錄的檔案路徑。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>更複雜的 expression 可以用 operators 來串接：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ find -name '*file*'
+./dir1/.hidden-file1
+./dir1/dir2/file2
+./dir1/dir2/.hidden-file2
+./dir1/file1
+./.hidden-file0
+./file0
+$
+$ find -name '*file*' -a -name '*[12]' <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+./dir1/.hidden-file1
+./dir1/dir2/file2
+./dir1/dir2/.hidden-file2
+./dir1/file1
+$
+$ find \( -name '*file*' -a -name '*[12]' \) -a \! -name '.*' <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+./dir1/dir2/file2
+./dir1/file1</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+只考慮檔名以 1 或 2 結尾。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+排除檔名以 <code>.</code> 開頭的隱藏檔。
+</td></tr>
+</table></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_延伸閱讀">延伸閱讀</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="../find-files.html">找檔案</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://en.wikipedia.org/wiki/Find">find - Wikipedia, the free encyclopedia</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://manpages.debian.net/cgi-bin/man.cgi?query=find">find - Debian Hypertext Man Pages</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">其他文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="https://www.linux.com/learn/tutorials/316404-10-tips-for-using-gnu-find">10 Tips for Using GNU Find | Linux.com</a> (2010-06-07)
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:07:09 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

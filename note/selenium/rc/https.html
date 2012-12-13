@@ -1,0 +1,140 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Selenium][RC] HTTPS</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="https.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>[Selenium][RC] HTTPS</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">搭配 <a href="../selenium-server-interactive-mode.html">interactive mode</a> 測試 HTTPS 的問題，有機會觀察 certificate 的細節，可以節省不少時間。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>Chrome <a href="chrome-https.html">測 HTTPS 會有問題</a>，加上 <code>-trustAllSSLCertificates</code> 可以解決。但加了這個參數之後，反倒是 Firefox 會遇到 SSL Error，發現是卡在不信任 CyberVillians 的關係，一樣要把它加到 Firefox 成為 Certificate Authorities 的一員即可（因為 Firefox 不像 Chrome 會吃 IE 的設定）。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ java -jar selenium-server-standalone-&lt;version&gt;.jar -help
+...
+-trustAllSSLCertificates: Forces the Selenium proxy to trust all
+  SSL certificates.  This doesn't work in browsers that don't use the
+  Selenium proxy.</code></pre>
+</div></div>
+<div class="paragraph"><p>不過就像官方文件所說的，Firefox 被叫起來後會被設定 proxy（不知道為什麼 Chrome/IE 都沒有這個現象？），如果本來就手動設定有 proxy，不知道會發生什麼事？</p></div>
+<div class="paragraph"><p><span class="image">
+<img src="https/firefox_auto_proxy.png" alt="https/firefox_auto_proxy.png" />
+</span></p></div>
+<div class="listingblock">
+<div class="title"><code>proxy.pac</code></div>
+<div class="content">
+<pre><code>function FindProxyForURL(url, host) {
+  return 'PROXY localhost:4444; DIRECT';
+}</code></pre>
+</div></div>
+<div class="paragraph"><p>還是得深入瞭解 Selenium RC Server 背後的架構，否則 HTTPS 的問題真的很煩人&#8230; proxy injection &#8230;</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_certificate_error_untrusted_connection">Certificate Error / Untrusted Connection</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>Certificate 有問題時，Firefox 跟 IE 都會擋下來，但行為不太一樣。Firefox 會顯示 <em>Untrusted Connection</em> 的畫面，並提供 Add Exception&#8230; 的功能。</p></div>
+<div class="imageblock">
+<div class="content">
+<img src="https/firefox_untrusted_connection.png" alt="https/firefox_untrusted_connection.png" />
+</div>
+</div>
+<div class="paragraph"><p>IE 6 的反應跟 IE 8 又不太一樣，IE 6 會跳 Security Alert，但 IE 8 則會跳&#8230; 只要直接點連結就可以了。當然最根本的解決方法是安裝 certificate。</p></div>
+<div class="paragraph"><p><span class="image">
+<img src="https/ie_certification_error.png" alt="https/ie_certification_error.png" />
+</span></p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_延伸閱讀">延伸閱讀</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="chrome-https.html">Google Chrome SSL Error</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://code.google.com/p/robotframework-seleniumlibrary/wiki/HandlingSelfSignedCertificates">Handling Self-Signed Certificates</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://seleniumhq.org/docs/05_selenium_rc.html#handling-https-and-security-popups">Selenium 1 (Selenium RC) &gt; Handling HTTPS and Security Popups — Selenium Documentation</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:15:33 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

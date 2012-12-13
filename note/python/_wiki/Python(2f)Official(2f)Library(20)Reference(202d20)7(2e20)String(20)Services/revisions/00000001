@@ -1,0 +1,369 @@
+= Python / Official / Library Reference - 7. String Services =
+<<TableOfContents>>
+
+== 7.2. re — Regular expression operations ==
+http://docs.python.org/library/re.html @2010/09/12
+
+This module provides regular expression matching operations similar to those found in Perl. __Both patterns and strings to be searched can be Unicode strings as well as 8-bit strings.__
+
+Regular expressions use the backslash character (`'\'`) to indicate special forms or to allow special characters to be used without invoking their special meaning. This collides with Python’s usage of the same character for the same purpose in string literals; for example, to match a literal backslash, one might have to write `'\\\\'` as the pattern string, because the regular expression must be `\\`, and each backslash must be expressed as `\\` inside a regular Python string literal.
+
+The solution is to use Python’s raw string notation for regular expression patterns; backslashes are not handled in any special way in a string literal prefixed with `'r'`. So `r"\n"` is a two-character string containing `'\'` and `'n'`, while `"\n"` is a one-character string containing a newline. __Usually patterns will be expressed in Python code using this raw string notation.__
+
+__It is important to note that most regular expression operations are available as module-level functions and `RegexObject` methods. The functions are ''shortcuts'' that don’t require you to compile a regex object first, but miss some fine-tuning parameters.__
+
+See also:
+
+ * Mastering Regular Expressions - Book on regular expressions by Jeffrey Friedl, published by O’Reilly. The second edition of the book no longer covers Python at all, but the first edition covered writing good regular expression patterns in great detail.
+
+=== 7.2.1. Regular Expression Syntax ===
+
+A regular expression (or RE) specifies a set of strings that matches it; the functions in this module let you check if a particular string matches a given regular expression (or if a given regular expression matches a particular string, which comes down to the same thing).
+
+Regular expressions can be concatenated to form new regular expressions; if A and B are both regular expressions, then AB is also a regular expression. In general, if a string p matches A and another string q matches B, the string pq will match AB. This holds unless A or B contain low precedence operations; boundary conditions between A and B; or have ''numbered group references''. Thus, complex expressions can easily be constructed from simpler primitive expressions like the ones described here. For details of the theory and implementation of regular expressions, consult the Friedl book referenced above, or almost any textbook about compiler construction.
+
+A brief explanation of the format of regular expressions follows. For further information and a gentler presentation, consult the Regular Expression HOWTO.
+
+Regular expressions can contain both special and ordinary characters. Most ordinary characters, like `'A'`, `'a'`, or `'0'`, are the simplest regular expressions; they simply match themselves. You can concatenate ordinary characters, so `last` matches the string `'last'`. (In the rest of this section, we’ll write RE’s in this special style, usually without quotes, and strings to be matched 'in single quotes'.)
+
+Some characters, like `'|'` or `'('`, are special. Special characters either stand for ''classes of ordinary characters'', or affect how the regular expressions around them are interpreted. Regular expression pattern strings may not contain ''null bytes'', but can specify the null byte using the `\number` notation, e.g., `'\x00'`.
+
+The special characters are:
+
+ * `'.'` - (Dot.) In the ''default mode'', this matches any character except a newline. __If the `DOTALL` flag has been specified, this matches any character including a newline.__
+
+ * `'^'` - (Caret.) Matches the start of the string, and __in `MULTILINE` mode also matches immediately after each newline.__
+
+ * `'$'` - Matches the end of the string or just before the newline at the end of the string, and __in `MULTILINE` mode also matches before a newline.__ `foo` matches both ‘foo’ and ‘foobar’, while the regular expression `foo$` matches only ‘foo’. More interestingly, searching for `foo.$` in `'foo1\nfoo2\n'` matches ‘foo2’ normally, but ‘foo1’ in `MULTILINE` mode; searching for a single `$` in `'foo\n'` will find two (empty) matches: one just before the newline, and one at the end of the string.
+
+ * `'*'` - Causes the resulting RE to match 0 or more repetitions of the preceding RE, as many repetitions as are possible. `ab*` will match ‘a’, ‘ab’, or ‘a’ followed by any number of ‘b’s.
+
+ * `'+'` - Causes the resulting RE to match 1 or more repetitions of the preceding RE. `ab+` will match ‘a’ followed by any non-zero number of ‘b’s; it will not match just ‘a’.
+
+ * `'?'` - Causes the resulting RE to match 0 or 1 repetitions of the preceding RE. `ab?` will match either ‘a’ or ‘ab’.
+
+ * `*?`, `+?`, `??` - __The `'*'`, `'+'`, and `'?'` qualifiers are all ''greedy''; they match as much text as possible. Sometimes this behaviour isn’t desired; if the RE `<.*>` is matched against `'<H1>title</H1>'`, it will match the entire string, and not just `'<H1>'`. Adding `'?'` after the qualifier makes it perform the match in non-greedy or ''minimal'' fashion; as few characters as possible will be matched. Using `.*?` in the previous expression will match only `'<H1>'`.__
+
+ * `{m}` - Specifies that exactly `m` copies of the previous RE should be matched; fewer matches cause the entire RE not to match. For example, `a{6}` will match exactly six `'a'` characters, but not five.
+
+ * `{m,n}` - Causes the resulting RE to match from `m` to `n` repetitions of the preceding RE, attempting to match as many repetitions as possible. For example, `a{3,5}` will match from 3 to 5 `'a'` characters. __Omitting `m` specifies a lower bound of zero, and omitting `n` specifies an infinite upper bound.__ As an example, `a{4,}b` will match `aaaab` or a thousand `'a'` characters followed by a `b`, but not `aaab`. __The comma may not be omitted or the modifier would be confused with the previously described form.__
+
+ * `{m,n}?` - Causes the resulting RE to match from `m` to `n` repetitions of the preceding RE, attempting to match as few repetitions as possible. __This is the non-greedy version of the previous qualifier.__ For example, on the 6-character string `'aaaaaa'`, `a{3,5}` will match 5 `'a'` characters, while `a{3,5}?` will only match 3 characters.
+
+ * `'\'` - Either escapes special characters (permitting you to match characters like `'*'`, `'?'`, and so forth), or signals a special sequence; special sequences are discussed below. <<BR>> If you’re not using a raw string to express the pattern, remember that Python also uses the backslash as an escape sequence in string literals; if the escape sequence isn’t recognized by Python’s parser, the backslash and subsequent character are included in the resulting string. __However, if Python would recognize the resulting sequence, the backslash should be repeated twice. This is complicated and hard to understand, so it’s highly recommended that you use raw strings for all but the simplest expressions.__
+
+ * `[]` - __Used to indicate a set of characters. Characters can be listed individually, or a range of characters can be indicated by giving two characters and separating them by a `'-'`. Special characters are not active inside sets.__ For example, `[akm$]` will match any of the characters `'a'`, `'k'`, `'m'`, or `'$'`; `[a-z]` will match any lowercase letter, and `[a-zA-Z0-9]` matches any letter or digit. __Character classes such as `\w` or `\S` (defined below) are also acceptable inside a range,__ although the characters they match depends on whether `LOCALE` or `UNICODE` mode is in force. __If you want to include a `']'` or a `'-'` inside a set, precede it with a backslash, or place it as the first character.__ The pattern `[]]` will match `']'`, for example. <<BR>> __You can match the characters not within a range by complementing the set. This is indicated by including a `'^'` as the first character of the set; `'^'` elsewhere will simply match the `'^'` character.__ For example, `[^5]` will match any character except `'5'`, and `[^^]` will match any character except `'^'`. <<BR>> __Note that inside `[]` the special forms and special characters lose their meanings and only the syntaxes described here are valid. For example, `+`, `*`, `(`, `)`, and so on are treated as literals inside `[]`, and backreferences cannot be used inside `[]`.__
+
+ * `'|'` - __`A|B`, where A and B can be arbitrary REs, creates a regular expression that will match either A or B. An arbitrary number of REs can be separated by the `'|'` in this way. This can be used inside groups (see below) as well.__ As the target string is scanned, REs separated by `'|'` are tried from left to right. When one pattern completely matches, that branch is accepted. This means that once A matches, B will not be tested further, even if it would produce a longer overall match. In other words, the `'|'` operator is never greedy. To match a literal `'|'`, use `\|`, or enclose it inside a character class, as in `[|]`.
+
+ * `(...)` - __Matches whatever regular expression is inside the parentheses, and indicates the start and end of a group; the contents of a group can be retrieved after a match has been performed, and can be matched later in the string with the `\number` special sequence,__ described below. To match the literals `'('` or `')'`, use `\(` or `\)`, or enclose them inside a character class: `[(]` `[)]`.
+
+ * `(?...)` - __This is an ''extension notation'' (a `'?'` following a `'('` is not meaningful otherwise). The first character after the `'?'` determines what the meaning and further syntax of the construct is. Extensions usually do not create a new group; `(?P<name>...)` is the only exception to this rule. (標準的 Regex 有支援這個嗎[?])__ Following are the currently supported extensions.
+
+ * `(?iLmsux)` - __(One or more letters from the set `'i'`, `'L'`, `'m'`, `'s'`, `'u'`, `'x'`.) The group matches the empty string; the letters set the corresponding flags: `re.I` (ignore case), `re.L` (locale dependent), `re.M` (multi-line), `re.S` (dot matches all), `re.U` (Unicode dependent), and `re.X` (verbose), for the entire regular expression.__ (The flags are described in Module Contents.) __This is useful if you wish to include the flags as part of the regular expression, instead of passing a `flag` argument to the `re.compile()` function.__ <<BR>> Note that the `(?x)` flag changes how the expression is parsed. It should be used first in the expression string, or after one or more whitespace characters. If there are non-whitespace characters before the flag, the results are undefined.
+
+ * `(?:...)` - __A ''non-grouping version'' of regular parentheses. Matches whatever regular expression is inside the parentheses, but the substring matched by the group cannot be retrieved after performing a match or referenced later in the pattern. (為什麼要這麼做?)__
+
+ * `(?P<name>...)` - __Similar to regular parentheses, but the substring matched by the group is accessible within the rest of the regular expression via the ''symbolic group name'' `name`. Group names must be valid Python identifiers, and each group name must be defined only once within a regular expression. A symbolic group is also a numbered group, just as if the group were not named. So the group named `id` in the example below can also be referenced as the numbered group 1. (Splunk 就是用這種方式在定義欄位!!)__ <<BR>> For example, if the pattern is `(?P<id>[a-zA-Z_]\w*)`, the group can be referenced by its name in arguments to methods of match objects, such as `m.group('id')` or `m.end('id')`, and also by name in the regular expression itself (using `(?P=id)`) and replacement text given to `.sub()` (using `\g<id>`).[?]
+
+ * `(?P=name)` - __Matches whatever text was matched by the earlier group named `name`.__
+
+ * `(?#...)` - A comment; the contents of the parentheses are simply ignored.
+
+ * `(?=...)` - __Matches if `...` matches next, but doesn’t consume any of the string. This is called a ''lookahead assertion''.__ For example, `Isaac (?=Asimov)` will match `'Isaac '` only if it’s followed by `'Asimov'`.
+
+ * `(?!...)` - __Matches if `...` doesn’t match next. This is a ''negative lookahead assertion''.__ For example, `Isaac (?!Asimov)` will match `'Isaac '` only if it’s not followed by `'Asimov'`.
+
+ * `(?<=...)` - __Matches if the current position in the string is preceded by a match for `...` that ends at the current position. This is called a ''positive lookbehind assertion''.__ `(?<=abc)def` will find a match in `abcdef`, since the lookbehind will back up 3 characters and check if the contained pattern matches. __The contained pattern must only match strings of some fixed length, meaning that `abc` or `a|b` are allowed, but `a*` and `a{3,4}` are not. Note that patterns which start with positive lookbehind assertions will never match at the beginning of the string being searched; you will most likely want to use the `search()` function rather than the `match()` function:__
+
+ {{{
+>>> import re
+>>> m = re.search('(?<=abc)def', 'abcdef')
+>>> m.group(0)
+'def'
+ }}}
+
+ This example looks for a word following a hyphen:
+
+ {{{
+>>> m = re.search('(?<=-)\w+', 'spam-egg')
+>>> m.group(0)
+'egg'
+ }}}
+
+ * `(?<!...)` - __Matches if the current position in the string is not preceded by a match for `...`. This is called a negative lookbehind assertion. Similar to positive lookbehind assertions, the contained pattern must only match strings of some fixed length. Patterns which start with negative lookbehind assertions may match at the beginning of the string being searched.__
+
+ * `(?(id/name)yes-pattern|no-pattern)` - Will try to match with `yes-pattern` if the group with given `id` or `name` exists, and with `no-pattern` if it doesn’t. `no-pattern` is optional and can be omitted. For example, `(<)?(\w+@\w+(?:\.\w+)+)(?(1)>)` is a poor email matching pattern, which will match with `'<user@host.com>'` as well as `'user@host.com'`, but not with `'<user@host.com'`. New in version 2.4.[?]
+
+The special sequences consist of `'\'` and a character from the list below. If the ordinary character is not on the list, then the resulting RE will match the second character. For example, `\$` matches the character `'$'`.
+
+ * `\number` - __Matches the contents of the group of the same number.__ Groups are numbered starting from 1. For example, `(.+) \1` matches `'the the'` or `'55 55'`, but not `'the end'` (note the space after the group). __This special sequence can only be used to match one of the first 99 groups. If the first digit of number is 0, or number is 3 octal digits long, it will not be interpreted as a group match, but as the character with octal value number. Inside the `'['` and `']'` of a character class, all numeric escapes are treated as characters.__
+
+ * `\A` - Matches only at the start of the string.
+
+ * `\b` - __Matches the empty string, but only at the beginning or end of a word. A word is defined as a sequence of alphanumeric or underscore characters, so the end of a word is indicated by whitespace or a non-alphanumeric, non-underscore character.__ Note that `\b` is defined as the boundary between `\w` and `\W`, so the precise set of characters deemed to be alphanumeric depends on the values of the `UNICODE` and `LOCALE` flags. Inside a character range, `\b` represents the backspace character, for compatibility with Python’s string literals.
+
+ * `\B` - Matches the empty string, but only when it is not at the beginning or end of a word. This is just the opposite of `\b`, so is also subject to the settings of `LOCALE` and `UNICODE`.
+
+ * `\d` - When the `UNICODE` flag is not specified, matches any decimal digit; this is equivalent to the set `[0-9]`. With `UNICODE`, it will match whatever is classified as a decimal digit in the Unicode character properties database.
+
+ * `\D` - When the `UNICODE` flag is not specified, matches any non-digit character; this is equivalent to the set `[^0-9]`. With `UNICODE`, it will match anything other than character marked as digits in the Unicode character properties database.
+
+ * `\s` - When the `LOCALE` and `UNICODE` flags are not specified, matches any whitespace character; this is equivalent to the set `[ \t\n\r\f\v]`. With `LOCALE`, it will match this set plus whatever characters are defined as space for the current locale. If `UNICODE` is set, this will match the characters `[ \t\n\r\f\v]` plus whatever is classified as space in the Unicode character properties database.
+
+ * `\S` - When the `LOCALE` and `UNICODE` flags are not specified, matches any non-whitespace character; this is equivalent to the set `[^ \t\n\r\f\v]` With `LOCALE`, it will match any character not in this set, and not defined as space in the current locale. If `UNICODE` is set, this will match anything other than `[ \t\n\r\f\v]` and characters marked as space in the Unicode character properties database.
+
+ * `\w` - When the `LOCALE` and `UNICODE` flags are not specified, matches any alphanumeric character and the underscore; this is equivalent to the set `[a-zA-Z0-9_]`. With `LOCALE`, it will match the set `[0-9_]` plus whatever characters are defined as alphanumeric for the current locale. If `UNICODE` is set, this will match the characters `[0-9_]` plus whatever is classified as alphanumeric in the Unicode character properties database.
+
+ * `\W` - When the `LOCALE` and `UNICODE` flags are not specified, matches any non-alphanumeric character; this is equivalent to the set `[^a-zA-Z0-9_]`. With `LOCALE`, it will match any character not in the set `[0-9_]`, and not defined as alphanumeric for the current locale. If `UNICODE` is set, this will match anything other than `[0-9_]` and characters marked as alphanumeric in the Unicode character properties database.
+
+ * `\Z` - Matches only at the end of the string.
+
+Most of the standard escapes supported by Python string literals are also accepted by the regular expression parser:
+
+ {{{
+\a      \b      \f      \n
+\r      \t      \v      \x
+\\
+ }}}
+
+Octal escapes are included in a limited form: If the first digit is a 0, or if there are three octal digits, it is considered an octal escape. __Otherwise, it is a group reference.__ As for string literals, octal escapes are always at most three digits in length.
+
+=== 7.2.2. Matching vs Searching ===
+
+__Python offers two different primitive operations based on regular expressions: `match` checks for a match only at the beginning of the string, while `search` checks for a match anywhere in the string (this is what Perl does by default).__
+
+__Note that `match` may differ from `search` even when using a regular expression beginning with `'^'`: `'^'` matches only at the start of the string, or in `MULTILINE` mode also immediately following a newline. The “match” operation succeeds only if the pattern matches at the start of the string regardless of mode, or at the starting position given by the optional `pos` argument regardless of whether a newline precedes it.__
+
+ {{{
+>>> re.match("c", "abcdef")  # No match
+>>> re.search("c", "abcdef") # Match
+<_sre.SRE_Match object at ...>
+ }}}
+
+=== 7.2.3. Module Contents ===
+
+The module defines several functions, constants, and an exception. Some of the functions are simplified versions of the full featured methods for compiled regular expressions. __Most non-trivial applications always use the compiled form. (Python 非常鼓勵使用這些 Shortcut Methods)__
+
+'''`re.compile(pattern[, flags])`'''
+
+Compile a regular expression pattern into a regular expression object, which can be used for matching using its `match()` and `search()` methods, described below.
+
+The expression’s behaviour can be modified by specifying a `flags` value. Values can be any of the following variables, combined using bitwise `OR` (the `|` operator).
+
+The sequence
+
+ {{{
+prog = re.compile(pattern)
+result = prog.match(string)
+ }}}
+
+is equivalent to
+
+ {{{
+result = re.match(pattern, string)
+ }}}
+
+__but using `re.compile()` and saving the resulting regular expression object for reuse is more efficient when the expression will be used several times in a single program.__
+
+Note: __The compiled versions of the most recent patterns passed to `re.match()`, `re.search()` or `re.compile()` are cached, so programs that use only a few regular expressions at a time needn’t worry about compiling regular expressions.__
+
+'''`re.I`'''
+'''`re.IGNORECASE`'''
+
+Perform case-insensitive matching; expressions like `[A-Z]` will match lowercase letters, too. This is not affected by the current locale.
+
+'''`re.L`'''
+'''`re.LOCALE`'''
+
+__Make `\w`, `\W`, `\b`, `\B`, `\s` and `\S` dependent on the current locale.__
+
+'''`re.M`'''
+'''`re.MULTILINE`'''
+
+__When specified, the pattern character `'^'` matches at the beginning of the string and at the beginning of each line (immediately following each newline); and the pattern character `'$'` matches at the end of the string and at the end of each line (immediately preceding each newline). By default, `'^'` matches only at the beginning of the string, and `'$'` only at the end of the string and immediately before the newline (if any) at the end of the string.__
+
+'''`re.S`'''
+'''`re.DOTALL`'''
+
+__Make the `'.'` special character match any character at all, including a newline; without this flag, `'.'` will match anything except a newline.__
+
+'''`re.U`'''
+'''`re.UNICODE`'''
+
+Make `\w`, `\W`, `\b`, `\B`, `\d`, `\D`, `\s` and `\S` dependent on the Unicode character properties database.
+
+New in version 2.0.
+
+'''`re.X`'''
+'''`re.VERBOSE`'''
+
+__This flag allows you to write regular expressions that look nicer. Whitespace within the pattern is ignored, except when in a character class or preceded by an unescaped backslash, and, when a line contains a `'#'` neither in a character class or preceded by an unescaped backslash, all characters from the leftmost such `'#'` through the end of the line are ignored.__
+
+That means that the two following regular expression objects that match a decimal number are functionally equal:
+
+ {{{
+a = re.compile(r"""\d +  # the integral part
+                   \.    # the decimal point
+                   \d *  # some fractional digits""", re.X)
+b = re.compile(r"\d+\.\d*")
+ }}}
+
+'''`re.search(pattern, string[, flags])`'''
+
+__Scan through string looking for a location where the regular expression pattern produces a match, and return a corresponding `MatchObject` instance. Return `None` if no position in the string matches the pattern;__ note that this is different from finding a zero-length match at some point in the string.
+
+'''`re.match(pattern, string[, flags])`'''
+
+__If zero or more characters at the beginning of string match the regular expression pattern, return a corresponding `MatchObject` instance. Return `None` if the string does not match the pattern; (為什麼有 zero 的狀況[?])__ note that this is different from a zero-length match.
+
+Note: If you want to locate a match anywhere in string, use `search()` instead.
+
+'''`re.split(pattern, string[, maxsplit=0, flags=0])`'''
+
+__Split string by the occurrences of pattern. If capturing parentheses are used in `pattern`, then the text of all groups in the pattern are also returned as part of the resulting list. If `maxsplit` is nonzero, at most `maxsplit` splits occur, and the remainder of the string is returned as the final element of the list.__ (Incompatibility note: in the original Python 1.5 release, `maxsplit` was ignored. This has been fixed in later releases.)
+
+ {{{
+>>> re.split('\W+', 'Words, words, words.')
+['Words', 'words', 'words', '']
+>>> re.split('(\W+)', 'Words, words, words.')
+['Words', ', ', 'words', ', ', 'words', '.', '']
+>>> re.split('\W+', 'Words, words, words.', 1)
+['Words', 'words, words.']
+>>> re.split('[a-f]+', '0a3B9', flags=re.IGNORECASE)
+['0', '3', '9']
+ }}}
+
+If there are capturing groups in the separator and it matches at the start of the string, the result will start with an empty string. The same holds for the end of the string:
+
+ {{{
+>>> re.split('(\W+)', '...words, words...')
+['', '...', 'words', ', ', 'words', '...', '']
+ }}}
+
+That way, separator components are always found at the same relative indices within the result list (e.g., if there’s one capturing group in the separator, the 0th, the 2nd and so forth).
+
+Note that `split` will never split a string on an empty pattern match. For example:
+
+ {{{
+>>> re.split('x*', 'foo')
+['foo']
+>>> re.split("(?m)^$", "foo\n\nbar\n")
+['foo\n\nbar\n']
+ }}}
+
+Changed in version 2.7,3.1: Added the optional `flags` argument.
+
+'''`re.findall(pattern, string[, flags])`'''
+
+__Return all non-overlapping matches of `pattern` in `string`, as a list of strings. The string is scanned left-to-right, and matches are returned in the order found. If one or more groups are present in the pattern, return a list of groups; this will be a list of tuples if the pattern has more than one group. Empty matches are included in the result unless they touch the beginning of another match.__
+
+New in version 1.5.2.
+
+Changed in version 2.4: Added the optional `flags` argument.
+
+'''`re.finditer(pattern, string[, flags])`'''
+
+Return an iterator yielding MatchObject instances over all non-overlapping matches for the RE pattern in string. The string is scanned left-to-right, and matches are returned in the order found. Empty matches are included in the result unless they touch the beginning of another match.
+
+New in version 2.2.
+
+Changed in version 2.4: Added the optional flags argument.
+
+'''`re.sub(pattern, repl, string[, count, flags])`'''
+
+Return the string obtained by replacing the leftmost non-overlapping occurrences of pattern in string by the replacement repl. If the pattern isn’t found, string is returned unchanged. repl can be a string or a function; if it is a string, any backslash escapes in it are processed. That is, \n is converted to a single newline character, \r is converted to a linefeed, and so forth. Unknown escapes such as \j are left alone. Backreferences, such as \6, are replaced with the substring matched by group 6 in the pattern. For example:
+
+>>> re.sub(r'def\s+([a-zA-Z_][a-zA-Z_0-9]*)\s*\(\s*\):',
+...        r'static PyObject*\npy_\1(void)\n{',
+...        'def myfunc():')
+'static PyObject*\npy_myfunc(void)\n{'
+
+If repl is a function, it is called for every non-overlapping occurrence of pattern. The function takes a single match object argument, and returns the replacement string. For example:
+
+>>> def dashrepl(matchobj):
+...     if matchobj.group(0) == '-': return ' '
+...     else: return '-'
+>>> re.sub('-{1,2}', dashrepl, 'pro----gram-files')
+'pro--gram files'
+>>> re.sub(r'\sAND\s', ' & ', 'Baked Beans And Spam', flags=re.IGNORECASE)
+'Baked Beans & Spam'
+
+The pattern may be a string or an RE object.
+
+The optional argument count is the maximum number of pattern occurrences to be replaced; count must be a non-negative integer. If omitted or zero, all occurrences will be replaced. Empty matches for the pattern are replaced only when not adjacent to a previous match, so sub('x*', '-', 'abc') returns '-a-b-c-'.
+
+In addition to character escapes and backreferences as described above, \g<name> will use the substring matched by the group named name, as defined by the (?P<name>...) syntax. \g<number> uses the corresponding group number; \g<2> is therefore equivalent to \2, but isn’t ambiguous in a replacement such as \g<2>0. \20 would be interpreted as a reference to group 20, not a reference to group 2 followed by the literal character '0'. The backreference \g<0> substitutes in the entire substring matched by the RE.
+
+Changed in version 2.7,3.1: Added the optional flags argument.
+
+'''`re.subn(pattern, repl, string[, count, flags])`'''
+
+Perform the same operation as `sub()`, but return a tuple `(new_string, number_of_subs_made)`.
+
+Changed in version 2.7,3.1: Added the optional `flags` argument.
+
+'''`re.escape(string)`'''
+
+__Return string with all non-alphanumerics backslashed; this is useful if you want to match an arbitrary literal string that may have regular expression metacharacters in it.__
+
+'''`re.purge()`'''
+
+Clear the regular expression cache.
+
+'''exception `re.error`'''
+
+__Exception raised when a string passed to one of the functions here is not a valid regular expression (for example, it might contain unmatched parentheses) or when some other error occurs during compilation or matching. It is never an error if a string contains no match for a pattern.__
+
+
+
+
+:::
+
+== 7.3. struct — Interpret strings as packed binary data ==
+http://docs.python.org/library/struct.html @2010/07/26
+
+This module performs conversions between Python values and C structs represented as Python strings. This can be used in handling binary data stored in files or from network connections, among other sources. It uses Format Strings as compact descriptions of the layout of the C structs and the intended conversion to/from Python values. [?]
+
+:::
+
+== 7.5. StringIO — Read and write strings as files ==
+http://docs.python.org/library/stringio.html @2010/08/19
+
+__This module implements a file-like class, `StringIO`, that reads and writes a ''string buffer'' (also known as ''memory files'').__ See the description of file objects for operations (section File Objects). (For standard strings, see `str` and `unicode`.)
+
+'''class `StringIO.StringIO([buffer])`'''
+
+__When a `StringIO` object is created, it can be initialized to an existing string by passing the string to the constructor. If no string is given, the `StringIO` will start empty. In both cases, the ''initial file position'' starts at zero.__
+
+The `StringIO` object can accept either Unicode or 8-bit strings, but mixing the two may take some care. If both are used, 8-bit strings that cannot be interpreted as 7-bit ASCII (that use the 8th bit) will cause a `UnicodeError` to be raised when `getvalue()` is called.
+
+The following methods of `StringIO` objects require special mention:
+
+'''`StringIO.getvalue()`'''
+
+__Retrieve the entire contents of the “file” at any time before the `StringIO` object’s `close()` method is called.__ See the note above for information about mixing Unicode and 8-bit strings; such mixing can cause this method to raise `UnicodeError`.
+
+'''`StringIO.close()`'''
+
+__Free the memory buffer. Attempting to do further operations with a closed `StringIO` object will raise a `ValueError`.__
+
+Example usage:
+
+ {{{
+import StringIO
+
+output = StringIO.StringIO()
+output.write('First line.\n')
+print >>output, 'Second line.'
+
+# Retrieve file contents -- this will be
+# 'First line.\nSecond line.\n'
+contents = output.getvalue()
+
+# Close object and discard memory buffer --
+# .getvalue() will now raise an exception.
+output.close()
+ }}}
+
+

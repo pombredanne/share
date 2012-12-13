@@ -1,0 +1,356 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>LogCat</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="android-logcat.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>LogCat</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>LogCat 可以用來查看應用程式或系統產生的 logs （包括發生錯誤時的 stack traces），可以從 ADB device/shell command - <code>logcat</code> 或 <a href="android-ddms.html">DDMS</a> 存取到它。</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>[adb] logcat [options] [filterspecs]</code></pre>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">事實上，使用 ADB device command 的好處（相對於 shell command）是，可以搭配 <code>grep</code> 等工具做進一步地處理。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>詳細的用法如下：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ logcat --help
+Usage: logcat [options] [filterspecs]
+options include:
+  -s              Set default filter to silent.
+                  Like specifying filterspec '*:s'
+  -f &lt;filename&gt;   Log to file. Default to stdout
+  -r [&lt;kbytes&gt;]   Rotate log every kbytes. (16 if unspecified). Requires -f
+  -n &lt;count&gt;      Sets max number of rotated logs to &lt;count&gt;, default 4
+  -v &lt;format&gt;     Sets the log print format, where &lt;format&gt; is one of:
+
+                  brief process tag thread raw time threadtime long
+
+  -c              clear (flush) the entire log and exit
+  -d              dump the log and then exit (don't block)
+  -t &lt;count&gt;      print only the most recent &lt;count&gt; lines (implies -d)
+  -g              get the size of the log's ring buffer and exit
+  -b &lt;buffer&gt;     Request alternate ring buffer, 'main', 'system', 'radio'
+                  or 'events'. Multiple -b parameters are allowed and the
+                  results are interleaved. The default is -b main -b system.
+  -B              output the log in binary
+filterspecs are a series of
+  &lt;tag&gt;[:priority]
+
+where &lt;tag&gt; is a log component tag (or * for all) and priority is:
+  V    Verbose
+  D    Debug
+  I    Info
+  W    Warn
+  E    Error
+  F    Fatal
+  S    Silent (supress all output)
+
+'*' means '*:d' and &lt;tag&gt; by itself means &lt;tag&gt;:v
+
+If not specified on the commandline, filterspec is set from ANDROID_LOG_TAGS.
+If no filterspec is found, filter defaults to '*:I'
+
+If not specified with -v, format is set from ANDROID_PRINTF_LOG
+or defaults to "brief"</code></pre>
+</div></div>
+<div class="paragraph"><p>下面示範一些簡單的操作：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ logcat <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+--------- beginning of /dev/log/main <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+I/keystore( 1270): uid: 1000 action: e -&gt; 7 state: 2 -&gt; 2 retry: 4
+D/Process ( 1379): killProcessQuiet, pid=1240
+D/Process ( 1379): dalvik.system.VMStack.getThreadStackTrace(Native Method)
+D/Process ( 1379): java.lang.Thread.getStackTrace(Thread.java:745) <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+D/Process ( 1379): android.os.Process.killProcessQuiet(Process.java:827)
+D/Process ( 1379): com.android.server.am.ActivityManagerService.updateOomAdjLocked(ActivityManagerService.java:14288)
+D/Process ( 1379): com.android.server.am.ActivityManagerService.updateLruProcessInternalLocked(ActivityManagerService.java:1868)
+D/Process ( 1379): com.android.server.am.ActivityManagerService.updateLruProcessLocked(ActivityManagerService.java:1875)
+D/Process ( 1379): com.android.server.am.ActivityManagerService.processCurBroadcastLocked(ActivityManagerService.java:12593)
+D/Process ( 1379): com.android.server.am.ActivityManagerService.processNextBroadcast(ActivityManagerService.java:13018)
+D/Process ( 1379): com.android.server.am.ActivityManagerService.access$100(ActivityManagerService.java:212)
+D/Process ( 1379): com.android.server.am.ActivityManagerService$2.handleMessage(ActivityManagerService.java:1221)
+D/Process ( 1379): android.os.Handler.dispatchMessage(Handler.java:99)
+D/Process ( 1379): android.os.Looper.loop(Looper.java:150)
+D/Process ( 1379): com.android.server.am.ActivityManagerService$AThread.run(ActivityManagerService.java:1497)
+--------- beginning of /dev/log/system <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+I/ActivityManager( 1379): No longer want net.smart.appstore.client (pid 1240): hidden #16
+I/keystore( 1270): uid: 1000 action: e -&gt; 7 state: 2 -&gt; 2 retry: 4
+$
+$ logcat -d <img src="../../_asciidoc/images/icons/callouts/4.png" alt="4" />
+--------- beginning of /dev/log/main
+I/keystore( 1270): uid: 1000 action: e -&gt; 7 state: 2 -&gt; 2 retry: 4
+D/Process ( 1379): killProcessQuiet, pid=1240
+D/Process ( 1379): dalvik.system.VMStack.getThreadStackTrace(Native Method)
+D/Process ( 1379): java.lang.Thread.getStackTrace(Thread.java:745)
+D/Process ( 1379): android.os.Process.killProcessQuiet(Process.java:827)
+...
+$
+$ logcat -c <img src="../../_asciidoc/images/icons/callouts/5.png" alt="5" />
+$ logcat -d -v time <img src="../../_asciidoc/images/icons/callouts/6.png" alt="6" />
+--------- beginning of /dev/log/main
+05-04 00:33:18.354 D/KeyguardViewMediator( 1379): wakeWhenReadyLocked(26)
+05-04 00:33:18.354 D/PowerManagerService( 1379): setScreenStateLocked, on: true
+$</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+單純輸入 <code>logcat</code> 會持續印出最新的 log，跟 Linux 下 <code>tail -f</code> 的效果有點像，按 Ctrl+C 可以結束。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+感覺像是 <code>tail -f /dev/log/main /dev/log/system</code> 一樣，其中 <code>main</code> 跟 <code>system</code> 指的是不同的 <a href="android-logging-buffer.html">log buffer</a>。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+Exception stack trace 會被拆成許多行。（即便搭配 <code>-v long</code> 輸出，還是會被拆成多個 entry）
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/4.png" alt="4" /></td><td>
+搭配 <code>-d</code> (dump) 印完 log 就會自動結束了。沒有清掉 log，下次 <code>logcat</code> 又會重頭開始印。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/5.png" alt="5" /></td><td>
+<code>logcat -c</code> (clear) 可以將 log 清除，下次 <code>logcat</code> 就不會印出舊的 log。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/6.png" alt="6" /></td><td>
+<code>-v &lt;format&gt;</code> 用來控制輸出的格式（控制哪些 metadata fields 要印出來），預設採用 <code>brief</code>（最明顯的就是沒有日期／時間），可以換成 <code>time</code>、<code>threadtime</code>、<code>long</code> 等。
+</td></tr>
+</table></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">在某個操作的前後分別執行 <code>logcat -c</code> 與 <code>logcat -d</code>，就可以輕易抓取出因為該操作所引發的所有 log；缺點是舊 log 會被清掉。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p><code>logcat</code> 預設會印出所有的 log，透過 filter expression 可以設定一或多個過濾條件（filter specification），只印出我們感興趣的部份。例如：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ logcat -d <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+--------- beginning of /dev/log/system
+I/keystore( 1270): uid: 1000 action: e -&gt; 7 state: 2 -&gt; 2 retry: 4
+I/keystore( 1270): uid: 1000 action: e -&gt; 7 state: 2 -&gt; 2 retry: 4
+D/dalvikvm(10110): GC_EXPLICIT freed 23K, 51% free 3306K/6663K, external 0K/0K, paused 62ms
+I/keystore( 1270): uid: 1000 action: e -&gt; 7 state: 2 -&gt; 2 retry: 4
+D/dalvikvm( 9161): GC_EXPLICIT freed 276K, 45% free 3747K/6727K, external 0K/0K, paused 33ms
+V/DeviceStorageMonitorService( 1379): freeMemory=127983616
+D/DeviceStorageMonitorService( 1379): OoO SMS Memory available. SMS_AVAILABLE_THRESHOLD == 524288
+I/DeviceStorageMonitorService( 1379): Posting Message again
+I/keystore( 1270): uid: 1000 action: e -&gt; 7 state: 2 -&gt; 2 retry: 4
+I/keystore( 1270): uid: 1000 action: e -&gt; 7 state: 2 -&gt; 2 retry: 4
+$
+$ logcat DeviceStorageMonitorService:I <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+--------- beginning of /dev/log/system
+I/keystore( 1270): uid: 1000 action: e -&gt; 7 state: 2 -&gt; 2 retry: 4
+I/keystore( 1270): uid: 1000 action: e -&gt; 7 state: 2 -&gt; 2 retry: 4
+D/dalvikvm(10110): GC_EXPLICIT freed 23K, 51% free 3306K/6663K, external 0K/0K, paused 62ms
+I/keystore( 1270): uid: 1000 action: e -&gt; 7 state: 2 -&gt; 2 retry: 4
+D/dalvikvm( 9161): GC_EXPLICIT freed 276K, 45% free 3747K/6727K, external 0K/0K, paused 33ms
+I/DeviceStorageMonitorService( 1379): Posting Message again <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+I/keystore( 1270): uid: 1000 action: e -&gt; 7 state: 2 -&gt; 2 retry: 4
+I/keystore( 1270): uid: 1000 action: e -&gt; 7 state: 2 -&gt; 2 retry: 4
+$
+$ logcat DeviceStorageMonitorService:D *:S <img src="../../_asciidoc/images/icons/callouts/4.png" alt="4" />
+--------- beginning of /dev/log/system
+D/DeviceStorageMonitorService( 1379): OoO SMS Memory available. SMS_AVAILABLE_THRESHOLD == 524288
+I/DeviceStorageMonitorService( 1379): Posting Message again
+$
+$ logcat -s DeviceStorageMonitorService:D <img src="../../_asciidoc/images/icons/callouts/5.png" alt="5" />
+--------- beginning of /dev/log/system
+D/DeviceStorageMonitorService( 1379): OoO SMS Memory available. SMS_AVAILABLE_THRESHOLD == 524288
+I/DeviceStorageMonitorService( 1379): Posting Message again</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+沒有設定 filter 時，會印出全部的 log。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+Filter specification 固定是 <code>tag:priority</code> 成對出現，其中 <em>tag</em> 必須要跟某個 tag 完全一致（大小寫有別），至於 <em>priority</em> 則可以是 <code>V/D/I/W/E/F</code> 其中一個。多了一個 <code>F</code> (Fatal)，大概只有系統遇到很嚴重的錯誤時才會發生吧？
+<div class="openblock">
+<div class="content">
+<div class="paragraph"><p>這裡 <code>logcat DeviceStorageMonitorService:I</code> 的用法，可以解讀成 "預設全部印出"，除了 tag 為 <code>DeviceStorageMonitorService</code> 且 priority 低於 <code>I</code> 的以外。</p></div>
+</div></div>
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+原本的 "V/DeviceStorageMonitorService&#8230;" 跟 "D/DeviceStorageMonitorService&#8230;" 已經被濾除。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/4.png" alt="4" /></td><td>
+多個 filter specification 間用空白隔開。這裡的 <code>*:S</code> (Silent) 表示 "除了&#8230;以外，預設全部不印出"（白名單），跟上面 "預設全部印出，除了&#8230;以外"（黑名單）剛好相反。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/5.png" alt="5" /></td><td>
+上面 <code>*:S</code> 的用法可以用 <code>-s</code> 來取代，比較容易理解。
+</td></tr>
+</table></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">
+<div class="paragraph"><p>DDMS 內建的 filtering 功能顯然比 shell command <code>logcat</code> 強大得多。</p></div>
+<div class="imageblock">
+<div class="content">
+<img src="android-logcat/ddms_filter.png" alt="android-logcat/ddms_filter.png" />
+</div>
+</div>
+<div class="ulist"><ul>
+<li>
+<p>
+不分大小寫
+</p>
+</li>
+<li>
+<p>
+只要出現該字串即可，不一定要出現在最開頭，可以用 <em>^</em> 來控制。
+</p>
+</li>
+<li>
+<p>
+用空格做為 filter 間的分隔字元，可以同時找多個字串
+</p>
+</li>
+<li>
+<p>
+除了 <code>pid:</code> 之外，其他都支援 regex
+</p>
+</li>
+<li>
+<p>
+沒有 prefix 時視為 <code>text:</code>
+</p>
+</li>
+<li>
+<p>
+各個 prefix 間是 AND 運算，就算 <code>text:</code> 用兩次也是一樣。
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>進一步比較 <code>threadtime</code> 跟 <code>long</code> 兩種格式的輸出：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ logcat -d -v long
+...
+[ 06-07 18:48:43.542 16573:0x40bd D/Dhcpcd   ]
+sending DHCP_DISCOVER with xid 0x1d3674b3, next in 4.79 seconds
+
+$ logcat -d -v threadtime <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+...
+06-07 18:48:43.542 16573 16573 D Dhcpcd  : sending DHCP_DISCOVER with xid 0x1d3674b3, next in 4.79 seconds
+06-07 18:48:42.892  1790  1790 D dalvikvm: GC_EXPLICIT freed 522K, 46% free 3667K/6791K, external 1500K/2012K, paused 94ms
+                                         ^ 前面不一定有空格</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+一行顯示一個 log，比較好做 parsing。
+</td></tr>
+</table></div>
+<div class="paragraph"><p><code>logcat</code> 預設會將 log 寫到 stdout，但可以搭配 <code>-f</code>、<code>-r</code> 跟 <code>-n</code> 以 log rotation 的方式寫到 device 上的外部檔案：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$</code></pre>
+</div></div>
+<div class="paragraph"><p>也可以搭配 <code>-d</code> 使用
+log rotation；</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_延伸閱讀">延伸閱讀</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="android-logging-buffer.html">Log Buffers</a>
+</p>
+</li>
+<li>
+<p>
+<a href="android-logcat-color.html">為 logcat 的輸出上顏色</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://developer.android.com/guide/developing/tools/logcat.html">logcat | Android Developers</a> - 簡單說明 <code>logcat</code> 有哪些參數而已。
+</p>
+</li>
+<li>
+<p>
+<a href="http://developer.android.com/guide/developing/debugging/debugging-log.html">Reading and Writing Logs | Android Developers</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:08:04 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

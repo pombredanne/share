@@ -1,0 +1,184 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>在 Python 裡用 Regex 處理多行文字</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="python-regex-multiline.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>在 Python 裡用 Regex 處理多行文字</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>透過 <code>re.DOTALL</code> 跟 <code>re.MULTILINE</code> 這兩個旗標，<code>re</code> 的 matching 就可以跨越多行。</p></div>
+<div class="paragraph"><p>假設有一份文字檔的內容如下：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>block1
+line1
+line2
+line3
+
+block2
+line1
+line2
+line3</code></pre>
+</div></div>
+<div class="paragraph"><p>由於各平台的<a href="../text/text-newline.html">換行字元</a>不同，文字檔實際的內容可能是：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; windows = 'block1\r\nline1\r\nline2\r\nline3\r\n\r\nblock2\r\nline1\r\nline2\r\nline3'
+&gt;&gt;&gt; unix = 'block1\nline1\nline2\nline3\n\nblock2\nline1\nline2\nline3'
+&gt;&gt;&gt; mac  = 'block1\rline1\rline2\rline3\r\rblock2\rline1\rline2\rline3'</code></pre>
+</div></div>
+<div class="paragraph"><p>試著用 regex 取出這兩塊文字：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; re.findall(r'^\w+?\d+.*?^$', unix, re.DOTALL | re.MULTILINE) <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+['block1\nline1\nline2\nline3\n']
+&gt;&gt;&gt; re.findall(r'^\w+?\d+.*?^$', unix + '\n', re.DOTALL | re.MULTILINE)
+['block1\nline1\nline2\nline3\n', 'block2\nline1\nline2\nline3\n']
+&gt;&gt;&gt;
+&gt;&gt;&gt; re.findall(r'^\w+?\d+.*?^$', windows, re.DOTALL | re.MULTILINE)
+[] <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+&gt;&gt;&gt; re.findall(r'^\w+?\d+.*?^\r$', windows, re.DOTALL | re.MULTILINE)
+['block1\r\nline1\r\nline2\r\nline3\r\n\r'] <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+&gt;&gt;&gt; re.findall(r'^\w+?\d+.*?^\r$', windows + '\r\n', re.DOTALL | re.MULTILINE)
+['block1\r\nline1\r\nline2\r\nline3\r\n\r'] <img src="../../_asciidoc/images/icons/callouts/4.png" alt="4" /></code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+用 <code>^$</code> 來表示空白行，但結果只拆出了一塊文字。
+<div class="openblock">
+<div class="content">
+<div class="paragraph"><p>搭配 <code>re.MULTILINE</code>，<code>^</code> 與 <code>$</code> 分別表示 start of the string / beginning of each line (immediately following each newline) 與 end of the string / end of each line (immediately preceding each newline)。</p></div>
+<div class="paragraph"><p>也就是說 <code>^$</code> 在找 <code>\n\n</code> 或 <code>\n&lt;EOF&gt;</code>，但結果不包含結尾的 <code>\n</code> 或 EOF。這也就是為什麼第二塊文字沒有被拆出來的原因，在字串後面加上 Unix-like 換行字元就好了。</p></div>
+</div></div>
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+完全拆不出東西，是因為 <code>^</code> 與 <code>$</code> 之間多了個 <code>\r</code>，找不到 <code>\n\n</code> 或 <code>\n&lt;EOF&gt;</code>。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+將 <code>^$</code> 調整成 <code>^\r$</code> 之後還是沒有達到預期，因為 <code>^\r$</code> 其實是在找 <code>\n\r\n</code> 或 <code>\n\r&lt;EOF&gt;</code>，也難怪只能拆出一塊文字。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/4.png" alt="4" /></td><td>
+在字串後面加上 Windows 換行字元還是拆不出第二塊文字，因為結尾是 <code>\r\n&lt;EOF&gt;</code>，跟 <code>^\r$</code> 要找的 <code>\n\r&lt;EOF&gt;</code> 不符。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>上面這段程式在 Unix-like 或 Windows 下執行都會得到相同的結果，因為 newline 指的永遠是 <code>\n</code>，不論在 Windows 或 Unix-like 下都一樣。實驗結果突顯了兩個問題：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+結尾有沒有換行字元有關係
+</p>
+</li>
+<li>
+<p>
+<code>re</code> 並不能自己解決各平台換行字元不同的差異。
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>其實最大的問題是 <code>^</code> 跟 <code>$</code> 相對的那個 newline 指的永遠是 <code>\n</code>，這跟現實世界裡 Unix-like 跟 Windows 分別採用 <code>\n</code> 與 <code>\r\n</code> 做為 newline character 的做法有落差。為了簡化問題，可以先把 <code>\r\n</code> (Windows) 與 <code>\r</code> (Mac) 全部取代成 <code>\n</code>，然後再解決檔案結尾可能沒有換行字元的問題：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; universal_pattern = re.compile(r'^\w+?\d+.*?(?=\n\n|\n\Z|\Z)', re.DOTALL | re.MULTILINE) <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+&gt;&gt;&gt; _windows = windows.replace('\r\n', '\n')
+&gt;&gt;&gt; _mac = mac.replace('\r', '\n')
+&gt;&gt;&gt; universal_pattern.findall(unix)
+['block1\nline1\nline2\nline3', 'block2\nline1\nline2\nline3']
+&gt;&gt;&gt; re.findall(ununiversal_pattern.findall(_mac)
+['block1\nline1\nline2\nline3', 'block2\nline1\nline2\nline3']
+&gt;&gt;&gt; universal_pattern.findall(_windows)
+['block1\nline1\nline2\nline3', 'block2\nline1\nline2\nline3']
+&gt;&gt;&gt;
+&gt;&gt;&gt; _windows = (windows + '\r\n').replace('\r\n', '\n')
+&gt;&gt;&gt; _mac = (mac + '\r').replace('\r', '\n')
+&gt;&gt;&gt; universal_pattern.findall(unix)
+['block1\nline1\nline2\nline3', 'block2\nline1\nline2\nline3']
+&gt;&gt;&gt; universal_pattern.findall(_mac)
+['block1\nline1\nline2\nline3', 'block2\nline1\nline2\nline3']
+&gt;&gt;&gt; universal_pattern.findall(_windows)
+['block1\nline1\nline2\nline3', 'block2\nline1\nline2\nline3']</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+用 <code>^\w+?\d+.*?(?=\n\n|\n\Z|\Z)</code> 做為一個通用的 pattern，不論檔案結尾有沒有換行字元，而且分隔區塊用的換行字元不會出現在結果裡。
+</td></tr>
+</table></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://docs.python.org/library/re.html">re — Regular expression operations</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://answers.oreilly.com/topic/224-how-to-search-line-by-line-with-a-regular-expression/">How to search line by line with a regular expression - O&#8217;Reilly Answers</a> (2009-09-18)
+</p>
+</li>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/1331815/regular-expression-to-match-cross-platform-newline-characters">python - Regular Expression to match cross platform newline characters - Stack Overflow</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:16:01 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

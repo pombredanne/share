@@ -1,0 +1,235 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Android] ADB (Android Debug Bridge)</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="android-adb.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>[Android] ADB (Android Debug Bridge)</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>ADB 可以用來跟 emulator/device 溝通，由三個部份組成：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+Client - 執行在開發機器上，可以下達 adb command。
+</p>
+</li>
+<li>
+<p>
+Server - 執行在開發機器的背景，做為 client 與 daemon 溝通的橋樑。
+</p>
+</li>
+<li>
+<p>
+Daemon - 執行在 emulator/device 的背景，用以執行 server 轉發過來的 adb command。
+</p>
+</li>
+</ul></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="paragraph"><p>這裡 ADB command 的說法並不精確，可以細分為：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+device command
+</p>
+</li>
+<li>
+<p>
+remote shell command
+</p>
+</li>
+<li>
+<p>
+emulator console command
+</p>
+</li>
+</ul></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ adb
+Android Debug Bridge version 1.0.29
+
+...
+device commands:
+  adb push &lt;local&gt; &lt;remote&gt;    - copy file/dir to device
+  adb pull &lt;remote&gt; [&lt;local&gt;]  - copy file/dir from device
+  adb sync [ &lt;directory&gt; ]     - copy host-&gt;device only if changed
+                                 (-l means list but don't copy)
+                                 (see 'adb help all')
+  adb shell                    - run remote shell interactively
+  adb shell &lt;command&gt;          - run remote shell command
+  adb emu &lt;command&gt;            - run emulator console command</code></pre>
+</div></div>
+</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>除了 <code>adb</code> (<code>$ANDROID_SDK/platform-tools/adb</code>) 這個 <a href="android-adb-cli.html">CLI</a>，其他開發工具（例如 ADT、DDMS 等）也會在內部建立 ADB client。</p></div>
+<div class="paragraph"><p>ADB server 固定在 TCP 5037 服務多個 ADB clients。可以用下面的指令來啟動或停止：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>adb start-server</code>
+</p>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ adb start-server
+* daemon not running. starting it now on port 5037 *
+* daemon started successfully *</code></pre>
+</div></div>
+</li>
+<li>
+<p>
+<code>adb kill-server</code>
+</p>
+</li>
+</ul></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">沒有指令可以檢查 ADB server 目前是否已啟動，可以用 <code>netstat -na | grep 5037</code> 來做檢查。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>ADB server 啟動後，會掃描 5555 到 5585 所有的單數 port，一旦發現有 adb daemon 時就會納入管理。因此 ADB server 同時管理所有 emulator/device 的連線，這也就是為什麼多個 ADB clients 可以透過單一個 ADB server 控制不同的 emulator/device。</p></div>
+<div class="paragraph"><p><code>adb devices</code> 可以列出目前連接到 ADB server 的 emulator/device 有哪些：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ adb devices
+* daemon not running. starting it now on port 5037 * <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+* daemon started successfully *
+List of devices attached
+emulator-5554   device <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+HT142TJ06210    device
+
+$ netstat -na | grep 555
+tcp        0      0 127.0.0.1:5554          0.0.0.0:*               LISTEN
+tcp        0      0 127.0.0.1:5555          0.0.0.0:*               LISTEN</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+除了用上面的方法明確啟動 ADB server 之外，ADB client 被建立時，會先檢查 ADB server 在不在，如果找不到的話，也會自動將 ADB server 執行起來。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+這裡的 <em>emulator-5554</em> 或 <em>HT142TJ06210</em> 被稱做 <a href="android-adb-serialno.html"><em>serial number</em></a>，用來識別不同的 emulator/device。
+<div class="openblock">
+<div class="content">
+<div class="paragraph"><p>以 <em>emulator-5554</em> 為例，<em>5554</em> 指的就是該 emulator instance 的 console port。</p></div>
+<div class="paragraph"><p>至於 <em>device</em> 是指該 emulator/device 的 connection state，可能的值有：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>offline</code> - 沒有連接到 ADB server。
+</p>
+</li>
+<li>
+<p>
+<code>device</code> - 有連接到 ADB server。要注意這個時候 emulator/device 可能還沒開完機來到待解鎖的畫面；拿 emulator 來試就知道了，AVD 啟動的過程中，<code>adv devices</code> 的狀態呈現 <code>device</code> 時，<code>adb shell</code> 已經可以作用，但手機畫面還在開機中。
+</p>
+</li>
+</ul></div>
+</div></div>
+</td></tr>
+</table></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_延伸閱讀">延伸閱讀</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="android-adb-serialno.html">Serial Number</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://developer.android.com/tools/help/adb.html">Android Debug Bridge | Android Developers</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">其他文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://hi.baidu.com/dhqway/blog/item/6a34661bce2696148618bfc8.html">adb 通信協議<em>Demonhunter&#8217;s world</em>百度空間</a> (2010-07-05)
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:11:39 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

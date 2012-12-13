@@ -1,0 +1,54 @@
+= Spring / Official / API =
+<<TableOfContents>>
+
+= Package org.springframework.mail.javamail =
+
+== Class MimeMessageHelper ==
+http://static.springsource.org/spring/docs/2.5.x/api/org/springframework/mail/javamail/MimeMessageHelper.html @2010/01/10
+
+ {{{
+java.lang.Object
+  |-- org.springframework.mail.javamail.MimeMessageHelper
+
+public class MimeMessageHelper
+extends Object
+ }}}
+
+Helper class for ''populating'' a `MimeMessage`. (因此少了許多 Getter 方法)
+
+Mirrors the simple setters of `SimpleMailMessage`, directly applying the values to the underlying `MimeMessage`. __Allows for defining a character encoding for the entire message, automatically applied by all methods of this helper class.__
+
+Offers support for HTML text content, inline elements such as images, and typical mail attachments. Also supports personal names that accompany mail addresses. Note that advanced settings can still be applied directly to the underlying `MimeMessage` object!
+
+__Typically used in `MimeMessagePreparator` implementations or `JavaMailSender` client code: simply instantiating it as a `MimeMessage` ''wrapper'', invoking setters on the wrapper, using the underlying `MimeMessage` for mail sending. (可以用 `getMimeMessage()` 取回)__ Also used internally by `JavaMailSenderImpl`.
+
+Sample code for an HTML mail with an inline image and a PDF attachment:
+
+ {{{
+mailSender.send(new MimeMessagePreparator() {
+  public void prepare(MimeMessage mimeMessage) throws MessagingException {
+    MimeMessageHelper message = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+    message.setFrom("me@mail.com");
+    message.setTo("you@mail.com");
+    message.setSubject("my subject");
+    message.setText("my text <img src='cid:myLogo'>", true);
+    message.addInline("myLogo", new ClassPathResource("img/mylogo.gif"));
+    message.addAttachment("myDocument.pdf", new ClassPathResource("doc/myDocument.pdf"));
+  }
+});
+ }}}
+
+Consider using `MimeMailMessage` (which implements the common `MailMessage` interface, just like `SimpleMailMessage`) on top of this helper (又再包了一層), in order to let message population code interact with a simple message or a MIME message through a common interface.
+
+Warning regarding multipart mails: __Simple MIME messages that just contain HTML text but no inline elements or attachments will work on more or less any email client that is capable of HTML rendering. However, inline elements and attachments are still a major compatibility issue between email clients: It's virtually impossible to get inline elements and attachments working across Microsoft Outlook, Lotus Notes and Mac Mail.__ Consider choosing a specific multipart mode for your needs: The javadoc on the `MULTIPART_MODE` constants contains more detailed information.
+
+Since: 19.01.2004
+
+Author: Juergen Hoeller
+
+See Also: `setText(String, boolean)`, `setText(String, String)`, `addInline(String, org.springframework.core.io.Resource)`, `addAttachment(String, org.springframework.core.io.InputStreamSource)`, `MULTIPART_MODE_MIXED_RELATED`, `MULTIPART_MODE_RELATED`, `getMimeMessage()`, `JavaMailSender`
+
+
+
+
+

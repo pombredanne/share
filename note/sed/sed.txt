@@ -1,0 +1,61 @@
+= sed (Stream Editor) =
+
+[quote,'http://en.wikipedia.org/wiki/Sed[sed - Wikipedia, the free encyclopedia]']
+________________________________________________________________________________
+sed (stream editor) is a Unix utility that parses text and implements a programming language which can apply transformations to such text. It reads input line by line (sequentially), applying the operation which has been specified via the command line (or a sed script), and then outputs the line.
+________________________________________________________________________________
+
+ sed [OPTION]... {script-only-if-no-other-script} [input-file]...
+
+如果 'input-file' 沒有提供的話，是以 standard input 做為輸入，至於輸出則預設是往 standard output。
+
+常用的 option 有：
+
+ * `-e script, --expression=script` - 如果有多個 scripts，可以使用這個 option 多次，給定要依序執行的 scripts。
+ * `-i[SUFFIX], --in-place[=SUFFIX]` - 直接將轉換後的結果寫回檔案。如果有提供 'SUFFIX' 的話，會另外備份並在檔名後面串上 'SUFFIX'，例如 `--in-place=.bak`。
+ * `-r, --regexp-extended` - 採用 extended regular expression。
+
+== 延伸閱讀 ==
+
+ * link:../unix-like/commands/commands.html[Linux Commands]
+
+== 參考資料 ==
+
+.網站
+--
+ * http://www.gnu.org/software/sed/[GNU sed - GNU Project - Free Software Foundation (FSF)]
+--
+
+.文件
+--
+ * http://en.wikipedia.org/wiki/Sed[sed - Wikipedia, the free encyclopedia]
+ * http://manpages.debian.net/cgi-bin/man.cgi?query=sed[sed(1) - Debian Man Pages]
+--
+
+////////////////////////////////////////////////////////////////////////////////
+
+ * sed -n '500,600p' filename ＃可以從 filename 取出第 500 行到 600 行（含）的內容
+ * sed 跟 awk 哪裡像？
+ * sed 以行為單位做為 input（可以是 stdin），用 regular expression 過濾，經過 script 處理，再輸出到 stdout（不會直接修改檔案）。
+ * sed script files，其中 script = sed commands = /pattern/action，而 action 可以是：
+   ** p - 印出符合 pattern 的行
+   ** d - 刪除（其實是不印出）符合 pattern 的行
+   ** s/pattern1/pattern2/ - 在符合 pattern 的行裡，將第一個 pattern1 取代成 pattern2
+   ** s/pattern1/pattern2/g - 在符合 pattern 的行裡，將所有的 pattern1 取代成 pattern2
+ * sed -e script1 -e script2 ... -e scriptN files
+   ** 跟 pipeline 的效果相同，sed script1 ... | sed script2 ...
++
+--------------------------------------------------------------------------------
+$ id | sed 's/(.*? gid=.*$//'
+uid=1000(jeremy) gid=1000(jeremy) ...
+$ id | sed 's/(.*$//'
+uid=1000
+$ id | sed 's/(.*$//' | sed 's/uid=//'
+1000
+$ id | sed -e 's/(.*$//' -e 's/uid=//'
+1000
+--------------------------------------------------------------------------------
++
+ * pattern space?
+////////////////////////////////////////////////////////////////////////////////
+

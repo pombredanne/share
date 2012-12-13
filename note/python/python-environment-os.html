@@ -1,0 +1,177 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>在 Python 裡判斷作業系統別</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div>&#187;<a href="../../index.html">首頁</a></div>
+  <div>&#187;<a href="../../note/index.html">學習筆記</a></div>
+  <div><img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" border="0" /><br/><em>Jeremy Kao</em></div>
+  <div>&#187;<a href="http://imsardine.wordpress.com">部落格</a></div>
+  <div>&#187;<a href="https://github.com/imsardine">GitHub</a></div>
+  <!-- <div id="page-source">&#187;<a href="python-environment-os.txt">頁面原始碼</a></div> -->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>在 Python 裡判斷作業系統別</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">
+<div class="title">延伸閱讀</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="python-environment-os-bit.html">判斷作業系統的位元數</a>
+</p>
+</li>
+<li>
+<p>
+<a href="python-environment-os-win.html">判斷 Windows 的版本</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>在 Python 裡要<a href="python-environment.html">識別執行環境</a>的作業系統，是 Windows、Linux 還是 Mac，可能的方式有：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://docs.python.org/library/os.html#os.name"><code>os.name</code></a> - 傳回 <code>nt</code>、<code>posix</code>、<code>darwin</code> (Mac OS X)、<code>java</code> (Jython) 等字串。
+</p>
+</li>
+<li>
+<p>
+<a href="http://docs.python.org/library/sys.html#sys.platform"><code>sys.platform</code></a> - 帶有版號，例如 <code>win32</code>（在 64-bit Windows 下也是傳回 <code>win32</code>）、<code>linux2</code>、<code>darwin</code>、<code>java1.6.0_20</code> 等，判斷時要用 <code>startswith()</code>。
+</p>
+</li>
+<li>
+<p>
+<a href="http://docs.python.org/library/platform.html#platform.system"><code>platform.system()</code></a> - 傳回 <code>Windows</code>、<code>Linux</code>、<code>Darwin</code>、<code>Java</code> 等字串。
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>比較下來，最直覺的方式就是透過 <code>platform.system()</code>：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>C:\&gt;python
+Python 2.7.2 (default, Jun 12 2011, 14:24:46) [MSC v.1500 64 bit (AMD64)] on win32
+Type "help", "copyright", "credits" or "license" for more information.
+&gt;&gt;&gt; import platform
+&gt;&gt;&gt; platform.uname()
+('Windows', 'my-host-name', '7', '6.1.7600', 'AMD64', 'Intel64 Family 6 Model 23 Stepping 10, GenuineIntel')
+&gt;&gt;&gt; platform.system()
+'Windows'
+&gt;&gt;&gt;
+
+$ python
+Python 2.6.6 (r266:84292, Sep 15 2010, 16:22:56)
+[GCC 4.4.5] on linux2
+Type "help", "copyright", "credits" or "license" for more information.
+&gt;&gt;&gt; import platform
+&gt;&gt;&gt; platform.uname()
+('Linux', 'my-host-name', '2.6.35-32-generic', '#67-Ubuntu SMP Mon Mar 5 19:39:49 UTC 2012', 'x86_64', '')
+&gt;&gt;&gt; platform.system()
+'Linux'
+&gt;&gt;&gt;
+
+$ python
+Python 2.7.3 (v2.7.3:70274d53c1dd, Apr  9 2012, 20:52:43)
+[GCC 4.2.1 (Apple Inc. build 5666) (dot 3)] on darwin
+Type "help", "copyright", "credits" or "license" for more information.
+&gt;&gt;&gt; import platform
+&gt;&gt;&gt; platform.uname()
+('Darwin', 'WFBSSs-Mac-mini.local', '11.3.0', 'Darwin Kernel Version 11.3.0: Thu Jan 12 18:47:41 PST 2012; root:xnu-1699.24.23~1/RELEASE_X86_64', 'x86_64', 'i386')
+&gt;&gt;&gt; platform.system()
+'Darwin'
+&gt;&gt;&gt;</code></pre>
+</div></div>
+<div class="paragraph"><p>例如：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>import platform
+
+if platform.system() == 'Windows':
+    import _winreg</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://docs.python.org/library/sys.html">sys — System-specific parameters and functions</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://docs.python.org/library/os.html">os — Miscellaneous operating system interfaces</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://docs.python.org/library/platform.html">platform — Access to underlying platform’s identifying data</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/4553129/when-to-use-os-name-sys-platform-or-platform-system">python - When to use os.name, sys.platform, or platform.system? - Stack Overflow</a> (2010-12-29) - <code>os.name</code>、<code>sys.platform</code>、<code>platform.system()</code> 都可以用來取得系統別。有人回答 <code>platform.system()</code> 是相對比較新的實作（<code>platform</code> 這個模組是 Python 2.3 之後才有的），其他兩個都是為了向下相容才留著的。
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-03 11:14:30 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>
