@@ -41,7 +41,7 @@ class DocumentSystem(object):
         fn = path.join(self.site_dir, RENAMES_CSV)
         if not path.exists(fn): return renames
 
-        with open(fn, 'rb') as f:
+        with open(fn, 'rU') as f:
             for row in csv.reader(f):
                 if row == []: continue # last line may be empty
                 renames[row[0]] = row[1]
@@ -80,6 +80,8 @@ class DocumentSystem(object):
 
 class Document(object):
 
+    _PATTERN_TITLE_LINE = re.compile(r'^= (.*) =$')
+    _PATTERN_TITLE_ATTR = re.compile(r'^:title:\s*(.*)$')
     _PATTERN_LITERAL = re.compile(r'^\s+[^-*].*$')
     _PATTERN_LINK = re.compile(r'(?:link|image):{1,2}.+?\[.*?]')
 
@@ -92,6 +94,7 @@ class Document(object):
         self.links = []
         self.back_links = []
         self.build_failure = None
+        self.title = None
 
     def _deduce_docnames(self, filename):
         relpath = path.relpath(path.splitext(filename)[0], self.docsys.site_dir)
@@ -109,9 +112,21 @@ class Document(object):
 
     def parse(self):
         logger.debug("Parsing %s ...", self.fullname)
-        with open(self.filename) as f:
+        with open(self.filename, 'rU') as f:
             lineno = 1
             for line in f:
+                # extrac document title
+                if lineno == 1:
+                    match = self._PATTERN_TITLE_LINE.match(line)
+                    if match:
+                        self.title = match.group(1)
+                    else:
+                        self.title = line
+                        logger.warning('The first line of %s does not match the standard pattern: [%s]', 
+                                       path.join(self.dirname, self.filename), line)
+                match = self._PATTERN_TITLE_ATTR.match(line)
+                if match: self.title = match.group(1) # override one-line title
+
                 if not self._PATTERN_LITERAL.match(line):
                     self._parse_line(line, lineno)
                 lineno += 1
@@ -248,6 +263,7 @@ class Document(object):
                 '-a', 'badges']
         cmds.extend(['-f', path.join(self.docsys.site_dir, '_asciidoc/layout.conf')])
         cmds.extend(['-a', 'siteroot=%s' % self.path_to_site_root()])
+        cmds.extend(['-a', 'source-highlighter=pygments'])
 
         rel = self.path_to_site_root()
         cmds.extend(['-a', 'iconsdir=%s_asciidoc/images/icons' % rel])
@@ -325,7 +341,7 @@ def main():
 
     docsys = DocumentSystem(site_dir)
     docsys.parse()
-    docsys.build(force=False) # TODO: option -f --force
+    docsys.build(force=False) # TODO: option -f --force, debug level
 
 if __name__ == '__main__':
    main()

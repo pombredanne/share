@@ -1,0 +1,209 @@
+= Bookmark Tree Manager =
+
+.http://dynamicg-android-apps2.googlecode.com/svn/trunk/BookmarkTree/AndroidManifest.xml[`AndroidMenifest.xml`]
+--------------------------------------------------------------------------------
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+      package="com.dynamicg.bookmarkTree"
+      android:installLocation="auto"
+      android:versionCode="21"
+      android:versionName="1.21"
+      >
+      
+    <supports-screens 
+    	android:smallScreens="true"
+        android:normalScreens="true"
+        android:largeScreens="true"
+        android:anyDensity="true"
+        />
+    
+    <uses-sdk android:minSdkVersion="5" android:targetSdkVersion="14" />
+
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+	<uses-permission android:name="com.android.browser.permission.READ_HISTORY_BOOKMARKS" /> <1>
+	<uses-permission android:name="com.android.browser.permission.WRITE_HISTORY_BOOKMARKS" />
+	<uses-permission android:name="com.android.launcher.permission.INSTALL_SHORTCUT" />
+	
+    <application
+        android:icon="@drawable/icon"
+        android:label="@string/app_name"
+        android:theme="@style/MainTheme"
+        >
+        <activity android:name="com.dynamicg.bookmarkTree.Main" <1>
+                  android:label="@string/app_name"
+                  android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize"
+                  android:launchMode="singleTask"
+                  >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+			<meta-data android:name="svnrevision" android:value="$Rev$" />
+        </activity>
+    </application>
+    
+</manifest>
+--------------------------------------------------------------------------------
+<1> 透過 `READ_HISTORY_BOOKMARKS` 跟 `WRITE_HISTORY_BOOKMARKS` 分別取得讀寫 bookmark 的權限。
+<2> 就這麼一個 activity，其他都是對話框。
+
+Bookmark 的讀取是透過 http://dynamicg-android-apps2.googlecode.com/svn/trunk/BookmarkTree/src/com/dynamicg/bookmarkTree/data/BrowserBookmarkLoader.java[`com.dynamicg.bookmarkTree.data.writer.BookmarkWriterA`]：
+
+--------------------------------------------------------------------------------
+package com.dynamicg.bookmarkTree.data.writer;
+
+import android.content.ContentValues;
+import android.net.Uri;
+import android.provider.Browser;
+
+import com.dynamicg.bookmarkTree.BookmarkTreeContext;
+import com.dynamicg.common.Logger;
+
+public class BookmarkWriter extends BookmarkWriterA {
+
+	private static final Logger log = new Logger(BookmarkWriter.class);
+	
+	private final ContentValues values = new ContentValues();
+
+	public BookmarkWriter(BookmarkTreeContext ctx) {
+		super(ctx);
+	}
+
+	private void doUpdate(Integer bookmarkId) {
+		
+		if (log.debugEnabled) {
+			log.debug("doUpdate ...", bookmarkId, values);
+		}
+		int result = contentResolver.update ( UriProvider.UPDATE
+				, values
+				, Browser.BookmarkColumns._ID+"=?"
+				, new String[]{Integer.toString(bookmarkId)}
+		);
+		if (log.debugEnabled) {
+			log.debug("doUpdate done", result);
+		}
+	}
+	
+	public void updateTitle(Integer bookmarkId, String title) {
+		values.put(Browser.BookmarkColumns.TITLE, title);
+		doUpdate(bookmarkId);
+	}
+
+	public void updateTitleAndUrl(Integer bookmarkId, String title, String url) {
+		values.put(Browser.BookmarkColumns.TITLE, title);
+		values.put(Browser.BookmarkColumns.URL, url);
+		doUpdate(bookmarkId);
+	}
+	
+	public void insert(String title, String url) {
+		if (log.debugEnabled) {
+			log.debug("create bookmark", title, url);
+		}
+		values.put(Browser.BookmarkColumns.TITLE, title);
+		values.put(Browser.BookmarkColumns.URL, url);
+		values.put(Browser.BookmarkColumns.BOOKMARK, 1);
+		Uri result = contentResolver.insert (  UriProvider.INSERT, values );
+		if (log.debugEnabled) {
+			log.debug("row created", result);
+		}
+	}
+	
+	public void deleteBrowserBookmark(Integer id) {
+		if (log.debugEnabled) {
+			log.debug("delete bookmark", id);
+		}
+		contentResolver.delete (  UriProvider.DELETE
+				, Browser.BookmarkColumns._ID+"=?"
+				, new String[]{Integer.toString(id)}
+				);
+	}
+	
+}
+--------------------------------------------------------------------------------
+
+寫入則是透過 http://dynamicg-android-apps2.googlecode.com/svn/trunk/BookmarkTree/src/com/dynamicg/bookmarkTree/data/writer/BookmarkWriter.java[`com.dynamicg.bookmarkTree.data.writer.BookmarkWriter`]：
+
+--------------------------------------------------------------------------------
+package com.dynamicg.bookmarkTree.data.writer;
+
+import android.content.ContentValues;
+import android.net.Uri;
+import android.provider.Browser;
+
+import com.dynamicg.bookmarkTree.BookmarkTreeContext;
+import com.dynamicg.common.Logger;
+
+public class BookmarkWriter extends BookmarkWriterA {
+
+	private static final Logger log = new Logger(BookmarkWriter.class);
+	
+	private final ContentValues values = new ContentValues();
+
+	public BookmarkWriter(BookmarkTreeContext ctx) {
+		super(ctx);
+	}
+
+	private void doUpdate(Integer bookmarkId) {
+		
+		if (log.debugEnabled) {
+			log.debug("doUpdate ...", bookmarkId, values);
+		}
+		int result = contentResolver.update ( UriProvider.UPDATE
+				, values
+				, Browser.BookmarkColumns._ID+"=?"
+				, new String[]{Integer.toString(bookmarkId)}
+		);
+		if (log.debugEnabled) {
+			log.debug("doUpdate done", result);
+		}
+	}
+	
+	public void updateTitle(Integer bookmarkId, String title) {
+		values.put(Browser.BookmarkColumns.TITLE, title);
+		doUpdate(bookmarkId);
+	}
+
+	public void updateTitleAndUrl(Integer bookmarkId, String title, String url) {
+		values.put(Browser.BookmarkColumns.TITLE, title);
+		values.put(Browser.BookmarkColumns.URL, url);
+		doUpdate(bookmarkId);
+	}
+	
+	public void insert(String title, String url) {
+		if (log.debugEnabled) {
+			log.debug("create bookmark", title, url);
+		}
+		values.put(Browser.BookmarkColumns.TITLE, title);
+		values.put(Browser.BookmarkColumns.URL, url);
+		values.put(Browser.BookmarkColumns.BOOKMARK, 1);
+		Uri result = contentResolver.insert (  UriProvider.INSERT, values );
+		if (log.debugEnabled) {
+			log.debug("row created", result);
+		}
+	}
+	
+	public void deleteBrowserBookmark(Integer id) {
+		if (log.debugEnabled) {
+			log.debug("delete bookmark", id);
+		}
+		contentResolver.delete (  UriProvider.DELETE
+				, Browser.BookmarkColumns._ID+"=?"
+				, new String[]{Integer.toString(id)}
+				);
+	}
+	
+}
+--------------------------------------------------------------------------------
+
+== 參考資料 ==
+
+.網站
+--
+ * https://play.google.com/store/apps/details?id=com.dynamicg.bookmarkTree&feature=search_result[Bookmark Tree Manager - Android Apps on Google Play]
+ * http://dynamicg-android-apps2.googlecode.com/svn/trunk/BookmarkTree/[SVN /trunk/BookmarkTree]
+--
+
+== 雜記 ==
+
+ * 發現在採用自家版本瀏覽器的 Sony Tablet S 上，Bookmark Tree Manager 也可以正常新增／刪除 bookmarks。
+
