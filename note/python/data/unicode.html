@@ -1,0 +1,132 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Python] Unicode</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" />
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="../python.html">Python</a> / <a href="data.html">Data</a> / <a href="string.html">String</a> Unicode</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; greeting = u"你好, 大家好"
+&gt;&gt;&gt; f = open('somefile.txt', 'w')
+&gt;&gt;&gt; f.write(greeting) # 只能寫出 ASCII 字元, 但 open() 又不能給定 Encoding
+Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+UnicodeEncodeError: 'ascii' codec can't encode characters in position 0-1: ordinal not in range(128)
+&gt;&gt;&gt; greeting_utf8 = greeting.encode('UTF-8')
+&gt;&gt;&gt; f.write(greeting_utf8) # 轉成相容於 ASCII 的編碼才行
+&gt;&gt;&gt; f.close()
+&gt;&gt;&gt; f = open('somefile.txt')
+&gt;&gt;&gt; greeting_utf8
+&gt;&gt;&gt; '\xe4\xbd\xa0\xe5\xa5\xbd, \xe5\xa4\xa7\xe5\xae\xb6\xe5\xa5\xbd'
+     ^^^^^^^^^^^^ 在 UTF-8 裡, 3 個 Bytes 構成一個中文字, 其他 ASCII 字元則維持原樣
+&gt;&gt;&gt; print f.read(3) # 讀取 3 Bytes
+&gt;&gt;&gt; 你
+&gt;&gt;&gt; print f.read(5)
+&gt;&gt;&gt; 好,
+&gt;&gt;&gt; rest = f.read()
+&gt;&gt;&gt; print type(rest), rest # 並沒有自動轉成 Unicode
+&lt;type 'str'&gt; 大家好
+&gt;&gt;&gt; urest = rest.decode('UTF-8')
+&gt;&gt;&gt; print type(urest), urest
+&lt;type 'unicode'&gt; 大家好</code></pre>
+</div></div>
+<div class="paragraph"><p>在字串前面加個 u 前導, 可以加在 Ordinary/Long/Raw Strings 前面</p></div>
+<div class="paragraph"><p>Data Type 是 unicode, 採用 16-bit Unicode 的方式存放.</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; "你好"
+'\xe4\xbd\xa0\xe5\xa5\xbd' # 這應該是 BIG-5 編碼吧?
+&gt;&gt;&gt; u"你好"
+u'\u4f60\u597d'
+&gt;&gt;&gt; ur"路徑是 C:\Programm Files" '\\' # 並用 u 與 r 兩個前導
+u'\u8def\u5f91\u662f C:\\Programm Files\\'
+&gt;&gt;&gt; print ur"路徑是 C:\Programm Files" '\\'
+路徑是 C:\Programm Files\</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="content">
+<pre><code># Normal/Unicode String 兩者要怎麼做轉換? 應該就是 encode()/decode() 吧
+&gt;&gt;&gt; unicode("你好")
+Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+UnicodeDecodeError: 'ascii' codec can't decode byte 0xe4 in position 0: ordinal not in range(128)
+&gt;&gt;&gt; str(u"你好")
+Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+UnicodeEncodeError: 'ascii' codec can't encode characters in position 0-1: ordinal not in range(128)</code></pre>
+</div></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>decode(encoding)</code> - 將其它編碼轉成 Unicode, 例如 <code>string.decode('UTF-8')</code>，傳回 <code>unicode</code>。
+</p>
+</li>
+<li>
+<p>
+<code>encode(encoding)</code> - 將 Unicode 轉成其他編碼, 例如 <code>string.encode('UTF-8')</code>，傳回 <code>str</code>。
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-15 20:50:55 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

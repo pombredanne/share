@@ -1,0 +1,2199 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>JMeter</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>JMeter</h1>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_getting_started">Getting Started</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_test_plan">Test Plan</h3>
+<div class="paragraph"><p>一切都從 test plan 開始。</p></div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_test_efficiency">Test Efficiency</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+透過 non-GUI mode 執行測試。
+</p>
+</li>
+<li>
+<p>
+把可以吃 <code>.jtl</code> 的 listener 都拿掉，改用 CLI 的 <code>--logfile</code> 來指定。至於不能吃 <code>.jtl</code> 的 listener（例如 PerfMon），還是要保留著才有作用。
+</p>
+</li>
+<li>
+<p>
+Result file 儘可能採用 CSV 格式（因為 CSV 不支援斷行）。
+</p>
+</li>
+<li>
+<p>
+如果 test data 很多（尤其是亂數產生的），建議先將 test data 產出再用 Config Element: CVS Data Set Config 引進來。這樣可以減少 runtime 的負載。
+</p>
+<div class="literalblock">
+<div class="content">
+<pre><code>Use as few Listeners as possible; if using the -l flag as above they can all be deleted or disabled.</code></pre>
+</div></div>
+</li>
+</ul></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/best-practices.html#limit_threads">User&#8217;s Manual &gt; Best Practices &gt; Limit the Number of Threads</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/best-practices.html#lean_mean">User&#8217;s Manual &gt; Best Practices &gt; Reducing resource requirements</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_distributed_testing">Distributed Testing</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>JMeter 支援 distributed testing：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+Master - 執行 JMeter GUI，對其他 slaves 發號施令。
+</p>
+</li>
+<li>
+<p>
+Slave - 執行 <code>jmeter-server</code>，接收 master 的指令，往 target 發出 requests。
+</p>
+</li>
+<li>
+<p>
+Target - 受測的 web server。
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>用在 client 端無法送出大量的 requests 時，可以集合多台電腦的力量，一起對受測的 servers 施壓。在 User&#8217;s Manual &gt; Best Practices 一開始就提到，JMeter 如果太忙的話，量測出來的時間準確度就會比較差，解法就是用 distributed testing 來解決。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/remote-test.html">User&#8217;s Manual: Remote (Distributed) Testing</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/jmeter_distributed_testing_step_by_step.pdf">Distributed Testing</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/best-practices.html#limit_threads">User&#8217;s Manual &gt; Best Practices &gt; Limit the Number of Threads</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_concepts">Concepts</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">Latency</div>
+<div class="content">
+<div class="paragraph"><p>這個數字是發出 request 前與收到第一批 response 時間差（所以不單單是受測端準備第一批 response 的時間，還包括測試端準備 request 的時間）。有兩個 listener 可以觀察 response latency 的變化：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+Response Latencies Over Time (jmeter-plugins)
+</p>
+</li>
+<li>
+<p>
+Response Times vs Threads (jmeter-plugins)
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>如果 sampler 有設定 response timeout 的話，latency 大於這個門檻的 request 都會以 <code>java.net.SocketTimeoutException</code> 收場。</p></div>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/glossary.html">Glossary</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_basics">Basics</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_cli">CLI</h3>
+<div class="paragraph"><p><code>jmeter</code> 常用的 options 有：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>-h, --help</code> - 印出 help 訊息。
+</p>
+</li>
+<li>
+<p>
+<code>-v, --version</code> - 印出 JMeter 的版本資訊。
+</p>
+</li>
+<li>
+<p>
+<code>-t, --testfile &lt;jmx_file&gt;</code> - 指定要執行的 test plan (<code>.jmx</code>)。
+</p>
+</li>
+<li>
+<p>
+<code>-n, --nongui</code> - 執行 non-GUI mode（預設是 GUI mode）。
+</p>
+</li>
+<li>
+<p>
+<code>-s, --server</code> - 執行 server mode。
+</p>
+</li>
+<li>
+<p>
+<code>-l, --logfile &lt;jtl_file&gt;</code> - the file to log samples to（別跟 <code>-j</code> 搞混了），例如 <code>-l result.jtl</code>。
+</p>
+</li>
+<li>
+<p>
+<code>-j, --jmeterlogfile &lt;log_file&gt;</code> - 指定 JMeter 輸出 log 的檔名，預設是 <code>jmeter.log</code>。
+</p>
+</li>
+<li>
+<p>
+<code>-H, --proxyHost &lt;proxy_host&gt;</code> - 指定 JMeter 自己往外發出 request 時，所要採用的 proxy server 的 IP 或 hostname。
+</p>
+</li>
+<li>
+<p>
+<code>-P, --proxyPort &lt;proxy_port&gt;</code> - 指定 proxy server 的埠號。
+</p>
+</li>
+<li>
+<p>
+<code>-N &lt;nonproxy_hosts&gt;</code> - 不走 proxy 的 host names。例如 <code>-N localhost</code>。
+</p>
+</li>
+<li>
+<p>
+<code>-J, --jmeterproperty &lt;argument&gt;=&lt;value&gt;</code> - 定義 JMeter property。例如 <code>-Jthreads=3</code> 或 <code>-Jhostname=www.foo.com</code>。
+</p>
+</li>
+<li>
+<p>
+<code>-G, --globalproperty &lt;argument&gt;=&lt;value&gt;</code> - Define Global properties (sent to servers；感覺像 STAF 有區分 local/global 一樣)
+</p>
+</li>
+<li>
+<p>
+<code>-D, --systemproperty &lt;argument&gt;=&lt;value&gt;</code> - Define additional System properties
+</p>
+</li>
+<li>
+<p>
+<code>-L, --loglevel [&lt;category&gt;=]&lt;level&gt;</code> - 例如 <code>-LDEBUG</code> 或 <code>-Ljmeter=DEBUG</code>。
+</p>
+</li>
+</ul></div>
+<div class="exampleblock">
+<div class="title">Example 1. 參考資料</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/get-started.html#options">Full list of command-line options</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+<div class="sect2">
+<h3 id="_gui_mode">GUI Mode</h3>
+<div class="paragraph"><p>執行 <code>jmeter</code> 就會帶出 JMeter GUI。</p></div>
+<div class="imageblock">
+<div class="content">
+<img src="jmeter/jmeter_gui.png" alt="jmeter/jmeter_gui.png" />
+</div>
+</div>
+<div class="paragraph"><p>GUI mode 主要是用來開發 test plan，真正在測試時，多半還是會採用 non-GUI mode，這樣才能將數據保存下來（雖然 GUI mode 下也可以 Export to CSV&#8230;），需要看到圖形再載入 JMeter GUI 看即可。</p></div>
+<div class="paragraph"><p>GUI mode 下 listener 會一直累計資料，如果要重來，必須手動執行 Run &gt; Clear (Ctrl+Shift-E) 或 Clear All (Ctrl-E) 才行。另外從檔案讀入 test result 時，並不會將現有的圖形清掉，方便合併多次測試的結果。（如果覺得圖形怪怪的，可以考慮做一下 clear 的動作）</p></div>
+<div class="sect3">
+<h4 id="_workbench">WorkBench ===</h4>
+<div class="paragraph"><p>Test Plan 跟 WorkBench 有什麼不同？Workbench 好像只是個暫時剪貼 elements 的地方，因為它並不會隨著 test plan 存出去；實務上就把它當做是一個工作台，可以先用 Save Selection As&#8230; 先存出去，下次再 merge 進來即可。比較常見的用法是，將其他 test plan 載到 workbench，方便複製／貼上。</p></div>
+<div class="paragraph"><p>考量 test efficiency，要儘可能減少 runtime 時的 listener。按照這種規劃，平常就要累積自己的 workbench（可以用 Controller: Simple 來分門別類）</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">如果 listener 不會跟 test plan 放在一起，平常就要另外開一支檔案在放 workbench 裡，因為看某個 test plan 的結果，總是開相同的 listener&#8230;</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_non_gui_mode">Non-GUI Mode</h3>
+<div class="paragraph"><p><code>jmeter -n</code> 可以用來啟動 non-GUI mode。例如：</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>jmeter -n -t test.jmx -l -f</code></pre>
+</div></div>
+<div class="paragraph"><p>必須要透過 <code>-t</code> 來指定 test plan (<code>.jmx</code>)</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/get-started.html#non_gui">Non-GUI Mode</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://wiki.apache.org/jakarta-jmeter/JMeterFAQ#How_do_I_parameterize_my_JMeter_test_cases.3F">How do I parameterize my JMeter test cases?</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://wiki.apache.org/jakarta-jmeter/JMeterFAQ#How_do_I_make_parameters_dynamic.2C_reacting_to_the_unique_server_responses_of_each_test_run.3F">How do I make parameters dynamic, reacting to the unique server responses of each test run?</a>
+</p>
+</li>
+</ul></div>
+</div>
+<div class="sect2">
+<h3 id="_scoping_rules">Scoping Rules</h3>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/test_plan.html#scoping_rules">User&#8217;s Manual &gt; Elements of a Test Plan &gt; Scoping Rules</a>
+</p>
+</li>
+</ul></div>
+</div>
+<div class="sect2">
+<h3 id="_property_and_variable">Property and Variable</h3>
+<div class="paragraph"><p>在 JMeter 裡，property 跟 Variable 是兩個很容易混淆的概念。兩者最大的差別就是，property 是 global (common to all threads) 的，而 variable 則是 local to a thread。</p></div>
+<div class="paragraph"><p>Property 定義在 <code>jmeter.properties</code> 裡，常用來定義 JMeter 各項設定的預設值。</p></div>
+<div class="paragraph"><p>在 JMeter 裡有 3 種 property：JMeter property、global property、system property。</p></div>
+<div class="paragraph"><p></p></div>
+<div class="paragraph"><p>WorkBench 底下可以新增一個 Non-Config Element: Property Display，用以檢視與修改 system 及 JMeter property 的值（但只能從 command line 的 <code>-J</code> 新增定義）。如果是測試過程中，想要觀查 JMeter property/variable 及 system peroperty 的變化，可以採用 Debug Sampler，它會吐出 property/variable 的值，當然結果還是得透過 Listener: View Results Tree 的 Response Data 來看。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">寫 test plan 時，Test Action 也很好用，可以當做中斷點&#8230;</td>
+</tr></table>
+</div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/test_plan.html#properties">User&#8217;s Manual &gt; Elements of a Test Plan &gt; Properties and Variables</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_udv_user_defined_variable">UDV (User Defined Variable)</h3>
+<div class="ulist"><ul>
+<li>
+<p>
+在 test plan 的層級設定，而且只在 test plan 開始時計算一次。
+</p>
+</li>
+<li>
+<p>
+之後還是可以同一般的 variable 取用，例如 <code>${__V(...)}</code> 或 <code>${__BeanShell(vars.get(...))}</code>。
+</p>
+</li>
+</ul></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/component_reference.html#User_Defined_Variables">User&#8217;s Manual &gt; Component Reference &gt; User Defined Variables</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_function">Function</h3>
+<div class="paragraph"><p>Function 固定會有一個回傳值，可以像 variable 一樣用來動態代換 tree element 的設定，也因此它的用法很像是 variable，都是放在 <code>${...}</code> 裡：</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>${__functionName}
+${__functionName(arg1,arg2,...,argN)}</code></pre>
+</div></div>
+<div class="paragraph"><p>其中 <em>__functionName</em> 大小寫有別，前面固定會有兩個底線，參數用逗號隔開放在括號裡。例如：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>${__time(YMD)} <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+${__threadNum} <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+${__time(EEE\, d MMM yyyy)} <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+<code>YMD</code> 是傳進 <code>__time()</code> 的參數，注意不需要用引號框起來。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+如果沒有參數的話，連括號都省了；結果看起來就像是個 variable。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+參數內含逗號，必須要用 <code>\</code> 跳脫，否則會被視為參數間的分隔字元。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>常用的 function 有：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>__property(property_name[,variable_name[,default_value]])</code> - 回傳 <em>property_name</em> 這個 property 的內容（如果沒有定義，但有給定預設值時，就採用 <em>default_value</em>）。如果有給定 <em>variable_name</em> 的話，這個回傳值還會額外寫進該變數。
+</p>
+</li>
+<li>
+<p>
+<code>__P(property_name[,default_value])</code> - 行為上很類似 <code>__property()</code>，只是沒有將回傳值寫進變數的功能。
+</p>
+</li>
+<li>
+<p>
+<code>__Random(min_value,maxvalue[,variable_name])</code>
+</p>
+</li>
+<li>
+<p>
+<code>__threadNum</code> - 目前的 thread 在所屬 group 下的編號。因此分屬兩個不同 group 的 thread 可能會有相同的 thread number。
+</p>
+</li>
+<li>
+<p>
+<code>__BeanShell()</code> - 例如 <code>${__BeanShell(12*3)}</code> 會傳回 36。
+</p>
+</li>
+<li>
+<p>
+<code>__javaScript()</code> - 有些地方限定使用 JavaScript（例如 If Controller 的 condition），倒不如就熟悉 JavaScript 就好，否則 BeanShell 也要懂&#8230;
+</p>
+</li>
+</ul></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">
+<div class="title">Parameterized Test</div>
+<div class="paragraph"><p><code>__property()</code> 與 <code>__P()</code> 這兩個 function，可以用來實現所謂的 parameterized test。由於 JMeter 無法從 CLI option 動態設定 variable 的值，所以只好透過 property 將變數帶進 test plan。例如：</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>$ jmeter -Jthreads=3</code></pre>
+</div></div>
+<div class="paragraph"><p>那麼在 test element 裡，就可以透過 <code>${__P(threads)}</code> 取用到（寫成 <code>${threads}</code> 會讀不到東西，因為 property 跟 variable 是不同的東西）。</p></div>
+</td>
+</tr></table>
+</div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/functions.html">User&#8217;s Manual &gt; Functions and Variables</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/best-practices.html#parameterising_tests">User&#8217;s Manual &gt; Best Practices &gt; Parameterising tests</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_proxy_and_http_proxy_server">Proxy and HTTP Proxy Server</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>在 WorkBench 上點右鍵，Add -&#8594; Non-Test Elements -&#8594; HTTP Proxy Server（其中 Non-Test Elements 是 Test Plan 所沒有的）。HTTP Proxy Server 可以用來錄製使用者的行為，並自動建立對應的 sampler element。</p></div>
+<div class="paragraph"><p>錄製的 sampler element 會被放在哪裡？是由 Target Controller 來控制：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+Use Recording Controller - 放在 test plan 裡的一個 Recording Controller 底下（當做是一個 placeholder）。
+</p>
+</li>
+<li>
+<p>
+WorkBench &gt; HTTP Proxy Server - 放在 HTTP Proxy Server 這個 element 底下。
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>Proxy server 啟動後還可以改設定，而且選項還會動態做調整，方便指定特定一個 Recording Controller（如果有多個的話）。另外 Grouping 的設定，可以用來將使用者單一操作所引發的多個 request 集合起來（由 <code>proxy.pause</code> 來控制，預設 1 秒鐘）：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+Do not group samplers
+</p>
+</li>
+<li>
+<p>
+Add separators between groups
+</p>
+</li>
+<li>
+<p>
+Put each group in a new controller
+</p>
+</li>
+<li>
+<p>
+Store 1st sampler of each group only
+</p>
+</li>
+<li>
+<p>
+Put each group in a new transaction controller
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>URL Patterns to Include/Exclude 可以用收錄特定 requests，例如：<code>.*sjdc\.bsh30\.lab.*</code></p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+proxy server
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/get-started.html#proxy_server">http://jakarta.apache.org/jmeter/usermanual/get-started.html#proxy_server</a>
+</p>
+</li>
+<li>
+<p>
+jmeter -H my.proxy.server -P 8000 -u username -a password -N localhost
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+用 JMeter Proxy Recorder 錄製登入過程。
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+The Proxy Server allows JMeter to watch and record your actions while you browse your web application with your normal browser. JMeter will create test sample objects and store them directly into your test plan as you go (so you can view samples interactively while you make them).
+</p>
+</li>
+<li>
+<p>
+（在 WorkBench，）
+</p>
+</li>
+<li>
+<p>
+這個 proxy server 的 proxy setting 則要透過 -H 與 -P 來設定（將 browser 的 proxy 設定 localhost:8080，原來的 proxy 透過 -H/-P 設定）
+</p>
+</li>
+<li>
+<p>
+錄製的東西會出現在 Test Plan 裡。
+</p>
+</li>
+<li>
+<p>
+可以應用在錄製使用者的行為，加工之後就可以用來模擬平常的 load。
+</p>
+</li>
+<li>
+<p>
+用 IE 錄製時，如果改了 proxy 的設定，一併也會影響本機其他吃 IE proxy 設定程式，所以要用
+</p>
+</li>
+</ul></div>
+</li>
+</ul></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/get-started.html#proxy_server">User&#8217;s Manual &gt; Getting Started &gt; Using a Proxy Server</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/component_reference.html#HTTP_Proxy_Server">User&#8217;s Manual &gt; Component Reference &gt; HTTP Proxy Server</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_monitoring">Monitoring</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>做 performance test 最難的部份，就是在送出大量 requests 時，同步蒐集多台 servers 負載的變化，才能找出其間的關聯（correlate）與效能的瓶頸。</p></div>
+<div class="sect2">
+<h3 id="_listener_monitor_results">Listener: Monitor Results</h3>
+<div class="paragraph"><p>就這方面而言，JMeter 只提供有一個 Listener: Monitor Results。</p></div>
+<div class="paragraph"><p>它是透過 Tomcat 5 的 status servlet 來取得伺服器的效能，所以受監測的伺服器上要額外安裝 Tomcat 才行（理論上，該 servlet 可以移植到任何支援 JMX 的 servlet container）。再加上它只監測 memory 跟 CPU 的使用狀況，而且不能合併檢視多台伺服器效能的變化（例如 load 是否平均地落在 cluster 的成員），因此不是相當的實用。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content"><a href="http://tomcat.apache.org/tomcat-5.5-doc/apr.html">Tomcat 的文件</a>有提到 - OS level statistics on memory usage and CPU usage by the Tomcat process are displayed by the status servlet。（從 JMeter 看起來，好像在監測 JVM，而非整個 OS？）</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>使用方式，可以把它想像成 “安排另外一個使用者（thread group）定期（timer）記錄 Tomcat 5 的效能輸出（HTTP Request）“，因此只要安排下面這些 elements 即可：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+Thread Group
+</p>
+</li>
+<li>
+<p>
+Constant Timer
+</p>
+</li>
+<li>
+<p>
+HTTP Request
+</p>
+</li>
+<li>
+<p>
+Monitor Results
+</p>
+</li>
+</ul></div>
+<div class="openblock">
+<div class="title">參考資料</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/build-monitor-test-plan.html">Building a Monitor Test Plan</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+<div class="sect2">
+<h3 id="_jmeter_plugins_perfmon">JMeter Plugins: PerfMon</h3>
+<div class="paragraph"><p>必須搭配 JMeter 2.4+ 跟 JRE 1.6+。安裝相當簡單，只要從 <code>JMeterPlugins-VERSION.zip</code> 解開取得 <code>JMeterPlugins.jar</code>，然後把它放到 <code>JMETER_HOME/lib/ext</code> 即可。重新啟動 JMeter GUI 就可以在選單裡看到 PerfMon 專有的項目。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>.
+|-- cmd/
+|   `-- JMeterPluginsCMD.*
+|-- examples/
+|   `-- *.jmx
+|-- JMeterPlugins.jar
+|-- LICENSE
+|-- README
+`-- serverAgent
+    |-- COPYING
+    |-- EXCEPTIONS
+    |-- *.so <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+    |-- LICENSES
+    |-- README
+    |-- ServerAgent.jar
+    |-- sigar-amd64-winnt.dll
+    |-- sigar.jar
+    |-- sigar-x86-winnt.dll
+    |-- sigar-x86-winnt.lib
+    |-- startAgent.bat
+    `-- startAgent.sh</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+各種平台的 native library，例如 <code>libsigar-amd64-freebsd-6.so</code>、<code>libsigar-x86-linux.so</code> 等。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>PerfMon 有自己的 agent，理論上可以跑在所有的平台（利用 SIGAR 來蒐集系統資訊，必須要有 JRE 1.4+ 的執行環境）。</p></div>
+<div class="paragraph"><p>將 <code>serverAgent/</code> 複製到受測的伺服器上，執行 <code>startAgent.sh &lt;port&gt;</code> 即可，預設採用 4444 埠（注意 firewall 的問題，不需要系統管理者的權限）。可以先單獨測試 SIGAR：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ java -jar sigar.jar
+sigar&gt; uptime
+  3:31 PM  up 5:37, load average: 0.25, 0.12, 0.07
+sigar&gt; quit
+
+$ ./startAgent.sh
+JMeterPlugins Agent version 1.3.2
+No port specified, the default value is used: 4444
+------ File Systems init: ------
+File System detected: /dev/sda6
+File System detected: /dev/sda5
+...
+--- Network Interfaces init: ---
+Network interface detected: lo
+Network interface detected: eth0
+...
+Waiting for incoming connections...</code></pre>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">搭配 <code>nohup</code> 可以讓它在背景執行，也不會因使用者離線而中斷。<code>nohup ./startAgent.sh &amp;</code></td>
+</tr></table>
+</div>
+<div class="paragraph"><p>新增 PerfMon listener (<a href="mailto:jp@gc">jp@gc</a> - Servers Performance Monitoring) 並連結到一或多個 agent 即可。每個 listener 可以合併多個 agent 的資訊（會自動用 hostname 來識別），但是一個 listener 只能選定一種 matrics：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+CPU - CPU 的利用率（%）；支援多 processor/core，但這個值是統合後的結果。
+</p>
+</li>
+<li>
+<p>
+Memory - 記憶體的使用量（MB）。
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+注意 Y 軸的最大值會隨著用量增加而改變，不要誤以為 SIGAR 抓到的總記憶體量不對。
+</p>
+</li>
+<li>
+<p>
+記憶體快要用盡時，通常會伴隨著 Swap 的活動突然增加，可能是 memory-bound。
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+Swap - 單位時內 page in/out 的 page 數量。
+</p>
+</li>
+<li>
+<p>
+Disks I/O - 單位時間內對所有磁碟的讀／寫次數。
+</p>
+</li>
+<li>
+<p>
+Networks I/O - 單位時間內所有網卡收到／送出的資料量（KB）。
+</p>
+</li>
+</ul></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">雖然某些資訊的呈現方式不夠詳細（例如 CPU load average，CPU time 是花在 user 或 system？），但至少它可以看出來一個大方向，把問題縮小到少數幾台可能的伺服器上。之後再重跑一次 test plan，直接觀察那少數幾台機器的細部資訊即可。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>在 non-GUI mode 下跑時，蒐集到的資訊會存成 <code>.jppm</code>（類似 CSV 的格式；定期取樣，跟 sampler 無關），事後可以從 JMeter GUI 裡用 Load PerfMon File&#8230; 打開來看。反之，在 GUI mode 下跑時，結果只是一張可以另存的圖形，沒有對應的 <code>.jppm</code>，但仍然可以 Export to CSV&#8230;。</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>jmeter -n -t test.jmx -l result.jtl -Jjppmfile=result.jppm</code></pre>
+</div></div>
+<div class="paragraph"><p>如果沒有給定 <code>-Jjppmfile</code>，預設會寫到目前所在目錄 <code>perfmon_yyyymmdd_HHMMSS.jppm</code>。</p></div>
+<div class="openblock">
+<div class="title">參考資料</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://code.google.com/p/jmeter-plugins/wiki/PerfMon">PerfMon - jmeter-plugins</a>
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://code.google.com/p/jmeter-plugins/wiki/PluginInstall">Installation</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://code.google.com/p/jmeter-plugins/wiki/PerfMon#Installation">PerfMon: Installation</a>
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+<a href="http://support.hyperic.com/display/SIGAR/Home">SIGAR</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://en.wikipedia.org/wiki/Paging">Paging - Wikipedia, the free encyclopedia</a> - 解釋 page in/out。
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+<div class="sect2">
+<h3 id="_參考資料">參考資料</h3>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.kobatera.com/blog/posts/performance-engineering/monitoring-apache-server-status-with-jmeter-51">Monitoring Apache Server Status with JMeter : Kobatera Blog</a> (2010-09-21)
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.informit.com/guides/content.aspx?g=java&amp;seqNum=273">InformIT: Java Reference Guide &gt; Monitoring Tomcat Performance</a> (2006-08-04)
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_components">Components</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>主要區分為：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+Thread Group
+</p>
+</li>
+<li>
+<p>
+Logic Controller（不能直接擺在 Test Plan 底下）
+</p>
+</li>
+<li>
+<p>
+Config Element
+</p>
+</li>
+<li>
+<p>
+Timer - 用來控制同一 thread 下的 request 發出去<em>之前</em>，要先延遲多少時間。
+</p>
+</li>
+<li>
+<p>
+Pre Processor
+</p>
+</li>
+<li>
+<p>
+Sampler（不能直接擺在 Test Plan 底下）
+</p>
+</li>
+<li>
+<p>
+Post Processor
+</p>
+</li>
+<li>
+<p>
+Assertion
+</p>
+</li>
+<li>
+<p>
+Listener
+</p>
+</li>
+<li>
+<p>
+Non-Test Element（只會出現在 WorkBench 底下）
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>除了 Thread Group、Config Element 與 Non-Test Element 之外，都支援用 BSF、BeanShell 與 JSR223 來自訂。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/test_plan.html">Elements of a Test Plan</a>（比 Component Reference 容易讀）
+</p>
+</li>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/component_reference.html">Component Reference</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://jakarta.apache.org/bsf/index.html">Jakarta BSF - Bean Scripting Framework</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.beanshell.org/">BeanShell - Lightweight Scripting for Java</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.jcp.org/en/jsr/detail?id=223">JSR 223: Scripting for the Java Platform</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+<div class="sect2">
+<h3 id="_result_status_action_handler_post_processor">Result Status Action Handler (Post Processor)</h3>
+<div class="paragraph"><p>作用範圍內的 sampler 失敗時，是否要將目前的 thread 停掉，還是中斷整個測試？這對於測試過程中一定要成功的步驟很重要。例如測試一開始的登入動作，如果發生錯誤，就沒有測試下去的必要了。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>Thread Group
+  |-- Login (Transaction Controller)
+  |   |-- Result Status Action Handler (Stop Test Now)
+  |   \-- Samplers...
+  |-- Sync All Logins (Test Action, Pause, 0ms)
+  |   |-- Synchronizing Timer (the number of threads)
+  |-- Following steps...</code></pre>
+</div></div>
+<div class="paragraph"><p>事實上在 thread group 這一層也可以做相同的控制，只是它作用的範圍是底下所有的 sampler。</p></div>
+<div class="paragraph"><p>不同的 sampler 對所謂的 “失敗” 有不同的定義，例如對 HTTP request 而言，response code 是 2xx 或 3xx 表示成功（例如 303 See Other、304 Not Modified），其餘的 4xx 或 5xx 則表示失敗。（但 JMeter Plugins 的 Dummy Sampler 是個特例，它的結果是由 Successful sample 的選項來控制，並非自訂的 response code）</p></div>
+<div class="paragraph"><p>很可惜的是，當整個測試因為這樣而中斷時，<code>jmeter</code> 的 exit status 還是固定傳回 0，使得要把它整合到 script 裡有些困難&#8230; 不過還好 result file 仍然會記錄到最後一筆失敗的 response code，因此事後可以從所有的 <code>.jtl</code> 裡找看看有沒有不符合 <code>rc="200"</code> 的結果，有的話就表示有問題：</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>grep -Pc 'rc="[45N].*?"' *.jtl</code></pre>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/component_reference.html#Result_Status_Action_Handler">User&#8217;s Manual &gt; Component Reference &gt; Result Status Action Handler</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://jmeter.512774.n5.nabble.com/Result-Status-Action-Handler-td532281.html">JMeter - User - Result Status Action Handler?</a> (2009-06-03)
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html">HTTP/1.1: Status Code Definitions</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_if_controller">If Controller</h3>
+<div class="paragraph"><p>預設用 JavaScript 來寫，傳回 true 或 false。例如：</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>${COUNT} &lt; 10 &amp;&amp; "${VAR}" == "abcd"</code></pre>
+</div></div>
+<div class="paragraph"><p>用起來像是 template&#8230; 變數代進來都是字串。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="literalblock">
+<div class="content">
+<pre><code>*</code></pre>
+</div></div>
+</td>
+</tr></table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_thread_group">Thread Group</h3>
+<div class="paragraph"><p>只能直接擺在 test plan 底下，但透過 controller 又可以增加另一層 thread group。</p></div>
+<div class="paragraph"><p>JMeter 用一個 thread 來模擬單一個 user 連續的多個操作（每一個 thread 都是完全獨立的），所以許多提到 thread 的地方，都會被加註 <em>(users)</em>。Number of threads 的設定會影響 JMeter 將用幾個 thread 來跑這個測試，模擬幾個使用者同時存取的狀況。</p></div>
+<div class="paragraph"><p>透過 ramp-up period 可以錯開每個 thread 開始的時間，避免測試一開始就暴大量。目前 ramp-period 只能平均地錯開，例如有 100 個 thread，將 ramp-up period 設成 300 秒時，表示每隔 3 秒錯會開始一個 thread 的測試。之後再搭配 timer 來錯開同一 thread 下 request 間發出的間隔（甚至支援 Gaussian Random Timer 常態分佈），就能讓伺服器接收 request 的情況趨近於真實。</p></div>
+</div>
+<div class="sect2">
+<h3 id="_logic_controller">Logic Controller</h3>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="paragraph"><p><a href="http://jakarta.apache.org/jmeter/usermanual/component_reference.html#logic_controllers">User&#8217;s Manual &gt; Component Reference &gt; Logic Controller</a></p></div>
+</td>
+</tr></table>
+</div>
+<div class="sect3">
+<h4 id="_transaction">Transaction</h4>
+<div class="paragraph"><p>把所有 nested element 處理的時間（不只是 sampler）全部算入另一個邏輯上的 sampler，也就是將多個 nested element 視為一個 sampler/transaction。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="paragraph"><p><a href="http://jakarta.apache.org/jmeter/usermanual/component_reference.html#Transaction_Controller">User&#8217;s Manual &gt; Component Reference &gt; Transaction Controller</a></p></div>
+</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_test_action_sampler">Test Action (Sampler)</h3>
+<div class="paragraph"><p>最實用的 action 是 Pause，它不需要產生一個 sample 就可以達成 sleep 一段時間的效果。如果沒有這個 sampler 的話，可能得透過 <em>dummy sampler + timer</em> 才能完成 sleep 效果（但會多出不必要的 sample）。</p></div>
+<div class="paragraph"><p>它畢竟是個 sampler，如果 duration 填上 0 的話，可以搭配其他 timer 做更彈性的時間控制。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">它可以用在必須要有個 sampler，但又不想真正產生 sampler 的地方。例如 Test Action 底下放個 Synchronizing Timer。</td>
+</tr></table>
+</div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/component_reference.html#Test_Action">User&#8217;s Manual &gt; Component Reference &gt; Test Action</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_http_header_manager">HTTP Header Manager</h3>
+<div class="ulist"><ul>
+<li>
+<p>
+實驗發現，thrad group 層級的 manager，裡頭的設定會跟 sampler 自己的 header manager 合併起來。
+</p>
+</li>
+</ul></div>
+</div>
+<div class="sect2">
+<h3 id="_controller_once_only">Controller: Once Only</h3>
+<div class="paragraph"><p>通常擺在 Thread Group 底下，一個 thread 只會做一次登入的動作就夠了。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/component_reference.html#Once_Only_Controller">User&#8217;s Manual &gt; Component Reference &gt; Once Only Controller</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_timer_uniform_random">Timer: Uniform Random</h3>
+<div class="paragraph"><p>亂數決定要延遲的時間（下面兩個數字的加總）：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+Random Delay Maximum - 剛數決定一個時間，但不超過這個值。
+</p>
+</li>
+<li>
+<p>
+Constant Delay Offset - 固定的時間。
+</p>
+</li>
+</ul></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/component_reference.html#Uniform_Random_Timer">User&#8217;s Manual &gt; Component Reference &gt; Uniform Random Timer</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_synchronizing_timer">Synchronizing Timer</h3>
+<div class="paragraph"><p>可以用來集聚一定數量的 thread/user 後一起釋放出去，造成瞬間的大量。當然搭配 Test Action 也可以用來等所有人都完成上一個動作，再往下走；下一步又可以用 timer 來錯開大家的時間&#8230;</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/caution.png" alt="Caution" />
+</td>
+<td class="content">Number of Simulated Users to Group by 不能填成 0。填成 0 的話會卡在那裡，不會往下走。</td>
+</tr></table>
+</div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/component_reference.html#Synchronizing_Timer">User&#8217;s Manual &gt; Component Reference &gt; Synchronizing Timer</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_gaussian_random_timer">Gaussian Random Timer</h3>
+<div class="paragraph"><p>Timer: Gaussian Random 有兩項設定：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+Deviation（偏差）
+</p>
+</li>
+<li>
+<p>
+Constant Delay Offset
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>基本上，request 的間隔由固定的 Constant Delay Offic 加上 Deviation 乘以 0.0 ~ 1.0 的亂數（Gaussian distributed value）來決定。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/component_reference.html#Gaussian_Random_Timer">User&#8217;s Manual &gt; Component Reference &gt; Gaussian Random Timer</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.devx.com/webdev/Article/17950/1954">Load Testing with Apache JMeter</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+<div class="sect3">
+<h4 id="_sampler_dummy_jmeter_plugins">Sampler: Dummy (jmeter-plugins)</h4>
+<div class="paragraph"><p><span class="image">
+<img src="jmeter/dummy_sampler.png" alt="jmeter/dummy_sampler.png" />
+</span></p></div>
+<div class="paragraph"><p>除了可以用來測試 Regular Expression Extractor 之外，也很常用來撰寫 example test plan，jmeter-plugins 的官方文件就是這麼做的。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://code.google.com/p/jmeter-plugins/wiki/DummySampler">DummySampler - jmeter-plugins</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_sampler_http_request">Sampler: HTTP Request</h3>
+<div class="ulist"><ul>
+<li>
+<p>
+Send Files With the Request 如果只給一個檔案，Parameter Name: 沒給的話，該檔案的內容就會被視為 body 送出來。方便用來傳送 binary 的 body。
+</p>
+</li>
+<li>
+<p>
+Path 裡不能增 host name 這些東西（例如 <code>/app/index.html</code>），要拆開放到 Server Name or IP, Port Number&#8230; 等，但 query string 是可以直接寫在 Path 裡的，例如 <code>/app/index.php?q=java</code>，只是 query string 太長時不方便維護而已。
+</p>
+</li>
+<li>
+<p>
+實務上，可以將固定的 query string 寫在 Path 裡，剩下會變動的部份透過 UI 一項項指定，可以個別做 encode 跟 include equals 的設定。其中 include equals 指的是如果沒有 value 的話，是否要強制寫成 <code>param=</code>。
+</p>
+</li>
+</ul></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">
+<div class="title">相對路徑</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://jmeter.512774.n5.nabble.com/Help-in-getting-relative-path-for-sending-datafile-td533479.html">JMeter - User - Help in getting relative path for sending datafile</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="paragraph"><p><a href="http://jakarta.apache.org/jmeter/usermanual/component_reference.html#HTTP_Request">User&#8217;s Manual: Component Reference</a></p></div>
+</td>
+</tr></table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_post_processor_regular_expression_extractor">Post Processor: Regular Expression Extractor</h3>
+<div class="paragraph"><p>掛在 sampler 底下，它的功能如下：</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+用 Perl regular expression 從 server response 提取某些片段出來。
+</p>
+</li>
+<li>
+<p>
+將這些片段（group）套進 template 組出另一個字串。
+</p>
+</li>
+<li>
+<p>
+將組出來的字串指定為某個變數的內容，變數的名稱由 reference name 來設定。
+</p>
+</li>
+</ol></div>
+<div class="paragraph"><p>Regular expression 預設會區分大小寫。如果想要忽略大小寫的差異，可以在前面加上 <code>(?i)</code>。</p></div>
+<div class="paragraph"><p>Template 裡用 <code>$n$</code> 參照 group <em>n</em> 的內容。例如 <code>$1$</code> 指的是 group 1，而 <code>$0$</code> 則是一整段的內容。</p></div>
+<div class="paragraph"><p>除了將套上 template 的內容寫到 reference name 指定的變數名稱之外（假設是 <code>refName</code>），下面這些變數也會被設定：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>refName_gn</code> - 第 <em>n</em> 個 group 的內容，例如 <code>url_g0</code>、<code>host_g1</code> 等。
+</p>
+</li>
+<li>
+<p>
+<code>refName_g</code> - Groups 的數量
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>可以針對 server response 的幾個部份做提取：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+Body
+</p>
+</li>
+<li>
+<p>
+Body (unescaped) - 將 <code>&amp;lt;</code> 轉回 <code>&lt;</code> 的動作？
+</p>
+</li>
+<li>
+<p>
+Headers
+</p>
+</li>
+<li>
+<p>
+URL
+</p>
+</li>
+<li>
+<p>
+Response Code - 例如 "200"。
+</p>
+</li>
+<li>
+<p>
+Response Message - 例如 "OK"。
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>開啟 DEBUG level，這個 processor 就會將收到的 HTML 印出來：</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>jmeter ... -Ljmeter.extractor.RegexExtractor=DEBUG</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>2011/07/27 20:03:40 DEBUG - jmeter.extractor.RegexExtractor: Input = &lt;!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"&gt;
+&lt;html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"&gt;
+...
+&lt;/body&gt;
+&lt;/html&gt;
+...
+2011/07/27 20:38:34 DEBUG - jmeter.extractor.RegexExtractor: Regex Extractor result = xxx <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+這個方法某種程度上比 Listener: Save Responses to a File 或 Listener: View Results Tree 好用，因為可以確定 regex 是否真的有把我們要的部份提取出來。
+</td></tr>
+</table></div>
+<div class="exampleblock">
+<div class="title">Example 2. 參考資料</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/component_reference.html#Regular_Expression_Extractor">Regular Expression Extractor</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/regular_expressions.html">User&#8217;s Manual: Regular Expressions</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+<div class="sect2">
+<h3 id="_listener">Listener</h3>
+<div class="paragraph"><p>Listener 主要是將蒐集到的測試結果（test result），<em>以不同的方式表現出來</em>。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/important.png" alt="Important" />
+</td>
+<td class="content">雖然每個 listener 都提供有一個 Write results to file / Read from file 的欄位，但實際上多個 listener 最後寫出的內容都是一樣的（頂多也只是欄位數量或 XML/CSV 格式的不同而已）。這間接說明了為什麼 CLI 單一個參數 <code>--logfile</code> 就可以滿足多個 listener。</td>
+</tr></table>
+</div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">注意這裡 CSV result file 跟在圖形上做 Export to CSV&#8230; 的結果是不同的，前者則是 raw data，後者則是將統計後的數據。Export to CSV&#8230; 輸出的結果，可以餵給其他圖形化的工具，例如 Gnuplot、OpenOffice.org Calc 等。</td>
+</tr></table>
+</div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">分析 <code>.jtl</code> 實際的輸出之後發現，取樣的時間點都是在 sampler <em>完成之後</em>，所以最早回來的 request 會被記在前面（也可能是發生錯誤就直接回來了），反倒是花很長時間成功被處理掉的 request 會被記錄在後面。Sampler # 是該 sample result 在 <code>.jtl</code> 裡出現的順序，要看 thread name 才能知道發出的順序。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>在 GUI mode 下，建議不要去設定 Write results to file / Read from file，不過光從 CLI 給定的 <code>--logfile</code> 額外輸出 test result，卻又沒法指定輸出的細節？？？目前的解法就是安排一個 Simple Data Writer，只有它才去設定檔名及要輸出的細節。</p></div>
+<div class="paragraph"><p>如果 result file 已經存在，新的測試結果會附加在檔案後面。</p></div>
+<div class="paragraph"><p>在 GUI mode 或 non-GUI mode 下的 <code>--logfile</code>，哪些 test result 會被記錄下來，是組態在 <code>jmeter.properties</code> 裡。</p></div>
+<div class="imageblock">
+<div class="content">
+<img src="jmeter/sample_result_config.png" alt="jmeter/sample_result_config.png" />
+</div>
+</div>
+<div class="listingblock">
+<div class="title"><code>bin/jmeter.properties</code></div>
+<div class="content">
+<pre><code>...
+#---------------------------------------------------------------------------
+# Results file configuration
+#---------------------------------------------------------------------------
+
+# This section helps determine how result data will be saved.
+# The commented out values are the defaults.
+
+# legitimate values: xml, csv, db.  Only xml and csv are currently supported.
+#jmeter.save.saveservice.output_format=xml <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+
+
+# true when field should be saved; false otherwise
+
+# assertion_results_failure_message only affects CSV output
+#jmeter.save.saveservice.assertion_results_failure_message=false
+#
+# legitimate values: none, first, all
+#jmeter.save.saveservice.assertion_results=none
+#
+#jmeter.save.saveservice.data_type=true
+#jmeter.save.saveservice.label=true
+#jmeter.save.saveservice.response_code=true
+# response_data is not currently supported for CSV output
+#jmeter.save.saveservice.response_data=false
+# Save ResponseData for failed samples
+#jmeter.save.saveservice.response_data.on_error=false
+#jmeter.save.saveservice.response_message=true
+#jmeter.save.saveservice.successful=true
+#jmeter.save.saveservice.thread_name=true
+#jmeter.save.saveservice.time=true
+#jmeter.save.saveservice.subresults=true
+#jmeter.save.saveservice.assertions=true
+#jmeter.save.saveservice.latency=true
+#jmeter.save.saveservice.samplerData=false
+#jmeter.save.saveservice.responseHeaders=false
+#jmeter.save.saveservice.requestHeaders=false
+#jmeter.save.saveservice.encoding=false
+#jmeter.save.saveservice.bytes=true
+#jmeter.save.saveservice.url=false
+#jmeter.save.saveservice.filename=false
+#jmeter.save.saveservice.hostname=false
+#jmeter.save.saveservice.thread_counts=false <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+#jmeter.save.saveservice.sample_count=false
+#jmeter.save.saveservice.idle_time=false
+
+# Timestamp format - this only affects CSV output files
+# legitimate values: none, ms, or a format suitable for SimpleDateFormat
+#jmeter.save.saveservice.timestamp_format=ms
+#jmeter.save.saveservice.timestamp_format=yyyy/MM/dd HH:mm:ss.SSSS
+
+# For use with Comma-separated value (CSV) files or other formats
+# where the fields' values are separated by specified delimiters.
+# Default:
+#jmeter.save.saveservice.default_delimiter=,
+# For TAB, since JMeter 2.3 one can use:
+#jmeter.save.saveservice.default_delimiter=\t
+
+# Only applies to CSV format files:
+#jmeter.save.saveservice.print_field_names=false
+
+# Optional list of JMeter variable names whose values are to be saved in the result data files.
+# Use commas to separate the names. For example:
+#sample_variables=SESSION_ID,REFERENCE
+# N.B. The current implementation saves the values in XML as attributes,
+# so the names must be valid XML names.
+# Versions of JMeter after 2.3.2 send the variable to all servers
+# to ensure that the correct data is available at the client.
+
+# Optional xml processing instruction for line 2 of the file:
+#jmeter.save.saveservice.xml_pi=&lt;?xml-stylesheet type="text/xsl" href="../extras/jmeter-results-detail-report_21.xsl"?&gt;
+...</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+輸出的格式預設採用 XML (<code>.jtl</code>)
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+最常把這個設定打開，才能將 active thread 的數量記錄下來。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>如果有自訂的需求，建議寫在 <code>user.properties</code> 裡。</p></div>
+<div class="listingblock">
+<div class="title"><code>bin/user.properties</code></div>
+<div class="content">
+<pre><code>...
+#---------------------------------------------------------------------------
+# Results file configuration
+#---------------------------------------------------------------------------
+jmeter.save.saveservice.thread_counts=true</code></pre>
+</div></div>
+<div class="paragraph"><p>test result 要寫到哪個 <code>.jtl</code> 或 <code>.csv</code> 檔（<code>.jtl</code> 是個 XML 檔，比 <code>.csv</code> 詳細，而且 CSV 不支援斷行），</p></div>
+<div class="paragraph"><p>JTL 裡一堆簡寫的 XML attribute，對應 Sample Result Save Configuration：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+Save As XML
+</p>
+</li>
+<li>
+<p>
+Save Response Headers (XML)
+</p>
+</li>
+<li>
+<p>
+Save Response Code &#8594; <code>rc</code>
+</p>
+</li>
+<li>
+<p>
+Save Label &#8594; <code>lb</code>
+</p>
+</li>
+<li>
+<p>
+Save Response Data (XML)
+</p>
+</li>
+<li>
+<p>
+Save Success &#8594; <code>s</code>（<code>true</code>/<code>false</code>），error rate 應該就是看這個吧？
+</p>
+</li>
+<li>
+<p>
+Save Time Stamp &#8594; <code>ts</code>
+</p>
+</li>
+<li>
+<p>
+Save Response Filename
+</p>
+</li>
+<li>
+<p>
+Save Hostname &#8594; <code>hn</code>（由哪一台主機產出這個 sample）
+</p>
+</li>
+<li>
+<p>
+Save Field Names (CSV)
+</p>
+</li>
+<li>
+<p>
+Save Request Headers (XML)
+</p>
+</li>
+<li>
+<p>
+Save Data Type &#8594; <code>dt</code>
+</p>
+</li>
+<li>
+<p>
+Save Latency &#8594; <code>lt</code> （初次收到 response 的時間，milliseconds）
+</p>
+</li>
+<li>
+<p>
+Save Sampler Data (XML)
+</p>
+</li>
+<li>
+<p>
+Save Thread Name &#8594; <code>tn</code>
+</p>
+</li>
+<li>
+<p>
+Save URL
+</p>
+</li>
+<li>
+<p>
+Save Active Thread Counts &#8594; <code>na</code> 及 <code>ng</code>，前者看全部的 thread group，後者則只看這個 sample 所屬的 thread group。
+</p>
+</li>
+<li>
+<p>
+Save Idle Time
+</p>
+</li>
+<li>
+<p>
+Save Assertion Failure Message
+</p>
+</li>
+<li>
+<p>
+Save Assertion Results (XML)
+</p>
+</li>
+<li>
+<p>
+Save Encoding &#8594; <code>de</code>
+</p>
+</li>
+<li>
+<p>
+Save Response Message &#8594; <code>rm</code>
+</p>
+</li>
+<li>
+<p>
+Save Sub Results (XML) - 利如用 transaction controller 將多個 sampler 包起來時。
+</p>
+</li>
+<li>
+<p>
+Save Elapsed Time &#8594; <code>t</code> (milliseconds)
+</p>
+</li>
+<li>
+<p>
+Save byte count &#8594; <code>by</code>
+</p>
+</li>
+<li>
+<p>
+Save Sample and Error Counts &#8594; <code>sc</code> 及 <code>ec</code> 。其中 <code>sc</code> 固定是 1，而 <code>ec</code> 只能是 0 或 1，除非合併多個 sample result。
+</p>
+</li>
+</ul></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/test_plan.html#listeners">User&#8217;s Manual &gt; Elements of a Test Plan &gt; Listeners</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/component_reference.html#Sample_Result_Save_Configuration">User&#8217;s Manual &gt; Elements of a Test Plan &gt; Sample Result Save Configuration</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/listeners.html#defaults">User&#8217;s Manual &gt; Listeners &gt; Default Configuration</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://wiki.apache.org/jakarta-jmeter/JtlTestLog">JMeter Wiki &gt; The JMeter Jtl Test Plan Format</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://wiki.apache.org/jakarta-jmeter/LogAnalysis#The_JMeter_Log_Format">JMeter Wiki &gt; Suggestions and Recipes for Log Analysis &gt; The JMeter Log Format</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_listener_view_results_in_table">Listener: View Results in Table</h3>
+<div class="ulist"><ul>
+<li>
+<p>
+可以用來看 sampler 回來的順序，可以用來確認某些動作發生在其他動作之前。
+</p>
+</li>
+<li>
+<p>
+可惜不能排序。
+</p>
+</li>
+</ul></div>
+</div>
+<div class="sect2">
+<h3 id="_listener_composite_graph_jmeter_plugins">Listener: Composite Graph (jmeter-plugins)</h3>
+<div class="paragraph"><p>可以將兩個以上的圖形合併顯示（事實上，合併的對象是圖形裡面的 row）。如果合併的圖形原先 Y 軸採用不同的單位，或者值域差異太大，會自動放大數值（並標示 x10, x100 等），方便檢視不同線條的起伏（畢竟實際的數值並不重要，重要的是起伏間的關係）。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">有時候 Force maximum Y axis value to nnn 可以取消 x10 或 x100 的行為。有時候，別人會來挑戰你說為什麼要放大，會產生不必要的誤會</td>
+</tr></table>
+</div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">Composite Graph 要在跑測試（或載入 result file）之前安排好才行（放在 WorkBench 下也可以），等 sample result 進來時，左側才會有項目可以選到右側做合併。不過選到右側的項目如果有存檔的話，下載叫進來就可以直接用了。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>設計上似乎只能比較同一次的測試（相同的變因），對不同面向的影響。因為載入兩次的測試結果，線條並沒有辦法疊在一起（即便 use relative times 有打開），或許要從 <code>.jtl</code> 或 <code>.jppm</code> 裡記錄的絕對時間動手腳吧？（<code>reset_ts.py</code>）又或者用其他工具整合匯出節的 CSV 檔。0.4.2-RC2 只修復線條上的刻度，但合併不同時期的測試結果還是有問題。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">合併圖形時，顏色沒得選（紅、藍、紫&#8230;），順序也是按照 listener name，如果想排序的話，只能從 listener name 下手。</td>
+</tr></table>
+</div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">合併後的圖形如果很複雜的會，可以考慮 Settings 裡的 Limit number of points in row to nnn points （單位時間內取樣的次數；次數太少會失真？次數太多會很難讀&#8230; 50 好像滿適合用來看出線條間的增幅比例） 跟 Force maximum Y axis value to nnn 讓可讀性提高。</td>
+</tr></table>
+</div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://code.google.com/p/jmeter-plugins/wiki/CompositeGraph">CompositeGraph - jmeter-plugins</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://code.google.com/p/jmeter-plugins/issues/detail?id=49">Issue 49 - jmeter-plugins - Composite graph - Relative times - Every load test needs some sexy features! - Google Project Hosting</a> (2011-06-09)
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_perfmon_active_threads_over_time">PerfMon: Active Threads Over Time</h3>
+<div class="paragraph"><p>秀出同一時間，各個 thread group 下 active thread 的數量，通常這就是受測端的 concurrent user。</p></div>
+<div class="imageblock">
+<div class="content">
+<img src="jmeter/active_threads_over_time.png" alt="jmeter/active_threads_over_time.png" />
+</div>
+</div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://code.google.com/p/jmeter-plugins/wiki/ActiveThreadsOverTime">ActiveThreadsOverTime - jmeter-plugins</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_perfmon_response_latencies_over_time">PerfMon: Response Latencies Over Time</h3>
+<div class="imageblock">
+<div class="content">
+<img src="jmeter/response_latencies_over_time.png" alt="jmeter/response_latencies_over_time.png" />
+</div>
+</div>
+<div class="paragraph"><p>如果有設定 response timeout 而得到 <code>java.net.SocketTimeoutException</code>，latency 欄位（<code>lt</code>）的值會是 0 而非接近 response timeout 的值。也因此有發生 response timeout 的 sample 都會落在圖形的底部（而不是剛好落在 response time），不容易識別出來。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://code.google.com/p/jmeter-plugins/wiki/LatenciesOverTime">LatenciesOverTime - jmeter-plugins</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/glossary.html#Latency">User&#8217;s Manual &gt; </a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+<div class="sect3">
+<h4 id="_aggregate_graph_report">Aggregate Graph/Report</h4>
+<div class="ulist"><ul>
+<li>
+<p>
+可以顯示出 Error%
+</p>
+</li>
+<li>
+<p>
+會合併顯示同名的 sampler，即便分屬於不同的 sampler element。
+</p>
+</li>
+</ul></div>
+</div>
+<div class="sect3">
+<h4 id="_save_responses_to_a_file">Save Responses to a File</h4>
+<div class="paragraph"><p>把 server response 寫進檔案（跟 Simple Data Writer 將 test result 寫出不同）。如果內容無法判斷，副檔名會是 <code>.unknown</code>。</p></div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_data_driven_paramaterized">Data Driven / Paramaterized</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_user_variables">User Variables</h3>
+<div class="paragraph"><p>每個 thread/user 都要採用不同的值時（例如用不同的帳號登入），可以將 Config Element: CVS Data Set Config 加到 thread group 底下，每個 thread 就會逐行套用到 CVS 檔裡頭不同行的資料。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/best-practices#user_variables">User&#8217;s Manual &gt; Best Practices &gt; User variables</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/component_reference.html#CSV_Data_Set_Config">User&#8217;s Manual &gt; Component Reference &gt; CSV Data Set Config</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_beanshell">BeanShell</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>在 script 裡，可以透過下面這些變數來跟 JMeter 接上：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>vars</code> - JMeter variables。
+</p>
+</li>
+<li>
+<p>
+<code>props</code> - JMeter properties。
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>其中單一個 JMeter variable 的值，可以透過 <code>vars.get(name)</code> 及 <code>vars.set(name, value)</code> 來存取（只支援 <code>String</code> 型態）。例如：</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>${__BeanShell(vars.get("threads"))}</code></pre>
+</div></div>
+<div class="paragraph"><p>要注意 JMeter variable 的特性是 local to a thread，如果需要在不同 thread 間交換資料的話，就必須要改用 JMeter property 才行。一樣是透過 <code>props.get(name)</code> 及 <code>props.set(name, value)</code> 存取。例如：</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>${__BeanShell(Integer.parseInt(props.get("hits")) / 5)}</code></pre>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/best-practices.html#beanshell_server">User&#8217;s Manual &gt; Best Practices &gt; BeanShell server/scripting</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/functions.html#<em>BeanShell">User&#8217;s Manual &gt; Functions and Variables &gt; </em>BeanShell</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.beanshell.org/">BeanShell - Lightweight Scripting for Java</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_issues">Issues</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_http_non_http_response_code_java_net_bindexception">HTTP_Non HTTP response code:java.net.BindException</h3>
+<div class="paragraph"><p>這個問題源自 Windows 限制短時間內對外的連線數，如果超過這個限額就會丟出 <code>java.net.BindException</code>（不太直覺？）。</p></div>
+<div class="paragraph"><p>解決除了去改 registry 之外，另一個根本的解法就是移到 Linux 下去執行。</p></div>
+<div class="exampleblock">
+<div class="title">Example 3. 參考資料</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://twit88.com/blog/2008/07/28/jmeter-exception-javanetbindexception-address-already-in-use-connect/">JMeter Exception: java.net.BindException: Address already in use: connect | twit88.com</a> (2008-07-28)
+</p>
+</li>
+<li>
+<p>
+<a href="http://support.microsoft.com/kb/q196271">When you try to connect from TCP ports greater than 5000 you receive the error <em>WSAENOBUFS (10055)</em></a> (2009-10-12)
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料_2">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">網站</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/">官方網站</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://wiki.apache.org/jakarta-jmeter/FrontPage">JMeter Wiki</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://jmeter-tips.blogspot.com/">JMeter Tips</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">書籍</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.packtpub.com/beginning-apache-jmeter/book">Packt - Apache JMeter</a> (2008-06)
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">工具</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://code.google.com/p/jmeter-plugins/">jmeter-plugins</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.badboysoftware.biz/docs/jmeter.htm">Badboy</a> - 可以錄製 browser 裡的操作，然後轉成 JMeter 的格式。
+</p>
+</li>
+<li>
+<p>
+<a href="http://rubenlaguna.com/wp/better-jmeter-graphs/">Better JMeter Graphs</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">官方文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://wiki.apache.org/jakarta-jmeter/">Wiki</a>
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://wiki.apache.org/jakarta-jmeter/JtlFiles">JtlFiles - Jakarta-jmeter Wiki</a>
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+<a href="http://wiki.apache.org/jakarta-jmeter/JMeterFAQ">FAQ</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/api/index.html">API Javadoc</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/index.html">User&#8217;s Manual</a>
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/build-test-plan.html">Building a Test Plan</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/build-web-test-plan.html">Building a Web Test Plan</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/build-adv-web-test-plan.html">Building an Advanced Web Test Plan</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/build-ws-test-plan.html">Building a WebService Test Plan</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/best-practices.html">Best Practices</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://jakarta.apache.org/jmeter/usermanual/glossary.html">Glossary</a>
+</p>
+</li>
+</ul></div>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">其他文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://en.wikipedia.org/wiki/JMeter">JMeter - Wikipedia, the free encyclopedia</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.performancewiki.com/performance-staf-jmeter.html">performancewiki.com - automate performance testing with STAF and JMETER</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://kevindude.iteye.com/blog/869744">Narya性能測試（二） - Thinking in Action - ITeye技術網站</a> (2011-01-12)
+</p>
+</li>
+<li>
+<p>
+<a href="http://sunqi.iteye.com/blog/807475">壓力測試（性能測試）和性能調優實戰---jmeter、jamon、jconsole - sunqi - ITeye技術網站</a> (2010-11-10)
+</p>
+</li>
+<li>
+<p>
+<a href="http://xebee.xebia.in/2010/08/17/performace-testing-made-easy-using-badboy-and-jmeter/">Swarm of XeBees » Performace Testing made easy using Badboy and JMeter</a> (2010-08-17)
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.anujgakhar.com/2010/06/23/stress-testing-your-website-with-apache-jmeter/">Stress Testing your website with Apache jMeter | Anuj Gakhar&#8217;s Blog</a> (2010-06-23)
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.packtpub.com/article/functional-testing-with-jmeter">Functional Testing with JMeter</a> (2008-08)
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.javaworld.com/javaworld/jw-07-2005/jw-0711-jmeter.html">JMeter tips - JavaWorld</a> (2005-07-11)
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.roseindia.net/jmeter/index.shtml">JMeter Tutorials</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.devarticles.com/c/a/PHP/Regression-Testing-With-JMeter/">Regression Testing With JMeter</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料_3">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">網站</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://jmeter.apache.org/">Apache JMeter</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://jmeter.apache.org/usermanual/index.html">Apache JMeter - User&#8217;s Manual</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-15 20:42:14 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

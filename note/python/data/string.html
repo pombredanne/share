@@ -1,0 +1,341 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Python] 字串（String）</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" />
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="../python.html">Python</a> / 字串（String）</h1>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_判斷字串是否出現在另一個字串裡">判斷字串是否出現在另一個字串裡</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>單純要判斷字串是否出現在另一個字串裡，用 <code>in</code> 就可以辦到了：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; s = 'This is a book.'
+&gt;&gt;&gt; 'book' in s, 'pencile' in s
+(True, False)</code></pre>
+</div></div>
+<div class="paragraph"><p>如果要限定出現在開頭或結尾，可以用下面兩個方法來做判斷：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>str.startswith(prefix[, start[, end]])</code> - 判斷 <em>prefix</em> 是否出現在字串的開頭。
+</p>
+</li>
+<li>
+<p>
+<code>str.endswith(suffix[, start[, end]])</code> - 判斷 <em>suffix</em> 是否出現在字串的結尾。
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>其中 <code>[, start[, end]]</code> 可以將搜尋限縮在 <code>[start:]</code> 或 <code>[start:end]</code> 的範圍裡。<em>start</em> 與 <em>end</em> 的預設值分別是 0 跟 <code>len(s)</code>。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; s = 'This is a book.'
+&gt;&gt;&gt; s.startswith('This')
+True
+&gt;&gt;&gt; s.endswith('book')
+False
+&gt;&gt;&gt; s[0:-1], s.endswith('book', 0, -1)
+('This is a book', True)</code></pre>
+</div></div>
+<div class="paragraph"><p>Python 2.5 後 <em>prefix</em> 跟 ‘suffix' 都開始支援 tuple，只是以其中一個字串做為開頭或結尾，就會得到 <code>True</code>。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; s1 = 'This is a book'; s2 = 'That is a pencile'; s3 = 'Today is my day'
+&gt;&gt;&gt; prefix = ('This', 'That'); suffix = ('book', 'pen')
+&gt;&gt;&gt; s1.startswith(prefix), s1.endswith(suffix)
+(True, True)
+&gt;&gt;&gt; s2.startswith(prefix), s2.endswith(suffix)
+(True, False)</code></pre>
+</div></div>
+<div class="paragraph"><p>如果需要進一步知道出現的位置（以 0 為啟始的索引值），才需要用到下面這些方法：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>str.find(sub[, start[, end]])</code> - 從字串左邊開始找起，傳回 <em>sub</em> 出現的位置，否則傳回 <code>-1</code>。
+</p>
+</li>
+<li>
+<p>
+<code>str.rfind(sub[, start[, end]])</code> - 從字串右邊開始找起，傳回 <em>sub</em> 出現的位置，否則傳回 <code>-1</code>。
+</p>
+</li>
+<li>
+<p>
+<code>str.index(sub[, start[, end]])</code> - 跟 <code>find()</code> 一樣，只是找不到時會丟出 <code>ValueError</code>。
+</p>
+</li>
+<li>
+<p>
+<code>str.rindex(sub[, start[, end]])</code> - 跟 <code>rfind()</code> 一樣，只是找不到時會丟出 <code>ValueError</code>。
+</p>
+</li>
+</ul></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; s = '0A2B4C6B8A'; len(s)
+10
+&gt;&gt;&gt; s.rfind('B8')
+7
+&gt;&gt;&gt; s.find('B4')
+3
+&gt;&gt;&gt; s[3:], s.index('B4', 3)
+('B4C6B8A', 3) <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+&gt;&gt;&gt; s[4:], s.index('B4', 4)
+Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+ValueError: substring not found</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+即使用 <code>[, start[, end]]</code> 來限定搜尋的範圍，回傳的位置還是從原始字串的第一個位置開始計算。
+</td></tr>
+</table></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">如果 <em>sub</em> 一定會出現，用 <code>str.index()</code> 或 <code>str.rindex()</code> 可以省去檢查回傳值是否為 <code>-1</code> 的麻煩。</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_格式化">格式化</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+str.format(<strong>args, </strong>*kwargs)
+</p>
+</li>
+<li>
+<p>
+str.center(width[, fillchar])
+</p>
+</li>
+<li>
+<p>
+str.ljust(width[, fillchar])
+</p>
+</li>
+<li>
+<p>
+str.rjust(width[, fillchar])
+</p>
+</li>
+<li>
+<p>
+str.zfill(width)
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_調整字串內容">調整字串內容</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+str.capitalize()
+</p>
+</li>
+<li>
+<p>
+str.title()
+</p>
+</li>
+<li>
+<p>
+str.expandtabs([tabsize])
+</p>
+</li>
+<li>
+<p>
+str.lower()
+</p>
+</li>
+<li>
+<p>
+str.upper()
+</p>
+</li>
+<li>
+<p>
+str.swapcase()
+</p>
+</li>
+<li>
+<p>
+str.lstrip([chars])
+</p>
+</li>
+<li>
+<p>
+str.rstrip([chars])
+</p>
+</li>
+<li>
+<p>
+str.strip([chars])
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_用_regex_更聰明地拆解字串">用 Regex 更聰明地拆解字串</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>假設檔案內容如下：</p></div>
+<div class="listingblock">
+<div class="title"><a href="string/ifconfig.txt"><code>ifconfig.txt</code></a></div>
+<div class="content">
+<pre><code>eth0      Link encap:Ethernet  HWaddr 00:00:00:da:0b:0f
+          inet addr:10.201.175.201  Bcast:10.201.175.255  Mask:255.255.254.0
+          inet6 addr: fe80::226:9eff:feda:b0f/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:2332718 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:64375 errors:0 dropped:0 overruns:0 carrier:1
+          collisions:0 txqueuelen:1000
+          RX bytes:177828762 (177.8 MB)  TX bytes:17929110 (17.9 MB)
+          Interrupt:46
+
+lo        Link encap:Local Loopback
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          inet6 addr: ::1/128 Scope:Host
+          UP LOOPBACK RUNNING  MTU:16436  Metric:1
+          RX packets:10768 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:10768 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0
+          RX bytes:1360723 (1.3 MB)  TX bytes:1360723 (1.3 MB)
+
+wlan0     Link encap:Ethernet  HWaddr 00:00:00:12:45:44
+          inet addr:10.1.247.66  Bcast:10.1.247.255  Mask:255.255.252.0
+          inet6 addr: fe80::224:d6ff:fe12:4544/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:21850 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:2504 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:1188659 (1.1 MB)  TX bytes:376448 (376.4 KB)</code></pre>
+</div></div>
+<div class="paragraph"><p>如何快速拆解出三張網卡的資訊，答案是 regex：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>import re
+
+config = open('ifconfig.txt').read()
+re.findall(r'^\w+.*?^$', config, re.DOTALL | re.MULTILINE)</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_取代字串的內容">取代字串的內容</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+str.replace(old, new[, count])
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_延伸閱讀">延伸閱讀</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="split-string.html">拆解字串</a>
+</p>
+</li>
+<li>
+<p>
+<a href="../python-encoding.html">處理不同的文字編碼</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://docs.python.org/2/library/stdtypes.html#string-methods">Built-in Types &gt; String Methods — The Python Standard Library</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://docs.python.org/2/reference/lexical_analysis.html#string-literal-concatenation">Lexical analysis &gt; String literal concatenation — The Python Language Reference</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-15 20:52:40 CST
+</div>
+<div id="footer-badges">
+<a href="http://validator.w3.org/check?uri=referer">
+  <img style="border:0;width:88px;height:31px"
+    src="http://www.w3.org/Icons/valid-xhtml11-blue"
+    alt="Valid XHTML 1.1" height="31" width="88" />
+</a>
+<a href="http://jigsaw.w3.org/css-validator/">
+  <img style="border:0;width:88px;height:31px"
+    src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
+    alt="Valid CSS!" />
+</a>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

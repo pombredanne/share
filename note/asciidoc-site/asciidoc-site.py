@@ -259,8 +259,7 @@ class Document(object):
 
         # TODO: customize sidebar-menu, banner (extract)
         logger.info('Build %s ...', self.filename)
-        cmds = ['asciidoc', '-b', 'xhtml11', '-a', 'linkcss', '-a', 'icons',
-                '-a', 'badges']
+        cmds = ['asciidoc', '-b', 'xhtml11', '-a', 'linkcss', '-a', 'icons']
         cmds.extend(['-f', path.join(self.docsys.site_dir, '_asciidoc/layout.conf')])
         cmds.extend(['-a', 'siteroot=%s' % self.path_to_site_root()])
         cmds.extend(['-a', 'source-highlighter=pygments'])

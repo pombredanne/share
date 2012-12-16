@@ -1,0 +1,47 @@
+= link:../python.html[Python] / link:types.html[Types] / Checking =
+:title: [Python] Type Checking
+
+一般而言，你不該在 Python 裡做型態檢查（type checking），但如果有需要的話（尤其是在寫 utility function 時），http://docs.python.org/2/library/functions.html#type[官方建議]用 `isinstance()` 來做。
+
+ isinstance(object, classinfo)
+
+簡單地說，就是檢查 'object' 的型態是否與 'classinfo' 相符。可以分成幾個狀況來看：
+
+ * 當 'classinfo' 是 class object 時（也就是 old-style class），它會檢查 "object is an instance of that class"（或 subclass）。
+ * 當 'classinfo' 是 type object 時（也就是 new-style class），它會檢查 "object is an object of that type"（或 subtype）。
+ * 當 'classinfo' 是內含 type/class object 的 tuple 時，只要 'object' 通過任一 class/type object 的檢查即可。
+
+--------------------------------------------------------------------------------
+>>> import types
+>>>
+>>> alist = list(); adict = dict(); atuple = tuple()
+>>> isinstance(alist, list) <1>
+True
+>>> isinstance(adict, tuple)
+False
+>>> isinstance(atuple, (list, dict, tuple))
+True
+>>>
+>>> isinstance('text', (str, unicode)) <2>
+True
+>>> isinstance(u'text', types.StringTypes)
+True
+>>> types.StringTypes
+(<type 'str'>, <type 'unicode'>)
+--------------------------------------------------------------------------------
+<1> 雖然也可以寫成 `isinstance(alist, types.ListType)`，但http://docs.python.org/2/library/types.html[官方建議]儘可能用 built-in type，而非 `types` 裡的別名。
+<2> 檢查是否為字串，`(str, unicode)` 的做法很常見，不過 `types.StringTypes` 提供了一個更簡潔的寫法。
+
+== 參考資料 ==
+
+.文件
+--
+ * http://docs.python.org/2/library/functions.html[Built-in Functions > type(), isinstance(), issubclass() — The Python Standard Library]
+ * http://docs.python.org/2/library/types.html[types — Names for built-in types — The Python Standard Library]
+--
+
+.其他文件
+--
+ * http://www.siafoo.net/article/56[Type Checking in Python - Siafoo] (2008-05-09) - 比較 `type()`、`isinstance()` 跟 `__class__` 三種不同的做法，結果 `isinstance()` 勝出。
+--
+

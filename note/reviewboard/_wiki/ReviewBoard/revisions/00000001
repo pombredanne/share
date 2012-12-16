@@ -1,0 +1,621 @@
+= Review Board =
+<<TableOfContents>>
+
+== Overview ==
+http://www.review-board.org/
+http://code.google.com/p/reviewboard/
+
+ Review Board has changed the way we review ''code changes'', enforce high quality coding standards and styles, and generally mentor(指導) new developers. Every time you visit search.yahoo.com you use code that has been reviewed on review board. We're great fans of your work! — Yahoo! Web Search
+
+__For too long, code reviews have been too much of a chore(苦差事). This is largely due to the lack of quality tools available, leaving developers to resort to(訴諸於) ''e-mail and bug tracker-based solutions''.__
+
+__At VMware, we've traditionally done code reviews over e-mail. A significant amount of time was wasted in forming(建立) ''review requests'', '''switching between the diff and the e-mail, and trying to understand what parts of the code the reviewer was referring to(有關). We decided to fix all that.'''__
+
+Review Board is a powerful web-based code review tool that offers developers an easy way to handle code reviews. It scales well from small projects to large companies and offers a variety of tools to take much of the stress and ''time out(逾時)'' of the code review process. (如果在 VMware 這類大型的專案都能應付, 其他規模的開發就大概沒有什麼問題了...)
+
+__Review Board is a web-based tool designed to help projects and companies keep track of ''pending(未審理的) code changes'' and make code reviews much less painful and time-consuming. It is being developed for use in VMware (難怪 UI 的風格有點像是 VMware Management Interface), but is designed to be generic enough to use in any project. It currently has support to SVN, CVS, Perforce, Git, and Mercurial repositories. (下面提到 review requiest 要自行產生 diff 上傳, 而非直接整合 version control, 那這裡列出支援的 repositories 有什麼意思[?])__
+
+Review Board is written using http://www.djangoproject.com/[Django] (底層的架構) and Python.
+
+=== Detailed review requests ===
+
+{{attachment:reviewrequest_thumb.png}}
+
+All the information on a ''change'' is available at a glance. ''Authors'' can modify the information quickly and easily through the web UI. __Screenshots can be added and commented on.__
+
+__Review requests can be created through the "New Review Request" page, or ''updated'' through the `post-review` tool on compatible revision control systems, making it easy to ''file(提出)'' new review requests. (自動發出 review request 而言; 上面 "updated" 的說法是可以持續更新嗎[?])__
+
+=== Powerful diff viewer ===
+
+{{attachment:diffviewer_thumb.png}}
+
+__Diffs are no longer something you just read. Now you can interact with them, '''commenting directly on the lines you're reviewing. The comments, along with the lines of the diff, will appear on the review.'''__
+
+Keyboard shortcuts make it easy to jump around the diff. For example, pressing "n" will jump to the next ''changed chunk'', while "p" will jump to the previous.
+
+To improve readability, we display syntax highlighting in the diff and show the changes within a lines in a ''"replace" block''[?].
+
+__Every revision of a diff is stored. This allows the user to look at any revision of the diff and also to see the differences between revisions. This is especially valuable when there are ''several iterations of large diffs''. (為什麼 diff 也有 revision 的概念? 為什麼要存起來[?])__
+
+=== Comment and review dialog ===
+
+{{attachment:commentdlg_thumb.png}}
+
+Reviews of code are made in the Comment dialog on the diff viewer page. Clicking a line or a ''comment flag'' will take you here, allowing you to comment on the review. When finished, the review can be ''finalized'' and ''published'' on the Review tab. (作業流程為何[?])
+
+=== Contextual discussions and reviews ===
+
+{{attachment:reviews_thumb.png}}
+
+__You already know that comments can be made directly on lines in the diff. Following that ''contextual model'', we display discussions, comments, and lines of the diff ''inline'' on reviews. This allows people to read top to bottom and know exactly what people are talking about. (加入討論的功能, 會讓 Review Board 與 Issue Tracking 系統更難以區隔...)__
+
+We even display clips of commented regions of screenshots!
+
+=== The dashboard ===
+
+{{attachment:dashboard_thumb.png}}
+
+__Every user gets a dashboard, which displays the list of ''outgoing and incoming reviews''. You'll never miss a review request again. (畫面右上方提供有往 issue tracking 系統的連結)__
+
+The dashboard is customizable. Columns can be rearranged, new columns can be added and unwanted columns can be removed. The dashboard can be sorted using ''two-level sorting''.
+
+== User Documentation ==
+http://code.google.com/p/reviewboard/wiki/Documentation
+
+=== User Basics - How to get started as a Review Board user ===
+http://code.google.com/p/reviewboard/wiki/UserBasics
+
+==== Introduction ====
+
+This is a basic guide to using Review Board as a user. For information on setting up a new installation of Review Board, please see the http://code.google.com/p/reviewboard/wiki/GettingStarted[GettingStarted] document.
+
+This is very much a work in progress. Feel free to add anything you think is missing!
+
+===== Before You Start =====
+
+Most common browsers should work. We've heard of some slight problems with Firefox 1.5, Safari 2.0 and Opera, but Firefox 2.0, Internet Explorer and Safari 3.0 should work.
+
+__Many version control systems have a built-in diff tool, but if it calls the `diff` program, make sure you're using at least `diffutils` 2.8.x. (這跟 scm 的 diff 工具有什麼關係? 會不是用在下面所提的 `post-review` 工具[?])__
+
+===== Posting Review Requests =====
+
+__Review Board is designed for ''code review processes'' which occur ''before'' a change is committed to version control. (要等到別人檢視過後才能 commit, 除非有專職的 reviewer, 否則在實務上並不太可行...)__ The general ''workflow'' we designed it for is this:
+
+ 1. You make some awesome(令人敬畏的) change to your local checkout.
+ 2. __You create a ''review request'' by posting a ''diff'', writing a description, and selecting some ''reviewers''. (要自行準備 diff 檔的做法, 實在是很怪[?])__
+ 3. You click "Publish" on the review request and wait for your reviewers to see it.
+ 4. Other people look at your review request, say "that is awesome, except some stuff is broken."
+ 5. You update your code to address(處理) some of their comments.
+ 6. __You post an ''updated diff'', and respond to their comments indicating what you changed (or you respond indicating why you're not going to make some change they suggested)__
+ 7. People look at your updated code, and give you the go ahead.
+ 8. You commit your change to the repository.
+ 9. You click "Set Submitted" on the review request to remove it from peoples' dashboards.
+
+__This workflow can be changed a bit (eg. for processes where review happens after the commit, or for decentralized version control), but there are some inherent limitations in the way things are implemented right now, so it can't be changed too much. '''For the moment, it is absolutely required that review requests are ''posted as diffs'' against revisions of files which exist in some centralized repository.''' (那為什麼有組態 repository 的必要[?])__
+
+====== Using post-review ======
+
+`post-review` is the ''preferred way'' to post review requests, mostly because it's so dang(非常地) easy. If your administrator has not provided a customized version, download http://reviewboard.googlecode.com/svn/trunk/reviewboard/contrib/tools/post-review. (這是一支 python script) The first time you run it, it should ask you for a server (the full URL to your Review Board server).
+
+You'll need Python with the `simplejson` module installed for `post-review` to work. Note that it currently only supports SVN and Perforce repositories.
+
+Once you've run `post-review`, it will give you the URL for your new review request. Open this up, and skip to the "Filling out the review" section below.
+
+Special note for Perforce users: Unfortunately, `p4 diff` is pretty broken. Unless you've got a special wrapper around `p4` which does some more intense diffing (such as `p5` internally at VMware), you'll need to use `post-review`.[?]
+
+====== Not using post-review ======
+
+If you can't use `post-review` (for example, with CVS or Mercurial) repositories, or you just like doing things the hard way, you can post a review by hand.
+
+To start, click "New Review Request" in the upper left. This will take you to a form to upload your diff. Which means, you have to create a diff! The diff needs to be in ''unified format'', and different version control systems have different ways to do this. You'll need to consult the documentation for your VCS to figure out how to do this if you don't already know.
+
+Once you have the diff saved to a file, you can fill out the "New Review Request" form. Begin by selecting a repository. On most Review Board installations, you'll probably only have one choice, but some may have multiple ones to choose from. (支援 mutliple projects 的局部[?]) Select the one which corresponds to the diff you just made.
+
+Once you've selected the repository, some of the other fields may change depending on what version control system it's using. Here are some of the fields you may encounter:
+
+ * Perforce
+   * Change number -- this is the ''changeset number'' of the diff you want to post
+ * Subversion
+   * Base diff path -- the ''relative path'' of where you were when you created the diff. For example, if you locally have a checkout of `trunk/reviewboard` named `reviewboard`, and that was the directory you were in when you made the diff, the base diff path would be `trunk/reviewboard`. This may also depend on how Review Board was configured -- consult your administrator if you have problems.
+
+Finally, the last field is the diff. Select the diff file you created, then click "Submit"
+
+====== Filling Out The Review ======
+
+Once you've got the review posted, you'll see a lot of empty fields (with Perforce, some of these may be filled in by your changeset information). To set these, click the pencil icons.
+
+===== Reviewing Code =====
+
+To review code, navigate to the review request you wish to review and click "View Diff" in the top right.
+
+The general procedure is pretty simple:
+
+ 1. Navigate through the diff and look at the changed files. There's a cursor available that lets you keep track of where you are (if you scroll to some other part of the code to look at something). Pressing "n" will jump the cursor to the next change, and "p" to the previous.
+ 2. If you want to comment on one or more lines, click on the line number, or click and drag (downwards) to select multiple lines. A box will pop up allowing you to enter your comment. Click "Save Comment" when you're done.
+ 3. When finished with your review, click the Review tab in the comment dialog. If you've closed this dialog, go ahead and open it again by clicking on a random line. It doesn't matter. Yes, we'll make this more sane(穩健的) soon. Type in whatever you like above and below your contextual comments, click "Ship It" if you think it's ready to be submitted, and then click "Publish Review."
+
+After publishing a review, your review will be available in the Review Request page under the request box. You will notice that every line you've commented on appears inline on the review box. This helps the developer to see what you're talking about and helps for discussions about the code. No more jumping back and forth between the e-mail client and the diff!
+
+Note: Ship It! is just a way of giving a definite(明確的) "yes" to a change. It won't actually commit anything to your repository
+
+===== Discussing Reviews =====
+
+Discussions of a review take place on the review box. Below each block of text, you'll find an Add Comment link. Clicking this will preset a box that you can type in. You can make several comments and then click "Publish" at the top of the review box to save your comments and e-mail it out.
+
+Note: You can respond to a single review at a time. In some cases, you may want to respond to multiple reviews by different people, in which case you need to publish two responses (and therefore will get two e-mail messages). We're thinking of ways to reduce the amount of mail in these cases, so please bear with(忍受) us.
+
+__Discussions are ''single-threaded'', like web forums, http://digg.com/[Digg], etc. This allows people to read a conversation from top to bottom instead of jumping between lots of threads.__
+
+==== Reporting Problems ====
+
+This system is still pretty new, and is undergoing constant development. If you have a bug, please file it in the http://code.google.com/p/reviewboard/issues/list[Issue Tracker]. Keep in mind that this is a public bug tracker, so do not include any sensitive information in the bug report.
+
+Please also file feature requests if you have any. We can't get to everything, but are working hard to make this a system people want to use.
+
+=== Using post-review - Instructions on using the post-review tool ===
+http://code.google.com/p/reviewboard/wiki/Using_PostReview
+
+`post-review` is a simple tool that doesn't take too many options. However, its basic usage differs depending on the repository type it's being used with.
+
+==== Posting and Updating Review Requests ====
+
+Depending on the repository type, `post-review` is used in one of two ways. __Either with a changeset number, or without. `post-review` will build the diff and post it to the Review Board server. The diff and any additional review request information will be saved as a ''draft'', which can then be published.__
+
+After posting a new review request or ''updating'' an existing one, the URL of the review request will be displayed in the terminal.
+
+===== Perforce =====
+
+Perforce has a concept of changesets, which are server-stored descriptions of a change along with an ID number and associated files. For Perforce, Review Board stores changeset numbers of a posted change and can use these to associate particular changes with review requests.
+
+To post a review request for a specific change, or to update an existing review request for that change, type:
+
+ {{{
+$ post-review CHANGENUM
+ }}}
+
+Where `CHANGENUM` is the changeset number in Perforce.
+
+The diff will be generated and uploaded to Review Board, and the review request information will be updated based on the changeset description.
+
+===== CVS and Subversion =====
+
+CVS and Subversion don't have a concept of changesets, so instead the working copy's uncommitted changes are posted for review. To post for review, simply run:
+
+ {{{
+$ post-review
+ }}}
+
+This will create a new review request and post the diff of the uncommitted changes. If you instead want to update an existing review request with new changes, use the `-r` parameter. For example, to update review request #42, type:
+
+ {{{
+$ post-review -r 42
+ }}}
+
+If you need to post specific files, leaving other uncommitted files out of the review request, you can include them on the command line, like so:
+
+ {{{
+$ post-review src/foo.c data/bar.png
+ }}}
+
+===== Posting Committed Code =====
+
+The default `post-review` invocation assumes ''uncommitted code'' is to be posted, but sometimes it's useful to post code that has already been committed to a repository, such as in a branch.
+
+In order to do this, you should use the `--revision-range` parameter, which will generate a diff based on a range of committed revisions. This allows a single review request to be generated based on the entire history of a branch, if desired.
+
+Usage is easy. Simply type:
+
+ {{{
+$ post-review --revision-range=STARTREV:STOPREV
+ }}}
+
+Where `STARTREV` is the beginning revision in the range and `STOPREV` is the ending revision. If you only need to post a single revision, type:
+
+ {{{
+$ post-review --revision-range=REVISION
+ }}}
+
+In order to update an existing review request, use the `-r` flag, as shown above.
+
+==== Options ====
+
+
+== Administrator Documentation ==
+http://code.google.com/p/reviewboard/wiki/Documentation
+
+=== Host Requirements - Requirements your host must meet for Review Board ===
+http://code.google.com/p/reviewboard/wiki/Host_Requirements
+
+Review Board is known to work on Linux, Windows and MacOS X hosts. We're flexible and support a variety of configurations.
+
+The ideal server should have at least 512MB of RAM. Larger installations should ideally have 1GB or more. __It should also have at least 2GB of storage space free to accommodate(容納) many screenshots and large databases.__
+
+'''Required Programs''' (以下這些東西都要額外手動安裝; 如果稍有 python 的基礎, 其實不會太難...)
+
+ * Django version 0.97 or higher
+ * Python version 2.4 or higher
+ * PIL - The Python Imaging Library
+ * patchutils
+ * memcached (Optional, but strongly recommended)
+
+'''Database'''
+
+You will need one of the following database servers.
+
+ * MySQL 5.0.31 or higher with:
+ * PostgreSQL 8.0 or higher
+ * SQLite 3
+
+'''Web Server'''
+
+You will need one of the following web servers.
+
+ * Apache 2.0 or higher
+   * mod_rewrite
+   * mod_python or fastcgi
+ * http://www.lighttpd.net/[lighttpd]
+
+'''Perforce Support'''
+
+ * http://public.perforce.com/guest/robert_cowham/perforce/API/python/index.html[p4python]
+
+'''Subversion Support'''
+
+ * http://pysvn.tigris.org/[pysvn]
+
+=== Before You Install - What you need to know before installing Review Board ===
+http://code.google.com/p/reviewboard/wiki/Before_You_Install
+
+Before you install Review Board, you'll need to make sure that the server you're installing Review Board on meets certain requirements. You'll also need to make sure you can make the appropriate changes on the server.
+
+First off, check to see that your server meets the http://code.google.com/p/reviewboard/wiki/Host_Requirements[host requirements] needed.
+
+You'll need shell access (usually through SSH) on the server in order to install any missing dependencies. Most hosting providers you would run Review Board on will give you shell access. You'll also need a program to log into your shell. If you're using Windows, we recommend http://www.putty.org/[Putty].
+
+You'll need to edit files on the server. You can do this either on the server using a program such as `vim`, `nano`, `pico` or `emacs` (on Linux-based systems) or by using a text editor on your computer (such as Notepad) and uploading through an FTP or SFTP client.
+
+If you meet all the requirements, you're ready to install Review Board. If you have any questions, you can ask your hosting provider or http://groups.google.com/group/reviewboard[contact us].
+
+=== Getting Started - Instructions for getting reviewboard initially up and running ===
+http://code.google.com/p/reviewboard/wiki/GettingStarted
+
+==== Basic Dependencies ====
+
+At the very least, you need:
+
+ * python 2.4 or newer
+ * django 0.97 (svn)
+ * sqlite 3 (not necessary if using mysql)
+ * PIL
+ * patchutils
+
+Additional things you may want:
+
+ * Mysql 5.0.31 or newer
+ * lighttpd or apache
+ * flup
+ * p4python
+ * pysvn
+ * nose and coverage.py for running unit tests.
+
+Review Board has only been deployed on linux. There may be things which have to be changed to deploy on other platforms such as windows or OS X. 
+
+Distribution-specific dependency guides:
+
+ * http://code.google.com/p/reviewboard/wiki/Installing_on_Ubuntu_Gutsy[Installing on Ubuntu Gutsy (7.10)]
+
+==== Downloading ====
+
+Review Board is still in development and we do not currently have a release for download. However, you can get the code through our Subversion development tree using the following command:
+
+ {{{
+svn checkout http://reviewboard.googlecode.com/svn/trunk/reviewboard
+ }}}
+
+__We try to keep the development tree fairly stable, and we do our best to fix critical bugs as soon as they're reported.__
+
+==== Configuration ====
+
+__''Django projects'' are configured through a settings file, which is basically just a python file that defines a bunch of variables. Most of the settings for reviewboard are ''deployment-neutral(無關的)'', and these are kept in `settings.py`. A few things (such as database configuration, SCM location, etc) need to be configured for ''each deployment''. These are kept in `settings_local.py`. (因為 `settings.py` 裡面會將 `settings_local.py` 引入)__
+
+To create this, first copy `settings_local.py.tmpl` to `settings_local.py`, then open it in your editor.
+
+===== Database =====
+
+The easiest way to get up and running initially is to use sqlite as your database backend:
+
+ {{{
+DATABASE_ENGINE = 'sqlite3'
+DATABASE_NAME = 'reviewboard.sqlite' # 這一支檔案會直接新增在 review board 的安裝目錄下
+ }}}
+
+If you would rather use mysql, you need to install it and get it running, and create a database to use. Creating a special user is optional, especially if mysql is only open to "localhost". You can then configure django to access it thusly(於是):
+
+ {{{
+DATABASE_ENGINE = 'mysql'
+DATABASE_NAME = 'reviewboard'
+DATABASE_USER = 'reviewboard'
+DATABASE_PASSWORD = 'password'
+DATABASE_HOST = '' # default (localhost)
+DATABASE_PORT = '' # default
+ }}}
+
+Django can use a few other databases, but none except sqlite and mysql have been tested.
+
+===== Secret Key =====
+
+Come up with a random string and set it in the `SECRET_KEY` variable.[?]
+
+===== Further Reading =====
+
+The http://www.djangoproject.com/documentation/settings/[django documentation] contains a lot of additional keys that can be set. In addition, any variables inside `settings.py` can be overridden in `settings_local.py`.
+
+==== Running The Server ====
+
+Now on to the fun part.
+
+===== Creating the database =====
+
+You should now be finished configuring reviewboard. To create the database tables, run
+
+ {{{
+./manage.py syncdb
+ }}}
+
+When asked to create a ''superuser'', say "yes" and type in your desired account information.
+
+===== Using the built-in web server =====
+
+Now, to run using django's built-in web server, type
+
+ {{{
+./manage.py runserver
+ }}}
+
+then open http://127.0.0.1:8000 in your web browser. If all is working, you should be presented with a login box! __The built-in server is really really slow, so it's not really appropriate for final deployments, but it should get you started.__
+
+===== Running with apache or lighttpd =====
+
+This is more complicated. There are some example configuration files for lighttpd and apache inside the `contrib/conf/` directory (例如 `apache-modpython.conf.in`; 樣板檔裡的 `@pythondir@` 之類的符號, 都要用實際路徑取代掉) in the reviewboard directory to get you started. (應該有機會為多個專案各自架設一個入口[?]) Another good resource is the http://www.djangobook.com/en/beta/chapter21/[Deploying Django] chapter of http://www.djangobook.com/[The Django Book]
+
+===== Optimize the server =====
+
+You'll want to optimize the server where you can. Refer to http://code.google.com/p/reviewboard/wiki/ServerOptimizations[ServerOptimizations] for more information.
+
+==== Final Configuration ====
+
+===== Set the site URL =====
+
+Log in to http://127.0.0.1:8000/admin as your superuser account. Click "Sites", then `"example.com"`. Change both the domain and display names to reference your server. Without this, emails will have http://example.com/ instead of your reviewboard server. (系統發出的 email 會帶有連回 review board 的連結)
+
+Make sure that the `SITE_ID` variable in `settings.py` or `settings_local.py` is set to the object ID of the ''site object''. (可以應用在多個 site 的建立[?])
+
+===== Set up repositories =====
+
+In the admin UI, select "Add" next to the "Repositories" label in the Scmtools section. Give your repository a name and path, and select the type of server. If your tool requires a login or password, provide those here. By default, subversion and perforce tools are available.
+
+The path identifies which server to contact. For subversion repositories, give the repository path. For perforce servers, give the contents of your `$P4PORT` environment variable. For example:
+
+ {{{
+Name: Reviewboard SVN
+Path: http://reviewboard.googlecode.com/svn/
+Username:
+Password:
+Tool: Subversion
+ }}}
+
+ {{{
+Name: Perforce Public
+Path: public.perforce.com:1666
+Username: foo
+Password: bar
+Tool: Perforce
+ }}}
+
+The astute(聰明的) observer will also notice `scmtools/perforce_vmware.py`. This is a specialization of the `PerforceTool` which parses the changeset descriptions in use at VMware. Adding special fields to perforce changelists is pretty common with larger depots(儲藏所), so this can be used as an example for how to deal with this.
+
+===== Bug Tracker URL =====
+
+__Each repository also has a "Bug tracker" field. (如果同一個 repository 下的多個 project 有各自的 bug tracker 怎麼辦[?]) Bug numbers listed in review requests will automatically be hyperlinked to the relevant bugs.__ This field should be a format string with a single `"%s"` where the bug ID should go in the URL.
+
+Here are some examples:
+
+ * Bugzilla: http://bugzilla.server/show_bug.cgi?id=%s
+ * Trac: http://trac.server/ticket/%s
+ * Google issue tracker: http://code.google.com/p/project/issues/detail?id=%s
+
+===== Configure Groups =====
+
+When a user first logs in, they will be directed to the user profile page and asked to join groups. Once again, create these through the django admin UI. There are two Groups tables -- make sure to add these to the one within the "Reviews" section, not "Auth". (在管理首頁有 Auth > Groups 與 Reviews > Review groups 兩項功能) __Each group is associated with a mailing list, which will be copied on relevant emails. (還是相當依賴  email 的機制[?])__
+
+===== Set up search =====
+
+This isn't strictly necessary (and might be hard on some platforms), but it'll make your users love you. See http://code.google.com/p/reviewboard/wiki/SettingUpSearch[SettingUpSearch] for details.
+
+==== Let Us Know! ====
+
+We'd love to hear how you're using Review Board. The Review Board Discussion google group is a great place to share how you've integrated Review Board into your workflow and how you think it could be improved.
+
+=== Dependency installation instructions for Ubuntu Gutsy (7.10) ===
+http://code.google.com/p/reviewboard/wiki/Installing_on_Ubuntu_Gutsy
+
+==== Basic Setup ====
+
+Installation on Ubuntu Gutsy is easy for the most part, with exceptions. Most of the packages we need are packaged by default. We'll need to grab Django and the ''Python Memcache bindings'' manually.
+
+Start by typing the following in a terminal:
+
+ {{{
+$ sudo apt-get install build-essential subversion python-imaging python-flup python-dev memcached libmemcache-dev
+ }}}
+
+其中:(`subversion` 是用來簽出 django 的原始碼)
+
+ * `python-imaging`: The Python Imaging Library (PIL) adds an image object to you Python interpreter. You can load images from a variety of file formats, and apply rich set of image operations to them.
+ * __`python-flup`: Implements the standard interface between Python Web applications and Web servers, as described in PEP 333, http://www.python.org/dev/peps/pep-0333__
+ * `python-dev`: Header files, a static library and development tools for building Python modules, extending the Python interpreter or embedding Python in applications.
+ * __`memcached`: http://en.wikipedia.org/wiki/Danga_Interactive[Danga Interactive] developed `memcached` to enhance the speed of LiveJournal.com, a site which was already doing 20 million+ dynamic page views per day for 1 million users with a bunch of webservers and a bunch of database servers. `memcached` dropped the database load to almost nothing, yielding faster page load times for users, better resource utilization, and faster access to the databases on a memcache miss.__
+ * `libmemcache-dev`: `memcached` optimizes specific high-load serving applications that are designed to take advantage of its versatile(通用的) ''no-locking memory access system''. Clients are available in several different programming languages, to suit the needs of the specific application. Traditionally this has been used in `mod_perl` apps to avoid storing large chunks of data in Apache memory, and to share this burden across several machines.
+
+Now change to a directory where you want to keep the Django source tree and type:
+
+ {{{
+$ svn co http://code.djangoproject.com/svn/django/trunk django_src
+$ cd django_src
+$ sudo python setup.py install
+ }}}
+
+@2008/05/03 如果直接安裝 `python-django` 套件, 後面執行 `./manage.py syncdb` 時會出現下面的錯誤:
+
+ {{{
+Error: Couldn't install apps, because there were errors in one or more models:
+reviewboard.scmtools: __init__() got an unexpected keyword argument 'max_length'
+reviewboard.diffviewer: cannot import name ugettext_lazy
+reviewboard.reviews: No module named safestring
+reviewboard.accounts: cannot import name ugettext_lazy
+ }}}
+
+Next we must set up `cmemcache`, the Python bindings for memcache. Download the http://gijsbert.org/downloads/cmemcache/[latest release], extract it, and change to its directory. Then type:
+
+ {{{
+$ sudo python setup.py install
+ }}}
+
+If all went well, you should have Django installed and the base dependencies for Review Board.
+
+==== Choosing a Database Backend ====
+
+Review Board has been tested with SQLite 3 and MySQL databases.
+
+ * SQLite: `$ sudo apt-get install python-pysqlite2`
+ * MySQL: `$ sudo apt-get install mysql-server-5.0 python-mysqldb`
+
+==== Choosing a Web Server ====
+
+Review Board has been tested with Apache 2 and lighttpd.
+
+ * Apache: `$ sudo apt-get install apache2 libapache2-mod-python`
+ * lighttpd: `$ sudo apt-get install lighttpd`
+
+==== Support for Revision Control Systems ====
+
+Most revision control systems, like Subversion or CVS, are easy to install and get running.
+
+ * Subversion: `$ sudo apt-get install python-svn`
+ * CVS: `$ sudo apt-get install cvs`
+ * Git: `$ sudo apt-get install git-core`
+ * Mercurial: `$ sudo apt-get install mercurial`
+ * Perforce: Perforce is a bit more difficult to set up properly. You will need to install `p4api` and `p4python`. See http://public.perforce.com/guest/robert_cowham/perforce/API/python/index.html#build[p4python's documentation] for detailed instructions.
+
+==== Development Tools ====
+
+If you're working on developing or testing Review Board, you'll want to install some extras.
+
+ * Nose: `$ sudo apt-get install python-nose` (We use nose for our unit tests)
+
+=== Installing on Ubuntu 8.04 (Hardy) with Apache, SQLite and Subversion Integrated ===
+
+ {{{
+mkdir /tmp/reviewboard
+cd /tmp/reviewboard
+
+sudo apt-get install build-essential subversion python-docutils python-imaging python-flup python-dev memcached libmemcache-dev
+sudo apt-get install python-pysqlite2 python-svn
+sudo apt-get install apache2 libapache2-mod-python
+
+svn co http://code.djangoproject.com/svn/django/trunk django_src
+cd django_src
+sudo python setup.py install
+cd ..
+
+wget http://gijsbert.org/downloads/cmemcache/cmemcache-0.91.tar.bz2
+tar -jxf cmemcache-0.91.tar.bz2
+cd cmemcache-0.91
+sudo python setup.py install
+
+cd /opt
+sudo svn checkout http://reviewboard.googlecode.com/svn/trunk/reviewboard
+cd reviewboard
+
+sudo mkdir /var/opt/reviewboard
+cd htdocs/media
+sudo mv uploaded /var/opt/reviewboard
+sudo ln -s /var/opt/reviewboard/uploaded
+
+cd /var/opt/reviewboard
+sudo mkdir uploaded/images
+sudo chown -R :www-data uploaded
+sudo chmod -R g+w uploaded
+
+sudo mkdir database
+sudo chown -R :www-data /var/opt/reviewboard/database
+sudo chmod -R g+w /var/opt/reviewboard/database
+
+cd /opt/reviewboard
+sudo mkdir /etc/opt/reviewboard
+sudo cp settings_local.py.tmpl /etc/opt/reviewboard/settings_local.py
+sudo ln -s /etc/opt/reviewboard/settings_local.py
+
+sudo vi settings_local.py <-- 將 DATABASE_ENGINE 修改為 'sqlite3', DATABASE_NAME 修改為 '/var/opt/reviewboard/database/database.sqlite'
+sudo ./manage.py syncdb <-- 過程中建立一個 superuser
+
+sudo cp contrib/conf/apache-modpython.conf.in /etc/apache2/sites-available/reviewboard
+cd /etc/apache2/sites-enabled
+sudo ln /etc/apache2/sites-available/reviewboard
+sudo vi reviewboard
+
+sudo apache2ctl restart
+ }}}
+
+Apache 組態:
+
+ {{{
+<VirtualHost *>
+	ServerName example.com
+	DocumentRoot /opt/reviewboard/htdocs/
+
+	# Error handlers
+	ErrorDocument 500 /errordocs/500.html
+
+	# Serve django pages
+	<LocationMatch ^/(.*)$>
+		PythonPath "['/opt'] + ['/opt/reviewboard'] + sys.path"
+		SetEnv DJANGO_SETTINGS_MODULE reviewboard.settings
+		SetHandler mod_python
+		PythonHandler django.core.handlers.modpython
+		PythonAutoReload Off
+		PythonDebug Off
+		# If you run multiple mod_python sites in the same apache
+		# instonce, uncomment this line:
+		# PythonInterpreter reviewboard
+	</LocationMatch>
+
+	# Serve static media without running it through mod_python
+	# (overrides the above)
+	<LocationMatch ^(/(media|errordocs))>
+		SetHandler None
+	</LocationMatch>
+
+	# Alias static media requests to filesystem
+	# Alias /media @pythondir@/reviewboard/htdocs/media
+	# Alias /errordocs @pythondir@/reviewboard/htdocs/errordocs
+</VirtualHost>
+ }}}
+
+== Resource ==
+
+=== Reference ===
+
+ * [[Jupiter|Jupiter]]
+
+=== Attachments ===
+
+|| Filename || Description ||
+||  ||  ||
+
+=== Links ===
+
+=== Search ===
+
+== Scratch ==
+
