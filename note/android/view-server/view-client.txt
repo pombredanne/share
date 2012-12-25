@@ -1,0 +1,51 @@
+= link:../android.html[Android] / AndroidViewClient =
+:title: AndroidViewClient
+
+在實體裝置上測試 AndroidViewClient，發現它也需要搭配 device 裡的 link:view-server.html[Viewer Server] 才能運作，所以結果還是失敗了：
+
+--------------------------------------------------------------------------------
+$ export ANDROID_VIEW_CLIENT_HOME=<path-to-androidviewclient>
+$ ./examples/settings.py
+120722 13:14:43.191:S [MainThread] [com.android.monkeyrunner.MonkeyRunnerOptions] Script terminated due to an exception
+120722 13:14:43.191:S [MainThread] [com.android.monkeyrunner.MonkeyRunnerOptions]Traceback (most recent call last):
+  File "/home/jeremy/tmp/AndroidViewClient/examples/./settings.py", line 45, in <module>
+    vc = ViewClient(device)
+  File "/home/jeremy/tmp/AndroidViewClient/src/com/dtmilano/android/viewclient.py", line 200, in __init__
+    raise Exception('Cannot start View server.\n'
+Exception: Cannot start View server.
+This only works on emulator and devices running developer versions. <1>
+Does hierarchyviewer work on your device ?
+--------------------------------------------------------------------------------
+<1> 跟 link:../tools/hierarchy-viewer.html#developer-version-only[Hierarchy Viewer] 有相同的要求。
+
+有人在 http://dtmilano.blogspot.tw/2012/02/monkeyrunner-interacting-with-views.html[monkeyrunner: interacting with the Views] 對作者提問：
+
+________________________________________________________________________________
+the core concept is dump the infomation of current view, and store it into the vc.views. then pick up the position and id informaiton from it. BUT, the data is so large about 2M,each dump action will use more than 10s via the adb port forward. So I think it is the key trouble
+
+Is there any documentation or webpage how it is taking the dump.dump action is taking 8­-10 secs,sometimes UI is changing by the time.
+________________________________________________________________________________
+
+隨後作者回說：
+
+________________________________________________________________________________
+Unfortunately the time it takes to get the dump is mainly due to the ViewServer and not much can be done on the client side. If you run hierarchyviewer you can see that it takes almost the same time because both tools use the same strategy.
+________________________________________________________________________________
+
+感覺跟 link:../../monkeyrunner/api/hierarchy-viewer.html#dump[HierarchyViewer API] 背後的機制很像...
+
+== 參考資料 ==
+
+.網站
+--
+ * http://dtmilano.blogspot.tw/search/label/AndroidViewClient[Diego Torres Milano's blog: AndroidViewClient]
+ * https://github.com/dtmilano/AndroidViewClient[dtmilano/AndroidViewClient · GitHub]
+--
+
+.官方文件
+--
+ * http://dtmilano.blogspot.tw/2012/05/androidviewclient-q.html[Diego Torres Milano's blog: AndroidViewClient: Q&A] (2012-05-12)
+ * http://dtmilano.blogspot.tw/2012/03/eclipse-working-monkeyrunner.html[Diego Torres Milano's blog: Eclipse: working monkeyrunner configuration] (2012-03-12) - 把 AndroidViewClient 用在 unit test 裡。
+ * http://dtmilano.blogspot.tw/2012/02/monkeyrunner-interacting-with-views.html[Diego Torres Milano's blog: monkeyrunner: interacting with the Views] (2012-02-07) - 提到 AndroidViewClient 在 monkeyrunner 上加了一些功能，跟 chimpchat 不同？而且可以運作在 device 上？
+--
+

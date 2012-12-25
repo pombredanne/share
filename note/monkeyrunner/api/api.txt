@@ -1,0 +1,70 @@
+= link:../monkeyrunner.html[monkeyrunner] / API =
+:title: [monkeyrunner] API
+
+API 由下面幾個 Java 類別（`com.android.monkeyrunner.*`）組成：
+
+ * `MonkeyRunner`
+ * `MonkeyDevice`
+ * `MonkeyImage`
+
+其中 `MonkeyDevice` 可以說是 monkeyrunner 的主角，所有跟 emulator/device 的互動都是透過它。
+
+接上 Android-powered device 或啟動一個 emulator，體驗一下 monkeyrunner：
+
+[source,pycon]
+--------------------------------------------------------------------------------
+$ monkeyrunner
+Jython 2.5.0 (Release_2_5_0:6476, Jun 16 2009, 13:33:26) 
+[OpenJDK 64-Bit Server VM (Sun Microsystems Inc.)] on java1.6.0_20
+>>> from com.android.monkeyrunner import MonkeyRunner, MonkeyDevice
+>>> device = MonkeyRunner.waitForConnection() # <1>
+>>> device.getProperty('build.model')         # <2>
+u'HTC Desire S'
+>>> 
+>>> w, h = int(device.getProperty('display.width')), int(device.getProperty('display.height'))
+>>> device.drag((20, h / 2), (w - 20, h / 2), 1, 5) # swipe right
+>>> device.press('KEYCODE_HOME', MonkeyDevice.DOWN_AND_UP)
+>>> device.drag((w - 20, h / 2), (20, h / 2), 1, 5) # swipe left
+>>> device.press('KEYCODE_HOME', MonkeyDevice.DOWN_AND_UP)
+>>> device.press('KEYCODE_MENU', MonkeyDevice.DOWN_AND_UP)
+--------------------------------------------------------------------------------
+<1> 跟 emulator/device 建立連線。
+<2> 後續的操作，幾乎都是透過 `waitForConnection()` 傳回的 `MonkeyDevice`。
+
+[TIP]
+================================================================================
+TIP: API 的用法除了可以參考http://developer.android.com/tools/help/monkeyrunner_concepts.html[官方文件]之外，也可以從 monkeyrunner 內部直接取得：
+
+--------------------------------------------------------------------------------
+>>> from com.android.monkeyrunner import MonkeyRunner
+>>> print MonkeyRunner.help()
+MonkeyRunner help
+...
+
+com.android.monkeyrunner.MonkeyRunner.waitForConnection
+  Waits for the workstation to connect to the device.
+  
+
+  Args:
+    timeout - The timeout in seconds to wait. The default is to wait indefinitely. 
+    deviceId - A regular expression that specifies the device name. See the documentation for 'adb' in the Developer Guide to learn more about device names. 
+  Returns: A ChimpDevice object representing the connected device. 
+...
+--------------------------------------------------------------------------------
+================================================================================
+
+== 參考資料 ==
+
+.網站
+--
+ * http://androidxref.com/source/xref/sdk/monkeyrunner/[/sdk/monkeyrunner - Android XRef] - monkeyrunner 的原始碼
+--
+
+.文件
+--
+ * http://developer.android.com/tools/help/MonkeyRunner.html[MonkeyRunner | Android Developers]
+ * http://developer.android.com/tools/help/MonkeyDevice.html[MonkeyDevice | Android Developers]
+ * http://developer.android.com/tools/help/MonkeyImage.html[MonkeyImage | Android Developers]
+ * http://developer.android.com/reference/android/view/InputEvent.html[KeyEvent | Android Developers]
+--
+

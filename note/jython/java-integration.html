@@ -1,0 +1,157 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Jython] Java Integration</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div>
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="jython.html">Jython</a> / Java Integration</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>Jython 除了做為 Java Scripting 的方案之一，它之於 Python 最大的優勢就是可以直接從 Python code 裡直接調用 Java 實作的 library （也就是一堆 class），而且用起來跟 Python class 沒什麼兩樣：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; from java.util import ArrayList <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+&gt;&gt;&gt; words = ArrayList()             <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+&gt;&gt;&gt; words.add('Hello')
+True
+&gt;&gt;&gt; words.add('Jython')
+True
+&gt;&gt;&gt; words[0], words[1]              <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+(u'Hello', u'Jython')
+&gt;&gt;&gt; ', '.join(words)
+u'Hello, Jython'
+&gt;&gt;&gt;
+&gt;&gt;&gt; words.class                     <img src="../../_asciidoc/images/icons/callouts/4.png" alt="4" />
+&lt;type 'java.util.ArrayList'&gt;
+&gt;&gt;&gt; words.__class__
+&lt;type 'java.util.ArrayList'&gt;
+&gt;&gt;&gt; type(words)
+&lt;type 'java.util.ArrayList'&gt;
+&gt;&gt;&gt;
+&gt;&gt;&gt; words = words.toArray()         <img src="../../_asciidoc/images/icons/callouts/5.png" alt="5" />
+&gt;&gt;&gt; words.__class__
+&lt;type 'array.array'&gt;
+&gt;&gt;&gt; type(words)
+&lt;type 'array.array'&gt;
+&gt;&gt;&gt; words.class                     <img src="../../_asciidoc/images/icons/callouts/6.png" alt="6" />
+Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+AttributeError: 'array.array' object has no attribute 'class'
+&gt;&gt;&gt;
+&gt;&gt;&gt; System.currentTimeMillis()           <img src="../../_asciidoc/images/icons/callouts/7.png" alt="7" />
+Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+NameError: name 'System' is not defined
+&gt;&gt;&gt; from java.lang import System         <img src="../../_asciidoc/images/icons/callouts/8.png" alt="8" />
+&gt;&gt;&gt; System.out.println(', '.join(words))
+Hello, Jython</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+用 Python 的語法引入 Java class <code>java.util.ArrayList</code>。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+之後用起來就跟 Python class 沒什麼兩樣，例如直接呼叫該 class 就可以生成一個 instance，用 <code>.</code> 就可以呼叫 instance method 等。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+沒想到在 Jython 裡的 <code>java.util.ArrayList</code> 直接支援 Python 裡 sequence/iterable 的用法。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/4.png" alt="4" /></td><td>
+雖然型態是 <code>java.util.ArrayList</code>，除了 Java 的用法（<code>words.class</code>），也完全支援 Python 的用法（<code>words.__class__</code> 跟 <code>type(words)</code>）。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/5.png" alt="5" /></td><td>
+某些資料型態的轉換會自動發生在從 Python 傳入 Java method 的參數，也會發生在從 Java method 返回的回傳值。例如 Java 的 array 會變成 Python 的 <code>array.array</code>，其他型態的對應可以參考 <a href="http://wiki.python.org/jython/UserGuide#calling-java-methods-and-functions">User Guide &gt; Calling Java Methods and Functions</a>。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/6.png" alt="6" /></td><td>
+轉成 Python 的型態之後，Java 專有的用法 <code>.class</code> 就不適用了。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/7.png" alt="7" /></td><td>
+在 Java 裡預設會被引入的 <code>java.lang.*</code>，在 Jython 裡也要手動引入才行。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/8.png" alt="8" /></td><td>
+呼叫 class method 的方式跟 instance method 一樣。
+</td></tr>
+</table></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.jython.org/jythonbook/en/1.0/ModulesPackages.html">Jython Book &gt; Modules and Packages for Code Reuse</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.jython.org/jythonbook/en/1.0/JythonAndJavaIntegration.html">Jython Book &gt; Jython and Java Integration</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-25 23:26:35 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script>
+</body>
+</html>

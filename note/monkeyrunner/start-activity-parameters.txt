@@ -1,0 +1,108 @@
+= [monkeyrunner] `startActivity()` 參數內容要避開某些特殊的字元 =
+:icons:
+:blogpost-categories: android,monkeyrunner
+
+照理說，如果要用瀏覽器叫出 Google Maps 顯示 http://en.wikipedia.org/wiki/Taipei_101[台北 101] 的位置，可以這麼做：
+
+ startActivity(action='android.intent.action.VIEW', data='http://maps.google.com/?q=25.033611,121.565000&z=19')
+
+不過這個動作大部份的時候會失敗（至於為什麼 "偶爾" 可以，真的讓人不解！），因為某個參數裡出現特殊的字元，就像是這裡 `data` 參數裡的 `&`。原因是 monkeyrunner 最後也是將不同的參數串成一個 shell command，但某些字元在 shell 的環境下有特殊的意義，所以造成某些參數值被錯誤解讀。
+
+這個問題可以在 ADB shell 裡看出端倪：
+
+--------------------------------------------------------------------------------
+$ am start -a android.intent.action.VIEW -d http://maps.google.com/?q=25.033611,121.565000&z=19
+$ Starting: Intent { act=android.intent.action.VIEW dat=http://maps.google.com/?q=25.033611,121.565000 } <1>
+
+[1]   Done                    am start -a android.intent.action.VIEW -d http://maps.google.com/?q=25.033611,121.565000
+$
+$ am start -a android.intent.action.VIEW -d http://maps.google.com/?q=25.033611,121.565000\&z=19
+Starting: Intent { act=android.intent.action.VIEW dat=http://maps.google.com/?q=25.033611,121.565000&z=19 } <2>
+--------------------------------------------------------------------------------
+<1> 很明顯地，整個 `am start` 尾部的 `&z=19` 整個被切掉了，因為 `&` 被解讀為 "放到背景執行"。
+<2> 用 `\` 把 `&` 字元跳脫後，`am` 就能收到完整的參數。
+
+由於 `startActivity()` 內部不會做 escaping（細節可以看最後一節），要解這個問題，就必須要先將參數值加工過：
+
+ startActivity(action='android.intent.action.VIEW', data=r'http://maps.google.com/?q=25.033611,121.565000\&z=19')
+
+== 原來 monkeyrunner 最後也是呼叫 Shell Command ==
+
+從 `MonkeyDevice.startActivity()` 開始追起：
+
+.http://androidxref.com/source/xref/sdk/monkeyrunner/src/com/android/monkeyrunner/MonkeyDevice.java#startActivity[`com.android.monkeyrunner.MonkeyDevice`]
+--------------------------------------------------------------------------------
+69    private IChimpDevice impl;
+...
+274    public void startActivity(PyObject[] args, String[] kws) {
+275        ArgParser ap = JythonUtils.createArgParser(args, kws);
+276        Preconditions.checkNotNull(ap);
+277
+278        String uri = ap.getString(0, null);
+279        String action = ap.getString(1, null);
+280        String data = ap.getString(2, null);
+281        String mimetype = ap.getString(3, null);
+282        Collection<String> categories = Collections2.transform(JythonUtils.getList(ap, 4),
+283                Functions.toStringFunction());
+284        Map<String, Object> extras = JythonUtils.getMap(ap, 5);
+285        String component = ap.getString(6, null);
+286        int flags = ap.getInt(7, 0);
+287
+288        impl.startActivity(uri, action, data, mimetype, categories, extras, component, flags); <1>
+289    }
+290
+--------------------------------------------------------------------------------
+<1> 轉呼叫 `IChimpDevice.startActivity()`，目前只有 `AdbChimpDevice` 實作它。
+
+.http://androidxref.com/source/xref/sdk/chimpchat/src/com/android/chimpchat/adb/AdbChimpDevice.java#startActivity[`com.android.chimpchat.adb.AdbChimpDevice`]
+--------------------------------------------------------------------------------
+383    public void startActivity(String uri, String action, String data, String mimetype,
+384            Collection<String> categories, Map<String, Object> extras, String component,
+385            int flags) {
+386        List<String> intentArgs = buildIntentArgString(uri, action, data, mimetype, categories,
+387                extras, component, flags);
+388        shell(Lists.asList("am", "start", <1>
+389                intentArgs.toArray(ZERO_LENGTH_STRING_ARRAY)).toArray(ZERO_LENGTH_STRING_ARRAY));
+390    }
+...
+406    private List<String> buildIntentArgString(String uri, String action, String data, String mimetype,
+407            Collection<String> categories, Map<String, Object> extras, String component,
+408            int flags) {
+409        List<String> parts = Lists.newArrayList();
+410
+411        // from adb docs: <2>
+412        //<INTENT> specifications include these flags:
+413        //    [-a <ACTION>] [-d <DATA_URI>] [-t <MIME_TYPE>]
+414        //    [-c <CATEGORY> [-c <CATEGORY>] ...]
+415        //    [-e|--es <EXTRA_KEY> <EXTRA_STRING_VALUE> ...]
+416        //    [--esn <EXTRA_KEY> ...]
+417        //    [--ez <EXTRA_KEY> <EXTRA_BOOLEAN_VALUE> ...]
+418        //    [-e|--ei <EXTRA_KEY> <EXTRA_INT_VALUE> ...]
+419        //    [-n <COMPONENT>] [-f <FLAGS>]
+420        //    [<URI>]
+421
+422        if (!isNullOrEmpty(action)) {
+423            parts.add("-a");
+424            parts.add(action);
+425        }
+426
+427        if (!isNullOrEmpty(data)) {
+428            parts.add("-d");
+429            parts.add(data);
+430        }
+...
+479        return parts;
+480    }
+--------------------------------------------------------------------------------
+<1> 原來 monkeyrunner 內部最後也是轉呼叫 shell command。
+<2> 問題就出在不同的參數最後會被接成一長串 `am start ...` 的指令。
+
+== 延伸閱讀 ==
+
+ * link:start-activities.html[開啟 Activity]
+ * link:type.html[按鈕跟鍵盤的操作] - 也有類似的問題。
+
+== 參考資料 ==
+
+ * http://stackoverflow.com/questions/13193555/monkeyrunner-doesnt-handle-specifical-characters-correctly-while-constructing-s[android - monkeyrunner doesn't handle specifical characters correctly while constructing shell commands - Stack Overflow] (2012-11-02)
+

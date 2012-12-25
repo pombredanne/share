@@ -1,0 +1,269 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>Extending monkeyrunner</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div>
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>Extending monkeyrunner</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>所謂擴充 monkeyrunner API，指的是在 <code>monkeyrunner</code> 帶出的執行環境下，增加可以存取 Java class 或 Python module，或是事先對該環境做一些初始化。其中：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+JAR 檔要透過 <code>-plugin xxx.jar</code> 帶進去，但不用放到 <code>$ANDROID_HOME/tools/lib</code>。但如果不是 plugin 的 JAR 檔，還是得放到 <code>$ANDROID_HOME/tools/lib</code> 才行。
+</p>
+</li>
+<li>
+<p>
+monkeyrunner 不吃 <code>JYTHONPATH</code> 的設定，所以其他 Python modules (<code>*.py</code>) 只能事先擺到 <code>$ANDROID_HOME/tools/lib/Lib</code> 才行。想到可以進到 plugin 之後，自己再做 <code>sys.path.append(os.environ['JYTHONPATH'])</code>&#8230;
+</p>
+</li>
+<li>
+<p>
+事後如果更新 SDK，這些手動佈署的檔案都會被拿掉，所以最好有自動佈署的機制，檢查到檔案不見或內容不一致時就再佈署一次。
+</p>
+</li>
+</ul></div>
+<div class="listingblock">
+<div class="title"><code>monkeyrunner-plugin/build.xml</code></div>
+<div class="content">
+<pre><code>.
+|-- build.xml
+|-- src
+|   `-- main
+|       `-- java
+|           `-- example
+|               `-- MonkeyPlugin.java
+`-- test.py</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="title"><code>monkeyrunner-plugin/src/main/java/example/MonkeyPlugin.java</code></div>
+<div class="content">
+<pre><code>package example;
+
+import com.google.common.base.Predicate;
+import org.python.util.PythonInterpreter;
+
+public class MonkeyPlugin implements Predicate&lt;PythonInterpreter&gt; {
+
+    @Override
+    public boolean apply(PythonInterpreter anInterpreter) {
+        System.out.println("MonkeyPlugin inited.");
+        anInterpreter.exec("import sys, os.path as path"); <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+        anInterpreter.exec("pring sys.argv");
+        return true; <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+    }
+
+}</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+環境內可以直接存取 <code>sys</code> 跟 ``path`。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+不知道傳回 <code>true</code> 或 <code>false</code> 有什麼差別??
+</td></tr>
+</table></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ ant jar
+...
+
+$ monkeyrunner -plugin target/monkeyrunner-plugin.jar
+Jython 2.5.0 (Release_2_5_0:6476, Jun 16 2009, 13:33:26)
+[OpenJDK 64-Bit Server VM (Sun Microsystems Inc.)] on java1.6.0_20
+&gt;&gt;&gt;
+
+$ monkeyrunner -plugin target/monkeyrunner-plugin.jar test.py
+MonkeyPlugin inited. <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+['/storage/data/Dropbox/KM/monkeyrunner/monkeyrunner-plugin/test.py']
+without explicitly importing os.path, alias 'path' is immediately available, because of the plugin.
+the path separator = [/]
+
+$ cd target
+$ monkeyrunner -plugin monkeyrunner-plugin.jar ../test.py
+MonkeyPlugin inited.
+['/storage/data/Dropbox/KM/monkeyrunner/monkeyrunner-plugin/target/../test.py'] <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+without explicitly importing os.path, alias 'path' is immediately available, because of the plugin.
+the path separator = [/]</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+測試發現，plugin 只有在執行 script 時才會被初始化。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+<code>sys.argv[0]</code> 固定傳回 script 的完整路徑。
+</td></tr>
+</table></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_從_java_裡叫用_monkeyruuner_api">從 Java 裡叫用 monkeyruuner API</h2>
+<div class="sectionbody">
+<div class="paragraph"><p><code>com.android.monkeyrunner.MonkeyRunner</code> 其 <code>waitForConnection()</code> 的原始碼如下：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>private static MonkeyRunnerBackend backend;
+
+static void setBackend(MonkeyRunnerBackend backend) {
+    MonkeyRunner.backend = backend;
+}
+
+...
+
+public static MonkeyDevice waitForConnection(PyObject[] args, String[] kws) { <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+    ArgParser ap = JythonUtils.createArgParser(args, kws);
+    Preconditions.checkNotNull(ap);
+
+    long timeoutMs;
+    try {
+        double timeoutInSecs = JythonUtils.getFloat(ap, 0);
+        timeoutMs = (long) (timeoutInSecs * 1000.0);
+    } catch (PyException e) {
+        timeoutMs = Long.MAX_VALUE;
+    }
+
+    return backend.waitForConnection(timeoutMs, <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+            ap.getString(1, ".*"));
+}</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+這裡 <code>(PyObject[] args, String[] kws)</code> 的寫法是為了支援 Python 裡 <code>(*args, **kwargs)</code> 的用法。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+從呼叫方式看起來 <code>MonkeyRunnerBackend</code> 似乎更適合從 Java 裡呼叫？但它不是 monkeyrunner API 的一部份，不應該相依在內部的實作細節。而且目前 (2012-04-26) 的 monkeyrunner 也已經找不到 <code>MonkeyRunnerBackend</code> 了&#8230;
+</td></tr>
+</table></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.jython.org/archive/22/userfaq.html#extending-jython">Jython FAQ &gt; Extending Jython</a> - 提到 <code>foo(PyObject[] args, String[] keywords)</code> 的用法。
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.java2s.com/Open-Source/Android/android-core/platform-sdk/com/android/monkeyrunner/MonkeyRunner.java.htm">MonkeyRunner.java</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">網站</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.java2s.com/Open-Source/Android/android-core/platform-sdk/com/android/monkeyrunner/Catalogmonkeyrunner.htm">monkeyrunner (com.android.monkeyrunner) 的原始碼</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">官方文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://developer.android.com/guide/developing/tools/monkeyrunner_concepts.html">monkeyrunner &gt; Extending monkeyrunner with Plugins</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">其他文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://code.google.com/p/android-in-practice/source/browse/trunk/appendices/DealDroidMonkeyrunner/?r=570">/trunk/appendices/DealDroidMonkeyrunner/ - android-in-practice</a> - Android in Practice 這本書有提到 monkeyrunner plugin 的寫法。
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_學習筆記">學習筆記</h2>
+<div class="sectionbody">
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-25 23:32:30 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script>
+</body>
+</html>

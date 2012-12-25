@@ -1,0 +1,177 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>Android Unit Test</title>
+<link rel="stylesheet" href="../../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" />
+<script type="text/javascript" src="../../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div>
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>Android Unit Test</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">用 instrumentation 要跨 activities 好像<a href="http://stackoverflow.com/questions/1759626/how-do-you-test-an-android-application-across-multiple-activities">不是件簡單的事</a>，也難怪 Robotium 要強調它可以 "handles multiple Android activities automatically"。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>以 <a href="../../start.html">Building Your First App</a> 寫出來的 My First App 為例。</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+File &gt; New &gt; Project&#8230; &gt; Android &gt; Android Test Project。
+</p>
+</li>
+<li>
+<p>
+Project Name 填入 <code>MyFirstAppTest</code>，Test Target 選 MyFirstApp。
+</p>
+</li>
+</ol></div>
+<div class="paragraph"><p>觀察 <code>AndroidManifest.xml</code> 內含 instrumentation 相關的設定：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>    &lt;instrumentation
+        android:name="android.test.InstrumentationTestRunner" <img src="../../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+        android:targetPackage="com.example.myfirstapp" /&gt;     <img src="../../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+用 instrumentation-enabled test runner 來跑測試。
+</td></tr>
+<tr><td><img src="../../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+AUT 的 package name。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>在 <code>com.example.myfirstapp.test</code> 上點右鍵，選 New &gt; JUnit Test Case：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+Name 填上 <code>MyActivityTest</code>
+</p>
+</li>
+<li>
+<p>
+Superclass 改成 <code>ActivityInstrumentationTestCase2&lt;MainActivity&gt;</code>
+</p>
+</li>
+</ul></div>
+<div class="listingblock">
+<div class="title"><code>MainActivityTest.java</code></div>
+<div class="content">
+<pre><code>package com.example.myfirstapp.test;
+
+import android.test.ActivityInstrumentationTestCase2;
+
+import com.example.myfirstapp.MainActivity;
+
+public class MainActivityTest extends ActivityInstrumentationTestCase2&lt;MainActivity&gt; {
+
+    public MainActivityTest() {
+        super(MainActivity.class);
+    }
+
+    protected void setUp() throws Exception {
+        super.setUp();
+    }
+
+}</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://developer.android.com/tools/testing/testing_android.html">Testing Fundamentals | Android Developers</a> <sup><a href="http://diigo.com/0v712">閱讀</a></sup>
+</p>
+</li>
+<li>
+<p>
+<a href="http://developer.android.com/tools/testing/activity_test.html">Activity Testing Tutorial | Android Developers</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">其他文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://simpleprogrammer.com/2010/07/27/the-best-way-to-unit-test-in-android/">The Best Way to Unit Test in Android: Part 1 « Making the Complex Simple</a> (2010-07-27)
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-25 23:30:29 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script>
+</body>
+</html>

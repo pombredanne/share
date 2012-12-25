@@ -1,0 +1,56 @@
+= link:jython.html[Jython] / Java Integration =
+:title: [Jython] Java Integration
+
+Jython 除了做為 Java Scripting 的方案之一，它之於 Python 最大的優勢就是可以直接從 Python code 裡直接調用 Java 實作的 library （也就是一堆 class），而且用起來跟 Python class 沒什麼兩樣：
+
+--------------------------------------------------------------------------------
+>>> from java.util import ArrayList <1>
+>>> words = ArrayList()             <2>
+>>> words.add('Hello')
+True
+>>> words.add('Jython')
+True
+>>> words[0], words[1]              <3>
+(u'Hello', u'Jython')
+>>> ', '.join(words)
+u'Hello, Jython'
+>>>
+>>> words.class                     <4>
+<type 'java.util.ArrayList'>
+>>> words.__class__
+<type 'java.util.ArrayList'>
+>>> type(words)
+<type 'java.util.ArrayList'>
+>>>
+>>> words = words.toArray()         <5>
+>>> words.__class__
+<type 'array.array'>
+>>> type(words)
+<type 'array.array'>
+>>> words.class                     <6>
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+AttributeError: 'array.array' object has no attribute 'class'
+>>>
+>>> System.currentTimeMillis()           <7>
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+NameError: name 'System' is not defined
+>>> from java.lang import System         <8>
+>>> System.out.println(', '.join(words))
+Hello, Jython
+--------------------------------------------------------------------------------
+<1> 用 Python 的語法引入 Java class `java.util.ArrayList`。
+<2> 之後用起來就跟 Python class 沒什麼兩樣，例如直接呼叫該 class 就可以生成一個 instance，用 `.` 就可以呼叫 instance method 等。
+<3> 沒想到在 Jython 裡的 `java.util.ArrayList` 直接支援 Python 裡 sequence/iterable 的用法。
+<4> 雖然型態是 `java.util.ArrayList`，除了 Java 的用法（`words.class`），也完全支援 Python 的用法（`words.__class__` 跟 `type(words)`）。
+<5> 某些資料型態的轉換會自動發生在從 Python 傳入 Java method 的參數，也會發生在從 Java method 返回的回傳值。例如 Java 的 array 會變成 Python 的 `array.array`，其他型態的對應可以參考 http://wiki.python.org/jython/UserGuide#calling-java-methods-and-functions[User Guide > Calling Java Methods and Functions]。
+<6> 轉成 Python 的型態之後，Java 專有的用法 `.class` 就不適用了。
+<7> 在 Java 裡預設會被引入的 `java.lang.*`，在 Jython 裡也要手動引入才行。
+<8> 呼叫 class method 的方式跟 instance method 一樣。
+
+== 參考資料 ==
+
+ * http://www.jython.org/jythonbook/en/1.0/ModulesPackages.html[Jython Book > Modules and Packages for Code Reuse]
+ * http://www.jython.org/jythonbook/en/1.0/JythonAndJavaIntegration.html[Jython Book > Jython and Java Integration]
+

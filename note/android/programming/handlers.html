@@ -1,0 +1,150 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Android] Handler</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" />
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div>
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>[Android] Handler</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>透過 handler (<code>android.os.Handler</code>)，可以讓某段程式碼（<code>java.lang.Runnable</code>）在另一個 thread 裡執行，或是把某個訊息（<code>android.os.Message</code>）丟到另一個 thread 執行。</p></div>
+<div class="paragraph"><p>下面示範 Thread B 在執行的過程中，如何將某段程式碼交給 Thread A 執行：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>public void tryRunnable(View view) {
+    Log.d(TAG, "tryRunnable(); thread = " + Thread.currentThread().getName());
+    final Handler handler = new Handler();
+
+    new Thread(new Runnable() {
+        @Override
+        public void run() {
+            Log.d(TAG, "run(); thread = " + Thread.currentThread().getName());
+            for (int i = 0; i &lt;= 10; i++) {
+                try {
+                    Thread.sleep(2000); // long running
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                final int progress = i * 10;
+                Log.d(TAG, "report progress = " + progress + "%; thread = " + Thread.currentThread().getName());
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        Log.d(TAG, "receive progress = " + progress + "%; thread = " + Thread.currentThread().getName());
+                    }
+                });
+            }
+        }
+    }, "Worker").start();
+}</code></pre>
+</div></div>
+<div class="paragraph"><p>10-28 06:37:06.186: W/dalvikvm(8181): threadid=9: thread exiting with uncaught exception (group=0x4001d5a0)
+10-28 06:37:06.196: E/AndroidRuntime(8181): FATAL EXCEPTION: Thread A
+10-28 06:37:06.196: E/AndroidRuntime(8181): java.lang.RuntimeException: Can&#8217;t create handler inside thread that has not called Looper.prepare()
+10-28 06:37:06.196: E/AndroidRuntime(8181):     at android.os.Handler.&lt;init&gt;(Handler.java:121)
+10-28 06:37:06.196: E/AndroidRuntime(8181):     at com.simplbug.tryit.MainActivity$2.run(MainActivity.java:43)
+10-28 06:37:06.196: E/AndroidRuntime(8181):     at java.lang.Thread.run(Thread.java:1027)</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.vogella.com/articles/AndroidPerformance/article.html">Android Threads, Handlers and AsyncTask - Tutorial</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://developer.android.com/reference/android/os/Handler.html">Handler | Android Developers</a> (PDF, <a href="http://androidxref.com/source/xref/external/javassist/src/main/javassist/expr/Handler.java">source</a>)
+</p>
+</li>
+<li>
+<p>
+<a href="http://developer.android.com/reference/android/os/Looper.html">Looper | Android Developers</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">其他文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/5198043/does-the-android-os-handler-class-eliminate-the-need-to-declare-certain-methods">java - Does the android.os.Handler class eliminate the need to declare certain methods as synchronized? - Stack Overflow</a> (2011-03-04; PDF) - 透過 handler，可以讓另一個 thread 讓某段程式碼執行在 handler 所屬的 thread（該 thread 必須要有 looper 做 message loop）；如果 handler 是在 main/UI thread 建立的，那麼另一個 thread 就可以透過 handler 來更新 UI。
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-25 23:21:36 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script>
+</body>
+</html>

@@ -1,0 +1,172 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>測試時如何避開 Android 的滑動解鎖（Keyguard）</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div>
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>測試時如何避開 Android 的滑動解鎖（Keyguard）</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>測試過程中要避免螢幕自動上鎖？</p></div>
+<div class="paragraph"><p>有的手機會在 Settings &gt; Applications &gt; Developement 下提供 "Stay awake" 的選項，再不然也可以透過 Settings &gt; Display &gt; Screen timeout 設定永遠不關閉螢幕來達成類似的目的。但偏偏有些手機這兩個選項都沒有提供&#8230;</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">
+<div class="paragraph"><p>Keyguard 指的是 "slide to unlock"，例如：</p></div>
+<div class="imageblock">
+<div class="content">
+<img src="disable-keyguard/emulator_keyguard.png" alt="disable-keyguard/emulator_keyguard.png" />
+</div>
+<div class="title">Figure 1. Emulator 的鍵盤鎖</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="disable-keyguard/htc_keyguard.png" alt="disable-keyguard/htc_keyguard.png" />
+</div>
+<div class="title">Figure 2. HTC Sense 的鍵盤鎖</div>
+</div>
+<div class="paragraph"><p>它跟 Settings &gt; Security &gt; Set up screen lock 底下的 Screen Lock 不同，例如：</p></div>
+<div class="imageblock">
+<div class="content">
+<img src="disable-keyguard/pattern_lock.png" alt="disable-keyguard/pattern_lock.png" />
+</div>
+<div class="title">Figure 3. 用圖形來解鎖</div>
+</div>
+<div class="paragraph"><p>Keyguard 功用就像早期手機要連續按斜對角的兩個按鈕來解鎖一樣，避免放在口袋裡就不小撥出電話了。從這個角度來看，"keyguard" 確實很直覺，但使用者似乎比較習慣用 "screen lock" 來稱呼 "keyguard"，以 "keyguard" 為關鍵字反而找不太到防螢幕上鎖的程式，就是最好的證明。</p></div>
+</td>
+</tr></table>
+</div>
+<div class="paragraph"><p><a href="http://developer.android.com/guide/topics/testing/activity_testing.html#UnlockDevice">官方文件</a>提到，測試時可以在 <code>Activity.onCreate()</code> 加上下面的程式碼，自動解開鍵盤鎖；但正式發行時要記得把這些程式拿掉&#8230; XD!</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>mKeyGuardManager = (KeyguardManager) getSystemService(KEYGUARD_SERVICE);
+mLock = mKeyGuardManager.newKeyguardLock("activity_classname");
+mLock.disableKeyguard();</code></pre>
+</div></div>
+<div class="paragraph"><p>當然這得要求對應的權限才行：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&lt;uses-permission android:name="android.permission.DISABLE_KEYGUARD"/&gt;</code></pre>
+</div></div>
+<div class="paragraph"><p>如果是測試用途，可以考慮這下面這兩個 App，它們都只要求了 disable keyguard 的權限而已：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="https://play.google.com/store/apps/details?id=org.jraf.android.nolock">No Lock</a> - 人氣很旺！搭配 widget 切換更方便。
+</p>
+</li>
+<li>
+<p>
+<a href="https://play.google.com/store/apps/details?id=com.futonredemption.nokeyguard">No Lock Screen</a>
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>實驗發現，這在 HTC Desire S 跟 Samsung Galaxy S2 上都行得通。當螢幕全關時，下面幾種方式都可以喚醒手機：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>adb shell input keyevent 82</code> - 按下 Menu 鈕。
+</p>
+</li>
+<li>
+<p>
+<code>MonkeyRunner.waitForConnection()</code> 或 <code>MonkeyDevice.wake()</code> - 透過 monkeyrunner API。由於接上手機 <code>waitForConnection()</code> 的動作就會喚醒手機，所以實務上 <code>wake()</code> 不太會用到。
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/4878212/check-if-keyguard-is-enabled-i-e-currently-active-from-android-application">check if keyguard is enabled i.e. currently active from android application - Stack Overflow</a> (2011-02-02) - 系統有個 Keyguard Service 來處理鍵盤鎖。
+</p>
+</li>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/1959012/how-can-i-unlock-the-screen-programmatically-in-android">automation - How can I unlock the screen programmatically in Android? - Stack Overflow</a> - 送 key event 的方式，但都試不出來
+</p>
+</li>
+<li>
+<p>
+<a href="http://developer.android.com/guide/topics/testing/activity_testing.html#UnlockDevice">Activity Testing &gt; Unlocking the emulator or device | Android Developers</a> - 官方文件提到 disable keyguard 的做法，是在 <code>onCreate()</code> 安插解鎖的程式碼。
+</p>
+</li>
+<li>
+<p>
+<a href="https://motorola-global-eng.custhelp.com/app/answers/detail/a_id/18083/~/enabling%2Fdisabling-keyguard">Enabling/Disabling KeyGuard</a> - Motorola 某些機型可以用組合鍵來解鎖，而且不同型號的做法不太一樣。
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-25 23:25:57 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script>
+</body>
+</html>

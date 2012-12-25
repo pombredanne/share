@@ -1,0 +1,60 @@
+= link:../android.html[Android] / 收發 SMS 簡訊 =
+
+ * Emulator 直接支援收發 SMS message.
+ * 收發 SMS message，要分別取得 `SEND_SMS` 跟 `RECEIVE_SMS` 兩項 permission。
+ * PDU (Protocol Data Unit)
+ * `SmsManager` 支援三種 SMS message：text based、data based、multi-part text based。
+ * 由 `SmsManager` 定義的常數 `STATUS_ON_ICC_UNREAD`、`STATUS_ON_ICC_UNSENT` 等看起來，似乎連對方有沒有打開來看到可以檢查得到？
+
+--------------------------------------------------------------------------------
+<uses-permission android:name="android.permission.SEND_SMS"/>
+<uses-permission android:name="android.permission.RECEIVE_SMS"/>
+--------------------------------------------------------------------------------
+
+import android.telephony.gsm.SmsManager;
+
+--------------------------------------------------------------------------------
+public void sendSMS(String phoneNumber, String message) {
+    SmsManager sms = SmsManager.getDefault();
+    sms.sendTextMessage(phoneNumber, null, message, null, null);
+}
+--------------------------------------------------------------------------------
+
+TIP: 在實機上測試時，也可以考慮將 SMS 發給自己，電信公司並不會擋。
+
+http://stackoverflow.com/questions/4580952/why-do-i-get-nullpointerexception-when-sending-an-sms-on-an-htc-desire-or-what[這裡]提到訊息內容長度超過 PDU 的限制時，在某些手機會丟出 NPE，或許這也是為什麼 `SmsManager` 提供有 `divideMessage()` 可以用來把過長的訊息拆成多筆。
+
+--------------------------------------------------------------------------------
+E/AndroidRuntime(13308): Caused by: java.lang.NullPointerException
+E/AndroidRuntime(13308): 	at android.telephony.SmsMessage$SubmitPdu.<init>(SmsMessage.java:141)
+E/AndroidRuntime(13308): 	at android.telephony.SmsMessage.getSubmitPdu(SmsMessage.java:624)
+E/AndroidRuntime(13308): 	at android.telephony.SmsManager.sendTextMessage(SmsManager.java:229)
+E/AndroidRuntime(13308): 	at android.telephony.SmsManager.sendTextMessage(SmsManager.java:110)
+E/AndroidRuntime(13308): 	at com.example.antilost.MainActivity.sendSMS(MainActivity.java:47)
+E/AndroidRuntime(13308): 	... 14 more
+--------------------------------------------------------------------------------
+
+== 延伸閱讀 ==
+
+ * link:../../sms/sms.html[Short Message Service (SMS)]
+
+== 參考資料 ==
+
+.網站
+--
+ * http://code.google.com/p/emergencybutton/[emergencybutton - Emergency Button - Google Project Hosting]
+--
+
+.文件
+--
+ * http://developer.android.com/reference/android/telephony/SmsMessage.html[SmsMessage | Android Developers]
+ * http://developer.android.com/reference/android/telephony/SmsManager.html[`android.telephony.SmsManager`]
+ * http://developer.android.com/reference/android/telephony/gsm/SmsManager.html[`android.telephony.gsm.SmsManager`] (deprecated)
+--
+
+.其他文件
+--
+ * http://www.dreamfabric.com/sms/[SMS messages and the PDU format]
+ * http://mobiforge.com/developing/story/sms-messaging-android[SMS Messaging in Android | mobiForge]
+--
+

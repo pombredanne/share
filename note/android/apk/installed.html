@@ -1,0 +1,154 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[APK] 取得已安裝程式的 APK</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" />
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div>
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="apk.html">APK</a> / 取得已安裝程式的 APK</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>device 上安裝的 apps 大致可區分成 <em>user apps</em> 跟 <em>system apps</em>：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+user apps - 安裝在 <code>/data/app</code>（也稱也稱做 <em>data apps</em>）。如果用 Move to SD card 搬動的話，則會被移到 <code>/mnt/asec</code> 底下。
+</p>
+</li>
+<li>
+<p>
+system apps - 也就是所謂的 pre-installed apps，安裝在 <code>/system/apps</code>，使用者無法利除或搬移到 SD card。
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>沒想到 <code>/data/app</code> 的權限會比 <code>/system/app</code> 還嚴格：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ adb shell ls /system/app
+Calculator.apk
+Calculator.odex
+Browser.apk
+Browser.odex
+Gmail.apk
+Gmail.odex
+...
+$ adb shell ls /data/app
+opendir failed, Permission denied</code></pre>
+</div></div>
+<div class="paragraph"><p>如果要透過 <a href="../adb/adb.html">ADB</a> 的話，只要知道 <code>.apk</code> 的完整路徑（APK Info 或 Apk Info free 都可以幫上忙），就可以用 <code>adb pull</code> 取得檔案。</p></div>
+<div class="paragraph"><p>以 built-in browser 跟 APK Info 為例：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ adb pull /system/app/Browser.apk
+1771 KB/s (1320463 bytes in 0.727s)
+$ adb pull /data/app/com.intelloware.apkinfo-1.apk
+757 KB/s (93850 bytes in 0.120s)</code></pre>
+</div></div>
+<div class="paragraph"><p>另外 APK Info 這個工具提供 Copy to SD card 的功能，將 user/system apps 的 APK 檔複製到 SD card，也是可行的方式之一。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">工具</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="https://play.google.com/store/apps/details?id=com.intelloware.apkinfo">APK Info</a> - 可以看到 <code>.apk</code> 的安裝位置、native libraries、permissions、activities 的清單，資訊是比 Apk Info free 少了一點，但提供 Copy to SD card 的功能，可以將 <code>.apk</code> 複製到 SD card（預設存放在 <code>/sdcard/apktool/apk</code>）。
+</p>
+</li>
+<li>
+<p>
+<a href="https://play.google.com/store/apps/details?id=de.migali.soft.apkinfo">Apk Info free</a> - 可以看到 package name、source directory (<code>.apk</code>)、data directory、permissions，還有 activities、receivers、providers、services 的清單。
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">其他文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.addictivetips.com/mobile/how-to-install-any-app-as-system-app-on-android/">How To Install Any App As A System App On Android [Guide&#93;</a> <sup><a href="http://diigo.com/0v8co">閱讀</a></sup> (2012-05-14) - installed apps 按安裝位置區分為 user apps 跟 system apps
+</p>
+</li>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/10533030/where-is-apk-location-for-apps-that-are-installed-on-sdcard">android - where is .apk location for apps that are installed on sdcard? - Stack Overflow</a> <sup><a href="http://diigo.com/0v8cn">閱讀</a></sup> (2012-05-10) - 搬到 SD card 後是在 <code>/mnt/sdcard/.android_secure</code> 底下？但 HTC Desire S 卻是 <code>/mnt/asec</code>。
+</p>
+</li>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/2507960/does-android-keep-the-apk-files-if-so-where">packages - Does Android keep the .apk files? if so where? - Stack Overflow</a> <sup><a href="http://diigo.com/0v8dj">閱讀</a></sup> (2010-05-24) - 在 real device 上，/system/app 可以 listing 跟 read，但最妙的是 /data/app 雖然不能 listing，但只要知道 .apk 的完整路徑，是可以讀取出來的。
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-25 23:28:31 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script>
+</body>
+</html>

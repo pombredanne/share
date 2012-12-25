@@ -1,0 +1,475 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Android] Test Automation</title>
+<link rel="stylesheet" href="../../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" />
+<script type="text/javascript" src="../../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div>
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="../../android.html">Android</a> / <a href="../test.html">Testing</a> / Automation</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="imageblock">
+<div class="content">
+<img src="automation/test_framework.png" alt="automation/test_framework.png" />
+</div>
+<div class="title">Figure 1. Testing Framework（圖片來源：<a href="http://developer.android.com/tools/testing/testing_android.html">Testing Fundamentals | Android Developers</a>）</div>
+</div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">如果要自行埋 <a href="../../view-server/view-server.html">View Server</a> 到個別的 app，就會遭遇只能測單一個 app 的問題。不過內嵌 Viewser 的做法好像比 Robotium 走 intrumentation 來得好？至少可以繼續用 monkeyrunner 這個官方的測試工具。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>Android 的測試方式可粗分為三種：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+基於 <a href="../../../junit/junit.html">JUnit 3</a> 和 <a href="../../instrumentation/instrumentation.html">instrumentation</a> 的 unit test，也可以用 mock objects 隔離其他的變因，但 unit 是個別的 component，比一般所認知的 class 再 high-level 一點。
+</p>
+</li>
+<li>
+<p>
+基於 Python 跟 <a href="../../../monkeyrunner/api/api.html">monkeyrunner API</a> 的 functional-level 測試，對象是整個 application，重在 component 間的整合。
+</p>
+</li>
+<li>
+<p>
+基於 <a href="../tools/monkey.html">Monkey</a> 的壓力測試，對象也是整個 application。
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>或許 monkeyrunner 跟 Robotium 的測試是要互補的？AndroidViewClient 的做法好像太 tricky 了一點？</p></div>
+<div class="quoteblock">
+<div class="content">
+<div class="paragraph"><p>The Android JUnit extensions provide <em>component-specific</em> test case classes. These classes provide helper methods for creating <em>mock objects</em> and methods that help you <em>control the lifecycle of a component</em>.</p></div>
+<div class="paragraph"><p>An Android test runner must also be instrumented, so that the system utility for starting applications can control how the test package loads test cases and the application under test. You must use <code>InstrumentationTestRunner</code> (or a subclass) to run JUnit tests.</p></div>
+<div class="paragraph"><p>To run <code>InstrumentationTestRunner</code>, you use internal system classes called by Android tools. The system classes load and start the test package, <em>kill any processes that are running an instance of the application under test, and then load a new instance of the application under test.</em> They then pass control to <code>InstrumentationTestRunner</code>, which runs each test case class in the test package.</p></div>
+<div class="paragraph"><p>Normally, an Android component runs in a lifecycle determined by the system. With Android instrumentation, though, you can invoke callback methods in your test code. This allows you to <em>run through the lifecycle of a component step by step</em>, as if you were debugging the component.</p></div>
+<div class="paragraph"><p>Also, instrumentation can load both a test package and the application under test into the same process. Since the application components and their tests are in the same process, the tests can invoke methods in the components, and modify and examine fields in the components.</p></div>
+</div>
+<div class="attribution">
+</div></div>
+<div class="paragraph"><p>mock, QA 的測試是 integration &#8230;</p></div>
+<div class="paragraph"><p>black box? 適合 QA test? 整合 L10N? 重在 integration &#8230; 學習曲線，用 JUnit 寫好像要求有點太高了？&#8230; 它可能比較好，但可能把自己累死 &#8230;要 L10N 去安插截圖的動作更難。感覺 JUnit 比較封閉，無法交錯 applications 間的測試。</p></div>
+<div class="paragraph"><p>不是 Robotium/Instrumnetation 不好，只是這些 test tools 要考量到方不方便跟 test framework 整合（才能間接整合其他的測試工具），其他 QA 好不好上手，用 Robotium 寫測試可能不容易維護，這些都是需要考量的&#8230;</p></div>
+<div class="paragraph"><p>測試工具有：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="../../../monkeyrunner/monkeyrunner.html">monkeyrunner</a>
+</p>
+</li>
+<li>
+<p>
+<a href="../../../robotium/robotium.html">Robotium</a>
+</p>
+</li>
+<li>
+<p>
+<a href="../../../calabash/calabash.html">Calabash</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_延伸閱讀">延伸閱讀</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="sikuli.html">用 Sikuli 來測試 Android</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">網站</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://developer.android.com/tools/testing/testing_android.html">Testing Fundamentals | Android Developers</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://dtmilano.blogspot.com/">Diego Torres Milano&#8217;s blog</a> - Android Application Testing Guide 作者的網站
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">官方文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://developer.android.com/guide/topics/testing/index.html">Testing | Android Developers</a> - 關於 Android 的測試，從這裡看起&#8230;
+</p>
+</li>
+<li>
+<p>
+<a href="http://developer.android.com/tools/testing/testing_android.html">Testing Fundamentals | Android Developers</a> <sup><a href="http://diigo.com/0v712">閱讀</a></sup>
+</p>
+</li>
+<li>
+<p>
+<a href="http://developer.android.com/resources/tutorials/testing/helloandroid_test.html">Hello, Testing | Android Developers</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://developer.android.com/resources/tutorials/testing/activity_test.html">Activity Testing | Android Developers</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://developer.android.com/guide/developing/testing/index.html">Testing | Android Developers</a>
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://developer.android.com/guide/developing/testing/testing_eclipse.html">Testing from Eclipse with ADT | Android Developers</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://developer.android.com/guide/developing/testing/testing_otheride.html">Testing from Other IDEs | Android Developers</a>
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+<a href="http://developer.android.com/reference/android/test/InstrumentationTestCase.html">InstrumentationTestCase | Android Developers</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">書籍</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.packtpub.com/android-application-testing-guide/book">Packt - Android Application Testing Guide</a> (2011.06)
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">投影片</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.slideshare.net/bitbar/android-testing-8364839">Android testing</a> - 提及 Monkey, Monkeyrunner, Robotium, Roboelectric, Cucumber。其中 "Avoid using emulators and rooted devices" 的觀點很特別&#8230;
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">工具</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://developer.android.com/guide/developing/tools/index.html">Tools | Android Developers</a>
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://developer.android.com/guide/developing/tools/adb.html">Android Debug Bridge (adb)</a>
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+<a href="http://testdroid.com/">Testdroid</a>
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+提供 Testdroid Recorder (Eclipse plugin) 錄製操作的過程，上傳到 Testdroid Cloud 同步在多個 device 執行。
+</p>
+</li>
+<li>
+<p>
+錄製的結果適用 monkeyrunner 和 Robotium。
+</p>
+</li>
+<li>
+<p>
+收費的項目竟是 Recorder 而非 Cloud，每個月要價 US$99。
+</p>
+</li>
+</ul></div>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">其他文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.infoq.com/news/2011/09/Android-Testing">Automated Testing Solutions for Android</a> (2011-09-30) - 主要在講 LessPainful 這個 TaaS，也是跑在 Instrumentation 之上。提到差異 OS versions &gt; Themes &gt; Hardware &gt; Manufacture。
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.mail-archive.com/android-developers@googlegroups.com/msg154905.html">Re: [android-developers</a> Re: Unit testing framework with monkeyrunner] (2011-04-19)
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.juddsolutions.com/downloads/UnitAndFunctionalTestingForAndroidPlatform.pdf">Unit and Functional Testing for the Android Platform</a> - 比較了 JUnit/Instrumentation、MonkeyRunner、Monkey、Robotium 的做法，將 JUnit/Instrumentation 歸類在 Unit Test。當然同樣是架構在 Instrumentation 之上的 Robotium 被歸類為 functional test，只是作者也直言 "not approachable by traditional testers"。
+</p>
+</li>
+<li>
+<p>
+<a href="http://site.douban.com/widget/notes/113383/note/161520844/">android測試是孤獨的</a> (2011-07-15) - 可以朝著 Monkey、Sikuli、Robotium、monkeyrunner、instrumentation 等方向前進。
+</p>
+</li>
+<li>
+<p>
+<a href="http://pontiffkao.blogspot.com/2011/05/android.html">渺小且微不足道的晦暗: Android 自動化測試蒐集</a> (2011-05-11)
+</p>
+</li>
+<li>
+<p>
+<a href="http://mars5337.iteye.com/blog/750339">Android自動化測試可行性途徑分析 - - ITeye技術網站</a> (2010-08-30)
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.directrss.co.il/TextPage_EN.aspx?ID=6978646">Diego Torres Milano''s blog</a> - 作者收集了將在 OSCON 2012 上講的東西？
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_雜記">雜記</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://blog.anscamobile.com/2011/08/automated-testing-on-mobile-devices-part1/">(Part 1) Automated Testing on Mobile Devices for iOS and Android | Ansca Mobile Blog | » Archive</a> - 五連發，值得一看。
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.youtube.com/watch?v=EBFtH5tj7Cw">Android Test Automation - YouTube</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.infoq.com/news/2011/09/Android-Testing">InfoQ: Automated Testing Solutions for Android</a> (2011-09-03)
+</p>
+</li>
+<li>
+<p>
+<a href="http://mylifewithandroid.blogspot.com/2008/11/test-driving-android-gui.html">My life with Android :-): Test-driving Android GUI</a> (2008-11-06) - SDK 內建 Android instrumentation framework，可以用來測 UI。
+</p>
+</li>
+<li>
+<p>
+<a href="http://code.google.com/p/scirocco/">scirocco - A UI Test Automation Tool for Android - Google Project Hosting</a> - 包裝 Robotium。
+</p>
+</li>
+<li>
+<p>
+<a href="https://sites.google.com/site/mobilewirelesstestautomation/draft-material-on-mobile-wireless/testing-techniques-for-android-applications">Testing techniques for Android applications - mobile wireless test automation</a> - 測 browser 的話建議用 Selenium 2.0 WebDriver，還有許多其他文件的連結&#8230;
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.slideshare.net/dorieven/banchmark-android-ui-tools-3537546">Benchmark Android automation Tools (for Test Automation)</a>
+</p>
+</li>
+<li>
+<p>
+AutomateIt
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://lifehacker.com/5782502/automateit-is-a-simple-and-free-android-automation-tool">AutomateIt Is a Simple and Free Android Automation Tool</a> (2011-03-16)
+</p>
+</li>
+<li>
+<p>
+有人稱這就是手機上的 <a href="http://marcolibrary.blogspot.com/2011/06/ifthisthenthat-iftttcom.html">ifttt</a>
+</p>
+</li>
+<li>
+<p>
+設定一些 trigger，當條件成立時就執行對應的 action。
+</p>
+</li>
+<li>
+<p>
+跟 Tasker 很像，但它是 automation，但跟 test automation 無關。
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+<a href="http://code.google.com/p/autoandroid/">autoandroid - Tools for automating android projects.. so you can just write code! - Google Project Hosting</a> - 已停止開發
+</p>
+</li>
+<li>
+<p>
+<a href="http://brainflush.wordpress.com/2010/01/10/introducing-calculon-a-java-dsl-for-android-activity-testing/">Introducing Calculon – a Java DSL for Android Activity testing « Brain Flush</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://pivotal.github.com/robolectric/index.html">Robolectric: Unit Test your Android Application | Robolectric</a>
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+不是跑在 InstrumentationTestRunner 之上，但可以加快測試的速度，值得一看。
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+<a href="http://developer.android.com/guide/developing/tools/monkeyrunner_concepts.html">monkeyrunner | Android Developers</a>
+</p>
+</li>
+<li>
+<p>
+<a href="https://www.lesspainful.com/">LessPainful · Mobile Application Testing</a> 雲端測試，測試用<a href="http://cukes.info/">Cucumber</a>寫（一種 BDD 方案）
+</p>
+</li>
+<li>
+<p>
+是 Android Emulator 而非 Simulator。<a href="http://neochung.blogspot.com/2008/09/simulator-emulator.html">Simulator 和 Emulator的差異 | Darkman Side</a> (2008-09-28)
+</p>
+</li>
+<li>
+<p>
+<a href="http://blog.codecentric.de/en/2011/03/android-testing-in-brief/">Android testing in brief | codecentric Blog</a> (2011-03-15)
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.simpligility.com/2011/11/testing-android-applications-going-from-zero-to-hero/">Testing Android Applications – Going from Zero to Hero | simpligility</a> (2011-11-06)
+</p>
+</li>
+<li>
+<p>
+<a href="http://pivotal.github.com/robolectric/">Robolectric: Unit Test your Android Application | Robolectric</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.artima.com/scalazine/articles/borachio_mock_objects_for_scala.html">Borachio: Mock Objects for Scala and Android</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_延伸閱讀_2">延伸閱讀</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="tools.html">Tools</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料_2">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://kongqingyun123.blog.163.com/blog/static/63772835201111572320143/">Android應用重新簽名問題解決 - kevinkong的日誌 - 網易博客</a> (2011-12-05)
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-25 23:22:33 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script>
+</body>
+</html>

@@ -1,96 +1,14 @@
 = Jython =
 
-目前最新版是 2011-03-03 釋出的 Jython 2.5.2
+== 延伸閱讀 ==
 
-=== Standalone Mode ===
-
-安裝過程中被問到 installation type 時，如果選 "Standalone (a single, executable .jar)"，最後只會得到一個 `jython.jar` 檔。`jython.jar` 裡面的 `/Lib` 包含 Python standard library，可惜並沒有 pre-compiled `.class`。
-
- java -jar jython.jar [script.py]
-
- * The Jython Standalone installation is a Jython JAR also containing all Python standard libraries.
- * The standalone option does no caching and so avoids the startup overhead (most likely at the cost of some speed in calling Java classes, but I have not profiled it) ... 沒有 cache 為什麼反而比較快??
-
-[NOTE]
-.參考資料
-================================================================================
- * http://wiki.python.org/jython/InstallationInstructions[Installation]
-================================================================================
-
-== PYTHONPATH? JYTHONPATH ==
-
- * `-Dpython.path` 等同 CPython 的 `PYTHONPATH`，實驗確認 Jython 是完全不吃 `PYTHONPATH` 的設定，但它會吃 `JYTHONPATH` 的設定。當 `-Dpython.path` 同時給時，實驗確認最後會以 `JYTHONPATH` 的設定為主。
- * 很多人都提到只要把 `.py` 放到 `jython.jar/Lib` 底下即可，那其他的 Jar 檔呢??
-
-[NOTE]
-.參考資料
-================================================================================
- * http://wiki.python.org/jython/JythonFaq/DistributingJythonScripts[JythonFaq/DistributingJythonScripts - JythonWiki]
- * http://jython.extreme.st/talk/talk.html[jython.extreme.st/talk/talk.html]
- * http://www.jython.org/docs/using/cmdline.html[1. Command line and environment — Jython v2.5.2 documentation] - 提到吃 `JYTHONPATH` 的設定。
- * http://wiki.python.org/jython/UserGuide#registry-properties[UserGuide - JythonWiki] - 提到 `-Dpython.path` 等同 CPython 的 `PYTHONPATH`
-================================================================================
-
-== 整合 Java ==
-
-Jython 除了做為 Java Scripting 的方案之一，它之於 Python 最大的優勢就是可以直接從 Python code 裡直接調用 Java 實作的 library （也就是一堆 class），而且用起來跟 Python class 沒什麼兩樣：
-
---------------------------------------------------------------------------------
->>> from java.util import ArrayList <1>
->>> words = ArrayList()             <2>
->>> words.add('Hello')
-True
->>> words.add('Jython')
-True
->>> words[0], words[1]              <3>
-(u'Hello', u'Jython')
->>> ', '.join(words)
-u'Hello, Jython'
->>>
->>> words.class                     <4>
-<type 'java.util.ArrayList'>
->>> words.__class__
-<type 'java.util.ArrayList'>
->>> type(words)
-<type 'java.util.ArrayList'>
->>>
->>> words = words.toArray()         <5>
->>> words.__class__
-<type 'array.array'>
->>> type(words)
-<type 'array.array'>
->>> words.class                     <6>
-Traceback (most recent call last):
-  File "<stdin>", line 1, in <module>
-AttributeError: 'array.array' object has no attribute 'class'
->>>
->>> System.currentTimeMillis()           <7>
-Traceback (most recent call last):
-  File "<stdin>", line 1, in <module>
-NameError: name 'System' is not defined
->>> from java.lang import System         <8>
->>> System.out.println(', '.join(words))
-Hello, Jython
---------------------------------------------------------------------------------
-<1> 用 Python 的語法引入 Java class `java.util.ArrayList`。
-<2> 之後用起來就跟 Python class 沒什麼兩樣，例如直接呼叫該 class 就可以生成一個 instance，用 `.` 就可以呼叫 instance method 等。
-<3> 沒想到在 Jython 裡的 `java.util.ArrayList` 直接支援 Python 裡 sequence/iterable 的用法。
-<4> 雖然型態是 `java.util.ArrayList`，除了 Java 的用法（`words.class`），也完全支援 Python 的用法（`words.__class__` 跟 `type(words)`）。
-<5> 某些資料型態的轉換會自動發生在從 Python 傳入 Java method 的參數，也會發生在從 Java method 返回的回傳值。例如 Java 的 array 會變成 Python 的 `array.array`，其他型態的對應可以參考 http://wiki.python.org/jython/UserGuide#calling-java-methods-and-functions[User Guide > Calling Java Methods and Functions]。
-<6> 轉成 Python 的型態之後，Java 專有的用法 `.class` 就不適用了。
-<7> 在 Java 裡預設會被引入的 `java.lang.*`，在 Jython 裡也要手動引入才行。
-<8> 呼叫 class method 的方式跟 instance method 一樣。
-
-
-
-如果 package name 相衝突時，會以 Python 或 Java 為主？
-
-[NOTE]
-.參考資料
-================================================================================
- * http://www.jython.org/jythonbook/en/1.0/ModulesPackages.html[Jython Book > Modules and Packages for Code Reuse]
- * http://www.jython.org/jythonbook/en/1.0/JythonAndJavaIntegration.html[Jython Book > Jython and Java Integration]
-================================================================================
+ * link:install.html[安裝]
+ * link:command-line.html[Command Line]
+ * link:module-search-path.html[Module Search Path]
+ * link:registry.html[Registry]
+ * link:java-integration.html[Java Integration]
+ * link:environments.html[辨識執行環境]
+ * link:distribution.html[Distribution]
 
 == 參考資料 ==
 
@@ -100,23 +18,6 @@ Hello, Jython
  * http://wiki.python.org/jython/[Wiki]
  * http://old.nabble.com/Jython-f4120.html[Old Nabble - Jython forum]
  * irc://irc.freenode.net/#jython[IRC] (http://www.extreme.st/jython.extreme.st/irclogs/index.php/[Logs]) - 好像大家比較習慣在 IRC 上發問
---
-
-.官方文件
---
- * http://www.jython.org/docs/index.html[Jython Documentation]
- * http://wiki.python.org/jython/JythonFaq[FAQ]
- * http://wiki.python.org/jython/UserGuide[User Guide]
- * http://wiki.python.org/jython/WhyJython[Why Jython]
---
-
-.其他文件
---
- * http://en.wikipedia.org/wiki/Jython[Jython - Wikipedia, the free encyclopedia]
- * http://www.ibm.com/developerworks/websphere/library/techarticles/1004_gibson/1004_gibson.html[Scripting from scratch: Creating a Jython administrative script for IBM WebSphere Application Server] (2010-04-07)
- * http://www.fishandcross.com/blog/?page_id=214[Jython Master Resource List – Bibliography : Road Warrior Collaboration] (2007-07-19)
- * http://www.ibm.com/developerworks/java/tutorials/j-jython1/[Intro to Jython, Part 1: Java programming made easier] (2004-04-08)
- * http://www.ibm.com/developerworks/java/tutorials/j-jython2/[Introduction to Jython, Part 2: Programming essentials] (2004-04-08)
 --
 
 .書籍
@@ -129,12 +30,29 @@ Hello, Jython
  * http://www.informit.com/store/product.aspx?isbn=0735711119[Sams - Jython for Java Programmers] (2001-12)
 --
 
-== 學習筆記 ==
+.文件
+--
+ * http://en.wikipedia.org/wiki/Jython[Jython - Wikipedia, the free encyclopedia]
+ * http://www.jython.org/docs/index.html[Jython Documentation]
+   ** http://wiki.python.org/jython/JythonFaq[FAQ]
+   ** http://wiki.python.org/jython/UserGuide[User Guide]
+   ** http://wiki.python.org/jython/WhyJython[Why Jython]
+ * http://www.ibm.com/developerworks/java/tutorials/j-jython1/[Intro to Jython, Part 1: Java programming made easier] (2004-04-08)
+ * http://www.ibm.com/developerworks/java/tutorials/j-jython2/[Introduction to Jython, Part 2: Programming essentials] (2004-04-08)
+--
+
+.其他文件
+--
+ * http://www.ibm.com/developerworks/websphere/library/techarticles/1004_gibson/1004_gibson.html[Scripting from scratch: Creating a Jython administrative script for IBM WebSphere Application Server] (2010-04-07)
+ * http://www.fishandcross.com/blog/?page_id=214[Jython Master Resource List – Bibliography : Road Warrior Collaboration] (2007-07-19)
+--
+
+////////////////////////////////////////////////////////////////////////////////
 
  * Java Scripting 的好處是不用裝 JDK 也可以用 Java 寫新的程式，而且 Jython 可以用來說明 Java API 的用法（但又怕不懂 Python 的人看不懂？）
  * http://docs.oracle.com/cd/E13222_01/wls/docs90/config_scripting/using_WLST.html[WebLogic Scripting Tool] (WLST) 就是用 Jython 來寫，所以在查一些問題時可以用 WLST 當關鍵字。
- * 2010-10-04 在 Jython 2.5.2 Beta 2 上, 確認沒有提供 `_winreg` 模組（在 Windows 上也是一樣）, 另外 `os.name` 會傳回 'java'. 這將是一個很大的問題 - 如果要用 Jython 的方式寫 Java Application, 用 Groovy 會更好, 但要用 Jython 來寫 Python Script, 卻又少了某些系統特有的 Modules, 也就是說兩邊寫出來的 `.py` 檔並不能互通, 充其量 Jython 不過是用了 Python 的語法而已, 做為 Java 的 Scripting Language, 為什麼不選 Groovy 呢? 定位上確實有點尷尬. 更何況所有的平台幾乎都提供有 CPython, 並不需要 JVM 來達到跨平台的目的.
  * 以後應以 jython 優先考量，因為 jython 能跑，python 就沒問題，但反之則不然
  * 使用 `with` 時會遇到 `'with' will become a reserved keyword in Python 2.6` 的錯誤，可以在 `.py` 最前面加上 `from __future__ import with_statement` 即可。
- * 把 `*.py` 放在 `.jar` 的 `/Lib` 好像是慣例?
+
+////////////////////////////////////////////////////////////////////////////////
 

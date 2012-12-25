@@ -1,0 +1,30 @@
+= monkeyrunner 觸控手勢：輕觸（Tap）跟長按（Long Press） =
+
+輕觸（Tap）跟長按（Long Press）這兩個很基本的link:gestures.html[觸控手勢]都可以簡單透過 `MonkeyDevice.touch()` 來達成：
+
+ touch(x, y, type)
+
+`MonkeyRunner` 另外定義了三個字串常數，可以用在 'type' 參數：`DOWN`、`UP`、`DOWN_AND_UP`。其中 `DOWN` 跟 `UP` 分別對應 "手指頭碰觸螢幕" 跟 "手指頭離開螢幕" 兩個動作。想當然爾，`DOWN_AND_UP` 的結果就有輕觸（Tap）：
+
+--------------------------------------------------------------------------------
+>>> from com.android.monkeyrunner import MonkeyRunner, MonkeyDevice
+>>> device = MonkeyRunner.waitForConnection()
+>>>
+>>> device.touch(100, 100, MonkeyDevice.DOWN_AND_UP)
+--------------------------------------------------------------------------------
+
+手指頭碰觸螢幕一小段時間後才拿開，就是長按（Long Press）：
+
+--------------------------------------------------------------------------------
+>>> import time
+>>> device.touch(100, 100, MonkeyDevice.DOWN)
+>>> time.sleep(2); device.touch(100, 100, MonkeyDevice.UP)
+--------------------------------------------------------------------------------
+
+2012-10-02 發現上面的做法並不適用於 Samsung Galaxy S2，例如在點擊文字輸入框時，`DOWN` 跟 `UP` 似乎被分開解讀了，導致無法形成 long press，後來改用 `drag()` 就好了。
+
+--------------------------------------------------------------------------------
+>>> point = (100, 100)
+>>> device.drag(point, point, 2, 2)
+--------------------------------------------------------------------------------
+

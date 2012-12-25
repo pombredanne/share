@@ -1,0 +1,202 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>用 monkeyrunner API 做畫面的比對</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div>
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>用 monkeyrunner API 做畫面的比對</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>monkeyrunner 的測試方法，簡單的說就是 - You provide input values with keystrokes or touch events, and view the results as screenshots。</p></div>
+<div class="quoteblock">
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+Functional testing: monkeyrunner can run an automated start-to-finish test of an Android application. You provide input values with keystrokes or touch events, and view the results as screenshots.
+</p>
+</li>
+<li>
+<p>
+Regression testing - monkeyrunner can test application stability by running an application and comparing its output screenshots to a set of screenshots that are known to be correct.
+</p>
+</li>
+</ul></div>
+</div>
+<div class="attribution">
+<em><a href="http://developer.android.com/tools/help/monkeyrunner_concepts.html">monkeyrunner</a></em><br />
+&#8212; Android Developers
+</div></div>
+<div class="paragraph"><p>顯然 functional/regression testing 相當依重 screenshot 的比對。只要<a href="screenshots.html">事先抓取好預期的畫面</a>，就可以輔以下面的 API 做驗證：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>MonkeyRunner.loadImageFromFile(path)</code> - 載入事先準備好的圖片，做為驗證結果之用。
+</p>
+</li>
+<li>
+<p>
+<code>MonkeyImage.getSubImage(rect)</code> - 其中 <em>rect</em> 是 4-tuple (x, y, w, h)，可以用來取出畫面的局部。
+</p>
+</li>
+<li>
+<p>
+<code>MonkeyImage.sameAs(otherImage, percent=1.0)</code> - 比對兩個（局部）畫面，其中 <em>percent</em> 可以用來決定可接受的相似度（0.0 - 1.0）。
+</p>
+</li>
+</ul></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">
+<div class="paragraph"><p>“只比對畫面的局部“（利用 <code>getSubImage()</code>）這件事對 "圖形驗證" 尢其重要，因為畫面上其他地方的變化可能會造成 false positive，例如畫面最上方 status bar 的變化（時間、電量、訊號強度等）是避免不了的。</p></div>
+<div class="paragraph"><p><span class="image">
+<img src="screenshots-verification/statusbar.png" alt="screenshots-verification/statusbar.png" />
+</span></p></div>
+<div class="paragraph"><p>另外 <code>sameAs()</code> 的相似度（percent）儘可能採用預設值 1.0，因為這是在比對結果，而非藉由圖形來定位操作的目標。</p></div>
+</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>下面用調整 Settings &gt; Sound &gt; General &gt; Vibrate 的設定來做示範：</p></div>
+<div class="imageblock">
+<div class="content">
+<img src="screenshots-verification/rect.png" alt="screenshots-verification/rect.png" />
+</div>
+</div>
+<div class="paragraph"><p>過程中會用到 <code>checked.png</code> (<span class="image">
+<img src="screenshots-verification/checked.png" alt="screenshots-verification/checked.png" />
+</span>) 跟 <code>unchecked.png</code> (<span class="image">
+<img src="screenshots-verification/unchecked.png" alt="screenshots-verification/unchecked.png" />
+</span>) 做為驗證之用。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; from com.android.monkeyrunner import MonkeyRunner, MonkeyDevice
+&gt;&gt;&gt; device = MonkeyRunner.waitForConnection()
+&gt;&gt;&gt;
+&gt;&gt;&gt; actual = device.takeSnapshot().getSubImage((417, 324, 39, 39)) <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+&gt;&gt;&gt; assert actual.sameAs(MonkeyRunner.loadImageFromFile('checked.png'))
+&gt;&gt;&gt;
+&gt;&gt;&gt; device.touch(417 + 20, 324 + 20, MonkeyDevice.DOWN_AND_UP) <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+&gt;&gt;&gt;
+&gt;&gt;&gt; actual = device.takeSnapshot().getSubImage((417, 324, 39, 39))
+&gt;&gt;&gt; assert actual.sameAs(MonkeyRunner.loadImageFromFile('unchecked.png'))</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+<code>getSubImage()</code> 可以將 checkbox 當下的狀態取出來。假設一開始 Vibrate 的設定是啟用的，核取方塊應該要是被勾選的。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+將 Vibrate 的設定取消，核取方塊應該要是沒被勾選的。
+</td></tr>
+</table></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">網站</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://androidxref.com/source/xref/sdk/monkeyrunner/">/sdk/monkeyrunner - Android XRef</a> - monkeyrunner 的原始碼
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">官方文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://developer.android.com/tools/help/monkeyrunner_concepts.html">monkeyrunner | Android Developers</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://developer.android.com/tools/help/MonkeyImage.html">MonkeyImage | Android Developers</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://dtmilano.blogspot.tw/2011/04/monkeyrunner-visual-image-comparison.html">Diego Torres Milano&#8217;s blog: monkeyrunner: visual image comparison</a> (2011-04-10; PDF) - 用 <code>MonkeyImage.sameAs()</code> 比對結果，相似度低於 90％ 時會用 ImageMagick 將差異的部份標示出來。
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-25 23:33:44 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script>
+</body>
+</html>

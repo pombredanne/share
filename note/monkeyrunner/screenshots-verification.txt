@@ -1,0 +1,64 @@
+= 用 monkeyrunner API 做畫面的比對 =
+
+monkeyrunner 的測試方法，簡單的說就是 - You provide input values with keystrokes or touch events, and view the results as screenshots。
+
+[quote,'Android Developers','http://developer.android.com/tools/help/monkeyrunner_concepts.html[monkeyrunner]']
+________________________________________________________________________________
+ * Functional testing: monkeyrunner can run an automated start-to-finish test of an Android application. You provide input values with keystrokes or touch events, and view the results as screenshots.
+ * Regression testing - monkeyrunner can test application stability by running an application and comparing its output screenshots to a set of screenshots that are known to be correct.
+________________________________________________________________________________
+
+顯然 functional/regression testing 相當依重 screenshot 的比對。只要link:screenshots.html[事先抓取好預期的畫面]，就可以輔以下面的 API 做驗證：
+
+ * `MonkeyRunner.loadImageFromFile(path)` - 載入事先準備好的圖片，做為驗證結果之用。
+ * `MonkeyImage.getSubImage(rect)` - 其中 'rect' 是 4-tuple (x, y, w, h)，可以用來取出畫面的局部。
+ * `MonkeyImage.sameAs(otherImage, percent=1.0)` - 比對兩個（局部）畫面，其中 'percent' 可以用來決定可接受的相似度（0.0 - 1.0）。
+
+[TIP]
+================================================================================
+“只比對畫面的局部“（利用 `getSubImage()`）這件事對 "圖形驗證" 尢其重要，因為畫面上其他地方的變化可能會造成 false positive，例如畫面最上方 status bar 的變化（時間、電量、訊號強度等）是避免不了的。
+
+image:screenshots-verification/statusbar.png[]
+
+另外 `sameAs()` 的相似度（percent）儘可能採用預設值 1.0，因為這是在比對結果，而非藉由圖形來定位操作的目標。
+================================================================================
+
+下面用調整 Settings > Sound > General > Vibrate 的設定來做示範：
+
+image::screenshots-verification/rect.png[]
+
+過程中會用到 `checked.png` (image:screenshots-verification/checked.png[]) 跟 `unchecked.png` (image:screenshots-verification/unchecked.png[]) 做為驗證之用。
+
+--------------------------------------------------------------------------------
+>>> from com.android.monkeyrunner import MonkeyRunner, MonkeyDevice
+>>> device = MonkeyRunner.waitForConnection()
+>>>
+>>> actual = device.takeSnapshot().getSubImage((417, 324, 39, 39)) <1>
+>>> assert actual.sameAs(MonkeyRunner.loadImageFromFile('checked.png'))
+>>>
+>>> device.touch(417 + 20, 324 + 20, MonkeyDevice.DOWN_AND_UP) <2>
+>>>
+>>> actual = device.takeSnapshot().getSubImage((417, 324, 39, 39))            
+>>> assert actual.sameAs(MonkeyRunner.loadImageFromFile('unchecked.png'))
+--------------------------------------------------------------------------------
+<1> `getSubImage()` 可以將 checkbox 當下的狀態取出來。假設一開始 Vibrate 的設定是啟用的，核取方塊應該要是被勾選的。
+<2> 將 Vibrate 的設定取消，核取方塊應該要是沒被勾選的。
+
+== 參考資料 ==
+
+.網站
+--
+ * http://androidxref.com/source/xref/sdk/monkeyrunner/[/sdk/monkeyrunner - Android XRef] - monkeyrunner 的原始碼
+--
+
+.官方文件
+--
+ * http://developer.android.com/tools/help/monkeyrunner_concepts.html[monkeyrunner | Android Developers]
+ * http://developer.android.com/tools/help/MonkeyImage.html[MonkeyImage | Android Developers]
+--
+
+.文件
+--
+ * http://dtmilano.blogspot.tw/2011/04/monkeyrunner-visual-image-comparison.html[Diego Torres Milano's blog: monkeyrunner: visual image comparison] (2011-04-10; PDF) - 用 `MonkeyImage.sameAs()` 比對結果，相似度低於 90％ 時會用 ImageMagick 將差異的部份標示出來。
+--
+

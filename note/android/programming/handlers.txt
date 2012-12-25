@@ -1,0 +1,58 @@
+= [Android] Handler =
+
+透過 handler (`android.os.Handler`)，可以讓某段程式碼（`java.lang.Runnable`）在另一個 thread 裡執行，或是把某個訊息（`android.os.Message`）丟到另一個 thread 執行。
+
+下面示範 Thread B 在執行的過程中，如何將某段程式碼交給 Thread A 執行：
+
+--------------------------------------------------------------------------------
+public void tryRunnable(View view) {
+    Log.d(TAG, "tryRunnable(); thread = " + Thread.currentThread().getName());
+    final Handler handler = new Handler();
+
+    new Thread(new Runnable() {
+        @Override
+        public void run() {
+            Log.d(TAG, "run(); thread = " + Thread.currentThread().getName());
+            for (int i = 0; i <= 10; i++) {
+                try {
+                    Thread.sleep(2000); // long running
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                final int progress = i * 10;
+                Log.d(TAG, "report progress = " + progress + "%; thread = " + Thread.currentThread().getName());
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        Log.d(TAG, "receive progress = " + progress + "%; thread = " + Thread.currentThread().getName());
+                    }
+                });
+            }
+        }
+    }, "Worker").start();
+}
+--------------------------------------------------------------------------------
+
+10-28 06:37:06.186: W/dalvikvm(8181): threadid=9: thread exiting with uncaught exception (group=0x4001d5a0)
+10-28 06:37:06.196: E/AndroidRuntime(8181): FATAL EXCEPTION: Thread A
+10-28 06:37:06.196: E/AndroidRuntime(8181): java.lang.RuntimeException: Can't create handler inside thread that has not called Looper.prepare()
+10-28 06:37:06.196: E/AndroidRuntime(8181): 	at android.os.Handler.<init>(Handler.java:121)
+10-28 06:37:06.196: E/AndroidRuntime(8181): 	at com.simplbug.tryit.MainActivity$2.run(MainActivity.java:43)
+10-28 06:37:06.196: E/AndroidRuntime(8181): 	at java.lang.Thread.run(Thread.java:1027)
+
+
+== 參考資料 ==
+
+.文件
+--
+ * http://www.vogella.com/articles/AndroidPerformance/article.html[Android Threads, Handlers and AsyncTask - Tutorial]
+ * http://developer.android.com/reference/android/os/Handler.html[Handler | Android Developers] (PDF, http://androidxref.com/source/xref/external/javassist/src/main/javassist/expr/Handler.java[source])
+ * http://developer.android.com/reference/android/os/Looper.html[Looper | Android Developers]
+--
+
+.其他文件
+--
+ * http://stackoverflow.com/questions/5198043/does-the-android-os-handler-class-eliminate-the-need-to-declare-certain-methods[java - Does the android.os.Handler class eliminate the need to declare certain methods as synchronized? - Stack Overflow] (2011-03-04; PDF) - 透過 handler，可以讓另一個 thread 讓某段程式碼執行在 handler 所屬的 thread（該 thread 必須要有 looper 做 message loop）；如果 handler 是在 main/UI thread 建立的，那麼另一個 thread 就可以透過 handler 來更新 UI。
+--
+

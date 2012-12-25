@@ -1,0 +1,73 @@
+= [Android] Logging =
+
+程式是透過 `android.util.Log` 來寫出 log，例如：
+
+ Log.i("MyActivity", "MyClass.getView() — get item number " + position);
+
+除了 `Log.i()` 之外，類似的方法還有 `Log.d()`、`Log.i()`、`Log.w()`、`Log.e()` 等，分別對應不同的 priority level：（由低至高）
+
+ * `println(int priority, String tag, String msg)` - `Log.ASSERT`
+ * `v(String tag, String msg[, Throwable tr])` - `Log.VERBOSE`
+ * `d(String tag, String msg[, Throwable tr])` - `Log.DEBUG`
+ * `i(String tag, String msg[, Throwable tr])` - `Log.INFO`
+ * `w(String tag, String msg[, Throwable tr])` - `Log.WARN`
+ * `e(String tag, String msg[, Throwable tr])` - `Log.ERROR`
+
+以上面的程式碼為例：
+
+--------------------------------------------------------------------------------
+ ,----------- Priority Level <1>
+ v             ,------- Process ID
+ I/MyActivity( 1557): MyClass.getView() — get item number 1
+   ^                  `------- Message
+   `----------- Tag <2>
+--------------------------------------------------------------------------------
+<1> 單一個大寫字母，代表不同的 priority level。
++
+--
+http://developer.android.com/guide/developing/debugging/debugging-log.html#filteringOutput[官方文件]上寫說，除了 `V/D/I/W/E` 之外，還有 `F` (Fatal)，大概只有系統遇到很嚴重的錯誤時才會發生？
+--
++
+<2> 用來識別這個 log 是誰寫出來的 tag。但的寫法好像沒什麼規範，不同應用程式之間可能會用到相同的 tag 而難以識別？聽說用 `System.out.print()` 寫出的部份可以用 `System.out` 這個 tag 來過濾？
+
+減少 Logging 對效能的衝擊
+
+Log.isLoggable(TAG)，只要用 log.tag.TAG = level 就可以顯示出來，這麼做有什麼用嗎？而且 `isLoggable()` 似乎很少人在用？
+
+對照 http://developer.android.com/reference/android/util/Log.html[`android.util.Log`] 的說法，verbose logs 要自己拿掉，但 debug logs 還是存在的，'stripped' 指的就是 `isLoggable(DEBUG)` 過不了 log level 預設值 info 的檢查而已。
+
+________________________________________________________________________________
+Verbose should never be compiled into an application except during development. Debug logs are compiled in but stripped at runtime. Error, warning and info logs are always kept.
+________________________________________________________________________________
+
+如果沒有 `isLoggable(DEBUG)` 的話，debug log 固定會寫出去，設了 `log.tag.TAG LEVEL` 也沒用，更重要的是 log message 拼接需要的時間，也這麼浪費掉了。
+
+== 延伸閱讀 ==
+
+ * link:production.html[如何將 Verbose/Debug Log 拿掉？]
+ * link:sysout.html[`System.out` 或 `System.out` 的輸出去了哪裡？]
+ * link:buffers.html[Log Buffers]
+
+== 參考資料 ==
+
+.文件
+--
+ * http://developer.android.com/guide/developing/debugging/debugging-log.html[Reading and Writing Logs | Android Developers]
+ * http://developer.android.com/reference/android/util/Log.html[Log | Android Developers]
+ * http://mobile.tutsplus.com/tutorials/android/logcat_android-sdk/[Android Essentials: Application Logging] (2011-01-25)
+ * http://www.intertech.com/[Android Logging] (2012-03-16)
+ * http://www.vogella.com/articles/AndroidLogging/article.html[Android Logging Tutorial] (2012-07-27)
+--
+
+.工具
+--
+ * http://code.google.com/p/roboguice/wiki/Logging[Logging - RoboGuice 2] - 在 `android.uitl.Log` 之上提供一個更好的 wrapper。
+--
+
+.其他文件
+--
+ * http://mobilebytes.wordpress.com/2010/07/19/logging-the-android-way/[Logging the Android Way « MobileBytes] (2010-07-19) - 提到 `setprops log.tag.<tag> <level>` 可以讓 debug logs 出現，這應該是搭配 `Log.isLoggable(tag, Log.DEBUG)` 的寫法，顯然 `Log.x()` 內部並不會檢查 level。
+ * http://www.quietlycoding.com/?p=9[Android Logging … the awesome way | Quietly Coding] (2010-03-22) - 自訂一層 wrapper，裡面有用到 `isLoggable()`，但組合 log message 所花的時間還是浪費掉了。
+ * http://stackoverflow.com/questions/2018263/android-logging/2019002#2019002[Android logging - Stack Overflow] (2010-01-07) - 可以對 JAR 檔加工，將 `Log.v()` 的呼叫全部拿掉。
+--
+

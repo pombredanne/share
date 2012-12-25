@@ -1,0 +1,53 @@
+= link:jython.html[Jython] / `PYTHONPATH` =
+:title: [Jython] PYTHONPATH
+
+Jython 不同於 CPython，完全不會理會 `PYTHONPATH` 環境變數的設定，必須透過 `python.path` 這個 link:registry.html[property] 來設定 module search path。
+
+ $ jython -Dpython.path=...
+
+直到 Jython 2.5 才開始支援 `JYTHONPATH` 的用法。
+
+--------------------------------------------------------------------------------
+$ jython -V; pwd
+Jython 2.5.2
+/tmp
+$
+$ jython -c "import sys; print sys.path"
+['', '/home/username/dev/jython-2.5.2/Lib', '__classpath__', '__pyclasspath__/', '/home/username/dev/jython-2.5.2/Lib/site-packages']
+$
+$ jython -Dpython.path=/tmp -c "import sys; print sys.path"
+['', '/tmp', '/home/username/dev/jython-2.5.2/Lib', '__classpath__', '__pyclasspath__/', '/home/username/dev/jython-2.5.2/Lib/site-packages']
+$
+$ export JYTHONPATH=foo/path:bar/path
+$ jython -c "import sys; print sys.path"
+['', '/tmp/foo/path', '/tmp/bar/path', '/home/username/dev/jython-2.5.2/Lib', '__classpath__', '__pyclasspath__/', '/home/username/dev/jython-2.5.2/Lib/site-packages']
+$
+$ jython -Dpython.path=/tmp -c "import sys; print sys.path"
+['', '/tmp', '/home/username/dev/jython-2.5.2/Lib', '__classpath__', '__pyclasspath__/', '/home/username/dev/jython-2.5.2/Lib/site-packages']
+--------------------------------------------------------------------------------
+
+從上面的實驗，可以觀察到幾個規則：
+
+ * `python.path` 或 `JYHTONPATH` 會安插在 `$JYTHON_HOME/Lib` 之前。
+ * `python.path` 和 `JYHTONPATH` 同時有指定時，會採用 `python.path` 的設定。
+
+== 延伸閱讀 ==
+
+ * link:classpath.html[Classpath]
+
+== 參考資料 ==
+
+.文件
+--
+ * http://www.jython.org/docs/using/cmdline.html[1. Command line and environment — Jython v2.5.2 documentation] ^http://diigo.com/0v96b[閱讀]^ - 提到會吃 `JYTHONPATH` 的設定。
+ * http://wiki.python.org/jython/UserGuide[UserGuide > Registry Properties - JythonWiki] ^http://diigo.com/0v9db[閱讀]^ - 提到 `-Dpython.path` 等同 CPython 的 `PYTHONPATH`
+ * http://wiki.python.org/jython/JythonFaq/InstallingJython[JythonFaq/InstallingJython > What do "python.path" and "python.prepath" mean in the Jython registry? - JythonWiki] ^http://diigo.com/0v9dk[閱讀]^ - 以前曾經有過 `python.prepath`，不過目前已經沒有用了。
+ * http://wiki.python.org/jython/Settings[Settings - JythonWiki] ^http://diigo.com/0v9b5[閱讀]^ - 為什麼 `python.path` 會被標示為 "gone in Jython 2.5 or later"？
+--
+
+.其他文件
+--
+ * http://stefaanlippens.net/jython_and_pythonpath[Jython and PYTHONPATH | Stefaan Lippens' webface] ^http://diigo.com/0v96e[閱讀]^ (2009-09-09) - `JYTHONPATH` 是 2.5 後加入的，在這之前都用 `-Dpython.path=foo/path:bar/path` 來指定。作者最後提到 `alias jython='jython -Dpython.path=$PYTHONPATH'` 的做法，可以共用 CPython 會吃的 `PYTHONPATH`，還滿有趣的。
+ * http://bytes.com/topic/python/answers/606006-jython-import-search-path[jython import search path - Python] ^http://diigo.com/0v96a[閱讀]^ (2007-02-22) - 可以在 registry file 裡宣告 `python.path`，又或者用 `java -Dpython.path=...` 來指定。
+--
+

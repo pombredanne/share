@@ -1,0 +1,233 @@
+= Android Programming =
+
+== 基本概念 ==
+
+ * Activity 可以用來做某些事，通常提供 UI 跟使用者互動（由層疊的 view 所組成），但不一定要有。
+   ** Activity 是繼承自 `android.app.Activity` 的類別，而 view 則是繼承自 `android.view.View` 的類別。（為什麼 `Activity` 跟 `View` 都不是 interface??）
+   ** 一個應用程式可以有多個 activity，但同時間只有一個 activity 可以跟使用者互動。
+   ** Default activity 怎麼設定??
+   ** 最開始，`Activity` 的 `onCreate()` 會被呼叫，可以用來初始化 UI，最後透過 `setContentView()` 設定要顯示的內容。
+ * Context 是應用程式跟系統溝通的媒介（handle）
+   ** Context 是繼承自 `android.content.Context` 的類別。
+   ** 由於 `Activity` 間接繼承自 `Context`，所以程式裡有需要 context 的地方，也可以把 `this` 傳進去。
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://developer.android.com/guide/basics/what-is-android.html[What is Android? | Android Developers]
+ * http://developer.android.com/guide/topics/fundamentals.html[Application Fundamentals | Android Developers]
+ * http://developer.android.com/guide/topics/fundamentals/activities.html[Activities | Android Developers] - Activity Life Cycle
+================================================================================
+
+== Hello, Android ==
+
+File > New > Android Project （提供 new project、from existing source 跟 from existing sample）
+
+ * Project Name: `HelloAndroid`
+ * Build Target: 依據哪個 Android platform library 做程式碼的編譯而言。
+   ** Android 應用程式有 forward-compatible 的特性（也就是說 Android platform 本身有 backward-compatible 的特性），所以該應用程式可以跑在比編譯時較新的 platform 上。
+   ** Compile your application against the lowest version you want to support, but test it against higher versions that you intend the application to run on.
+ * Application Name: 使用者看到的應用程式名稱，例如 `Hello, Android`。
+ * Package Name: `com.example.helloandroid`
+ * Create Activity: `HelloAndroidActivity` (後面加 `Activity` 好像有點多餘??)
+ * Minimum SDK: 要跑這個應用程式至少的 API level，通常跟 Build Target 一樣。
+ * Create a Test Project
+   ** Test Project Name: `HelloAndroidTest`
+   ** Test Application: `HelloAndroidTest`
+   ** Test Package: `com.example.helloandroid.test` (習慣在後面串上 `.test`)
+
+將 `HelloAndroidActivity` 裡的 `setContentView(R.layout.main)` 改寫掉：
+
+--------------------------------------------------------------------------------
+public void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    // setContentView(R.layout.main);
+    TextView tv = new TextView(this); <1>
+    tv.setText("Hello World, HelloAndroidActivity!");
+    setContentView(tv);               <2>
+}
+--------------------------------------------------------------------------------
+<1> 由於 `HelloAndroidActivity` 間接繼承自 `Context`，所以可以直接傳入 `this`。
+<2> 整個 activity UI 就是一個 `TextView`。
+
+在 project 上點右鍵（不是 `HelloAndroidActivity.java` 上），選 Run As > Android Application。（如果同時間有多個 emulator 或 Android device 時，會跳出視窗詢問要安裝到哪個 device）
+
+觀察檔案目錄結構：
+
+--------------------------------------------------------------------------------
+.
+|-- AndroidManifest.xml
+|-- assets
+|-- gen
+|   `-- com
+|       `-- example
+|           `-- helloandroid
+|               `-- R.java
+|-- proguard.cfg
+|-- project.properties
+|-- res
+|   |-- drawable-hdpi
+|   |   `-- ic_launcher.png
+|   |-- drawable-ldpi
+|   |   `-- ic_launcher.png
+|   |-- drawable-mdpi
+|   |   `-- ic_launcher.png
+|   |-- layout
+|   |   `-- main.xml
+|   `-- values
+|       `-- strings.xml
+`-- src
+    `-- com
+        `-- example
+            `-- helloandroid
+                `-- HelloAndroidActivity.java
+--------------------------------------------------------------------------------
+
+.`AndroidManifest.xml`
+--------------------------------------------------------------------------------
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.helloandroid"
+    android:versionCode="1"
+    android:versionName="1.0" >
+
+    <uses-sdk android:minSdkVersion="10" />
+
+    <application
+        android:icon="@drawable/ic_launcher" <1>
+        android:label="@string/app_name" >   <2>
+        <activity
+            android:name=".HelloAndroidActivity"
+            android:label="@string/app_name" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>
+--------------------------------------------------------------------------------
+<1> `android:icon` 定義應用程式的圖示。`@drawable` 引用 `res/drawable-xxx/` 底下的圖檔（忽略副檔名）。
+<2> `android:label` 定義應用程式的名稱。`@string` 引用定義在 `res/values/strings.xml` 裡的 string resource。
+
+.`res/values/strings.xml`
+--------------------------------------------------------------------------------
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="hello">Hello World, HelloAndroidActivity!</string>
+    <string name="app_name">HelloAndroid</string>
+
+</resources>
+--------------------------------------------------------------------------------
+
+.`gen/com/example/helloandroid/R.java`
+--------------------------------------------------------------------------------
+/* AUTO-GENERATED FILE.  DO NOT MODIFY. <1>
+ *
+ * This class was automatically generated by the
+ * aapt tool from the resource data it found.  It
+ * should not be modified by hand.
+ */
+
+package com.example.helloandroid;
+
+public final class R {
+    public static final class attr {
+    }
+    public static final class drawable { <2>
+        public static final int ic_launcher=0x7f020000;
+    }
+    public static final class layout {   <3>
+        public static final int main=0x7f030000;
+    }
+    public static final class string {   <4>
+        public static final int app_name=0x7f040001;
+        public static final int hello=0x7f040000;
+    }
+}
+--------------------------------------------------------------------------------
+<1> `R.java` 會由 ADT/Ant 自動依 `res/` 底下的變動做調整。
+<2> `R.drawable` 參照 `res/drawable-xxx/` 底下的圖檔。
+<3> `R.layout` 參照 `res/layout/*.xml`。
+<4> `R.string` 參照 `res/values/strings.xml` 裡頭的字串。
+
+將 `res/layout/main.xml` 改寫成下面這個樣子：（把外層的 `LinerLayout` 去掉）
+
+--------------------------------------------------------------------------------
+<?xml version="1.0" encoding="utf-8"?>
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+  android:id="@+id/textview"
+  android:layout_width="fill_parent"
+  android:layout_height="fill_parent"
+  android:text="@string/hello"/>
+--------------------------------------------------------------------------------
+
+再將 `HelloAndroidActivity` 改回原來的樣子，直接拿定義在 `res/layout/main.xml` 裡的 XML layout 當做 activity UI：
+
+--------------------------------------------------------------------------------
+public void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.main); <1>
+}
+--------------------------------------------------------------------------------
+<1> `R.layout.main` 直接帶出 `res/layout/main.xml` 的 XML layout。
+
+這裡 "XML layout" 是相對於 programmatic layout 的說法。Programmatic layout 的問題在於調整 layout 的成本很高，而且 view 間如果（包覆）關係沒有串聯好，很容易會出狀況。
+
+重新執行一次，結果跟第一次的結果一模一樣。
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://developer.android.com/resources/tutorials/hello-world.html[Hello, World | Android Developers]
+================================================================================
+
+== Notepad Tutorial ==
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://developer.android.com/resources/tutorials/notepad/index.html[Notepad Tutorial | Android Developers]
+================================================================================
+
+== Layout and Widget ==
+
+XML layout file 必須擺在 `res/layout` 底下。
+
+TIP: 如果沒有在 `res/layout-land` 額外提供 landscape layout 的話（相對於 default layout 的說法），版面在設備橫擺時自動做調整。如何將 layout 固定下來不能轉向呢??
+
+--------------------------------------------------------------------------------
+<?xml version="1.0" encoding="utf-8"?>
+<TextView xmlns:android="http://schemas.android.com/apk/res/android" <1>
+  android:id="@+id/textview"          <2>
+  android:layout_width="fill_parent"  <3>
+  android:layout_height="fill_parent"
+  android:text="@string/hello"/>      <4>
+--------------------------------------------------------------------------------
+<1> 每一個 XML element 都表示一個 view。
+ * 事實上是 `View` 類別的名稱，例如這裡的 `TextView` 就是 `android.widget.TextView`。也可以是自訂的類別，但如果 `View` 類別所屬的套件不是 `android.widget` 呢??
+ * 其中 `xmlns:android` 宣告 XML namespace。
+<2> `android:id` 搭配 `@+id` 的語法，給定一個可以從程式碼引用到這個 view 的 ID。
+<3> `android:layout_width` 跟 `android:layout_height` 分別定義這個 view 要分配到多少 "剩餘的" 寬度跟高度。
+<4> `@string` 引用定義在 `res/values/strings.xml` 裡的 string resource。
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://developer.android.com/resources/tutorials/views/index.html[Hello, Views | Android Developers]
+================================================================================
+
+== Resource 跟 i18n ==
+
+Resource 是 non-code assets，包括 layout file、圖像、聲音、localized string 等。
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://developer.android.com/guide/topics/resources/index.html[Application Resources | Android Developers]
+ * http://developer.android.com/resources/tutorials/localization/index.html[Hello, L10N | Android Developers]
+================================================================================
+

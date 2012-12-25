@@ -1,0 +1,237 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>用 monkeyrunner API 抓取手機的畫面</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div>
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>用 monkeyrunner API 抓取手機的畫面</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>monkeyrunner 裡跟抓取手機畫面相關的 API 有：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>MonkeyDevice.takeSnapshot()</code> - 抓取整個畫面（screen buffer）。
+</p>
+</li>
+<li>
+<p>
+<code>MonkeyImage.getSubImage(rect)</code> - 其中 <em>rect</em> 是 4-tuple (x, y, w, h)，可以用來取出畫面的局部。
+</p>
+</li>
+<li>
+<p>
+<code>MonkeyImage.writeToFile(filename, format='png')</code> - 將畫面存成圖檔，可做為link:screenshots-verification.html[後續比對]之用。
+</p>
+</li>
+</ul></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; from com.android.monkeyrunner import MonkeyRunner
+&gt;&gt;&gt; device = MonkeyRunner.waitForConnection()
+&gt;&gt;&gt; img = device.takeSnapshot() <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+&gt;&gt;&gt; type(img), dir(img)
+(&lt;type 'com.android.monkeyrunner.MonkeyImage'&gt;, ['__class__', '__delattr__', '__doc__', '__getattribute__', '__hash__', '__init__', '__new__', '__reduce__', '__reduce_ex__', '__repr__', '__setattr__', '__str__', 'convertToBytes', 'getRawPixel', 'getRawPixelInt', 'getSubImage', 'sameAs', 'writeToFile'])
+&gt;&gt;&gt;
+&gt;&gt;&gt; img.writeToFile('image.png') <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+True
+&gt;&gt;&gt;
+&gt;&gt;&gt; img.getSubImage((417, 324, 39, 39)).writeToFile('expected.png') <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+&gt;&gt;&gt; bytes = img.convertToBytes() <img src="../../_asciidoc/images/icons/callouts/4.png" alt="4" />
+&gt;&gt;&gt; type(bytes)
+&lt;type 'array.array'&gt;</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+抓取整個畫面，傳回 <code>MonkeyImage</code>。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+<code>writeToFile(filename, format='png')</code> 可以將畫面存成圖檔，如果 <em>format</em> 沒有指定，會自動從 <em>filename</em> 的副檔名推導。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+也可以用 <code>getSubImage(x, y, w, h)</code> 取出畫面的局部，做為驗證結果之用。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/4.png" alt="4" /></td><td>
+由於 disk I/O 比較花時間，如果可以直接在記憶體交換圖檔，就可以考慮採用 <code>convertToBytes(format='png')</code>。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>平均而言，抓取一個畫面要花 1 秒鐘，而且會依螢幕的解析度而有不同。下面是在 HTC Desire S 上的測試結果：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; import timeit
+&gt;&gt;&gt; def capture():
+...     device.takeSnapshot()
+...
+&gt;&gt;&gt; timer = timeit.Timer('capture()', 'from __main__ import capture')
+&gt;&gt;&gt; timer.timeit(100) <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+87.61700010299683
+&gt;&gt;&gt;
+&gt;&gt;&gt; counter = 0
+&gt;&gt;&gt; def capture():
+...     global counter
+...     counter += 1
+...     img = device.takeSnapshot()
+...     img.writeToFile('/tmp/image-%i.png' % counter)
+...
+&gt;&gt;&gt; timer.timeit(100) <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+109.14800000190735</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+平均從手機抓取一個畫面到電腦，要花 0.9 秒。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+將寫出圖檔，大概多花了 0.22 秒。
+</td></tr>
+</table></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_疑難排解">疑難排解</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_java_net_socketexception_no_buffer_space_available_maximum_connections_reached_connect">java.net.SocketException: No buffer space available (maximum connections reached?): connect</h3>
+<div class="listingblock">
+<div class="content">
+<pre><code>java.net.SocketException: No buffer space available (maximum connections reached?): connect
+     at sun.nio.ch.Net.connect(Native Method)
+     at sun.nio.ch.SocketChannelImpl.connect(Unknown Source)
+     at java.nio.channels.SocketChannel.open(Unknown Source)
+     at com.android.ddmlib.AdbHelper.getFrameBuffer(AdbHelper.java:280)
+     at com.android.ddmlib.Device.getScreenshot(Device.java:381)
+     at com.android.chimpchat.adb.AdbChimpDevice.takeSnapshot(AdbChimpDevice.java:210)
+     at com.android.monkeyrunner.MonkeyDevice.takeSnapshot(MonkeyDevice.java:89)
+     at com.android.monkeyrunner.sikuliplugin.AndroidRobot.captureScreen(Unknown Source)
+     at com.android.monkeyrunner.sikuliplugin.AndroidScreen.capture(Unknown Source)
+     at org.sikuli.script.Region.doFind(Region.java:1027)
+     at org.sikuli.script.Region$RepeatableFind.run(Region.java:1232)
+     at org.sikuli.script.Region$Repeatable.repeat(Region.java:1203)
+     at org.sikuli.script.Region.wait(Region.java:497)
+     at com.android.monkeyrunner.sikuliplugin.AndroidRegion.wait(Unknown Source)</code></pre>
+</div></div>
+<div class="paragraph"><p>網路上這個 exception 都沒有人提到跟 ADB 相關，目前先暫時重啟 ADB server 試看看&#8230;</p></div>
+</div>
+<div class="sect2">
+<h3 id="_unable_to_take_snapshot_com_android_ddmlib_timeoutexception">Unable to take snapshot (com.android.ddmlib.TimeoutException)</h3>
+<div class="paragraph"><p>下面這個問題在 SDK tool r19 跟 platform tool r11 上出現。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>120723 12:35:29.910:S [main] [com.android.chimpchat.adb.AdbChimpDevice] Unable to take snapshot
+120723 12:35:29.910:S [main] [com.android.chimpchat.adb.AdbChimpDevice]com.android.ddmlib.TimeoutException</code></pre>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="https://bugs.launchpad.net/linaro-android/+bug/1028471">Bug #1028471 “LAVA Android test : Monkeyrunner test failures obs&#8230;” : Bugs : Linaro Android</a> (2012-07-24)
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">官方文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://developer.android.com/tools/help/MonkeyDevice.html">MonkeyDevice | Android Developers</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://developer.android.com/tools/help/MonkeyImage.html">MonkeyImage | Android Developers</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://dtmilano.blogspot.tw/2011/01/obtaining-android-screenshots-in-tests.html">Diego Torres Milano&#8217;s blog: Obtaining Android screenshots in tests with monkeyrunner</a> (2011-01-31)
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-25 23:36:16 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script>
+</body>
+</html>

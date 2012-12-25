@@ -1,0 +1,104 @@
+= 用 monkeyrunner API 抓取手機的畫面 =
+
+monkeyrunner 裡跟抓取手機畫面相關的 API 有：
+
+ * `MonkeyDevice.takeSnapshot()` - 抓取整個畫面（screen buffer）。
+ * `MonkeyImage.getSubImage(rect)` - 其中 'rect' 是 4-tuple (x, y, w, h)，可以用來取出畫面的局部。
+ * `MonkeyImage.writeToFile(filename, format='png')` - 將畫面存成圖檔，可做為link:screenshots-verification.html[後續比對]之用。
+
+--------------------------------------------------------------------------------
+>>> from com.android.monkeyrunner import MonkeyRunner
+>>> device = MonkeyRunner.waitForConnection()
+>>> img = device.takeSnapshot() <1>
+>>> type(img), dir(img)
+(<type 'com.android.monkeyrunner.MonkeyImage'>, ['__class__', '__delattr__', '__doc__', '__getattribute__', '__hash__', '__init__', '__new__', '__reduce__', '__reduce_ex__', '__repr__', '__setattr__', '__str__', 'convertToBytes', 'getRawPixel', 'getRawPixelInt', 'getSubImage', 'sameAs', 'writeToFile'])
+>>>
+>>> img.writeToFile('image.png') <2>
+True
+>>>
+>>> img.getSubImage((417, 324, 39, 39)).writeToFile('expected.png') <3>
+>>> bytes = img.convertToBytes() <4>
+>>> type(bytes)
+<type 'array.array'>
+--------------------------------------------------------------------------------
+<1> 抓取整個畫面，傳回 `MonkeyImage`。
+<2> `writeToFile(filename, format='png')` 可以將畫面存成圖檔，如果 'format' 沒有指定，會自動從 'filename' 的副檔名推導。
+<3> 也可以用 `getSubImage(x, y, w, h)` 取出畫面的局部，做為驗證結果之用。
+<4> 由於 disk I/O 比較花時間，如果可以直接在記憶體交換圖檔，就可以考慮採用 `convertToBytes(format='png')`。
+
+平均而言，抓取一個畫面要花 1 秒鐘，而且會依螢幕的解析度而有不同。下面是在 HTC Desire S 上的測試結果：
+
+--------------------------------------------------------------------------------
+>>> import timeit
+>>> def capture():   
+...     device.takeSnapshot()
+... 
+>>> timer = timeit.Timer('capture()', 'from __main__ import capture')
+>>> timer.timeit(100) <1>
+87.61700010299683
+>>>
+>>> counter = 0
+>>> def capture():                 
+...     global counter
+...     counter += 1
+...     img = device.takeSnapshot()
+...     img.writeToFile('/tmp/image-%i.png' % counter)
+... 
+>>> timer.timeit(100) <2>
+109.14800000190735
+--------------------------------------------------------------------------------
+<1> 平均從手機抓取一個畫面到電腦，要花 0.9 秒。
+<2> 將寫出圖檔，大概多花了 0.22 秒。
+
+== 疑難排解 ==
+
+=== java.net.SocketException: No buffer space available (maximum connections reached?): connect ===
+
+--------------------------------------------------------------------------------
+java.net.SocketException: No buffer space available (maximum connections reached?): connect
+     at sun.nio.ch.Net.connect(Native Method)
+     at sun.nio.ch.SocketChannelImpl.connect(Unknown Source)
+     at java.nio.channels.SocketChannel.open(Unknown Source)
+     at com.android.ddmlib.AdbHelper.getFrameBuffer(AdbHelper.java:280)
+     at com.android.ddmlib.Device.getScreenshot(Device.java:381)
+     at com.android.chimpchat.adb.AdbChimpDevice.takeSnapshot(AdbChimpDevice.java:210)
+     at com.android.monkeyrunner.MonkeyDevice.takeSnapshot(MonkeyDevice.java:89)
+     at com.android.monkeyrunner.sikuliplugin.AndroidRobot.captureScreen(Unknown Source)
+     at com.android.monkeyrunner.sikuliplugin.AndroidScreen.capture(Unknown Source)
+     at org.sikuli.script.Region.doFind(Region.java:1027)
+     at org.sikuli.script.Region$RepeatableFind.run(Region.java:1232)
+     at org.sikuli.script.Region$Repeatable.repeat(Region.java:1203)
+     at org.sikuli.script.Region.wait(Region.java:497)
+     at com.android.monkeyrunner.sikuliplugin.AndroidRegion.wait(Unknown Source)
+--------------------------------------------------------------------------------
+
+網路上這個 exception 都沒有人提到跟 ADB 相關，目前先暫時重啟 ADB server 試看看...
+ 
+=== Unable to take snapshot (com.android.ddmlib.TimeoutException) ===
+
+下面這個問題在 SDK tool r19 跟 platform tool r11 上出現。
+
+--------------------------------------------------------------------------------
+120723 12:35:29.910:S [main] [com.android.chimpchat.adb.AdbChimpDevice] Unable to take snapshot
+120723 12:35:29.910:S [main] [com.android.chimpchat.adb.AdbChimpDevice]com.android.ddmlib.TimeoutException
+--------------------------------------------------------------------------------
+
+[NOTE]
+.參考資料
+================================================================================
+ * https://bugs.launchpad.net/linaro-android/+bug/1028471[Bug #1028471 “LAVA Android test : Monkeyrunner test failures obs...” : Bugs : Linaro Android] (2012-07-24)
+================================================================================
+
+== 參考資料 ==
+
+.官方文件
+--
+ * http://developer.android.com/tools/help/MonkeyDevice.html[MonkeyDevice | Android Developers]
+ * http://developer.android.com/tools/help/MonkeyImage.html[MonkeyImage | Android Developers]
+--
+
+.文件
+--
+ * http://dtmilano.blogspot.tw/2011/01/obtaining-android-screenshots-in-tests.html[Diego Torres Milano's blog: Obtaining Android screenshots in tests with monkeyrunner] (2011-01-31)
+--
+

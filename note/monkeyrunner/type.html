@@ -1,0 +1,148 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[monkeyrunner] 按鈕跟鍵盤的操作</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div>
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>[monkeyrunner] 按鈕跟鍵盤的操作</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>發現 <code>type()</code> 不能輸入中文、空白、或 <em>^</em> 時都會失敗。</p></div>
+<div class="paragraph"><p><a href="http://www.java2s.com/Open-Source/Android/android-core/platform-sdk/com/android/monkeyrunner/MonkeyManager.java.htm">MonkeyManager.java</a> - 由於背後的 protocol，大概可以看出為什麼</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>public boolean type(String text) throws IOException {
+    // The network protocol can't handle embedded line breaks, so we have to handle it
+    // here instead
+    StringTokenizer tok = new StringTokenizer(text, "\n", true);
+    while (tok.hasMoreTokens()) {
+        String line = tok.nextToken();
+        if ("\n".equals(line)) {
+            boolean success = press(PhysicalButton.ENTER);
+            if (!success) {
+                return false;
+            }
+        } else {
+            boolean success = sendMonkeyEvent("type " + line);
+            if (!success) {
+                return false;
+            }
+        }
+    }
+    return true;
+}</code></pre>
+</div></div>
+<div class="paragraph"><p>I/XT9_CIME_J( 1737): [onKeyDown]: keyCode=70b0003 &#8592; 好，但要怎麼傳進 monkeyrunner 最後轉化成 "type xxxx" 或 "press xxx"</p></div>
+<div class="paragraph"><p>發現 device.press(<em>KEYCODE_SPACE</em>, MonkeyDevice.DOWN_AND_UP) 可以送出空白字元，顯然 <code>MonkeyDevice.type()</code> 需要被 enhance!!</p></div>
+<div class="paragraph"><p>2012-05-18 在 Galax Nexus 上發現 type() 會被帶出來的 software keyword 吃去（反應會因當下鍵盤是中文／英文而異），使得敲進去的字都變成小寫，或是被誤以為在拼寫中文字&#8230; 還好只要按 back 將 software keyboard 收回去，就不會有上述的狀況了。</p></div>
+<div class="paragraph"><p>2012-07-22 在 HTC Desire S 測試，type() 不會受到當時用什麼輸入法所影響。</p></div>
+<div class="paragraph"><p>2012-09-19 在 Galaxy S2 上測試發現，輸入 <code>http://www.google.com</code> 會變成 <code>http://www:google:com</code>：</p></div>
+<div class="imageblock">
+<div class="content">
+<img src="type/s2_dot_colon.png" alt="type/s2_dot_colon.png" />
+</div>
+</div>
+<div class="paragraph"><p>按下 123SYM 切換輸入法後，重新再輸入一次就沒問題了。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://developer.android.com/tools/help/MonkeyDevice.html">MonkeyDevice | Android Developers</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://developer.android.com/reference/android/view/KeyEvent.html">KeyEvent | Android Developers</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">其他文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/8990827/python-script-for-monkeyrunner-with-whitesprace-on-device-type-method">scripting - python script for monkeyrunner with whitesprace on device.type method - Stack Overflow</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://distributedreasoner.blogspot.com/2011/06/android-monkeyrunner-and-google-adb.html">Distributed Reasoner: Android Monkeyrunner and the Google ADB: a lament</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-25 23:27:36 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script>
+</body>
+</html>

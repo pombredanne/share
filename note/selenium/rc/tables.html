@@ -1,0 +1,187 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Selenium][RC] 讀取表格的內容</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" />
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div>
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="../selenium.html">Selenium</a> / <a href="rc.html">RC</a> / 讀取表格的內容</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>想像中 table 相關的操作應該很複雜，但專用於 table 的 API 卻只有一個：</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>get_table(table_cell_address)</code></pre>
+</div></div>
+<div class="paragraph"><p>它可以用來取得表格中某一格（cell）的文字內容，這裡 <em>table cell address</em> 的用法跟 <a href="attributes.html">attribute locator</a> 很類似，是在 element locator 後面加上 <em>cell adress</em> - <code>.&lt;row&gt;.&lt;column&gt;</code>。</p></div>
+<div class="paragraph"><p>用下面的表格來進行一些實驗：</p></div>
+<div class="listingblock">
+<div class="title"><a href="tables/selenium-rc-table.html"><code>selenium-rc-table.html</code></a></div>
+<div class="content">
+<pre><code>&lt;div id="tab1"&gt;
+&lt;table id="data" class='data'&gt;
+&lt;thead&gt;
+  &lt;tr&gt;&lt;th&gt;row\col&lt;/th&gt;&lt;th&gt;1&lt;/th&gt;&lt;th&gt;2&lt;/th&gt;&lt;th&gt;Action&lt;/th&gt;&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr class="entry"&gt;&lt;td&gt;1&lt;/td&gt;&lt;td&gt;1, 1&lt;/td&gt;&lt;td&gt;1, 2&lt;/td&gt;&lt;td&gt;&lt;a href="#1"/&gt;Edit&lt;/a&gt;&lt;/td&gt;&lt;/tr&gt;
+  &lt;tr class="entry"&gt;&lt;td&gt;2&lt;/td&gt;&lt;td&gt;2, 1&lt;/td&gt;&lt;td&gt;2, 2&lt;/td&gt;&lt;td&gt;&lt;a href="#2"/&gt;Edit&lt;/a&gt;&lt;/td&gt;&lt;/tr&gt;
+  &lt;tr class="entry"&gt;&lt;td&gt;3&lt;/td&gt;&lt;td&gt;&amp;nbsp;3, 1&amp;nbsp;&lt;/td&gt;&lt;td&gt;3, 2&lt;/td&gt;&lt;td&gt;&lt;a href="#3"/&gt;Edit&lt;/a&gt;&lt;/td&gt;&lt;/tr&gt;
+  &lt;tr&gt;&lt;td&gt;4&lt;/td&gt;&lt;td&gt;&amp;nbsp;&lt;/td&gt;&lt;td&gt;&amp;nbsp;&lt;/td&gt;&lt;td&gt;&amp;nbsp;&lt;/td&gt;&lt;/tr&gt;
+  &lt;tr&gt;&lt;td&gt;5&lt;/td&gt;&lt;td&gt;&amp;nbsp;&lt;/td&gt;&lt;td&gt;&amp;nbsp;&lt;/td&gt;&lt;td&gt;&amp;nbsp;&lt;/td&gt;&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;/div&gt;</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; sel.get_table('id=data.0.0') <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+u'row\\col'
+&gt;&gt;&gt; sel.get_table('css=#tab1 .data.1.1') <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+u'1, 1'
+&gt;&gt;&gt; sel.get_table('id=data.3.1') <img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+u'3, 1'</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+cell address 中的 <em>row</em> 跟 <em>column</em> 都是從 0 起算，包含 table header。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+這裡刻意拿 <code>css=#tab1 .data</code> 來定位 table，確認 cell address 串在這種相對複雜的 element locator 後面也沒問題。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+傳回的文字內容，兩側的空白已經被去掉。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>事實上 <code>get_table()</code> 的功能，也可以用 <code>get_text()</code> 搭配 XPath 來達成：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; sel.get_text("//*[@id='data']//th[1]") <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+u'row\\col'
+&gt;&gt;&gt; sel.get_text("//*[@id='data']/tbody/tr[1]/td[2]")
+u'1, 1'
+&gt;&gt;&gt; sel.get_text("//*[@id='data']/tbody/tr[3]/td[2]") <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+u'3, 1'</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+將 <code>id=data.0.0</code> 換成 XPath 的寫法就是 <code>//*[@id='data']//th[1]</code>，注意 predicate 由 1 起算。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+同樣地，兩側的空白也被去掉了。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>雖然 <code>get_text()</code> 搭配 XPath 可以取代 <code>get_table()</code> 的功能，但 <code>get_table</code> 特有的 cell address 表示法，可以不用考慮 <code>&lt;th&gt;</code> 跟 <code>&lt;td&gt;</code> 的差異，使用起來還是比較簡單的。不過 <code>get_table()</code> 的方便性也僅止於取得表格的文字內容，剩下的還是得靠其他 API 搭配 XPath/CSS selector 來應付。</p></div>
+<div class="paragraph"><p>通常表格的資料是動態的（所以才需要自動化做驗證），必須先知道有效的資料筆數有多少，才能進一步操作。以一開始提到的那個表格為例：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; rows = sel.get_css_count('css=#data tr.entry') ; rows <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+3
+&gt;&gt;&gt; sel.click('//*[@id='data']//tr[%i]//td[4]/a' % rows) <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+<code>class="entry"</code> 表示有效的資料，可以用 <code>get_css_count()</code> 或 <code>get_xpath_count()</code> 取得符合條件的筆數。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+按下最後一行的 Edit 連結。
+</td></tr>
+</table></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_延伸閱讀">延伸閱讀</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="attributes.html">取得某個 Element 的屬性</a>
+</p>
+</li>
+<li>
+<p>
+<a href="text.html">取得文字內容</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://selenium.googlecode.com/svn/trunk/docs/api/py/selenium/selenium.selenium.html">selenium.selenium — Selenium 2.0 documentation</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-25 23:34:13 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script>
+</body>
+</html>

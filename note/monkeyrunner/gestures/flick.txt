@@ -1,0 +1,28 @@
+= monkeyrunner 觸控手勢：Flick（掃動） =
+
+我們在link:gestures.html#move-or-not[觸控手勢]有提到，如果操作過程中手指頭有移動的話就是用 `MonkeyDevice.drag()`：
+
+ drag(start, end, duration=1.0, steps=10)
+
+要達成 flick 的效果，關鍵在於：
+
+ * 'start' 跟 'end' 之間的距離不能太短。
+ * 'duration' 要夠短。
+
+如果 flick 會造成畫面的捲動，這兩個因素會相互影響，最後決定畫面捲動的幅度。
+
+--------------------------------------------------------------------------------
+>>> w, h = int(device.getProperty('display.width')), int(device.getProperty('display.height'))
+>>> x, y = w / 2, h / 2 # center
+>>> def swipe_left(): device.drag((x, y), (x - 100, y), 0.01)
+...
+>>> def swipe_right(): device.drag((x, y), (x + 100, y), 0.01)
+...
+>>> swipe_left()
+>>> swipe_right()
+--------------------------------------------------------------------------------
+
+== 參考資料 ==
+
+ * http://stackoverflow.com/questions/9510962/how-to-flick-using-monkeyrunner-not-just-drag[android - How to Flick using monkeyrunner? not just Drag - Stack Overflow] (2012-03-01) - 連續的 drag 沒有效果，但 Brian Cooley 提到縮短 duration 加快 drag 的速度是有效的（要快到 0.x 秒才有用，而且 0.0x 比 0.x 捲得還遠）。
+

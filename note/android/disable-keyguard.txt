@@ -1,0 +1,57 @@
+= 測試時如何避開 Android 的滑動解鎖（Keyguard） =
+:icons:
+:blogpost-categories: android,test
+
+測試過程中要避免螢幕自動上鎖？
+
+有的手機會在 Settings > Applications > Developement 下提供 "Stay awake" 的選項，再不然也可以透過 Settings > Display > Screen timeout 設定永遠不關閉螢幕來達成類似的目的。但偏偏有些手機這兩個選項都沒有提供...
+
+[TIP]
+================================================================================
+Keyguard 指的是 "slide to unlock"，例如：
+
+.Emulator 的鍵盤鎖
+image::disable-keyguard/emulator_keyguard.png[]
+
+.HTC Sense 的鍵盤鎖
+image::disable-keyguard/htc_keyguard.png[]
+
+它跟 Settings > Security > Set up screen lock 底下的 Screen Lock 不同，例如：
+
+.用圖形來解鎖
+image::disable-keyguard/pattern_lock.png[]
+
+Keyguard 功用就像早期手機要連續按斜對角的兩個按鈕來解鎖一樣，避免放在口袋裡就不小撥出電話了。從這個角度來看，"keyguard" 確實很直覺，但使用者似乎比較習慣用 "screen lock" 來稱呼 "keyguard"，以 "keyguard" 為關鍵字反而找不太到防螢幕上鎖的程式，就是最好的證明。
+================================================================================
+
+http://developer.android.com/guide/topics/testing/activity_testing.html#UnlockDevice[官方文件]提到，測試時可以在 `Activity.onCreate()` 加上下面的程式碼，自動解開鍵盤鎖；但正式發行時要記得把這些程式拿掉... XD!
+
+--------------------------------------------------------------------------------
+mKeyGuardManager = (KeyguardManager) getSystemService(KEYGUARD_SERVICE);
+mLock = mKeyGuardManager.newKeyguardLock("activity_classname");
+mLock.disableKeyguard();
+--------------------------------------------------------------------------------
+
+當然這得要求對應的權限才行：
+
+--------------------------------------------------------------------------------
+<uses-permission android:name="android.permission.DISABLE_KEYGUARD"/>
+--------------------------------------------------------------------------------
+
+如果是測試用途，可以考慮這下面這兩個 App，它們都只要求了 disable keyguard 的權限而已：
+
+ * https://play.google.com/store/apps/details?id=org.jraf.android.nolock[No Lock] - 人氣很旺！搭配 widget 切換更方便。
+ * https://play.google.com/store/apps/details?id=com.futonredemption.nokeyguard[No Lock Screen]
+
+實驗發現，這在 HTC Desire S 跟 Samsung Galaxy S2 上都行得通。當螢幕全關時，下面幾種方式都可以喚醒手機：
+
+ * `adb shell input keyevent 82` - 按下 Menu 鈕。
+ * `MonkeyRunner.waitForConnection()` 或 `MonkeyDevice.wake()` - 透過 monkeyrunner API。由於接上手機 `waitForConnection()` 的動作就會喚醒手機，所以實務上 `wake()` 不太會用到。
+
+== 參考資料 ==
+
+ * http://stackoverflow.com/questions/4878212/check-if-keyguard-is-enabled-i-e-currently-active-from-android-application[check if keyguard is enabled i.e. currently active from android application - Stack Overflow] (2011-02-02) - 系統有個 Keyguard Service 來處理鍵盤鎖。
+ * http://stackoverflow.com/questions/1959012/how-can-i-unlock-the-screen-programmatically-in-android[automation - How can I unlock the screen programmatically in Android? - Stack Overflow] - 送 key event 的方式，但都試不出來
+ * http://developer.android.com/guide/topics/testing/activity_testing.html#UnlockDevice[Activity Testing > Unlocking the emulator or device | Android Developers] - 官方文件提到 disable keyguard 的做法，是在 `onCreate()` 安插解鎖的程式碼。
+ * https://motorola-global-eng.custhelp.com/app/answers/detail/a_id/18083/~/enabling%2Fdisabling-keyguard[Enabling/Disabling KeyGuard] - Motorola 某些機型可以用組合鍵來解鎖，而且不同型號的做法不太一樣。
+

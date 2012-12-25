@@ -1,0 +1,217 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>monkeyrunner 觸控手勢：拖放（DnD）</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" />
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div>
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>monkeyrunner 觸控手勢：拖放（DnD）</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>拖放（DnD）這個<a href="gestures.html">觸控手勢</a>直接被 <a href="../api/api.html">monkeyrunner API</a> 支援：</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>drag(start, end, duration=1.0, steps=10)</code></pre>
+</div></div>
+<div class="paragraph"><p>開頭隱含了一個長按（Long Press）的動作，才會進入拖拉的模式。其中：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<em>start</em> 跟 <em>end</em> 表示頭尾兩個<a href="../coordinates.html">座標值</a>。
+</p>
+</li>
+<li>
+<p>
+<em>duration</em> 表示手指頭從 <em>start</em> 移到 <em>end</em> 要花多少時間。
+</p>
+</li>
+<li>
+<p>
+<em>steps</em> 會影響流暢度，但要怎麼給才合理？包括拿起跟放下，所以至少要 2 &#8230;. 跟徑不是平分的，而是由快到慢
+</p>
+</li>
+</ul></div>
+<div class="tableblock">
+<table rules="none"
+frame="void"
+cellspacing="0" cellpadding="4">
+<col />
+<col />
+<tbody>
+<tr>
+<td align="center" valign="top"><p class="table"><span class="image">
+<img src="drag-and-drop/dst_folder.png" alt="drag-and-drop/dst_folder.png" />
+</span></p></td>
+<td align="center" valign="top"><p class="table"><span class="image">
+<img src="drag-and-drop/src_phone.png" alt="drag-and-drop/src_phone.png" />
+</span></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; from com.android.monkeyrunner import MonkeyRunner, MonkeyDevice
+&gt;&gt;&gt; device = MonkeyRunner.waitForConnection()
+&gt;&gt;&gt;
+&gt;&gt;&gt; start = (421, 631) # phone
+&gt;&gt;&gt; end = (59, 456) # folder
+&gt;&gt;&gt; device.drag(start, end, 1, 10)</code></pre>
+</div></div>
+<div class="paragraph"><p>從 <code>drag()</code> <a href="../chimpchat/chimpchat.html">底層的實作</a> <code>AdbChimpDevice.drag()</code> 來看：</p></div>
+<div class="listingblock">
+<div class="title"><a href="http://androidxref.com/4.1.1/xref/sdk/chimpchat/src/com/android/chimpchat/adb/AdbChimpDevice.java"><code>com.android.chimpchat.adb.AdbChimpDevice</code></a></div>
+<div class="content">
+<pre><code>    public void drag(int startx, int starty, int endx, int endy, int steps, long ms) {
+        final long iterationTime = ms / steps;
+
+        LinearInterpolator lerp = new LinearInterpolator(steps);
+        LinearInterpolator.Point start = new LinearInterpolator.Point(startx, starty);
+        LinearInterpolator.Point end = new LinearInterpolator.Point(endx, endy);
+        lerp.interpolate(start, end, new LinearInterpolator.Callback() {
+            @Override
+            public void step(Point point) {
+                try {
+                    manager.touchMove(point.getX(), point.getY());
+                } catch (IOException e) {
+                    LOG.log(Level.SEVERE, "Error sending drag start event", e);
+                }
+
+                try {
+                    Thread.sleep(iterationTime);
+                } catch (InterruptedException e) {
+                    LOG.log(Level.SEVERE, "Error sleeping", e);
+                }
+            }
+
+            @Override
+            public void start(Point point) {
+                try {
+                    manager.touchDown(point.getX(), point.getY());
+                    manager.touchMove(point.getX(), point.getY());
+                } catch (IOException e) {
+                    LOG.log(Level.SEVERE, "Error sending drag start event", e);
+                }
+
+                try {
+                    Thread.sleep(iterationTime);
+                } catch (InterruptedException e) {
+                    LOG.log(Level.SEVERE, "Error sleeping", e);
+                }
+            }
+
+            @Override
+            public void end(Point point) {
+                try {
+                    manager.touchMove(point.getX(), point.getY());
+                    manager.touchUp(point.getX(), point.getY());
+                } catch (IOException e) {
+                    LOG.log(Level.SEVERE, "Error sending drag end event", e);
+                }
+            }
+        });
+    }</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="title"><a href="http://androidxref.com/4.1.1/xref/sdk/chimpchat/src/com/android/chimpchat/adb/LinearInterpolator.java">Cross Reference: /sdk/chimpchat/src/com/android/chimpchat/adb/LinearInterpolator.java</a>[<code>com.android.chimpchat.adb.LinearInterpolator</code>]</div>
+<div class="content">
+<pre><code>public class LinearInterpolator {
+
+    private static float lerp(float start, float stop, float amount) {
+        return start + (stop - start) * amount;
+    }
+
+    public void interpolate(Point start, Point end, Callback callback) {
+        int xDistance = Math.abs(end.getX() - start.getX());
+        int yDistance = Math.abs(end.getY() - start.getY());
+        float amount = (float) (1.0 / steps);
+
+
+        callback.start(start);
+        for (int i = 1; i &lt; steps; i++) {
+            float newX = lerp(start.getX(), end.getX(), amount * i);
+            float newY = lerp(start.getY(), end.getY(), amount * i);
+
+            callback.step(new Point(Math.round(newX), Math.round(newY)));
+        }
+        // Generate final point
+        callback.end(end);
+    }</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://dtmilano.blogspot.com/2012/01/monkeyrunner-testing-views-properties.html">Diego Torres Milano&#8217;s blog: monkeyrunner: testing views properties</a> (2012-01-28) - 有人提到 <code>drag()</code> 的開頭有個 long press。
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-25 23:28:13 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script>
+</body>
+</html>

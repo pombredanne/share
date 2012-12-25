@@ -1,0 +1,227 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Android] Application Object</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div>
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>[Android] Application Object</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>Application object 會在 application/package 的 process 剛起來時被建立（在其他 <a href="components.html">component</a> 之前），而且就這麼一個（singleton），可以用來維護 global application state。</p></div>
+<div class="paragraph"><p>預設會用 <code>android.app.Application</code>。要自訂 application object 的話，只要將類別的全名（full qualified name）填入 <code>&lt;application&gt;</code> (<code>AndroidMenifest.xml</code>) 的 <code>name</code> 屬性即可。</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;application android:name="com.example.MyApplication" ... /&gt;</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="title"><code>com.example.MyApplication</code></div>
+<div class="content">
+<pre><code>public class MyApplication extends Application { <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+
+    private static MyApplication singleton;
+
+    private SharedPreferences mPrefs;
+
+    public static MyApplication getInstance() { <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+        return singleton;
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        singleton = this;
+
+        mPrefs = PreferenceManager.getDefaultSharedPreferences(this); <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+    }
+
+    public String getUsername() {
+        return mPrefs.getString("username", null);
+    }
+
+    public String getPassword() {
+        return mPrefs.getString("password", null);
+    }
+
+}</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+自訂的 application object 必須要繼承自 <code>Application</code>。之後程式可以透過 <code>Activity.getApplication()</code> 或 <code>Service.getApplication()</code> 來取得：
+<div class="literalblock">
+<div class="content">
+<pre><code>MyApplication mApplication = (MyApplication) getApplication();</code></pre>
+</div></div>
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+只有 <code>Activity</code> 跟 <code>Service</code> 才提供有 <code>getApplication()</code>，透過 <code>getInstance()</code> 的安排，程式其他地方也可以透過下面的方式來取得 application object：
+<div class="literalblock">
+<div class="content">
+<pre><code>MyApplication mApplication = MyApplication.getInstance();</code></pre>
+</div></div>
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+Application object 本身就是個 context，不需要煩惱要從哪裡取得。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>官方文件明白說了，就 <a href="../singleton/singleton.html">singleton</a> 而言，不一定要借助於 application object，因為傳統 static singleton 的做法也能達到相同的效果（甚至更好）：</p></div>
+<div class="quoteblock">
+<div class="content">
+<div class="paragraph"><p>There is normally no need to subclass Application. <strong>In most situation, static singletons can provide the same functionality in a more modular way.</strong> If your singleton needs a global context (for example to register broadcast receivers), the function to retrieve it can be given a Context which internally uses <code>Context.getApplicationContext()</code> when first constructing the singleton.</p></div>
+</div>
+<div class="attribution">
+&#8212; <a href="http://developer.android.com/reference/android/app/Application.html">Application | Android Developers</a>
+</div></div>
+<div class="paragraph"><p>不過由於 applicatoin object 會在所有其他 component 之前完成初始化，很適合做為 <a href="programming/di.html">dependency injection (DI)</a> 的基礎，例如 <a href="../roboguice/roboguice.html">RoboGuice</a> 就是以自訂的 <code>RoboApplication</code> 做為起點。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_延伸閱讀">延伸閱讀</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="programming/di.html">Android 上的 Dependency Injection</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://developer.android.com/reference/android/app/Application.html">Application | Android Developers</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://developer.android.com/guide/topics/manifest/application-element.html#nm">&lt;application&gt; | Android Developers</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://developer.android.com/reference/android/app/Activity.html#getApplication()">Activity &gt; getApplication() | Android Developers</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://developer.android.com/reference/android/app/Service.html#getApplication()">Service &gt; getApplication() | Android Developers</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://developer.android.com/reference/android/content/Context.html#getApplicationContext()">Context &gt; getApplicationContext() | Android Developers</a>
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://developer.android.com/reference/android/content/ContextWrapper.html#getApplicationContext()">ContextWrapper &gt; getApplicationContext() | Android Developers</a>
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+<a href="http://androidcookbook.com/Recipe.seam?recipeId=1218">Android Cookbook: Recipe Android&#8217;s Application Object as a "Singleton" (Recipe 1218, Revision 3940)</a> (2012-02-18; PDF) - 專注在 <code>getInstance()</code> 的用法，完全沒提到 <code>getApplication()</code>。
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">書籍</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://shop.oreilly.com/product/0636920010883.do">O&#8217;Reilly - Learning Android &gt; The Yamba Application Object (p102)</a> (2011.03)
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">其他文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.intridea.com/blog/2011/5/24/how-to-use-application-object-of-android">How to use the Application object of Android | Intridea Blog</a> (2011-05-24) - 用 <code>getApplication()</code> 取回，最後提到 <code>getInstance()</code> 的 singleton 用法。
+</p>
+</li>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/5018545/getapplication-vs-getapplicationcontext">android - getApplication() vs. getApplicationContext() - Stack Overflow</a> (2011-02-16; PDF) - <code>getApplication()</code> 跟 <code>getApplicationContext()</code> 有什麼不同？前者又為什麼只出現在 activity 跟 service？雖然目前兩者都傳回同一個 application object，但不保證未來也是這樣，所以千萬別用 <code>getApplicationContext()</code> 來取得 application object。
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-25 23:22:38 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script>
+</body>
+</html>

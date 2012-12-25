@@ -1,0 +1,51 @@
+= link:apk.html[APK] / 取得已安裝程式的 APK =
+:title: [APK] 取得已安裝程式的 APK
+
+device 上安裝的 apps 大致可區分成 'user apps' 跟 'system apps'：
+
+ * user apps - 安裝在 `/data/app`（也稱也稱做 'data apps'）。如果用 Move to SD card 搬動的話，則會被移到 `/mnt/asec` 底下。
+ * system apps - 也就是所謂的 pre-installed apps，安裝在 `/system/apps`，使用者無法利除或搬移到 SD card。
+
+沒想到 `/data/app` 的權限會比 `/system/app` 還嚴格：
+
+--------------------------------------------------------------------------------
+$ adb shell ls /system/app
+Calculator.apk
+Calculator.odex
+Browser.apk
+Browser.odex
+Gmail.apk
+Gmail.odex
+...
+$ adb shell ls /data/app
+opendir failed, Permission denied
+--------------------------------------------------------------------------------
+
+如果要透過 link:../adb/adb.html[ADB] 的話，只要知道 `.apk` 的完整路徑（APK Info 或 Apk Info free 都可以幫上忙），就可以用 `adb pull` 取得檔案。
+
+以 built-in browser 跟 APK Info 為例：
+
+--------------------------------------------------------------------------------
+$ adb pull /system/app/Browser.apk
+1771 KB/s (1320463 bytes in 0.727s)
+$ adb pull /data/app/com.intelloware.apkinfo-1.apk
+757 KB/s (93850 bytes in 0.120s)
+--------------------------------------------------------------------------------
+
+另外 APK Info 這個工具提供 Copy to SD card 的功能，將 user/system apps 的 APK 檔複製到 SD card，也是可行的方式之一。
+
+== 參考資料 ==
+
+.工具
+--
+ * https://play.google.com/store/apps/details?id=com.intelloware.apkinfo[APK Info] - 可以看到 `.apk` 的安裝位置、native libraries、permissions、activities 的清單，資訊是比 Apk Info free 少了一點，但提供 Copy to SD card 的功能，可以將 `.apk` 複製到 SD card（預設存放在 `/sdcard/apktool/apk`）。
+ * https://play.google.com/store/apps/details?id=de.migali.soft.apkinfo[Apk Info free] - 可以看到 package name、source directory (`.apk`)、data directory、permissions，還有 activities、receivers、providers、services 的清單。
+--
+
+.其他文件
+--
+ * http://www.addictivetips.com/mobile/how-to-install-any-app-as-system-app-on-android/[How To Install Any App As A System App On Android [Guide&#93;] ^http://diigo.com/0v8co[閱讀]^ (2012-05-14) - installed apps 按安裝位置區分為 user apps 跟 system apps
+ * http://stackoverflow.com/questions/10533030/where-is-apk-location-for-apps-that-are-installed-on-sdcard[android - where is .apk location for apps that are installed on sdcard? - Stack Overflow] ^http://diigo.com/0v8cn[閱讀]^ (2012-05-10) - 搬到 SD card 後是在 `/mnt/sdcard/.android_secure` 底下？但 HTC Desire S 卻是 `/mnt/asec`。
+ * http://stackoverflow.com/questions/2507960/does-android-keep-the-apk-files-if-so-where[packages - Does Android keep the .apk files? if so where? - Stack Overflow] ^http://diigo.com/0v8dj[閱讀]^ (2010-05-24) - 在 real device 上，/system/app 可以 listing 跟 read，但最妙的是 /data/app 雖然不能 listing，但只要知道 .apk 的完整路徑，是可以讀取出來的。
+--
+

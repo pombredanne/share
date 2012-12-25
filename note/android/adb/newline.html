@@ -1,0 +1,141 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Android][ADB] ADB 輸出的換行字元（Newline）</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" />
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div>
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>[Android][ADB] ADB 輸出的換行字元（Newline）</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>觀察 ADB device command 跟 remote shell command 的輸出，發現 device command 輸出的<a href="../../text/text-newline.html">換行字元</a>會隨著作業系統改變，但 remote shell command 的換行字元固定是 <code>\r\n</code>（在 Windows 下甚至變成 <code>\r\r\n</code>）。</p></div>
+<div class="listingblock">
+<div class="title">Linux</div>
+<div class="content">
+<pre><code>$ adb devices &gt; devices.txt
+$ hexdump -c devices.txt
+0000000   L   i   s   t       o   f       d   e   v   i   c   e   s
+0000010   a   t   t   a   c   h   e   d      \n   H   T   1   4   2   T
+0000020   J   0   6   2   1   0  \t   d   e   v   i   c   e  \n  \n
+000002f
+$ adb logcat -d &gt; logcat.txt
+$ hexdump -c logcat.txt
+0000000   -   -   -   -   -   -   -   -   -       b   e   g   i   n   n
+0000010   i   n   g       o   f       /   d   e   v   /   l   o   g   /
+0000020   s   y   s   t   e   m  \r  \n   D   /   S   t   a   t   u   s
+...
+001ced0   c   y   (       1   5   8   3   )   :       N   e   t   w   o
+001cee0   r   k       T   y   p   e   :       3  \r  \n
+001ceec
+$
+$ hexdump -c shell_ls.txt
+0000000   a   k   m   d  \r  \n   a   m  \r  \n   a   p   p   _   p   r
+0000010   o   c   e   s   s  \r  \n   a   p   p   l   y   p   a   t   c
+0000020   h  \r  \n   a   w   b   _   c   a   m   e   r   a  \r  \n   b
+...
+00005c0   r   e   s   i   z   e   2   f   s  \r  \n   t   u   n   c   f
+00005d0   g  \r  \n
+00005d3
+$
+$ adb shell getprop ro.product.model &gt; shell_getprop.txt
+$ hexdump shell_getprop.txt
+0000000   H   T   C       D   e   s   i   r   e       S  \r  \n
+000000e</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="title">Windows</div>
+<div class="content">
+<pre><code>$ hexdump -c devices_win.txt
+0000000   L   i   s   t       o   f       d   e   v   i   c   e   s
+0000010   a   t   t   a   c   h   e   d      \r  \n   H   T   1   4   2
+0000020   T   J   0   6   2   1   0  \t   d   e   v   i   c   e  \r  \n
+0000030  \r  \n
+0000032
+$
+$ hexdump -c logcat_win.txt
+0000000   -   -   -   -   -   -   -   -   -       b   e   g   i   n   n
+0000010   i   n   g       o   f       /   d   e   v   /   l   o   g   /
+0000020   s   y   s   t   e   m  \r  \r  \n   D   /   T   e   l   e   p
+0000030   h   o   n   y   R   e   g   i   s   t   r   y   (       1   3
+...
+001d000   0   )   :       r   e   l   e   a   s   e   (   )       o   u
+001d010   t  \r  \r  \n
+001d014
+$
+$ hexdump -c shell_ls_win.txt
+0000000   a   k   m   d  \r  \r  \n   a   m  \r  \r  \n   a   p   p   _
+0000010   p   r   o   c   e   s   s  \r  \r  \n   a   p   p   l   y   p
+0000020   a   t   c   h  \r  \r  \n   a   w   b   _   c   a   m   e   r
+...
+0000660   s   i   z   e   2   f   s  \r  \r  \n   t   u   n   c   f   g
+0000670  \r  \r  \n
+0000673
+$ hexdump -c shell_getprop_win.txt
+0000000   H   T   C       D   e   s   i   r   e       S  \r  \r  \n
+000000f</code></pre>
+</div></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-25 23:28:15 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script>
+</body>
+</html>
