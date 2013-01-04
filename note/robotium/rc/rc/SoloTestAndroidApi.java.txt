@@ -1,0 +1,3742 @@
+0001: /** 
+0002:  ** Copyright (C) SAS Institute, All rights reserved.
+0003:  ** General Public License: http://www.opensource.org/licenses/gpl-license.php
+0004:  **/
+0005: package com.jayway.android.robotium.remotecontrol.solo;
+0006: 
+0007: import java.awt.Dimension;
+0008: import java.awt.Rectangle;
+0009: import java.util.ArrayList;
+0010: import java.util.List;
+0011: import java.util.Properties;
+0012: 
+0013: 
+0014: /**
+0015:  * This is used to test Remote Solo Implementation.<br>
+0016:  * You see link <a href="http://safsdev.sourceforge.net/doc/com/jayway/android/robotium/remotecontrol/solo/Solo.html">Remote Solo</a> for methods to test.<br>
+0017:  * We use the sample application ApiDemos provided by Android<br>
+0018:  * <br>
+0019:  * Due to the resolution problem, to make the test run smoothly on different<br>
+0020:  * device, you need to modify the AndroidManifest.xml of ApiDemos<br>
+0021:  * application by adding the following line.<br>
+0022:  * <supports-screens android:largeScreens="true" android:normalScreens="true" android:smallScreens="true" android:anyDensity="true"/><br>
+0023:  * After the modification, you need to rebuild it.<br>
+0024:  * <br>
+0025:  * This test requires you set you device's "language setting" to "English"<br>
+0026:  *    
+0027:  * @author Lei Wang, SAS Institute, Inc.
+0028:  *
+0029:  */
+0030: public class SoloTestAndroidApi extends SoloTest {
+0031: 	
+0032: 	public static final String DEFAULT_AUT_APK = "D:\\Eclipse\\workspace\\ApiDemos\\bin\\ApiDemos-debug.apk";
+0033: 	
+0034: 	public SoloTestAndroidApi() {
+0035: 		super();
+0036: 	}
+0037: 
+0038: 	public SoloTestAndroidApi(String messengerApk, String testRunnerApk, String instrumentArg) {
+0039: 		super(messengerApk, testRunnerApk, instrumentArg);
+0040: 	}
+0041: 
+0042: 	/**
+0043: 	 * @param args	Array of String: {"messenger=XXX", "runner=XXX", "instrument=XXX"}
+0044: 	 */
+0045: 	public SoloTestAndroidApi(String[] args) {
+0046: 		super(args);
+0047: 	}
+0048: 
+0049: 	/**
+0050: 	 * <pre>
+0051: 	 * Use solo to test Android ApiDemos
+0052: 	 * 
+0053: 	 * <instrumentation android:name="com.jayway.android.robotium.remotecontrol.client.RobotiumTestRunner"
+0054: 	 *                  android:targetPackage="com.example.android.apis"
+0055: 	 *                  android:label="General-Purpose Robotium Test Runner"/>
+0056: 	 * 
+0057: 	 * Test methods as:
+0058: 	 * {@link Solo#finishOpenedActivities()}
+0059: 	 * {@link Solo#getCurrentActivity()}
+0060: 	 * {@link Solo#waitForActivity(String)}
+0061: 	 * {@link Solo#assertMemoryNotLow()}
+0062: 	 * {@link Solo#getAllOpenActivities()}
+0063: 	 * {@link Solo#setActivityOrientation(int)}
+0064: 	 * {@link Solo#getActivityMonitor()}
+0065: 	 * 
+0066: 	 * The other Robotium-RC methods will be tested in the following methods:
+0067: 	 * They are independent from one to other, so you can comment any them during the regression test.
+0068: 	 * </pre>                 
+0069: 	 *                  
+0070: 	 * @see #verifyAssertActivityMethods(String, String)
+0071: 	 * @see #verifyWaitActivityMethods(String, boolean)
+0072: 	 * @see #testCustomTitleActivity()
+0073: 	 * @see #testDefaultThemeActivity()
+0074: 	 * @see #testDialogActivity()
+0075: 	 * @see #testDatePicker()
+0076: 	 * @see #gotoViewsList()
+0077: 	 * @see #gotoInflateMenu()
+0078: 	 * @see #gotoPhotoGallery()
+0079: 	 * @see #gotoIconGrid()
+0080: 	 */
+0081: 	protected void test(){
+0082: 		//Begin the testing
+0083: 		//Don't output the error messages from the remote side.
+0084: 		solo.doProcessFailure = false;
+0085: 		solo.doProcessSuccess = false;
+0086: 		
+0087: 		try {
+0088: 			if(solo.assertMemoryNotLow()){
+0089: 				debug("assertMemoryNotLow() Success: We have enough memory.");
+0090: 			}else{
+0091: 				debug("assertMemoryNotLow() Success: We don't have enough memory.");
+0092: 				return;
+0093: 			}
+0094: 			
+0095: 			//Set orientation to LANDSCAPE
+0096: 			if(solo.setActivityOrientation(Solo.LANDSCAPE)){
+0097: 				pass("setActivityOrientation(int): set orientation to LANDSCAPE");
+0098: 			}else{
+0099: 				pass("setActivityOrientation(int): fail to set orientation to LANDSCAPE");
+0100: 			}
+0101: 			
+0102: 			//List all opened activities
+0103: 			info("getAllOpenActivities(): Before testing, got All Opened Activities:");
+0104: 			List<String> openedActivites = solo.getAllOpenActivities();
+0105: 			for(String activity: openedActivites){
+0106: 				info(activity);
+0107: 			}
+0108: 			
+0109: 			//Get the current activity
+0110: 			String activityID = solo.getCurrentActivity();
+0111: 			Properties props = solo._last_remote_result;
+0112: 			String activityName = props.getProperty(Message.PARAM_NAME);
+0113: 			String activityClass = props.getProperty(Message.PARAM_CLASS);
+0114: 
+0115: 			info("CurrentActivity   UID: "+ activityID);
+0116: 			info("CurrentActivity Class: "+ activityClass);				
+0117: 			info("CurrentActivity  Name: "+ activityName);
+0118: 			
+0119: 			verifyAssertActivityMethods(activityClass, activityName);
+0120: 			
+0121: 			verifyWaitActivityMethods(activityName,true);
+0122: 			verifyWaitActivityMethods("BoguActivity",false);
+0123: 			
+0124: 			//Set orientation to PORTRAIT
+0125: 			if(solo.setActivityOrientation(Solo.PORTRAIT)){
+0126: 				pass("setActivityOrientation(int): set orientation to PORTRAIT");
+0127: 			}else{
+0128: 				pass("setActivityOrientation(int): fail to set orientation to PORTRAIT");
+0129: 			}
+0130: 			
+0131: 			if(solo.waitForActivity(activityName)){
+0132: 				pass("waitForActivity(String) Correct: '"+activityName+"' was found.");
+0133: 				printCurrentViews(TYPE_LISTVIEW);
+0134: 				gotoCustomTitleActivity();	
+0135: 				gotoDefaultThemeActivity();
+0136: 				gotoDialogActivity();
+0137: 				gotoDateTimePicker();
+0138: 				gotoViewsList();
+0139: 				gotoInflateMenu();
+0140: 				gotoPhotoGallery();
+0141: 				gotoIconGrid();
+0142: 			}else{
+0143: 				String name = solo._last_remote_result.getProperty(Message.PARAM_NAME);
+0144: 				fail("***waitForActivity(String) Error: '"+activityName+"' was NOT found. The current activity is '"+name+"'***");
+0145: 			}
+0146: 			
+0147: 			//List all opened activities
+0148: 			info("getAllOpenActivities(): After testing, got All Opened Activities:");
+0149: 			openedActivites = solo.getAllOpenActivities();
+0150: 			for(String activity: openedActivites){
+0151: 				info(activity);
+0152: 			}
+0153: 			
+0154: 			String activityMonitorID = solo.getActivityMonitor();
+0155: 			if(activityMonitorID!=null){
+0156: 				pass("getActivityMonitor(): got the activity monitor's ID is '"+activityMonitorID+"'");
+0157: 			}else{
+0158: 				pass("getActivityMonitor(): fail to get the activity monitor");
+0159: 			}
+0160: 			
+0161: 			// SHUTDOWN all Activities.  Done Testing.
+0162: 			if(solo.finishOpenedActivities()){
+0163: 				info("Application finished/shutdown without error.");				
+0164: 			}else{
+0165: 				warn("Application finished/shutdown with error.");
+0166: 			}
+0167: 
+0168: 		} catch(Exception e){
+0169: 			e.printStackTrace();
+0170: 		}
+0171: 	}
+0172: 	
+0173: 	/**
+0174: 	 * <pre>
+0175: 	 * {@link Solo#getString(String)}
+0176: 	 * {@link Solo#getView(int)}
+0177: 	 * 
+0178: 	 * The test depends on the application itself.
+0179: 	 * The parameter is got from the ApiDemos android project
+0180: 	 * </pre>
+0181: 	 * 
+0182: 	 * @see #testEditBoxInCustomActivity()
+0183: 	 */
+0184: 	protected void testRelateToApplication(String editTextIdToVerify){
+0185: 		try {
+0186: 			//for different language setting, the string is got from different xml file, for example:
+0187: 			//String is got from ApiDemosProject/res/values/strings.xml when "language setting" is "English"
+0188: 			//String is got from ApiDemosProject/res/values-zh/strings.xml when "language setting" is "Chinese"
+0189: 			//<string name="activity_animation">App/Activity/Animation</string>
+0190: 			String activity_animation_value = "App/Activity/Animation";
+0191: 		
+0192: 			//This is the generated id after the compilation of the ApiDeoms project,
+0193: 			//So it is often changed, you need to verify it before test.
+0194: 			//you can find it at ApiDemosProject/gen/the.package.of.component/R.string.stringId
+0195: 			final int activity_animation_id = 0x7f0a0015;
+0196: 			String value = solo.getString(String.valueOf(activity_animation_id));
+0197: 
+0198: 			if(value!=null){
+0199: 				pass("getString(String): get value '"+value+"' for native string id '"+Integer.toHexString(activity_animation_id)+"'");
+0200: 				if(value.equals(activity_animation_value)){
+0201: 					debug("getString(String): get the expected value");
+0202: 				}else{
+0203: 					debug("getString(String): fail to get the expected value, the expected value is '+activity_animation_value+'");
+0204: 				}
+0205: 			}else{
+0206: 				fail("getString(String): fail to get value for native string id '"+Integer.toHexString(activity_animation_id)+"'");
+0207: 			}
+0208: 			
+0209: 			//This is the generated id after the compilation of the ApiDeoms project,
+0210: 			//So it is often changed, you need to verify it before test.
+0211: 			//you can find it at ApiDemosProject/gen/the.package.of.component/R.id.comId
+0212: 			//com.example.android.apis.app.CustomTitle
+0213: 			final int leftTextEdit_id=0x7f090036;//This is the first editText's id in CustomTitle activity
+0214: 			String editCompId = solo.getView(leftTextEdit_id);
+0215: 			if(editCompId!=null){
+0216: 				pass("getView(int): get the view's id as '"+editCompId+"' for native component id '"+Integer.toHexString(leftTextEdit_id)+"'");
+0217: 				if(editCompId.equals(editTextIdToVerify)){
+0218: 					pass("Verification pass: get the same eidtText id");
+0219: 				}else{
+0220: 					fail("Verification fail: get the same eidtText id");
+0221: 				}
+0222: 			}else{
+0223: 				fail("getView(int): fail to get the view's id for native component id '"+Integer.toHexString(leftTextEdit_id)+"'");
+0224: 			}
+0225: 			
+0226: 		} catch (Exception e) {
+0227: 			e.printStackTrace();
+0228: 		} 
+0229: 		
+0230: 	}
+0231: 	
+0232: 	private static final String TYPE_CURRENBUTTON	= "CB";
+0233: 	private static final String TYPE_CURRENTVIEW	= "CV";
+0234: 	private static final String TYPE_CHECKBOX		= "CHKB";
+0235: 	private static final String TYPE_DATEPICKER 	= "DP";
+0236: 	private static final String TYPE_EDITTEXT	 	= "ET";
+0237: 	private static final String TYPE_GRIDVIEW 		= "GV";
+0238: 	private static final String TYPE_IMAGEBUTTON 	= "IB";
+0239: 	private static final String TYPE_IMAGEVIEW 		= "IV";
+0240: 	private static final String TYPE_LISTVIEW 		= "LV";
+0241: 	private static final String TYPE_PROGRESSBAR	= "PB";
+0242: 	private static final String TYPE_RADIOBUTTON	= "RB";
+0243: 	private static final String TYPE_SLIDERDRAWER 	= "SD";
+0244: 	private static final String TYPE_SPINNER	 	= "SP";
+0245: 	private static final String TYPE_SCROLLVIEW 	= "SV";
+0246: 	private static final String TYPE_TOGGLEBUTTON	= "TB";
+0247: 	private static final String TYPE_TIMEPICKER		= "TP";
+0248: 	private static final String TYPE_TEXTVIEW 		= "TV";
+0249: 	
+0250: 	@SuppressWarnings({ "unused", "unchecked" })
+0251: 	private void printCurrentViews(String viewType) throws Exception{
+0252: 		List<String> views = null;
+0253: 		String methodString = null;
+0254: 		
+0255: 		if(TYPE_CURRENBUTTON.equals(viewType)){
+0256: 			views = solo.getCurrentButtons();
+0257: 			methodString = "getCurrentButtons";
+0258: 		}else if(TYPE_CURRENTVIEW.equals(viewType)){
+0259: 			views = solo.getCurrentViews();
+0260: 			methodString = "getCurrentViews";
+0261: 		}else if(TYPE_CHECKBOX.equals(viewType)){
+0262: 			views = solo.getCurrentCheckBoxes();
+0263: 			methodString = "getCurrentCheckBoxes";
+0264: 		}else if(TYPE_DATEPICKER.equals(viewType)){
+0265: 			views = solo.getCurrentDatePickers();
+0266: 			methodString = "getCurrentDatePickers";
+0267: 		}else if(TYPE_EDITTEXT.equals(viewType)){
+0268: 			views = solo.getCurrentEditTexts();
+0269: 			methodString = "getCurrentEditTexts";
+0270: 		}else if(TYPE_GRIDVIEW.equals(viewType)){
+0271: 			views = solo.getCurrentGridViews();
+0272: 			methodString = "getCurrentGridViews";
+0273: 		}else if(TYPE_IMAGEBUTTON.equals(viewType)){
+0274: 			views = solo.getCurrentImageButtons();
+0275: 			methodString = "getCurrentImageButtons";
+0276: 		}else if(TYPE_IMAGEVIEW.equals(viewType)){
+0277: 			views = solo.getCurrentImageViews();
+0278: 			methodString = "getCurrentImageViews";
+0279: 		}else if(TYPE_LISTVIEW.equals(viewType)){
+0280: 			views = solo.getCurrentListViews();
+0281: 			methodString = "getCurrentListViews";
+0282: 		}else if(TYPE_PROGRESSBAR.equals(viewType)){
+0283: 			views = solo.getCurrentProgressBars();
+0284: 			methodString = "getCurrentProgressBars";
+0285: 		}else if(TYPE_RADIOBUTTON.equals(viewType)){
+0286: 			views = solo.getCurrentRadioButtons();
+0287: 			methodString = "getCurrentRadioButtons";
+0288: 		}else if(TYPE_SCROLLVIEW.equals(viewType)){
+0289: 			views = solo.getCurrentScrollViews();
+0290: 			methodString = "getCurrentScrollViews";
+0291: 		}else if(TYPE_SLIDERDRAWER.equals(viewType)){
+0292: 			views = solo.getCurrentSlidingDrawers();
+0293: 			methodString = "getCurrentSlidingDrawers";
+0294: 		}else if(TYPE_SPINNER.equals(viewType)){
+0295: 			views = solo.getCurrentSpinners();
+0296: 			methodString = "getCurrentSpinners";
+0297: 		}else if(TYPE_TOGGLEBUTTON.equals(viewType)){
+0298: 			views = solo.getCurrentToggleButtons();
+0299: 			methodString = "getCurrentToggleButtons";
+0300: 		}else if(TYPE_TIMEPICKER.equals(viewType)){
+0301: 			views = solo.getCurrentTimePickers();
+0302: 			methodString = "getCurrentTimePickers";
+0303: 		}else if(TYPE_TEXTVIEW.equals(viewType)){
+0304: 			views = solo.getCurrentTextViews();
+0305: 			methodString = "getCurrentTextViews";
+0306: 		}
+0307: 		
+0308: 		if(views!=null && views.size()>0){
+0309: 			pass(methodString+"() Correct: get current view as:");
+0310: 			for(String id: views){
+0311: 				debug("id="+id);
+0312: 			}
+0313: 		}else{
+0314: 			fail(methodString+"() Error: fail to get current view.");
+0315: 		}
+0316: 	}
+0317: 	
+0318: 	/**
+0319: 	 * <pre>
+0320: 	 * Verify following methods:
+0321: 	 * {@link Solo#waitForActivity(String)}
+0322: 	 * {@link Solo#waitForActivity(String, int)}
+0323: 	 * </pre>
+0324: 	 * 
+0325: 	 * @param activityName	String,  The current activity's name
+0326: 	 * @param positiveTest	boolean, true for positive test, the activityName should be valid.
+0327: 	 *                               false for negative test, the activityName should NOT be valid.
+0328: 	 * @throws Exception
+0329: 	 * 
+0330: 	 * @return true, if the expected activity exists
+0331: 	 */
+0332: 	void verifyWaitActivityMethods(String activityName, boolean positiveTest) throws Exception{
+0333: 		
+0334: 		if(positiveTest){
+0335: 			debug("Positive Test waitForActivity(): ");
+0336: 
+0337: 			if(solo.waitForActivity(activityName)){
+0338: 				pass("waitForActivity(String) Correct: '"+activityName+"' was found.");
+0339: 			}else{
+0340: 				String name = solo._last_remote_result.getProperty(Message.PARAM_NAME);
+0341: 				fail("***waitForActivity(String) Error: '"+activityName+"' was NOT found. The current activity is '"+name+"'***");
+0342: 			}
+0343: 			
+0344: 			if(solo.waitForActivity(activityName, 1000)){
+0345: 				pass("waitForActivity(String, int) Correct: '"+activityName+"' was found.");
+0346: 			}else{
+0347: 				String name = solo._last_remote_result.getProperty(Message.PARAM_NAME);
+0348: 				fail("***waitForActivity(String, int) Error: '"+activityName+"' was NOT found. The current activity is '"+name+"'***");
+0349: 			}
+0350: 		}else{
+0351: 			debug("Negative Test waitForActivity(): ");
+0352: 			
+0353: 			if(solo.waitForActivity(activityName)){
+0354: 				fail("waitForActivity(String) Error: '"+activityName+"' was found, but it should NOT.");
+0355: 			}else{
+0356: 				pass("waitForActivity(String) Correct: '"+activityName+"' was not found as expected. ***");
+0357: 			}
+0358: 			
+0359: 			if(solo.waitForActivity(activityName,1000)){
+0360: 				fail("waitForActivity(String, int) Error: '"+activityName+"' was found, but it should NOT.");
+0361: 			}else{
+0362: 				pass("waitForActivity(String, int) Correct: '"+activityName+"' was not found as expected. ***");
+0363: 			}
+0364: 		}
+0365: 		
+0366: 	}
+0367: 	
+0368: 	/**
+0369: 	 * <pre>
+0370: 	 * Verify following methods:
+0371: 	 * {@link Solo#assertCurrentActivityClass(String, String)}
+0372: 	 * {@link Solo#assertCurrentActivityClass(String, String, boolean)}
+0373: 	 * {@link Solo#assertCurrentActivityName(String, String)}
+0374: 	 * {@link Solo#assertCurrentActivityName(String, String, boolean)}
+0375: 	 * </pre>
+0376: 	 * 
+0377: 	 * @param activityClass		The current activity's class name
+0378: 	 * @param activityName		The current activity's name
+0379: 	 * @throws Exception
+0380: 	 */
+0381: 	void verifyAssertActivityMethods(String activityClass, String activityName) throws Exception{
+0382: 
+0383: 		
+0384: 		//Positive Verification of assertCurrentActivityClass(String, String)
+0385: 		if(solo.assertCurrentActivityClass("assertCurrentActivityClass Error", activityClass)){
+0386: 			pass("assertCurrentActivityClass(String, String) Correct: activity's class is '"+activityClass+"'");
+0387: 			
+0388: 			//Positive Verification of assertCurrentActivityClass(String, String, boolean)
+0389: 			if(solo.assertCurrentActivityClass("assertCurrentActivityClass Error", activityClass, true)){
+0390: 				pass("assertCurrentActivityClass(String, String, boolean) Correct: activity's class is new instance of '"+activityClass+"'");				
+0391: 			}else{
+0392: 				fail("assertCurrentActivityClass(String, String, boolean) Error: activity's class should be new instance of '"+activityClass+"'");
+0393: 			}
+0394: 			//Negative verification  of assertCurrentActivityClass(String, String, boolean)
+0395: 			if(solo.assertCurrentActivityClass("assertCurrentActivityClass Correct", activityClass, false)){
+0396: 				fail("assertCurrentActivityClass(String, String, boolean) Error: activity's class should NOT be old instance of '"+activityClass+"'");				
+0397: 			}else{
+0398: 				pass("assertCurrentActivityClass(String, String, boolean) Correct: activity's class is not old instance of '"+activityClass+"'");				
+0399: 			}
+0400: 			
+0401: 		}else{
+0402: 			String clazz = solo._last_remote_result.getProperty(Message.PARAM_CLASS);
+0403: 			fail("assertCurrentActivityClass(String, String) Error: activity's class should be '"+activityClass+"'. But the real class is '"+clazz+"'");
+0404: 		}
+0405: 		//Negative verification  of assertCurrentActivityClass(String, String)
+0406: 		if(solo.assertCurrentActivityClass("assertCurrentActivityClass Correct", "some.bogu.class")){
+0407: 			fail("assertCurrentActivityClass(String, String) Error: activity's class should NOT be 'some.bogu.class'");				
+0408: 		}else{
+0409: 			pass("assertCurrentActivityClass(String, String) Correct: activity's class is not 'some.bogu.class'");				
+0410: 		}
+0411: 		
+0412: 		//Positive Verification of assertCurrentActivityName(String, String)
+0413: 		if(solo.assertCurrentActivityName("assertCurrentActivityName Error", activityName)){
+0414: 			pass("assertCurrentActivityName(String, String) Correct: activity's name is '"+activityName+"'");	
+0415: 			
+0416: 			//Positive Verification of assertCurrentActivityName(String, String, boolean)
+0417: 			if(solo.assertCurrentActivityName("assertCurrentActivityName Error", activityName, true)){
+0418: 				pass("assertCurrentActivityName(String, String, boolean) Correct: activity's name is new instance of '"+activityName+"'");				
+0419: 			}else{
+0420: 				fail("assertCurrentActivityName(String, String, boolean) Error: activity's name should be new instance of '"+activityName+"'");
+0421: 			}
+0422: 			//Negative verification  of assertCurrentActivityName(String, String, boolean)
+0423: 			if(solo.assertCurrentActivityName("assertCurrentActivityName Correct", activityName, false)){
+0424: 				fail("assertCurrentActivityName(String, String, boolean) Error: activity's name should NOT be old instance of '"+activityName+"'");				
+0425: 			}else{
+0426: 				pass("assertCurrentActivityName(String, String, boolean) Correct: activity's name is not old instance of '"+activityName+"'");				
+0427: 			}
+0428: 			
+0429: 		}else{
+0430: 			String name = solo._last_remote_result.getProperty(Message.PARAM_NAME);
+0431: 			fail("assertCurrentActivityName(String, String) Error: activity's name should be '"+activityName+"'. But the real name is '"+name+"'");
+0432: 		}
+0433: 		//Negative verification  of assertCurrentActivityName(String, String)
+0434: 		if(solo.assertCurrentActivityName("assertCurrentActivityName Correct", "BoguActivityName")){
+0435: 			fail("assertCurrentActivityName(String, String) Error: activity's name should NOT be 'BoguActivityName'");				
+0436: 		}else{
+0437: 			pass("assertCurrentActivityName(String, String) Correct: activity's name is not 'BoguActivityName'");				
+0438: 		}
+0439: 
+0440: 	}
+0441: 	
+0442: 	/**
+0443: 	 * <pre>
+0444: 	 * "App -> Activity -> Custom Title" is the path to 'Custom Title Activity'.
+0445: 	 * This method will open the 'Custom Title Activity', then it will call {@link #testEditBox()} to
+0446: 	 * test some methods related to EditBox, finally it will go back to the first page of ApiDemos.
+0447: 	 * During this process, it will test the following methods
+0448: 	 * 
+0449: 	 * Tested methods:
+0450: 	 * {@link Solo#waitForView(String)}
+0451: 	 * {@link Solo#waitForView(String, int, long)}
+0452: 	 * 
+0453: 	 * {@link Solo#getView(String, int)}
+0454: 	 * 
+0455: 	 * {@link Solo#clickOnText(String)}
+0456: 	 * {@link Solo#clickOnText(String, int)}
+0457: 	 * {@link Solo#clickOnText(String, int, boolean)}
+0458: 	 * 
+0459: 	 * {@link Solo#clickInList(int)}
+0460: 	 * 
+0461: 	 * {@link Solo#goBackToActivity(String)}
+0462: 	 * 
+0463: 	 * </pre>
+0464: 	 * 
+0465: 	 * All tests are positive.
+0466: 	 */
+0467: 	void gotoCustomTitleActivity() throws Exception{
+0468: 		String firstLevelListUID = null;
+0469: 		String secondLevelListUID = null;
+0470: 		String thirdLevelListUID = null;
+0471: 		
+0472: 		if(solo.waitForView("android.widget.ListView")){
+0473: 			pass("waitForView(String) Correct: 'ListView' appears.");
+0474: 			
+0475: 			scrollToTop();
+0476: 			
+0477: 			firstLevelListUID = solo.getView("android.widget.ListView", 0);
+0478: 			debug("First level ListView UID= "+firstLevelListUID);
+0479: 			if(firstLevelListUID!=null){
+0480: 				pass("getView(String, int) Correct: 'ListView' was got.");
+0481: 				
+0482: 				String text = "App";
+0483: 				//review the source code of Robotium: clickOnText() will only scroll down to search text, never up
+0484: 				//If the text is above, the method clickOnText will certainly fail.
+0485: 				if(solo.clickOnText(wrapRegex(text), 1, true)){
+0486: 					pass("clickOnText(String, int, boolean) Correct: Text '"+text+"' was clicked.");
+0487: 					
+0488: 					if(solo.waitForView("android.widget.ListView", 1, 1000)){
+0489: 						pass("waitForView(String, int, long) Correct: 'ListView' appears within timeout");
+0490: 						
+0491: 						secondLevelListUID = solo.getView("android.widget.ListView", 0);
+0492: 						debug("Second level ListView UID= "+secondLevelListUID);
+0493: 						if(secondLevelListUID!=null){
+0494: 							pass("getView(String, int) Correct: 'ListView' was got.");
+0495: 							
+0496: 							text = "Activity";
+0497: 							if(solo.clickOnText(wrapRegex(text), 1)){
+0498: 								pass("clickOnText(String, int) Correct: Text '"+text+"' was clicked.");
+0499: 								
+0500: 								if(solo.waitForView("android.widget.ListView")){
+0501: 									pass("waitForView(String) Correct: 'ListView' appears within timeout");
+0502: 									
+0503: 									thirdLevelListUID = solo.getView("android.widget.ListView", 0);
+0504: 									debug("Third level ListView UID= "+thirdLevelListUID);
+0505: 									if(thirdLevelListUID!=null){
+0506: 										pass("getView(String, int) Correct: 'ListView' was got.");
+0507: 										
+0508: 										text = "Custom Title";
+0509: //										if(solo.clickOnText(wrapRegex(text))){
+0510: //											pass("clickOnText(String, int) Correct: Click on '"+text+"' successfully.");
+0511: //											testEditBoxInCustomActivity();
+0512: //											
+0513: //										}else{
+0514: //											fail("clickOnText(String, int) Error: There is no Text '"+text+"'!");
+0515: //										}
+0516: 										
+0517: 										//Use clickInList(int), the third line should be 'Custom Title'
+0518: 										int customTitleLine = 3;
+0519: 										//textViews contains the UID of the TextViews in the line of the List
+0520: 										List textViews = solo.clickInList(customTitleLine);
+0521: 										if(textViews!=null){
+0522: 											pass("clickInList(int) Correct: Click on line='"+customTitleLine+"' successfully.");
+0523: 											
+0524: 											//We will get the 'out parameter' Message.PARAM_TEXT, where the text we clicked should be stored
+0525: 											String clickedTexts = solo._last_remote_result.getProperty(Message.PARAM_TEXT);
+0526: 											if(clickedTexts!=null && clickedTexts.indexOf(text)>-1){
+0527: 												pass("Click on '"+text+"' of ListView successfully.");
+0528: 												testEditBoxInCustomActivity();
+0529: 											}else{
+0530: 												super.fail("Fail to Click on '"+text+"' of ListView. But we clicked '"+clickedTexts+"' in ListView.");
+0531: 											}
+0532: 											
+0533: 											debug("Clicked the text '"+clickedTexts+"'");
+0534: 											
+0535: 										}else{
+0536: 											fail("clickInList(int) Error: Fail to Click on line='"+customTitleLine+"'!");
+0537: 										}
+0538: 										
+0539: 										goBackToViewUID(thirdLevelListUID);
+0540: 										
+0541: 									}else{
+0542: 										fail("getView(String, int) Error: 'ListView' was NOT got.");
+0543: 									}
+0544: 									
+0545: 								}else{
+0546: 									fail("waitForView(String) Error: ListView NOT appear!");
+0547: 								}
+0548: 								
+0549: 							}else{
+0550: 								fail("clickOnText(String, int) Error: Fail to click on Text '"+text+"'!");
+0551: 							}
+0552: 							
+0553: 							goBackToViewUID(secondLevelListUID);
+0554: 						}else{
+0555: 							fail("getView(String, int) Error: 'ListView' was NOT got.");
+0556: 						}
+0557: 						
+0558: 					}else{
+0559: 						fail("waitForView(String, int, long) Error: 'ListView' NOT appear within timeout.");
+0560: 					}
+0561: 					
+0562: 				}else{
+0563: 					fail("clickOnText(String, int, boolean) Error: Fail to click on Text '"+text+"'!");	
+0564: 				}
+0565: 				
+0566: 				goBackToViewUID(firstLevelListUID);
+0567: 
+0568: 			}else{
+0569: 				fail("getView(String, int) Error: 'ListView' was NOT got.");
+0570: 			}
+0571: 						
+0572: 		}else{
+0573: 			fail("waitForView(String) Error: ListView NOT appear!");
+0574: 		}
+0575: 		
+0576: 	}
+0577: 	
+0578: 	/**
+0579: 	 * <pre>
+0580: 	 * "App -> Dialog " is the path to 'Dialog Activity'.
+0581: 	 * This method will open the 'Dialog Activity' and make some test
+0582: 	 * finally it will go back to the first page of ApiDemos.
+0583: 	 * During this process, it will test the following methods
+0584: 	 * 
+0585: 	 * Tested methods:
+0586: 	 * {@link Solo#clickInList(int)}
+0587: 	 * {@link Solo#clickInList(int, int)}
+0588: 	 * {@link Solo#clickLongInList(int)}
+0589: 	 * {@link Solo#clickLongInList(int, int)}
+0590: 	 * {@link Solo#clickLongInList(int, int, int)}
+0591: 	 * 
+0592: 	 * </pre>
+0593: 	 * 
+0594: 	 * All tests are positive.
+0595: 	 * @see #testProgressBar()
+0596: 	 * @see #testButtons()
+0597: 	 */
+0598: 	void gotoDialogActivity()throws Exception{
+0599: 		String firstLevelListUID = null;
+0600: 		String secondLevelListUID = null;
+0601: 		
+0602: 		if(solo.waitForView("android.widget.ListView")){
+0603: 			pass("waitForView(String) Correct: 'ListView' appears.");
+0604: 			
+0605: 			scrollToTop();
+0606: 			
+0607: 			firstLevelListUID = solo.getView("android.widget.ListView", 0);
+0608: 			debug("First level ListView UID= "+firstLevelListUID);
+0609: 			if(firstLevelListUID!=null){
+0610: 				pass("getView(String, int) Correct: 'ListView' was got.");
+0611: 				
+0612: 				int line = 1;//The line in list to click, start from 1
+0613: 				int index = 0;//The list to click if there are multiple lists, start from 0
+0614: 				
+0615: 				//TODO scroll up to the top of the list
+0616: 				
+0617: 				List clickedItems = solo.clickInList(line);
+0618: 				String clickedItemText = solo._last_remote_result.getProperty(Message.PARAM_TEXT);
+0619: 				debug("Item '"+clickedItemText+"' was clicked in the List");
+0620: 				
+0621: 				if(clickedItems!=null && clickedItems.size()>0){
+0622: 					
+0623: 					pass("clickInList(int) Correct: The "+line+"th item was clicked.");
+0624: 					
+0625: 					if(solo.waitForView("android.widget.ListView", 1, 1000)){
+0626: 						pass("waitForView(String, int, long) Correct: 'ListView' appears within timeout");
+0627: 						
+0628: 						secondLevelListUID = solo.getView("android.widget.ListView", 0);
+0629: 						debug("Second level ListView UID= "+secondLevelListUID);
+0630: 						if(secondLevelListUID!=null){
+0631: 							pass("getView(String, int) Correct: 'ListView' was got.");
+0632: 							
+0633: 							line = 4;
+0634: 							clickedItems = solo.clickInList(line, index);
+0635: 							clickedItemText = solo._last_remote_result.getProperty(Message.PARAM_TEXT);
+0636: 							debug("Item '"+clickedItemText+"' was clicked in the List");
+0637: 							
+0638: 							if(clickedItems!=null && clickedItems.size()>0){
+0639: 								pass("clickInList(int, int) Correct: The "+line+"th item was clicked.");
+0640: 								
+0641: 								testButtons();
+0642: 
+0643: 								testProgressBar();
+0644: 								
+0645: 							}else{
+0646: 								fail("clickInList(int, int) Error: Fail to click the "+line+"th item.");
+0647: 							}
+0648: 							
+0649: 							//GO BACK and Try the clickLongInList(int)
+0650: 							goBackToViewUID(secondLevelListUID);
+0651: 							
+0652: 							clickedItems = solo.clickLongInList(line);
+0653: 							String theSameDialogText = solo._last_remote_result.getProperty(Message.PARAM_TEXT);
+0654: 							debug("Item '"+theSameDialogText+"' was clicked in the List");
+0655: 							
+0656: 							if(clickedItems!=null && clickedItems.size()>0){
+0657: 								pass("clickLongInList(int) Correct: The "+line+"th item was clicked longtime.");
+0658: 								if(theSameDialogText!=null && theSameDialogText.equals(clickedItemText)){
+0659: 									pass("clickInList("+line+") and clickLongInList("+line+"): click on same text '"+theSameDialogText+"'" );
+0660: 								}else{
+0661: 									fail("clickInList("+line+") click on text '"+clickedItemText+"'" +"; While clickLongInList("+line+") click on text '"+theSameDialogText+"'" );
+0662: 								}
+0663: 							}else{
+0664: 								fail("clickLongInList(int) Error: Fail to click the "+line+"th item longtime.");
+0665: 							}
+0666: 							
+0667: 							//GO BACK and Try the clickLongInList(int, int)
+0668: 							goBackToViewUID(secondLevelListUID);
+0669: 							
+0670: 							clickedItems = solo.clickLongInList(line, index);
+0671: 							theSameDialogText = solo._last_remote_result.getProperty(Message.PARAM_TEXT);
+0672: 							debug("Item '"+theSameDialogText+"' was clicked in the List");
+0673: 							
+0674: 							if(clickedItems!=null && clickedItems.size()>0){
+0675: 								pass("clickLongInList(int, int) Correct: The "+line+"th item was clicked longtime on the "+index+"th list.");
+0676: 								if(theSameDialogText!=null && theSameDialogText.equals(clickedItemText)){
+0677: 									pass("clickInList("+line+") and clickLongInList("+line+","+index+"): click on same text '"+theSameDialogText+"'" );
+0678: 								}else{
+0679: 									fail("clickInList("+line+") click on text '"+clickedItemText+"'" +"; While clickLongInList("+line+","+index+") click on text '"+theSameDialogText+"'" );
+0680: 								}
+0681: 							}else{
+0682: 								fail("clickLongInList(int, int) Error: Fail to click the "+line+"th item longtime on the "+index+"th list.");
+0683: 							}
+0684: 							
+0685: 							//GO BACK and Try the clickLongInList(int, int, int)
+0686: 							goBackToViewUID(secondLevelListUID);
+0687: 							int time = 500;
+0688: 							clickedItems = solo.clickLongInList(line, index, time);
+0689: 							theSameDialogText = solo._last_remote_result.getProperty(Message.PARAM_TEXT);
+0690: 							debug("Item '"+theSameDialogText+"' was clicked in the List");
+0691: 							
+0692: 							if(clickedItems!=null && clickedItems.size()>0){
+0693: 								pass("clickLongInList(int, int, int) Correct: The "+line+"th item was clicked longtime ("+time+" millis) on the "+index+"th list.");
+0694: 								if(theSameDialogText!=null && theSameDialogText.equals(clickedItemText)){
+0695: 									pass("clickInList("+line+") and clickLongInList("+line+","+index+","+time+"): click on same text '"+theSameDialogText+"'" );
+0696: 								}else{
+0697: 									fail("clickInList("+line+") click on text '"+clickedItemText+"'" +"; While clickLongInList("+line+","+index+","+time+") click on text '"+theSameDialogText+"'" );
+0698: 								}
+0699: 							}else{
+0700: 								fail("clickLongInList(int, int) Error: Fail to click the "+line+"th item longtime ("+time+" millis) on the "+index+"th list.");
+0701: 							}
+0702: 							
+0703: 							goBackToViewUID(secondLevelListUID);
+0704: 							
+0705: 						}else{
+0706: 							fail("getView(String, int) Error: 'ListView' was NOT got.");
+0707: 						}
+0708: 						
+0709: 					}else{
+0710: 						fail("waitForView(String, int, long) Correct: 'ListView' NOT appear within timeout.");
+0711: 					}
+0712: 					
+0713: 				}else{
+0714: 					fail("clickInList(int) Error: Fail to click the "+line+"th item.");
+0715: 				}
+0716: 				
+0717: 				goBackToViewUID(firstLevelListUID);
+0718: 
+0719: 			}else{
+0720: 				fail("getView(String, int) Error: 'ListView' was NOT got.");
+0721: 			}
+0722: 						
+0723: 		}else{
+0724: 			fail("waitForView(String) Error: ListView NOT appear!");
+0725: 		}
+0726: 		
+0727: 	}
+0728: 	
+0729: 	/**
+0730: 	 * <pre>
+0731: 	 * Test some methods as:
+0732: 	 * {@link Solo#searchButton(String)}
+0733: 	 * 
+0734: 	 * {@link Solo#clickOnButton(String)}
+0735: 	 * 
+0736: 	 * Test some method of ProgressBar
+0737: 	 * {@link Solo#getCurrentProgressBars()}
+0738: 	 * {@link Solo#setProgressBar(int, int)}
+0739: 	 * {@link Solo#setProgressBar(String, int)}
+0740: 	 * 
+0741: 	 * {@link Solo#waitForDialogToClose(int)}
+0742: 	 * 
+0743: 	 * </pre>
+0744: 	 * 
+0745: 	 * @see #testDialogActivity()
+0746: 	 */
+0747: 	private void testProgressBar() throws Exception{
+0748: 
+0749: 		String text = "Progress dialog";
+0750: 		
+0751: 		try {
+0752: 			if(solo.searchButton(text)){
+0753: 				pass("searchButton(String) Correct: search button with text '"+text+"'");
+0754: 				
+0755: 				//Click button to open dialog
+0756: 				if(solo.clickOnButton(text)){
+0757: 					pass("searchButton(String) Correct: click button with text '"+text+"'");
+0758: 					
+0759: 					List progressBarList = solo.getCurrentProgressBars();
+0760: 					
+0761: 					if(progressBarList!=null && progressBarList.size()>0){
+0762: 						pass("getCurrentProgressBars() Correct: got progress bar as: ");
+0763: 						for(int i=0;i<progressBarList.size();i++){
+0764: 							debug("Progress Bar ID="+progressBarList.get(i));
+0765: 						}
+0766: 						
+0767: 						//Set progress bar to 60%
+0768: 						int progress = 60;//should not bigger than ProgressBar.getMax()!!!
+0769: 						String progressBarID = (String) progressBarList.get(0);
+0770: 						if(solo.setProgressBar(progressBarID, progress)){
+0771: 							pass("setProgressBar(String, int) Correct: set progress to "+progress+"% for progress bar '"+progressBarID+"'");
+0772: 						}else{
+0773: 							fail("setProgressBar(String, int) Error: fail to set progress to "+progress+"% for progress bar '"+progressBarID+"'");
+0774: 						}
+0775: 						
+0776: 						//Set progress bar to 0%
+0777: 						progress = 0;
+0778: 						int index = 0;
+0779: 						if(solo.setProgressBar(index, progress)){
+0780: 							pass("setProgressBar(int, int) Correct: set progress to "+progress+"% for '"+index+"'th progress bar.");
+0781: 						}else{
+0782: 							fail("setProgressBar(int, int) Error: fail to set progress to "+progress+"% for '"+index+"'th progress bar.");
+0783: 						}
+0784: 						
+0785: 						//Wait for progress bar dialog to close
+0786: 						int timeout = 3000;//time to wait for dialog to close, milliseconds
+0787: 						//we know 3 seconds is not enough for progress dialog to close.
+0788: 						if(solo.waitForDialogToClose(timeout)){
+0789: 							info("waitForDialogToClose(int) : dialog has been closed in '"+timeout+"' milliseconds.");
+0790: 						}else{
+0791: 							info("waitForDialogToClose(int) : dialog was not closed in '"+timeout+"' milliseconds.");
+0792: 							timeout = 30000;//wait for 30 seconds, this is enough for dialog ot close
+0793: 							if(solo.waitForDialogToClose(timeout)){
+0794: 								pass("waitForDialogToClose(int) Correct: dialog has been closed in '"+timeout+"' milliseconds.");
+0795: 							}else{
+0796: 								fail("waitForDialogToClose(int) Error: dialog was not closed in '"+timeout+"' milliseconds.");
+0797: 							}
+0798: 						}
+0799: 						
+0800: 					}else{
+0801: 						pass("getCurrentProgressBars() Error: fail to get progress bar.");
+0802: 					}
+0803: 				}else{
+0804: 					fail("searchButton(String) Error: fail to click button with text '"+text+"'");
+0805: 					
+0806: 				}
+0807: 				
+0808: 			}else{
+0809: 				fail("searchButton(String) Error: fail to search button with text '"+text+"'");
+0810: 			}
+0811: 
+0812: 		} catch (RemoteSoloException e) {
+0813: 			fail("searchButton(String) or waitForDialogToClose(int) Error!");
+0814: 			debug("Met RemoteSoloException="+e.getMessage());
+0815: 			e.printStackTrace();
+0816: 		}
+0817: 	}
+0818: 	
+0819: 	/**
+0820: 	 * <pre>
+0821: 	 * Test some methods as:
+0822: 	 * {@link Solo#getCurrentButtons()}
+0823: 	 * 
+0824: 	 * {@link Solo#getButton(int)}
+0825: 	 * {@link Solo#getButton(String)}
+0826: 	 * {@link Solo#getButton(String, boolean)}
+0827: 	 * 
+0828: 	 * {@link Solo#searchButton(String)}
+0829: 	 * {@link Solo#searchButton(String, boolean)}
+0830: 	 * {@link Solo#searchButton(String, int)}
+0831: 	 * {@link Solo#searchButton(String, int, boolean)}
+0832: 	 * 
+0833: 	 * {@link Solo#clickOnButton(int)}
+0834: 	 * {@link Solo#clickOnButton(String)}
+0835: 	 * 
+0836: 	 * {@link Solo#searchText(String)}
+0837: 	 * 
+0838: 	 * </pre>
+0839: 	 * 
+0840: 	 * @see #testDialogActivity()
+0841: 	 */
+0842: 	private void testButtons() throws Exception{
+0843: 
+0844: 		String text = "OK Cancel dialog with a message";
+0845: 		String textok = "OK";
+0846: 		String textcancel = "Cancel";
+0847: 		int index = 0;//the index of button to get on current page, start from 0
+0848: 		
+0849: 		try {
+0850: 			if(solo.waitForView("android.widget.Button")){
+0851: 				pass("waitForView(String): success wait for button");
+0852: 			}else{
+0853: 				fail("waitForView(String): fail to wait for button");
+0854: 				solo.sleep(1000);
+0855: 			}
+0856: 			
+0857: 			List<String> buttonIDList = solo.getCurrentButtons();
+0858: 			
+0859: 			if(buttonIDList!=null){
+0860: 				pass("getCurrentButtons() Correct: get buttons as:");
+0861: 				for(String id: buttonIDList){
+0862: 					debug("button ID="+id);
+0863: 				}
+0864: 
+0865: 				//Test something with the first button
+0866: 				String buttonId = solo.getButton(index);
+0867: 				if(buttonId!=null){
+0868: 					pass("getButton(int) Correct: get '"+index+"'th button, whose id is '"+buttonId+"'");
+0869: 
+0870: 					//Verify the first button id is the same as the first value returned by getCurrentButtons()
+0871: 					if(buttonIDList.size()>0){
+0872: 						info("getCurrentButtons() Correct: it returns at the least one button.");
+0873: 						if(buttonId.equals(buttonIDList.get(0))){
+0874: 							pass("getButton(0) return the same ID as the first ID returned by getCurrentButtons().");
+0875: 						}else{
+0876: 							fail("getButton(0) return different ID from the first ID returned by getCurrentButtons().");
+0877: 							debug("getButton(0) return ID '"+buttonId+"'");
+0878: 							debug("getCurrentButtons() first ID is '"+buttonIDList.get(0)+"'.");
+0879: 						}
+0880: 					}else{
+0881: 						error("getCurrentButtons() Error: it should return at the least one button.");
+0882: 					}
+0883: 					
+0884: 					if(solo.searchButton(text)){
+0885: 						pass("searchButton(String) Correct: search button with text '"+text+"'");
+0886: 						
+0887: 						//Use text to get the first button and verify					
+0888: 						debug("Try to get button with text '"+text+"'");
+0889: 						String buttonTextId = solo.getButton(text);
+0890: 						
+0891: 						if(buttonTextId!=null){
+0892: 							pass("getButton(String) Correct: get id="+buttonTextId+" for button '"+text+"'");
+0893: 							if(buttonTextId.equals(buttonId)){
+0894: 								pass("getButton(0) return the same ID as the ID returned by getButton("+text+").");
+0895: 							}else{
+0896: 								pass("getButton(0) return different ID from the ID returned by getButton("+text+").");
+0897: 								debug("getButton(0) return ID '"+buttonId+"'");
+0898: 								debug("getButton("+text+") return ID '"+buttonTextId+"'");
+0899: 							}
+0900: 						}else{
+0901: 							pass("getButton(String) Correct: fail to get id for button '"+text+"'");
+0902: 						}
+0903: 						
+0904: 						//Click the button with text to open dialog
+0905: 						if(solo.clickOnButton(text)){
+0906: 							pass("clickOnButton(String) Correct: click button with text '"+text+"'");
+0907: 							
+0908: 							if(solo.searchButton(textok, true)){
+0909: 								pass("searchButton(String, boolean) Correct: find visible button '"+textok+"'");
+0910: 								buttonId = solo.getButton(textok, true);
+0911: 								if(buttonId!=null){
+0912: 									pass("getButton(String, boolean) Correct: get id="+buttonId+" for visible button '"+textok+"'");
+0913: 								}else{
+0914: 									fail("getButton(String, boolean) Correct: fail to get id for visible button '"+textok+"'");
+0915: 								}
+0916: 								
+0917: 								if(solo.clickOnButton(textok)){
+0918: 									pass("clickOnButton(String) Correct: click on button '"+textok+"'");
+0919: 								}else{
+0920: 									fail("clickOnButton(String) Correct: fail to click on button '"+textok+"'");
+0921: 								}
+0922: 								
+0923: 							}else{
+0924: 								fail("searchButton(String, boolean) Error: fail to find visible button '"+textok+"'");
+0925: 							}
+0926: 							
+0927: 							//wait for dialog to disappear
+0928: 							if(solo.searchButton(text)){
+0929: 								pass("searchButton(String) Correct: find button '"+text+"'");
+0930: 							}else{
+0931: 								fail("searchButton(String) Error: fail to find button '"+text+"'");
+0932: 							}
+0933: 							
+0934: 						}else{
+0935: 							fail("clickOnButton(String) Error: fail to click button with text '"+text+"'");
+0936: 						}
+0937: 						
+0938: 					}else{
+0939: 						fail("searchButton(String) Error: fail to search button with text '"+text+"'");
+0940: 					}
+0941: 					
+0942: 				}else{
+0943: 					fail("getButton(int) Error: fail to get '"+index+"'th button");
+0944: 				}
+0945: 				
+0946: 			}else{
+0947: 				fail("getCurrentButtons() Error: fail to get buttons.");
+0948: 			}
+0949: 			
+0950: 			
+0951: 			//Test something with the button "Single choice list", the 5th button
+0952: 			text = "Single choice list";
+0953: 			index = 4; // the 5th button
+0954: 			int minMatch = 1;
+0955: 			if(solo.searchButton(text, minMatch)){
+0956: 				pass("searchButton(String, int) Correct: successfully search button '"+text+"' for "+minMatch+" time.");
+0957: 				
+0958: 				//Click on the 5th button
+0959: 				if(solo.clickOnButton(index)){
+0960: 					pass("clickOnButton(int) Correct: click on the "+index+"th button.");
+0961: 					//verify that the button "Single choice list" was clicked.
+0962: 					//The title should be "Single choice list" for the opened dialog
+0963: 					if(solo.searchText(text)){
+0964: 						pass("searchText(String) Correct: successfully search text '"+text+"'");
+0965: 						if(solo.searchButton(textcancel, minMatch, true)){
+0966: 							pass("searchButton(String, int, boolean) Correct: successfully search visible button '"+textcancel+"' for "+minMatch+" time.");
+0967: 							
+0968: 							if(solo.clickOnButton(textcancel)){
+0969: 								pass("clickOnButton(String) Correct: click button with text '"+textcancel+"'");
+0970: 							}else{
+0971: 								fail("clickOnButton(String) Error: fail to click button with text '"+textcancel+"'");
+0972: 							}
+0973: 						}else{
+0974: 							fail("searchButton(String, int, boolean) Error: fail to search visible button '"+textcancel+"' for "+minMatch+" time.");
+0975: 						}
+0976: 					}else{
+0977: 						fail("searchText(String) Error: fail to search text '"+text+"'");
+0978: 					}
+0979: 					
+0980: 					//wait for dialog to disappear
+0981: 					if(solo.searchButton(text)){
+0982: 						pass("searchButton(String) Correct: find button '"+text+"'");
+0983: 					}else{
+0984: 						fail("searchButton(String) Error: fail to find button '"+text+"'");
+0985: 					}
+0986: 					
+0987: 				}else{
+0988: 					fail("clickOnButton(int) Error: fail to click on the "+index+"th button.");
+0989: 				}
+0990: 			}else{
+0991: 				fail("searchButton(String, int) Error: fail to search button '"+text+"' for "+minMatch+" time.");
+0992: 			}
+0993: 
+0994: 		} catch (RemoteSoloException e) {
+0995: 			fail("searchButton(String)  Error!");
+0996: 			debug("Met RemoteSoloException="+e.getMessage());
+0997: 			e.printStackTrace();
+0998: 		}
+0999: 	}
+1000: 	
+1001: 	/**
+1002: 	 * <pre>
+1003: 	 * "Views -> Controls -> Default Theme" is the path to 'DefaultTheme Activity'.
+1004: 	 * This method will open the 'DefaultTheme Activity', 
+1005: 	 * then it will call {@link #testEditBox()} to
+1006: 	 * test some methods related to EditBox, finally it will go back to the first page of ApiDemos.
+1007: 	 * During this process, it will test the following methods
+1008: 	 * 
+1009: 	 * Tested methods:
+1010: 	 * {@link Solo#clickOnText(String, int, boolean)}
+1011: 	 * {@link Solo#clickOnText(String, int)}
+1012: 	 * {@link Solo#clickOnText(String)}
+1013: 	 * 
+1014: 	 * {@link Solo#getText(int)}
+1015: 	 * {@link Solo#getText(String)}
+1016: 	 * {@link Solo#getText(String, boolean)}
+1017: 	 * 
+1018: 	 * {@link Solo#getView(String, int)}
+1019: 	 * {@link Solo#waitForView(String)}
+1020: 	 * 
+1021: 	 * {@link Solo#getTopParent(String)}
+1022: 	 * 
+1023: 	 * </pre>
+1024: 	 * 
+1025: 	 * All tests are positive.
+1026: 	 */
+1027: 	void gotoDefaultThemeActivity() throws Exception{
+1028: 		String firstLevelListUID = null;
+1029: 		String secondLevelListUID = null;
+1030: 		String thirdLevelListUID = null;
+1031: 		
+1032: 		String topParentID = null;
+1033: 		
+1034: 		if(solo.waitForView("android.widget.ListView")){
+1035: 			pass("waitForView(String) Correct: 'ListView' appears.");
+1036: 			
+1037: 			scrollToTop();
+1038: 			
+1039: 			firstLevelListUID = solo.getView("android.widget.ListView", 0);
+1040: 			debug("First level ListView UID= "+firstLevelListUID);
+1041: 			if(firstLevelListUID!=null){
+1042: 				pass("getView(String, int) Correct: 'ListView' was got.");
+1043: 				
+1044: 				topParentID = solo.getTopParent(firstLevelListUID);
+1045: 				if(topParentID!=null){
+1046: 					pass("getTopParent(String): got top parent id as '"+topParentID+"' for view '"+firstLevelListUID+"'");
+1047: 				}else{
+1048: 					fail("getTopParent(String): fail to get top parent for view '"+firstLevelListUID+"'");
+1049: 				}
+1050: 				
+1051: 				String text = "Views";
+1052: 				
+1053: 				if(solo.clickOnText(text, 1, true)){
+1054: 
+1055: 					pass("clickOnText(String, int, boolean) Correct: Text '"+text+"' was clicked.");
+1056: 					
+1057: 					if(solo.waitForView("android.widget.ListView", 1, 1000)){
+1058: 						pass("waitForView(String, int, long) Correct: 'ListView' appears within timeout");
+1059: 						
+1060: 						secondLevelListUID = solo.getView("android.widget.ListView", 0);
+1061: 						debug("Second level ListView UID= "+secondLevelListUID);
+1062: 						if(secondLevelListUID!=null){
+1063: 							pass("getView(String, int) Correct: 'ListView' was got.");
+1064: 							
+1065: 							text = "Controls";
+1066: 							if(solo.clickOnText(text, 1)){
+1067: 								pass("clickOnText(String, int) Correct: Text '"+text+"' was clicked.");
+1068: 								
+1069: 								if(solo.waitForView("android.widget.ListView")){
+1070: 									pass("waitForView(String) Correct: 'ListView' appears within timeout");
+1071: 									
+1072: 									thirdLevelListUID = solo.getView("android.widget.ListView", 0);
+1073: 									debug("Third level ListView UID= "+thirdLevelListUID);
+1074: 									if(thirdLevelListUID!=null){
+1075: 										pass("getView(String, int) Correct: 'ListView' was got.");
+1076: 										
+1077: 										//TODO Verify the top parent of thirdLevelListUID is the same as that of firstLevelListUID
+1078: 										//Always a TimeOutException????
+1079: //										String tempTopParentID = solo.getTopParent(thirdLevelListUID);
+1080: //										if(tempTopParentID!=null && tempTopParentID.equals(topParentID)){
+1081: //											pass("getTopParent(String): verify the top parent of thirdLevelListUID is the same as that of firstLevelListUID");
+1082: //										}else{
+1083: //											fail("getTopParent(String): fail to verify the top parent of thirdLevelListUID is the same as that of firstLevelListUID");
+1084: //										}
+1085: 										
+1086: 										text = "Default Theme";
+1087: 										if(solo.clickOnText(wrapRegex(text))){
+1088: 											pass("clickOnText(String, int) Correct: Click on '"+text+"' successfully.");
+1089: 											
+1090: 											solo.getCurrentActivity();
+1091: 											String activityName = solo._last_remote_result.getProperty(Message.PARAM_NAME);
+1092: 											debug("Current Activity is '"+activityName+"'");
+1093: 											testStuffsInDefaultThemeActivity(activityName);
+1094: 											
+1095: 										}else{
+1096: 											fail("clickOnText(String, int) Error: There is no Text '"+text+"'!");
+1097: 										}
+1098: 										
+1099: 										goBackToViewUID(thirdLevelListUID);
+1100: 										
+1101: 									}else{
+1102: 										fail("getView(String, int) Error: 'ListView' was NOT got.");
+1103: 									}
+1104: 									
+1105: 								}else{
+1106: 									fail("waitForView(String) Correct: ListView NOT appear!");
+1107: 								}
+1108: 								
+1109: 							}else{
+1110: 								fail("clickOnText(String, int) Correct: Fail to click on Text '"+text+"'!");
+1111: 							}
+1112: 							
+1113: 							goBackToViewUID(secondLevelListUID);
+1114: 						}else{
+1115: 							fail("getView(String, int) Error: 'ListView' was NOT got.");
+1116: 						}
+1117: 						
+1118: 					}else{
+1119: 						fail("waitForView(String, int, long) Correct: 'ListView' NOT appear within timeout.");
+1120: 					}
+1121: 					
+1122: 				}else{
+1123: 					fail("clickOnText(String, int, boolean) Error: Fail to click on Text '"+text+"'!");	
+1124: 				}
+1125: 				
+1126: 				goBackToViewUID(firstLevelListUID);
+1127: 
+1128: 			}else{
+1129: 				fail("getView(String, int) Error: 'ListView' was NOT got.");
+1130: 			}
+1131: 						
+1132: 		}else{
+1133: 			fail("waitForView(String) Error: ListView NOT appear!");
+1134: 		}
+1135: 		
+1136: 	}
+1137: 	
+1138: 	/**
+1139: 	 * Wrap the text with regex prefix and suffix ".*"<br>
+1140: 	 * When you call some method like {@link Solo#clickOnText(String)}, the parameter<br>
+1141: 	 * can be regex string to match more, you can call this method to wrap the parameter.<br>
+1142: 	 * 
+1143: 	 * @param text	String
+1144: 	 * @return		String, .*text.*
+1145: 	 */
+1146: 	private String wrapRegex(String text){
+1147: 		if(text==null) return text;
+1148: 		return ".*"+text+".*";
+1149: 	}
+1150: 	
+1151: 	/**
+1152: 	 * As Robotium's clickInList(), clickOnText() can't work well for List.
+1153: 	 * I want to try clickOnView(), so I need to get the View by text within List.
+1154: 	 * 
+1155: 	 * Try to get the TextView in a ListView
+1156: 	 * 
+1157: 	 * @param text		String, the text to find
+1158: 	 * @param scroll	boolean, if the text is not found, whether need to scroll to find.
+1159: 	 * @return
+1160: 	 * @throws Exception
+1161: 	 * 
+1162: 	 * @see {@link Solo#getText(String)}
+1163: 	 */
+1164: 	private String getTextInList(String text, boolean scroll) throws Exception{
+1165: 		String uid = null;
+1166: 		boolean topReached = false;
+1167: 		boolean bottomReached = false;
+1168: 		
+1169: 		while( (uid=solo.getText(text))==null && scroll){
+1170: 			if(!topReached){
+1171: 				debug("Scroll up topReached="+topReached);
+1172: 				topReached = !solo.scrollUp();
+1173: 			}else if(!bottomReached){
+1174: 				debug("Scroll down bottomReached="+bottomReached);
+1175: 				bottomReached = !solo.scrollDown();
+1176: 			}else{
+1177: 				//if both top and bottom are reached, stop trying.
+1178: 				break;
+1179: 			}
+1180: 		}
+1181: 		
+1182: 		return uid;
+1183: 	}
+1184: 	
+1185: 	/**
+1186: 	 * <pre>
+1187: 	 * First this method will wait for the EditBox
+1188: 	 * {@link Solo#waitForView(String, int, long, boolean)}
+1189: 	 * 
+1190: 	 * Then it uses the EditBox UID to verify (positive and negative) methods WaitForViewUID by calling 
+1191: 	 * {@link #verifyWaitForViewUIDMethods(String, boolean)}.
+1192: 	 * 
+1193: 	 * Finally it will verify some methods related to EditBox as following:
+1194: 	 * {@link Solo#clearEditText(int)}
+1195: 	 * {@link Solo#clearEditText(String)}
+1196: 	 * {@link Solo#clickOnEditText(int)}
+1197: 	 * {@link Solo#enterText(int, String)}
+1198: 	 * {@link Solo#enterText(String, String)}
+1199: 	 * {@link Solo#searchEditText(String)}
+1200: 	 * {@link Solo#getEditText(int)}
+1201: 	 * {@link Solo#getEditText(String)}
+1202: 	 * {@link Solo#getEditText(String, boolean)}
+1203: 	 * {@link Solo#getCurrentEditTexts()}
+1204: 	 * 
+1205: 	 * </pre>
+1206: 	 * 
+1207: 	 * Most tests are positive.<br>
+1208: 	 * 
+1209: 	 * @throws Exception
+1210: 	 * @see {@link #testRelateToApplication(String)}
+1211: 	 */
+1212: 	private void testEditBoxInCustomActivity() throws Exception{
+1213: 		
+1214: 		String customTitleActivity = "CustomTitle";
+1215: 		debug("Try to go back to Activity '"+customTitleActivity+"'");
+1216: 		
+1217: 		//A keyboard will be shown automatically, use goBack() to show the 'CustomTitle' activity.
+1218: 		solo.goBack();
+1219: 		if(solo.waitForActivity(customTitleActivity)){
+1220: 			debug("Came back to activity "+customTitleActivity);
+1221: 		}else{
+1222: 			error("Can't wait activity "+customTitleActivity+", can't continue.");
+1223: 			return;
+1224: 		}
+1225: 		
+1226: 		//I know there 2 EditText, so test it with minimumApprence equals to 2
+1227: 		int minimumApprence = 2;
+1228: 		if(solo.waitForView("android.widget.EditText",minimumApprence,1000,true)){
+1229: 			pass("waitForView(String, int, long, boolean) Correct: 'EditText' appears at least 2 times within timeout 1000 millis");
+1230: 			
+1231: 			String firstEditTextUID = solo.getView("android.widget.EditText", 0);
+1232: 			debug("EditText UID= "+firstEditTextUID);
+1233: 			if(firstEditTextUID!=null){
+1234: 				pass("getView(String, int) Correct: Got first 'EditText'");
+1235: 				
+1236: 				testRelateToApplication(firstEditTextUID);
+1237: 				
+1238: 				//=============================  WaitForViewUID ====================================
+1239: 				//If firstEditTextUID is valid, use it to verify methods WaitForViewUID()
+1240: 				verifyWaitForViewUIDMethods(firstEditTextUID, true);
+1241: 				
+1242: 				//Use firstEditTextUID to create an invalid UID, and make negative test of methods WaitForViewUID()
+1243: 				//As I know the returned UID will only contains letters "0123456789ABCDEFabcdef-", so add some
+1244: 				//other letters to make an invalid UID
+1245: 				verifyWaitForViewUIDMethods(firstEditTextUID+"-QRTYUPLM", false);
+1246: 				
+1247: 				//=============================  Verify EditText with UID  ====================================
+1248: 				//Clear the first EditText (find it by uid)
+1249: 				if(solo.clearEditText(firstEditTextUID)){
+1250: 					pass("clearEditText(String) Correct: First EditText UID='"+firstEditTextUID+ "' is cleared.");										
+1251: 				}else{
+1252: 					fail("clearEditText(String) Error: First EditText UID='"+firstEditTextUID+"' fail to be cleared.");
+1253: 				}
+1254: 				
+1255: 				//Input some text to the first EditText
+1256: 				String text1 = "SOMETHING INPUTTED TO FIRST EDITTEXT";
+1257: 				String text1Regex = ".*INPUTTED TO FIRST EDITT.*";
+1258: 				if(solo.enterText(firstEditTextUID, text1)){
+1259: 					pass("enterText(String, String) Correct: Input '"+text1+"' to First EditText");
+1260: 				}else{
+1261: 					fail("enterText(String, String) Error: Fail to input '"+text1+"' to first EditText");
+1262: 				}
+1263: 				
+1264: 				//=============================  Verify EditText with Index ====================================
+1265: 				int firstEditTextIndex = 0;
+1266: 				int secondEditTextIndex = 1;
+1267: 
+1268: 				//Click on the second EditText (find it by index)
+1269: 				if(solo.clickOnEditText(secondEditTextIndex)){
+1270: 					pass("clickOnEditText(int) Correct: Second EditText is clicked.");
+1271: 				}else{
+1272: 					fail("clickOnEditText(int) Correct: Fail to click on Second EditText.");
+1273: 				}
+1274: 
+1275: 				//Clear the second EditText (find it by index)
+1276: 				if(solo.clearEditText(secondEditTextIndex)){
+1277: 					pass("clearEditText(int) Correct: Second EditText is cleared");										
+1278: 				}else{
+1279: 					fail("clearEditText(int) Error: Second EditText fail to be cleared");										
+1280: 				}
+1281: 				
+1282: 				String text2 = "SECOND EDITTEXT GOT YOU";
+1283: 				//Input something to the second EditText (find it by index)
+1284: 				if(solo.enterText(secondEditTextIndex, text2)){
+1285: 					pass("enterText(int, String) Correct: Input '"+text2+"' to EditText");
+1286: 				}else{
+1287: 					fail("enterText(int, String) Error: Fail to input '"+text2+"' to EditText");
+1288: 				}
+1289: 				
+1290: 				//get the first EditText by index
+1291: 				String otherFirstEditTextUID = solo.getEditText(firstEditTextIndex);
+1292: 				if(otherFirstEditTextUID!=null){
+1293: 					pass("getEditText(int) Correct: Got first 'EditText'");
+1294: 					if(otherFirstEditTextUID.equals(firstEditTextUID)){
+1295: 						pass("The UID return from getEditText(0) is the same as getView(\"android.widget.EditText\", 0) for first EditBox.");
+1296: 					}else{
+1297: 						super.fail("The UID return from getEditText(0) doesn't match getView(\"android.widget.EditText\", 0) for first EditBox.");
+1298: 						super.fail("UID getEditText()="+otherFirstEditTextUID);
+1299: 						super.fail("UID getView()="+firstEditTextUID);
+1300: 					}
+1301: 				}else{
+1302: 					fail("getEditText(int) Error: Fail to get first 'EditText'");
+1303: 				}
+1304: 				
+1305: 				//=============================  Verify EditText with Text ====================================
+1306: 				//get the first EditText by text
+1307: 				otherFirstEditTextUID = solo.getEditText(text1);
+1308: 				if(otherFirstEditTextUID!=null){
+1309: 					pass("getEditText(String) Correct: Got first 'EditText'");
+1310: 					if(otherFirstEditTextUID.equals(firstEditTextUID)){
+1311: 						pass("The UID return from getEditText(text) is the same as getView(\"android.widget.EditText\", 0) for first EditBox.");
+1312: 					}else{
+1313: 						super.fail("The UID return from getEditText(text) doesn't match getView(\"android.widget.EditText\", 0) for first EditBox.");
+1314: 						super.fail("UID getEditText()="+otherFirstEditTextUID);
+1315: 						super.fail("UID getView()="+firstEditTextUID);
+1316: 					}
+1317: 				}else{
+1318: 					fail("getEditText(int) Error: Fail to get first 'EditText'");
+1319: 				}
+1320: 				
+1321: 				//get the first EditText by text, whether the EditText is visible or not.
+1322: 				otherFirstEditTextUID = solo.getEditText(text1, false);
+1323: 				if(otherFirstEditTextUID!=null){
+1324: 					pass("getEditText(String, boolean) Correct: Got first 'EditText'");
+1325: 					if(otherFirstEditTextUID.equals(firstEditTextUID)){
+1326: 						pass("The UID return from getEditText(text, false) is the same as getView(\"android.widget.EditText\", 0) for first EditBox.");
+1327: 					}else{
+1328: 						super.fail("The UID return from getEditText(text, false) doesn't match getView(\"android.widget.EditText\", 0) for first EditBox.");
+1329: 						super.fail("UID getEditText()="+otherFirstEditTextUID);
+1330: 						super.fail("UID getView()="+firstEditTextUID);
+1331: 					}
+1332: 				}else{
+1333: 					fail("getEditText(int) Error: Fail to get first 'EditText'");
+1334: 				}
+1335: 				
+1336: 				//Search the first EditText by text
+1337: 				if(solo.searchEditText(text1Regex)){
+1338: 					pass("searchEditText(String) Correct: Found '"+text1+"' in first EditText");
+1339: 				}else{
+1340: 					fail("searchEditText(String) Error: Fail to find '"+text1+"' in first EditText");
+1341: 				}
+1342: 				
+1343: 				//=============================  Verify get current EditTexts ====================================
+1344: 				//Get all current edit texts
+1345: 				List edittexts = solo.getCurrentEditTexts();
+1346: 				if(edittexts!=null && edittexts.size()>=2){
+1347: 					pass("getCurrentEditTexts() Maybe Correct: Got at the least 2 EditTexts. Perhaps! Maybe some is empty.");
+1348: 					
+1349: 					//Get the UID for second EditText
+1350: 					String secondEditTextUID = solo.getEditText(firstEditTextIndex);
+1351: 					if(secondEditTextUID!=null){
+1352: 						pass("getEditText(int) Correct: Got second 'EditText'");
+1353: 						
+1354: 						//Only we got the second EditBox, we will continue to verify getCurrentEditTexts()
+1355: 						boolean[] match = {false, false};
+1356: 						//Verify if the EditTexts in list match those got previously
+1357: 						for(Object uid:edittexts){
+1358: 							if(!match[0]) match[0] = firstEditTextUID.equals(uid);
+1359: 							if(!match[1]) match[1] = secondEditTextUID.equals(uid);
+1360: 							if(match[0] && match[1]) break;
+1361: 						}
+1362: 						
+1363: 						if(match[0] && match[1]){
+1364: 							pass("getCurrentEditTexts() Correct: Got at the least 2 EditTexts. All matched.");
+1365: 						}else{
+1366: 							fail("getCurrentEditTexts() Error: Got at the least 2 EditTexts. NOT all matched.");
+1367: 						}
+1368: 						
+1369: 					}else{
+1370: 						fail("getEditText(int) Error: Fail to get second 'EditText'");
+1371: 						super.fail("Fail to verify getCurrentEditTexts()!!!");
+1372: 					}
+1373: 					
+1374: 				}else{
+1375: 					pass("getCurrentEditTexts() Error: Not got at the least 2 EditTexts.");
+1376: 				}
+1377: 				
+1378: 			}else{
+1379: 				fail("getView(String, int) Error: Not Got first 'EditText'");
+1380: 			}
+1381: 			
+1382: 		}else{
+1383: 			fail("waitForView(String, int, long, boolean) Error: 'EditText' NOT appear at least 2 times within timeout 1000 millis");
+1384: 		}
+1385: 	}
+1386: 	
+1387: 	/**
+1388: 	 * <pre>
+1389: 	 * First this method will wait for the DefaultThemeActivity
+1390: 	 * {@link Solo#waitForActivity(String)}
+1391: 	 * 
+1392: 	 * It will verify some methods related to CheckBox as following:
+1393: 	 * {@link Solo#clickOnCheckBox(int)}
+1394: 	 * {@link Solo#isCheckBoxChecked(int)}
+1395: 	 * {@link Solo#isCheckBoxChecked(String)}
+1396: 	 *
+1397: 	 * It will verify some methods related to RadioButton as following:
+1398: 	 * {@link Solo#clickOnRadioButton(int)}
+1399: 	 * {@link Solo#isRadioButtonChecked(int)}
+1400: 	 * {@link Solo#isRadioButtonChecked(String)}
+1401: 	 * 
+1402: 	 * It will verify some methods related to Spinner as following:
+1403: 	 * {@link Solo#getCurrentSpinners()}
+1404: 	 * {@link Solo#pressSpinnerItem(int, int)}
+1405: 	 * {@link Solo#isSpinnerTextSelected(String)}
+1406: 	 * {@link Solo#isSpinnerTextSelected(int, String)}
+1407: 	 * 
+1408: 	 * It will verify some methods related to ToggleButton as following:
+1409: 	 * {@link Solo#getCurrentToggleButtons()}
+1410: 	 * {@link Solo#clickOnToggleButton(String)}
+1411: 	 * {@link Solo#searchToggleButton(String)}
+1412: 	 * {@link Solo#searchToggleButton(String, int)}
+1413: 	 * {@link Solo#isToggleButtonChecked(int)}
+1414: 	 * {@link Solo#isToggleButtonChecked(String)}
+1415: 	 * 
+1416: 	 * </pre>
+1417: 	 * 
+1418: 	 * Most tests are positive.<br>
+1419: 	 * 
+1420: 	 * @throws Exception
+1421: 	 */
+1422: 	private void testStuffsInDefaultThemeActivity(String activityName) throws Exception{
+1423: 		
+1424: 		//A keyboard will be shown automatically, use goBack() to show the activity we want.
+1425: 		debug("Try to go back to Activity '"+activityName+"'");
+1426: 		
+1427: 		solo.goBack();
+1428: 		if(solo.waitForActivity(activityName)){
+1429: 			debug("Came back to activity "+activityName);
+1430: 		}else{
+1431: 			error("Can't wait activity "+activityName+", can't continue.");
+1432: 			return;
+1433: 		}
+1434: 	
+1435: 		testCheckeBox();
+1436: 		testRadioButton();
+1437: 		testSpinner();
+1438: 		testToggleButton();
+1439: 		
+1440: 	}
+1441: 	
+1442: 	/**
+1443: 	 * It will verify some methods related to CheckBox as following:
+1444: 	 * {@link Solo#getCurrentCheckBoxes()}
+1445: 	 * {@link Solo#clickOnCheckBox(int)}
+1446: 	 * {@link Solo#isCheckBoxChecked(int)}
+1447: 	 * {@link Solo#isCheckBoxChecked(String)}
+1448: 	 * 
+1449: 	 * @throws Exception
+1450: 	 * @see {@link #testStuffsInDefaultThemeActivity(String)}
+1451: 	 * 
+1452: 	 */
+1453: 	private void testCheckeBox() throws Exception{
+1454: 		/**=============================================CheckBox=====================================================**/
+1455: 		//There are 2 CheckBox, they should be visible as they are on the top of the layout
+1456: 		//If the list size is not 2, need to modify code to scroll and make them shown
+1457: 		List<String> checkboxList = solo.getCurrentCheckBoxes();
+1458: 		pass("getCurrentCheckBoxes() Correct: Found check box as:");
+1459: 		for(String ID: checkboxList){
+1460: 			debug("Check Box ID="+ID);
+1461: 		}
+1462: 		
+1463: 		//I know there 2 CheckBox, so test it with minimumApprence equals to 2
+1464: 		int minimumApprence = 2;
+1465: 		if(solo.waitForView("android.widget.CheckBox",minimumApprence,1000,true)){
+1466: 			pass("waitForView(String, int, long, boolean) Correct: 'CheckBox' appears at least 2 times within timeout 1000 millis");
+1467: 			
+1468: 			int index = 0;
+1469: 			String checkboxName = "Checkbox 1";
+1470: 			try{
+1471: 				boolean checked = solo.isCheckBoxChecked(index);
+1472: 				info("Beofre clickOnCheckBox(int): The check box's checked status is "+checked);
+1473: 				//Click the first check box
+1474: 				if(solo.clickOnCheckBox(index)){
+1475: 					pass("clickOnCheckBox(int) Clicked pass: The "+index+"th CheckBox is clicked.");
+1476: 					info("After clickOnCheckBox(int): The check box's checked status is "+solo.isCheckBoxChecked(index));
+1477: 					
+1478: 					//Check if the click really change the checkbox's checked status
+1479: 					if(!Boolean.valueOf(checked).equals(Boolean.valueOf(solo.isCheckBoxChecked(index))) ){
+1480: 						pass("clickOnCheckBox(int) Really work: The "+index+"th CheckBox's checked status changed.");
+1481: 					}else{
+1482: 						fail("clickOnCheckBox(int) Fail work: The "+index+"th CheckBox's checked status NOT changed.");
+1483: 					}
+1484: 					
+1485: 					//Use the checkbox'name to verify the same checkbox
+1486: 					info("isCheckBoxChecked(String) Info: The CheckBox '"+checkboxName+"' checked status is '"+solo.isCheckBoxChecked(checkboxName)+"'");
+1487: 					
+1488: 					if(solo.isCheckBoxChecked(checkboxName)==solo.isCheckBoxChecked(index)){
+1489: 						pass("isCheckBoxChecked(int) and isCheckBoxChecked(String) return the same value");
+1490: 					}else{
+1491: 						fail("isCheckBoxChecked(int) and isCheckBoxChecked(String) return DIFFERENT value");
+1492: 					}
+1493: 					
+1494: 				}else{
+1495: 					fail("clickOnCheckBox(int) Error: Fail to click on "+index+"th CheckBox.");
+1496: 				}
+1497: 				
+1498: 			} catch (RemoteSoloException e) {
+1499: 				fail("isCheckBoxChecked(int) or isCheckBoxChecked(String) Error!");
+1500: 				debug("Met RemoteSoloException="+e.getMessage());
+1501: 				e.printStackTrace();
+1502: 			}
+1503: 
+1504: 		}else{
+1505: 			fail("waitForView(String, int, long, boolean) Error: 'CheckBox' NOT appear at least 2 times within timeout 1000 millis");
+1506: 		}
+1507: 	}
+1508: 	
+1509: 	/**
+1510: 	 * It will verify some methods related to RadioButton as following:
+1511: 	 * {@link Solo#getCurrentRadioButtons()}
+1512: 	 * {@link Solo#clickOnRadioButton(int)}
+1513: 	 * {@link Solo#isRadioButtonChecked(int)}
+1514: 	 * {@link Solo#isRadioButtonChecked(String)}
+1515: 	 * 
+1516: 	 * @throws Exception
+1517: 	 * @see {@link #testStuffsInDefaultThemeActivity(String)}
+1518: 	 * 
+1519: 	 */
+1520: 	private void testRadioButton() throws Exception{
+1521: 		/**=============================================RadioButton=====================================================**/
+1522: 		//There are 2 Radio buttons, they should be visible as they are on the top of the layout
+1523: 		//If the list size is not 2, need to modify code to scroll and make them shown
+1524: 		List<String> radioButtonList = solo.getCurrentRadioButtons();
+1525: 		pass("getCurrentRadioButtons() Correct: Found radio buttons as:");
+1526: 		for(String ID: radioButtonList){
+1527: 			debug("Radio Button ID="+ID);
+1528: 		}
+1529: 		
+1530: 		//I know there 2 RadioButtons, so test it with minimumApprence equals to 2
+1531: 		int minimumApprence = 2;
+1532: 		if(solo.waitForView("android.widget.RadioButton",minimumApprence,1000,true)){
+1533: 			pass("waitForView(String, int, long, boolean) Correct: 'RadioButton' appears at least 2 times within timeout 1000 millis");
+1534: 			
+1535: 			int index = 1;
+1536: 			String name = "RadioButton 2";
+1537: 
+1538: 			try {
+1539: 				boolean checked = solo.isRadioButtonChecked(index);
+1540: 				info("Beofre clickOnCheckBox(int): The radio button's checked status is "+checked);
+1541: 				//Click the second radio button
+1542: 				if(solo.clickOnRadioButton(index)){
+1543: 					pass("clickOnRadioButton(int) Clicked pass: The "+index+"th RadioButton is clicked.");
+1544: 					info("After clickOnRadioButton(int): The radio button's checked status is "+solo.isRadioButtonChecked(index));
+1545: 					
+1546: 					//Check if the click really change the radiobutton's checked status
+1547: 					if(!Boolean.valueOf(checked).equals(Boolean.valueOf(solo.isRadioButtonChecked(index))) ){
+1548: 						pass("clickOnRadioButton(int) Really work: The "+index+"th RadioButton's checked status changed.");
+1549: 					}else{
+1550: 						fail("clickOnRadioButton(int) Fail work: The "+index+"th RadioButton's checked status NOT changed.");
+1551: 					}
+1552: 					
+1553: 					//Use the radiobutton's name to verify the same radiobutton
+1554: 					info("isRadioButtonChecked(String) Info: The CheckBox '"+name+"' checked status is '"+solo.isRadioButtonChecked(name)+"'");
+1555: 					
+1556: 					if(solo.isRadioButtonChecked(name)==solo.isRadioButtonChecked(index)){
+1557: 						pass("isRadioButtonChecked(int) and isRadioButtonChecked(String) return the same value");
+1558: 					}else{
+1559: 						fail("isRadioButtonChecked(int) and isRadioButtonChecked(String) return DIFFERENT value");
+1560: 					}
+1561: 					
+1562: 				}else{
+1563: 					fail("clickOnRadioButton(int) Error: Fail to click on "+index+"th RadionButton.");
+1564: 				}
+1565: 			} catch (RemoteSoloException e) {
+1566: 				fail("isRadioButtonChecked(int) or isRadioButtonChecked(String) Error!");
+1567: 				debug("Met RemoteSoloException="+e.getMessage());
+1568: 				e.printStackTrace();
+1569: 			}
+1570: 
+1571: 		}else{
+1572: 			fail("waitForView(String, int, long, boolean) Error: 'RadionButton' NOT appear at least 2 times within timeout 1000 millis");
+1573: 		}
+1574: 	}
+1575: 	
+1576: 	/**
+1577: 	 * Verify some methods related to Spinner as following:
+1578: 	 * {@link Solo#getCurrentSpinners()}
+1579: 	 * {@link Solo#pressSpinnerItem(int, int)}
+1580: 	 * {@link Solo#isSpinnerTextSelected(String)}
+1581: 	 * {@link Solo#isSpinnerTextSelected(int, String)}
+1582: 	 * 
+1583: 	 * @throws Exception
+1584: 	 * @see {@link #testStuffsInDefaultThemeActivity(String)}
+1585: 	 * 
+1586: 	 */
+1587: 	private void testSpinner() throws Exception{
+1588: 		/**=============================================Spinner=====================================================**/
+1589: 		//There is 1 Spinner in the current activity
+1590: 		int minimumApprence = 1;
+1591: 		List spinners = solo.getCurrentSpinners();
+1592: 		//Scroll down until we got the spinner
+1593: 		while((spinners==null || spinners.size()==0) && solo.scrollDown()){
+1594: 			spinners = solo.getCurrentSpinners();
+1595: 		}
+1596: 		
+1597: 		if(spinners!=null && spinners.size()==minimumApprence){
+1598: 			pass("getCurrentSpinners() Correct: return "+minimumApprence+" Spinner.");
+1599: 			String SpinnerID = (String) spinners.get(0);
+1600: 			info("The spinner UID is '"+SpinnerID+"'");
+1601: 			
+1602: 			//There are 8 items in this Spinner
+1603: 			info("Verify if the first Item is selecte.");
+1604: 			int spinnerIndex = 0;//As there is only one spinner
+1605: 			int itemRelativeIndex = 0;//relative to the current selected item
+1606: 			String item = "Mercury";//is the first item of the whole spinner
+1607: 			try{
+1608: 				//Press the first item (in the current view, not in the whole data) in the spinner
+1609: 				//If we launch the Activity for the first time, the first item will be the first of whole spinner
+1610: 				if(solo.pressSpinnerItem(spinnerIndex, itemRelativeIndex)){
+1611: 					pass("pressSpinnerItem(int, int) correct: the first item of "+spinnerIndex+"th spinner is pressed.");
+1612: 					
+1613: 					if(solo.isSpinnerTextSelected(spinnerIndex,item)){
+1614: 						info("isSpinnerTextSelected(int, String) : the item '"+item+"' of "+spinnerIndex+"th spinner is selected.");
+1615: 					}else{
+1616: 						info("isSpinnerTextSelected(int, String) : the item '"+item+"' of "+spinnerIndex+"th spinner is not selected.");
+1617: 					}
+1618: 					
+1619: 					if(solo.isSpinnerTextSelected(item)){
+1620: 						info("isSpinnerTextSelected(String) : the item '"+item+"' of ANY spinner is selected.");
+1621: 					}else{
+1622: 						info("isSpinnerTextSelected(String) : the item '"+item+"' of ANY spinner is not selected.");
+1623: 					}
+1624: 					
+1625: 					//Try to select the last item
+1626: 					itemRelativeIndex = 7;
+1627: 					item = "Neptune";
+1628: 					if(solo.pressSpinnerItem(spinnerIndex, itemRelativeIndex)){
+1629: 						pass("pressSpinnerItem(int, int) correct: the last item of "+spinnerIndex+"th spinner is pressed.");
+1630: 						
+1631: 						if(solo.isSpinnerTextSelected(item)){
+1632: 							info("isSpinnerTextSelected(String) : the item '"+item+"' of ANY spinner is selected.");
+1633: 						}else{
+1634: 							info("isSpinnerTextSelected(String) : the item '"+item+"' of ANY spinner is not selected.");
+1635: 						}						
+1636: 						
+1637: 					}else{
+1638: 						pass("pressSpinnerItem(int, int) fail! ");
+1639: 					}
+1640: 					
+1641: 				}else{
+1642: 					pass("pressSpinnerItem(int, int) fail! ");
+1643: 				}
+1644: 				
+1645: 			} catch (RemoteSoloException e) {
+1646: 				fail("isSpinnerTextSelected(String) or isSpinnerTextSelected(int, String) Error!");
+1647: 				debug("Met RemoteSoloException="+e.getMessage());
+1648: 				e.printStackTrace();
+1649: 			}
+1650: 			
+1651: 		}else{
+1652: 			fail("getCurrentSpinners() Error: NOT return "+minimumApprence+" Spinner.");
+1653: 		}
+1654: 	}
+1655: 	
+1656: 	/**
+1657: 	 * Verify some methods related to ToggleButton as following:
+1658: 	 * {@link Solo#getCurrentToggleButtons()}
+1659: 	 * {@link Solo#clickOnToggleButton(String)}
+1660: 	 * {@link Solo#searchToggleButton(String)}
+1661: 	 * {@link Solo#searchToggleButton(String, int)}
+1662: 	 * {@link Solo#isToggleButtonChecked(int)}
+1663: 	 * {@link Solo#isToggleButtonChecked(String)}
+1664: 	 * 
+1665: 	 * @throws Exception
+1666: 	 * @see {@link #testStuffsInDefaultThemeActivity(String)}
+1667: 	 * 
+1668: 	 */
+1669: 	private void testToggleButton() throws Exception{
+1670: 		/**=============================================ToggleButton=====================================================**/
+1671: 		//There are 2 toggle buttons
+1672: 		//At the first the 2 buttons are not checked, both texts are "OFF"
+1673: 		//If the button is checked, the text will changed to "ON"
+1674: 		List<String> toggleButtons = solo.getCurrentToggleButtons();
+1675: 		
+1676: 		//Scroll down until we got the 2 toggle buttons
+1677: 		while((toggleButtons==null || toggleButtons.size()<2) && solo.scrollDown()){
+1678: 			toggleButtons = solo.getCurrentToggleButtons();
+1679: 		}
+1680: 		
+1681: 		if(toggleButtons!=null && toggleButtons.size()>0){
+1682: 			pass("getCurrentToggleButtons() Correct: Found toggle buttons:");
+1683: 			for(String toggleID: toggleButtons){
+1684: 				debug("Toggle Button ID="+toggleID);
+1685: 			}
+1686: 			
+1687: 			try{
+1688: 				String textoff = "OFF";
+1689: 				String texton = "ON";
+1690: 				String text = textoff;
+1691: 				
+1692: 				//Search for the first toggle button
+1693: 				if(solo.searchToggleButton(textoff)){
+1694: 					pass("searchToggleButton(String) Correct: found toggle button with text '"+textoff+"'");
+1695: 					
+1696: 					//Will the first "OFF" be clicked?
+1697: 					//maybe, robotium should provide clickOnToggleButton(String text, int index) or clickOnToggleButton(int index)
+1698: 					int index = 0;//isToggleButtonChecked index start from 0
+1699: 					if(solo.clickOnToggleButton(textoff)){
+1700: 						pass("clickOnToggleButton(String) Correct: click toggle button with text '"+textoff+"'");
+1701: 						if(solo.isToggleButtonChecked(index)){
+1702: 							pass("isToggleButtonChecked(int) Correct: the first toggle button is checked.");
+1703: 							//After checked, the text will change to "ON", verify this
+1704: 							if(solo.isToggleButtonChecked(texton)){
+1705: 								pass("isToggleButtonChecked(String) Correct: the first toggle button is checked, text is '"+texton+"'");
+1706: 							}else{
+1707: 								fail("isToggleButtonChecked(String) Correct: the first toggle button is NOT checked, text is '"+texton+"'");
+1708: 							}
+1709: 							
+1710: 							//Click the first button again, to change the text to "OFF" again
+1711: 							if(solo.clickOnToggleButton(texton)){
+1712: 								pass("clickOnToggleButton(String) Correct: click toggle button with text '"+texton+"'");
+1713: 								
+1714: 								//Search for the second toggle button with text "OFF"
+1715: 								if(solo.searchToggleButton(textoff, 2)){
+1716: 									pass("searchToggleButton(String,int) Correct: found the second toggle button with text '"+textoff+"' ");
+1717: 								}else{
+1718: 									fail("searchToggleButton(String,int) Error: not found the second toggle button with text '"+textoff+"'");
+1719: 								}
+1720: 							}else{
+1721: 								fail("clickOnToggleButton(String) Error: Fail to click toggle button with text '"+texton+"'");
+1722: 								
+1723: 							}
+1724: 						}else{
+1725: 							pass("isToggleButtonChecked(int) Error: the first toggle button is NOT checked.");
+1726: 							
+1727: 						}
+1728: 					}else{
+1729: 						fail("clickOnToggleButton(String) Error: Fail to click toggle button with text '"+textoff+"'");
+1730: 					}
+1731: 					
+1732: 				}else{
+1733: 					fail("searchToggleButton(String) Error: not found toggle button with text '"+textoff+"'");
+1734: 				}
+1735: 				
+1736: 
+1737: 			}catch (RemoteSoloException e) {
+1738: 				fail("searchToggleButton(String) or searchToggleButton(String, int) Error!");
+1739: 				fail("isToggleButtonChecked(int) or isToggleButtonChecked(String) Error!");
+1740: 				debug("Met RemoteSoloException="+e.getMessage());
+1741: 				e.printStackTrace();
+1742: 			}
+1743: 			
+1744: 		}else{
+1745: 			fail("getCurrentToggleButtons() Error: Not found any toggle button.");
+1746: 		}
+1747: 	}
+1748: 	
+1749: 	/**
+1750: 	 * <pre>
+1751: 	 * Tested methods:
+1752: 	 * {@link Solo#waitForViewUID(String)}
+1753: 	 * {@link Solo#waitForViewUID(String, int, boolean)}
+1754: 	 * </pre>
+1755: 	 * 
+1756: 	 * @param viewUID		String, the view's uid
+1757: 	 * @param positiveTest	boolean, true for positive test, the viewUID should exist.
+1758: 	 *                               false for negative test, the viewUID should NOT exist.
+1759: 	 * @throws Exception
+1760: 	 */
+1761: 	void verifyWaitForViewUIDMethods(String viewUID, boolean positiveTest) throws Exception{
+1762: 		
+1763: 		if(positiveTest){
+1764: 			debug("Positive test: View '"+viewUID+"' should be found.");
+1765: 			
+1766: 			debug("Test waitForViewUID() with parameter 'uid' ");
+1767: 			if(solo.waitForViewUID(viewUID)){
+1768: 				String clazz = solo._last_remote_result.getProperty(Message.PARAM_CLASS);
+1769: 				pass("waitForViewUID(String) Correct: Got view '"+clazz+"' for UID="+viewUID);
+1770: 			}else{
+1771: 				fail("getView(int) Error: Not Got view for UID="+viewUID);			
+1772: 			}
+1773: 			
+1774: 			debug("Test waitForViewUID() with parameters 'uid', 'timeout' and 'scroll' ");
+1775: 			if(solo.waitForViewUID(viewUID,1000,true)){
+1776: 				String clazz = solo._last_remote_result.getProperty(Message.PARAM_CLASS);
+1777: 				pass("waitForViewUID(String, int, boolean) Correct: Got view '"+clazz+"' for UID="+viewUID);
+1778: 			}else{
+1779: 				fail("waitForViewUID(String, int, boolean) Error: Not Got view for UID="+viewUID);			
+1780: 			}
+1781: 			
+1782: 		}else{
+1783: 			debug("Negative test: View '"+viewUID+"' should not be found.");
+1784: 			
+1785: 			debug("Test waitForViewUID() with parameter 'uid' ");
+1786: 			if(solo.waitForViewUID(viewUID)){
+1787: 				String clazz = solo._last_remote_result.getProperty(Message.PARAM_CLASS);
+1788: 				fail("waitForViewUID(String) Error: Got view '"+clazz+"' for UID="+viewUID+"; But should not find.");
+1789: 			}else{
+1790: 				pass("getView(int) Correct: Not Got view for UID="+viewUID);			
+1791: 			}
+1792: 			
+1793: 			debug("Test waitForViewUID() with parameters 'uid', 'timeout' and 'scroll' ");
+1794: 			if(solo.waitForViewUID(viewUID, 1000, true)){
+1795: 				String clazz = solo._last_remote_result.getProperty(Message.PARAM_CLASS);
+1796: 				fail("waitForViewUID(String, int, boolean) Error: Got view '"+clazz+"' for UID="+viewUID+"; But should not find.");
+1797: 			}else{
+1798: 				pass("waitForViewUID(String, int, boolean) Correct: Not Got view for UID="+viewUID);			
+1799: 			}
+1800: 		}
+1801: 	}
+1802: 	
+1803: 	/**
+1804: 	 * <pre>
+1805: 	 * Tested methods:
+1806: 	 * {@link Solo#getView(int)}
+1807: 	 * </pre>
+1808: 	 * 
+1809: 	 * @param RID			int, The id used to get the view. This is the generated ID during compilation of AUT.
+1810: 	 * @param positiveTest  boolean, true for positive test, the RID should exist; 
+1811: 	 *                               false for negative test, the RID should NOT exist.
+1812: 	 */
+1813: 	void verifyGetViewByIdMethods(int RID, boolean positiveTest) throws Exception{
+1814: 		
+1815: 		String uid = solo.getView(RID);
+1816: 		debug("For RID '"+RID+"', Returned View UID="+uid);
+1817: 		if(positiveTest){
+1818: 			debug("Positive test.");
+1819: 			if(uid!=null){
+1820: 				String clazz = solo._last_remote_result.getProperty(Message.PARAM_CLASS);
+1821: 				pass("getView(int) Correct: Got view '"+clazz+"' for id="+RID);
+1822: 			}else{
+1823: 				fail("getView(int) Error: Not Got view for id="+RID);			
+1824: 			}
+1825: 		}else{
+1826: 			debug("Negative test.");
+1827: 			if(uid!=null){
+1828: 				String clazz = solo._last_remote_result.getProperty(Message.PARAM_CLASS);
+1829: 				fail("getView(int) Error: Got view '"+clazz+"' for id="+RID+"; But should not find.");
+1830: 			}else{
+1831: 				pass("getView(int) Correct: Not Got view for id="+RID);			
+1832: 			}
+1833: 		}
+1834: 	}
+1835: 	
+1836: 	/**
+1837: 	 * <pre>
+1838: 	 * "Views -> Date Widgets -> 1. Dialog" is the path to 'Date Time Picker'.
+1839: 	 * This method will open the DatePicker and TimePicker, and test related methods.
+1840: 	 * 
+1841: 	 * Tested methods:
+1842: 	 * {@link Solo#clickLongOnText(String)}
+1843: 	 * {@link Solo#clickLongOnText(String, int)}
+1844: 	 * {@link Solo#clickLongOnText(String, int, int)}
+1845: 	 * {@link Solo#clickLongOnText(String, int, boolean)}
+1846: 	 * 
+1847: 	 * {@link Solo#getView(String, int)}
+1848: 	 * {@link Solo#waitForView(String)}
+1849: 	 * 
+1850: 	 * </pre>
+1851: 	 * 
+1852: 	 * All tests are positive.
+1853: 	 */
+1854: 	void gotoDateTimePicker()throws Exception{
+1855: 		String firstLevelListUID = null;
+1856: 		String secondLevelListUID = null;
+1857: 		String thirdLevelListUID = null;
+1858: 		
+1859: 		if(solo.waitForView("android.widget.ListView")){
+1860: 			pass("waitForView(String) Correct: 'ListView' appears.");
+1861: 			
+1862: 			scrollToTop();
+1863: 			
+1864: 			firstLevelListUID = solo.getView("android.widget.ListView", 0);
+1865: 			debug("First level ListView UID= "+firstLevelListUID);
+1866: 			if(firstLevelListUID!=null){
+1867: 				pass("getView(String, int) Correct: 'ListView' was got.");
+1868: 				
+1869: 				String text = "Views";
+1870: 				
+1871: 				if(solo.clickLongOnText(text, 1, true)){
+1872: 
+1873: 					pass("clickLongOnText(String, int, boolean) Correct: Text '"+text+"' was clicked.");
+1874: 					
+1875: 					if(solo.waitForView("android.widget.ListView", 1, 1000)){
+1876: 						pass("waitForView(String, int, long) Correct: 'ListView' appears within timeout");
+1877: 						
+1878: 						secondLevelListUID = solo.getView("android.widget.ListView", 0);
+1879: 						debug("Second level ListView UID= "+secondLevelListUID);
+1880: 						if(secondLevelListUID!=null){
+1881: 							pass("getView(String, int) Correct: 'ListView' was got.");
+1882: 							
+1883: 							text = "Date Widgets";
+1884: 							if(solo.clickLongOnText(text, 1)){
+1885: 								pass("clickLongOnText(String, int) Correct: Text '"+text+"' was clicked.");
+1886: 								
+1887: 								if(solo.waitForView("android.widget.ListView")){
+1888: 									pass("waitForView(String) Correct: 'ListView' appears within timeout");
+1889: 									
+1890: 									thirdLevelListUID = solo.getView("android.widget.ListView", 0);
+1891: 									debug("Third level ListView UID= "+thirdLevelListUID);
+1892: 									if(thirdLevelListUID!=null){
+1893: 										pass("getView(String, int) Correct: 'ListView' was got.");
+1894: 										
+1895: 										text = "Dialog";
+1896: 										if(solo.clickLongOnText(wrapRegex(text))){
+1897: 											pass("clickLongOnText(String, int) Correct: Click on '"+text+"' successfully.");
+1898: 											
+1899: 											testDatePicker();
+1900: 											
+1901: 											testTimePicker();
+1902: 																						
+1903: 										}else{
+1904: 											fail("clickLongOnText(String, int) Error: There is no Text '"+text+"'!");
+1905: 										}
+1906: 										
+1907: 										goBackToViewUID(thirdLevelListUID);
+1908: 										
+1909: 									}else{
+1910: 										fail("getView(String, int) Error: 'ListView' was NOT got.");
+1911: 									}
+1912: 									
+1913: 								}else{
+1914: 									fail("waitForView(String) Correct: ListView NOT appear!");
+1915: 								}
+1916: 								
+1917: 							}else{
+1918: 								fail("clickLongOnText(String, int) Correct: Fail to click on Text '"+text+"'!");
+1919: 							}
+1920: 							
+1921: 							goBackToViewUID(secondLevelListUID);
+1922: 						}else{
+1923: 							fail("getView(String, int) Error: 'ListView' was NOT got.");
+1924: 						}
+1925: 						
+1926: 					}else{
+1927: 						fail("waitForView(String, int, long) Correct: 'ListView' NOT appear within timeout.");
+1928: 					}
+1929: 					
+1930: 				}else{
+1931: 					fail("clickLongOnText(String, int, boolean) Error: Fail to click on Text '"+text+"'!");	
+1932: 				}
+1933: 				
+1934: 				goBackToViewUID(firstLevelListUID);
+1935: 
+1936: 			}else{
+1937: 				fail("getView(String, int) Error: 'ListView' was NOT got.");
+1938: 			}
+1939: 						
+1940: 		}else{
+1941: 			fail("waitForView(String) Error: ListView NOT appear!");
+1942: 		}
+1943: 		
+1944: 	}
+1945: 	
+1946: 	/**
+1947: 	 * <pre>
+1948: 	 * Used to test methods related to "Date picker":
+1949: 	 * 
+1950: 	 * {@link Solo#waitForText(String)}
+1951: 	 * {@link Solo#waitForText(String, int, long)}
+1952: 	 * {@link Solo#getText(String)}
+1953: 	 * {@link Solo#clickOnView(String)}
+1954: 	 * 
+1955: 	 * {@link Solo#searchText(String, boolean)}
+1956: 	 * {@link Solo#searchText(String, int)}
+1957: 	 * 
+1958: 	 * {@link Solo#setDatePicker(int, int, int, int)}
+1959: 	 * {@link Solo#setDatePicker(String, int, int, int)}
+1960: 	 * 
+1961: 	 * </pre>
+1962: 	 * 
+1963: 	 * @throws Exception
+1964: 	 */
+1965: 	private void testDatePicker() throws Exception{
+1966: 		String textdate = "change the date";
+1967: 		boolean buttonClicked = false;
+1968: 		
+1969: 		printCurrentViews(TYPE_TEXTVIEW);
+1970: 		
+1971: 		if(solo.waitForText(textdate)){
+1972: 			pass("waitForText(String) Correct: success wait for text '"+textdate+"'");
+1973: 			
+1974: 			debug("Try to click button by method solo.clickOnView(String).");
+1975: 			String dateButtonTextId = solo.getText(textdate);
+1976: 			if(dateButtonTextId!=null){
+1977: 				pass("getText(String) Corrcet: get id '"+dateButtonTextId+"' for text '"+textdate+"'");
+1978: 				if(solo.clickOnView(dateButtonTextId)){
+1979: 					pass("clickOnView(String) Correct: click on view whose id="+dateButtonTextId);
+1980: 					buttonClicked = true;
+1981: 				}else{
+1982: 					fail("clickOnView(String) Error: fail to click on view whose id="+dateButtonTextId);
+1983: 				}
+1984: 			}else{
+1985: 				fail("getText(String) Error: fail to get id for text '"+textdate+"'");
+1986: 			}
+1987: 			
+1988: 			if(!buttonClicked){
+1989: 				debug("Try to click button by method solo.clickOnButton(String).");
+1990: 				if(solo.clickOnButton(textdate)){
+1991: 					pass("clickOnButton(String) Correct: click on button '"+textdate+"'");
+1992: 					buttonClicked = true;
+1993: 				}else{
+1994: 					fail("clickOnButton(String) Error: fail to click on button '"+textdate+"'");
+1995: 				}
+1996: 			}
+1997: 		
+1998: 			String setButtonText = "Set";
+1999: 			int year = 2000;
+2000: 			int month = 4;//month start from 0, so 4 will be month MAY
+2001: 			int day = 1;
+2002: 			String dateText = ""+(month+1)+"-"+day+"-"+year;
+2003: 			if(buttonClicked){
+2004: 				if(solo.waitForText(setButtonText, 1, 500)){
+2005: 					pass("waitForText(String, int, long) Correct: success wait for text '"+setButtonText+"' for at least one time in 500 millis");
+2006: 					
+2007: 					printCurrentViews(TYPE_DATEPICKER);
+2008: 					
+2009: 					//Set datepicker with index
+2010: 					if(solo.setDatePicker(0, year, month, day)){
+2011: 						pass("setDatePicker(int, int, int, int) Correct: set the first date picker to "+dateText);
+2012: 						if(solo.clickOnButton(setButtonText)){
+2013: 							//verify if we set the date correctly
+2014: 							if(solo.searchText(dateText, 1)){
+2015: 								pass("searchText(String, int) Correct: success search text '"+dateText+"'");
+2016: 							}else{
+2017: 								fail("searchText(String, int) Error: fail to search text '"+dateText+"'");
+2018: 							}
+2019: 						}else{
+2020: 							solo.goBack();
+2021: 						}
+2022: 					}else{
+2023: 						fail("setDatePicker(int, int, int, int) Error: fail to set the first date picker to "+dateText);
+2024: 					}
+2025: 					
+2026: 				}else{
+2027: 					fail("waitForText(String, int, long) Error: fail to wait for text 'Set date' for at least one time in 500 millis");
+2028: 				}
+2029: 			}else{
+2030: 				debug("Button '"+textdate+"' was not clicked.");
+2031: 			}
+2032: 			
+2033: 			//set datepicker with name
+2034: 			if(solo.clickOnButton(textdate)){
+2035: 				pass("clickOnButton(String) Correct: click on button '"+textdate+"'");
+2036: 
+2037: 				year = 2050;
+2038: 				month = 8;//month start from 0, so 8 will be month SEP
+2039: 				day = 23;
+2040: 				dateText = ""+(month+1)+"-"+day+"-"+year;
+2041: 				if(solo.waitForView("android.widget.DatePicker")){
+2042: 					pass("waitForView(String) correct: success wait for view 'DatePicker'");
+2043: 					String uidDatePicker = solo.getView("android.widget.DatePicker", 0);
+2044: 					if(uidDatePicker!=null){
+2045: 						pass("getView(String) correct: success get first view 'DatePicker', id="+uidDatePicker);
+2046: 						if(solo.setDatePicker(uidDatePicker, year, month, day)){
+2047: 							pass("setDatePicker(String, int, int, int) Correct: set the first date picker to "+dateText);
+2048: 							if(solo.clickOnButton(setButtonText)){
+2049: 								//verify if we set the date correctly
+2050: 								if(solo.searchText(dateText, true)){
+2051: 									pass("searchText(String, boolean) Correct: success search text '"+dateText+"'");
+2052: 								}else{
+2053: 									fail("searchText(String, boolean) Error: fail to search text '"+dateText+"'");
+2054: 								}
+2055: 							}else{
+2056: 								solo.goBack();
+2057: 							}
+2058: 						}else{
+2059: 							fail("setDatePicker(String, int, int, int) Error: fail to set the first date picker to "+dateText);
+2060: 						}
+2061: 					}else{
+2062: 						fail("getView(String) Error: fail to get first view 'DatePicker'");
+2063: 					}
+2064: 				}else{
+2065: 					fail("waitForView(String) Error: fail to wait for view 'DatePicker'");
+2066: 				}
+2067: 			}else{
+2068: 				fail("clickOnButton(String) Error: fail to click on button '"+textdate+"'");
+2069: 			}
+2070: 			
+2071: 		}else{
+2072: 			fail("waitForText(String) Error: fail to wait for text '"+textdate+"'");
+2073: 		}
+2074: 		
+2075: 	}
+2076: 	
+2077: 	/**
+2078: 	 * <pre>
+2079: 	 * Used to test methods related to "Time picker":
+2080: 	 * 
+2081: 	 * {@link Solo#waitForView(String)}
+2082: 	 * {@link Solo#waitForText(String, int, long)}
+2083: 	 * 
+2084: 	 * {@link Solo#searchText(String, boolean)}
+2085: 	 * {@link Solo#searchText(String, int)}
+2086: 	 * 
+2087: 	 * {@link Solo#setTimePicker(int, int, int)}
+2088: 	 * {@link Solo#setTimePicker(String, int, int)}
+2089: 	 * 
+2090: 	 * </pre>
+2091: 	 * 
+2092: 	 * @throws Exception
+2093: 	 */
+2094: 	private void testTimePicker() throws Exception{
+2095: 		String texttime = "change the time";
+2096: 		
+2097: 		if(solo.waitForView("android.widget.Button")){
+2098: 			pass("waitForView(String) Correct: success wait for view 'android.widget.Button");
+2099: 			
+2100: 			String setButtonText = "Set";
+2101: 			//There is on toggle button to show "AM" or "PM", this button will change according to hour value.
+2102: 			//If the hour is bigger than 12, botton will be PM; otherwise it will be AM.
+2103: 			int hour = 15;
+2104: 			int minute = 14;
+2105: 			String timeText = ""+hour+":"+minute;
+2106: 			String ampm = "";
+2107: 			
+2108: 			if (solo.clickOnButton(texttime)) {
+2109: 				pass("clickOnButton(String) Correct: click on button '" + texttime + "'");
+2110: 
+2111: 				if(solo.waitForText(setButtonText, 1, 500)){
+2112: 					pass("waitForText(String, int, long) Correct: success wait for text '"+setButtonText+"' for at least one time in 500 millis");
+2113: 					
+2114: 					printCurrentViews(TYPE_TIMEPICKER);
+2115: 					
+2116: 					//Set timepicker with index
+2117: 					if(solo.setTimePicker(0, hour, minute)){
+2118: 						ampm = isTimePM()? "PM":"AM";
+2119: 						pass("setTimePicker(int, int, int) Correct: set the first time picker to "+timeText + " "+ ampm );
+2120: 						
+2121: 						if(solo.clickOnButton(setButtonText)){
+2122: 							//verify if we set the time correctly
+2123: 							if(solo.searchText(timeText, 1)){
+2124: 								pass("searchText(String, int) Correct: success search text '"+timeText+"'");
+2125: 							}else{
+2126: 								fail("searchText(String, int) Error: fail to search text '"+timeText+"'");
+2127: 							}
+2128: 						}else{
+2129: 							solo.goBack();
+2130: 						}
+2131: 					}else{
+2132: 						fail("setDatePicker(int, int, int, int) Error: fail to set the first date picker to "+timeText);
+2133: 					}
+2134: 					
+2135: 				}else{
+2136: 					fail("waitForText(String, int, long) Error: fail to wait for text 'Set time' for at least one time in 500 millis");
+2137: 				}
+2138: 			} else {
+2139: 				fail("clickOnButton(String) Error: fail to click on button '"+ texttime + "'");
+2140: 			}
+2141: 			
+2142: 			//set datepicker with name
+2143: 			if(solo.clickOnButton(texttime)){
+2144: 				pass("clickOnButton(String) Correct: click on button '"+texttime+"'");
+2145: 
+2146: 				hour = 4;
+2147: 				minute = 28;
+2148: 				timeText = ""+hour+":"+minute;
+2149: 				
+2150: 				if(solo.waitForView("android.widget.TimePicker")){
+2151: 					pass("waitForView(String) correct: success wait for view 'TimePicker'");
+2152: 					String uid = solo.getView("android.widget.TimePicker", 0);
+2153: 					if(uid!=null){
+2154: 						pass("getView(String) correct: success get first view 'TimePicker', id="+uid);
+2155: 						if(solo.setTimePicker(uid, hour, minute)){
+2156: 							ampm = isTimePM()? "PM":"AM";
+2157: 							pass("setTimePicker(String, int, int) Correct: set the first time picker to "+timeText+" "+ampm);
+2158: 							
+2159: 							//Change to "PM"
+2160: 							if(solo.clickOnButton("AM")){
+2161: 								debug("click on AM, time will be changed to PM");
+2162: 								if(isTimePM()){
+2163: 									timeText = ""+(hour+12)+":"+minute;
+2164: 								}
+2165: 							}
+2166: 							
+2167: 							if(solo.clickOnButton(setButtonText)){
+2168: 								//verify if we set the time correctly
+2169: 								if(solo.searchText(timeText, true)){
+2170: 									pass("searchText(String, boolean) Correct: success search text '"+timeText+"'");
+2171: 								}else{
+2172: 									fail("searchText(String, boolean) Error: fail to search text '"+timeText+"'");
+2173: 								}
+2174: 							}else{
+2175: 								solo.goBack();
+2176: 							}
+2177: 						}else{
+2178: 							fail("setTimePicker(String, int, int) Error: fail to set the first time picker to "+timeText);
+2179: 						}
+2180: 					}else{
+2181: 						fail("getView(String) Error: fail to get first view 'TimePicker'");
+2182: 					}
+2183: 				}else{
+2184: 					fail("waitForView(String) Error: fail to wait for view 'TimePicker'");
+2185: 				}
+2186: 			}else{
+2187: 				fail("clickOnButton(String) Error: fail to click on button '"+texttime+"'");
+2188: 			}
+2189: 			
+2190: 		}else{
+2191: 			fail("waitForView(String) Error: fail to wait for view 'android.widget.Button");
+2192: 		}
+2193: 	}
+2194: 	
+2195: 	/**
+2196: 	 * 
+2197: 	 * @return 	boolean, true if the time is pm
+2198: 	 * @see #testTimePicker()
+2199: 	 */
+2200: 	private boolean isTimePM() throws Exception{
+2201: 		String pm = "PM";
+2202: 		String am = "AM";
+2203: 		
+2204: 		if(solo.searchText(am,1)) return false;
+2205: 		
+2206: 		if(solo.searchText(pm, 1)){
+2207: 			return true;
+2208: 		}else{
+2209: 			if(solo.searchText(pm, 1, true)){
+2210: 				return true;
+2211: 			}else{
+2212: 				if(solo.searchText(pm, 1, true, false)){
+2213: 					return true;
+2214: 				}
+2215: 			}
+2216: 		}
+2217: 		
+2218: 		return false;
+2219: 	}
+2220: 	
+2221: 	
+2222: 	/**
+2223: 	 * <pre>
+2224: 	 * "Views" is the path to 'Views List'.
+2225: 	 * Tested methods:
+2226: 	 * 
+2227: 	 * {@link Solo#getView(String, int)}
+2228: 	 * {@link Solo#waitForView(String)}
+2229: 	 * 
+2230: 	 * {@link Solo#clickOnText(String, int, boolean)}
+2231: 	 * 
+2232: 	 * </pre>
+2233: 	 * 
+2234: 	 * All tests are positive.
+2235: 	 */
+2236: 	void gotoViewsList()throws Exception{
+2237: 		String firstLevelListUID = null;
+2238: 		
+2239: 		if(solo.waitForView("android.widget.ListView")){
+2240: 			pass("waitForView(String) Correct: 'ListView' appears.");
+2241: 			
+2242: 			scrollToTop();
+2243: 			
+2244: 			firstLevelListUID = solo.getView("android.widget.ListView", 0);
+2245: 			debug("First level ListView UID= "+firstLevelListUID);
+2246: 			if(firstLevelListUID!=null){
+2247: 				pass("getView(String, int) Correct: 'ListView' was got.");
+2248: 				
+2249: 				//Test with the first item of this Views List
+2250: 				String text = "Views";
+2251: 				if(solo.clickOnText(text, 1, true)){
+2252: 					pass("clickOnText(String, int, boolean) click on text '"+text+"'");
+2253: 					
+2254: 					testInViewsList();
+2255: 					
+2256: 					testScrollInViewsList();
+2257: 					
+2258: 					//Robotium 3.6 scroll
+2259: 					testScrollForRobotium36();
+2260: 					
+2261: 					testImageButton();
+2262: 					
+2263: 					testGetViews();
+2264: 					
+2265: 				}else{
+2266: 					fail("clickOnText(String, int, boolean) fail to click on text '"+text+"'");
+2267: 				}
+2268: 				
+2269: 				goBackToViewUID(firstLevelListUID);
+2270: 
+2271: 			}else{
+2272: 				fail("getView(String, int) Error: 'ListView' was NOT got.");
+2273: 			}
+2274: 						
+2275: 		}else{
+2276: 			fail("waitForView(String) Error: ListView NOT appear!");
+2277: 		}
+2278: 		
+2279: 	}
+2280: 	
+2281: 	/**
+2282: 	 * <pre>
+2283: 	 * Tested methods:
+2284: 	 * 
+2285: 	 * {@link Solo#scrollDown()}
+2286: 	 * {@link Solo#scrollUp()}
+2287: 	 * {@link Solo#scrollUpList(int)}
+2288: 	 * {@link Solo#scrollDownList(int)}
+2289: 	 * 
+2290: 	 * {@link Solo#waitForText(String, int, long, boolean)}
+2291: 	 * 
+2292: 	 * </pre>
+2293: 	 * 
+2294: 	 * All tests are positive.
+2295: 	 */
+2296: 	private void testScrollInViewsList() throws Exception{
+2297: 		//Test with the last item of this Views List
+2298: 		//"WebView" is the last item in the list
+2299: 		String text = "WebView";
+2300: 		//robotium should scroll to bottom in list to find the text "WebView"
+2301: 		if(solo.searchText(text, 1, true)){
+2302: 			pass("searchText(String, int, boolean) Correct: success search text '"+text+"' for first occurance with scrollalbe");
+2303: 			
+2304: 			String uid = solo.getText(text, true);
+2305: 			if(uid!=null){
+2306: 				pass("getText(String, boolean) Correct: get uid '"+uid+"' for visible text '"+text+"'");
+2307: 			}else{
+2308: 				fail("getText(String, boolean) Error: fail to get uid for visible text '"+text+"'");
+2309: 			}
+2310: 			
+2311: 		}else{
+2312: 			fail("searchText(String, int, boolean) Error: Fail to search text '"+text+"' for first occurance with scrollable");	
+2313: 		}
+2314: 
+2315: 		//Now, we are at the bottom of list
+2316: 		while(solo.scrollUpList(0)){
+2317: 			//Scroll to the top of list
+2318: 			debug("Scrolling up in list ......");
+2319: 		}
+2320: 		
+2321: 		//robotium should scroll in list to find the text "WebView"
+2322: 		if(solo.searchText(text, 1, true,true)){
+2323: 			pass("searchText(String, int, boolean,boolean) Correct: success search visible text '"+text+"' for first occurance with scrollalbe");
+2324: 		}else{
+2325: 			fail("searchText(String, int, boolean,boolean) Error: Fail to search visible text '"+text+"' for first occurance with scrollable");	
+2326: 		}
+2327: 		
+2328: 		//Now, we are at the bottom of list
+2329: 		text = "Animation";//The first item in list
+2330: 		//waitForText() should fail, as "Animation" is at the top of list
+2331: 		//robotium can only scroll down to search, NEVER scroll up
+2332: 		if(solo.waitForText(text, 1, 1000, true)){
+2333: 			fail("waitForText(String, int, long, boolean) Error: success wait visible text '"+text+"' for first occurance with scrollalbe in '1000' millis, but we shouldn't find it.");
+2334: 		}else{
+2335: 			pass("waitForText(String, int, long, boolean) Correct: fail to wait visible text '"+text+"' for first occurance with scrollalbe in '1000' millis");
+2336: 			
+2337: 			scrollToTop();
+2338: 			
+2339: 			if(solo.waitForText(text)){
+2340: 				pass("waitForText(String): found text '"+text+"'");
+2341: 			}else{
+2342: 				fail("waitForText(String): fail to find text '"+text+"'");
+2343: 			}
+2344: 		}
+2345: 		
+2346: 		//try to find the last item
+2347: 		text = "WebView";
+2348: 		if(solo.waitForText(text)){
+2349: 			pass("waitForText(String) Correct: success wait text '"+text+"'");
+2350: 		}else{
+2351: 			fail("waitForText(String) Error: fail to wait text '"+text+"'");
+2352: 			
+2353: 			scrollToBottoum();
+2354: 			
+2355: 			if(solo.waitForText(text)){
+2356: 				pass("waitForText(String): found text '"+text+"'");
+2357: 			}else{
+2358: 				fail("waitForText(String): fail to find text '"+text+"'");
+2359: 			}
+2360: 		}
+2361: 	}
+2362: 	
+2363: 	/**
+2364: 	 * Test some API recently added in Robotium 3.6<br>
+2365: 	 * {@link Solo#scrollDownListUID(String)}<br>
+2366: 	 * {@link Solo#scrollListToBottomUID(String)}<br>
+2367: 	 * {@link Solo#scrollUpListUID(String)}<br>
+2368: 	 * {@link Solo#scrollListToTopUID(String)}<br>
+2369: 	 * {@link Solo#scrollListToLine(int, int)}<br>
+2370: 	 * {@link Solo#scrollListToLineUID(String, int)}<br>
+2371: 	 * 
+2372: 	 * @throws Exception
+2373: 	 */
+2374: 	
+2375: 	private void testScrollForRobotium36() throws Exception{
+2376: 
+2377: 		boolean success = false;
+2378: 		boolean canscroll = false;
+2379: 		
+2380: 		
+2381: 		if(solo.waitForView("android.widget.ListView")){
+2382: 			
+2383: 			List listviews = solo.getCurrentListViews();
+2384: 			String listviewuid = "";
+2385: 			if(listviews.size()>0){
+2386: 				listviewuid = (String)listviews.get(0);
+2387: 				debug("Got listview uid="+listviewuid);
+2388: 				
+2389: 				//At the first, the list should be able to scroll down
+2390: 				canscroll = solo.scrollDownListUID(listviewuid);
+2391: 				if(canscroll){
+2392: 					pass("Can still be scrolled");
+2393: 				}else{
+2394: 					fail("Can't be scrolled");
+2395: 				}
+2396: 				
+2397: 				//After scroll to the bottom, list should not be able to scroll down
+2398: 				canscroll = solo.scrollListToBottomUID(listviewuid);
+2399: 				if(canscroll){
+2400: 					fail("Can still be scrolled, not the bottom");
+2401: 				}else{
+2402: 					pass("Can't be scrolled, it is the bottom");
+2403: 				}
+2404: 				
+2405: 				//At the bottom, list should not be able to scroll down
+2406: 				canscroll = solo.scrollDownListUID(listviewuid);
+2407: 				if(canscroll){
+2408: 					fail("Can still be scrolled");
+2409: 				}else{
+2410: 					pass("Can't be scrolled");
+2411: 				}
+2412: 				
+2413: 				//At the bottom, the list should be able to scroll up
+2414: 				canscroll = solo.scrollUpListUID(listviewuid);
+2415: 				if(canscroll){
+2416: 					pass("Can still be scrolled");
+2417: 				}else{
+2418: 					fail("Can't be scrolled");
+2419: 				}
+2420: 				
+2421: 				//After scroll to the top, the list should not be able to scroll up
+2422: 				canscroll = solo.scrollListToTopUID(listviewuid);
+2423: 				if(canscroll){
+2424: 					fail("Can still be scrolled, not the top");
+2425: 				}else{
+2426: 					pass("Can't be scrolled, it is the top");
+2427: 				}
+2428: 				
+2429: 				//At the top, the list should not be able to scroll up
+2430: 				canscroll = solo.scrollUpListUID(listviewuid);
+2431: 				if(canscroll){
+2432: 					fail("Can still be scrolled");
+2433: 				}else{
+2434: 					pass("Can't be scrolled");
+2435: 				}
+2436: 				
+2437: 				success = solo.scrollListToLine(0, 12);
+2438: 				if(success){
+2439: 					pass("scrollListToLine success.");
+2440: 				}else{
+2441: 					fail("scrollListToLine fail.");
+2442: 				}
+2443: 				
+2444: 				solo.sleep(2000);
+2445: 				
+2446: 				success = solo.scrollListToLineUID(listviewuid, 3);
+2447: 				if(success){
+2448: 					pass("scrollListToLineUID success.");
+2449: 				}else{
+2450: 					fail("scrollListToLineUID fail.");
+2451: 				}
+2452: 				solo.sleep(2000);
+2453: 				
+2454: 			}else{
+2455: 				fail("Can't get list view to scroll");
+2456: 			}			
+2457: 		}else{
+2458: 			warn("waitForView(): can't wait a ListView.");
+2459: 		}
+2460: 		
+2461: 
+2462: 
+2463: 	}
+2464: 	
+2465: 	private void scrollToTop(){
+2466: 		//scroll to the top of the list
+2467: 		try {
+2468: 			while(solo.scrollUp()){
+2469: 				debug("Scrolling up......");
+2470: 			}
+2471: 		} catch (Exception e) {
+2472: 			e.printStackTrace();
+2473: 		}
+2474: 	}
+2475: 	
+2476: 	private void scrollToBottoum(){
+2477: 		//scroll to the bottom of the list
+2478: 		try {
+2479: 			while(solo.scrollDown()){
+2480: 				debug("Scrolling down......");
+2481: 			}
+2482: 		} catch (Exception e) {
+2483: 			e.printStackTrace();
+2484: 		}
+2485: 	}
+2486: 	
+2487: 	/**
+2488: 	 * <pre>
+2489: 	 * Tested methods:
+2490: 	 * 
+2491: 	 * {@link Solo#getView(String, int)}
+2492: 	 * {@link Solo#waitForView(String)}
+2493: 	 * 
+2494: 	 * {@link Solo#searchText(String, int)}
+2495: 	 * {@link Solo#searchText(String, int, boolean)}
+2496: 	 * {@link Solo#searchText(String, int, boolean, boolean)}
+2497: 	 * 
+2498: 	 * {@link Solo#getText(int)}
+2499: 	 * {@link Solo#getText(String)}
+2500: 	 * {@link Solo#getText(String, boolean)}
+2501: 	 * 
+2502: 	 * {@link Solo#clickLongOnText(String, int, int)}
+2503: 	 * 
+2504: 	 * {@link Solo#getCurrentTextViews()}
+2505: 	 * {@link Solo#clickLongOnView(String)}
+2506: 	 * {@link Solo#getTextViewValue(String)}
+2507: 	 * 
+2508: 	 * </pre>
+2509: 	 * 
+2510: 	 * All tests are positive.
+2511: 	 */
+2512: 	private void testInViewsList() throws Exception{
+2513: 		String firstLevelListUID = null;
+2514: 		String secondLevelListUID = null;
+2515: 		String thirdLevelListUID = null;
+2516: 		
+2517: 		if(solo.waitForView("android.widget.ListView")){
+2518: 			pass("waitForView(String) Correct: 'ListView' appears.");
+2519: 			
+2520: 			firstLevelListUID = solo.getView("android.widget.ListView", 0);
+2521: 			debug("First level ListView UID= "+firstLevelListUID);
+2522: 			if(firstLevelListUID!=null){
+2523: 				pass("getView(String, int) Correct: 'ListView' was got.");
+2524: 				
+2525: 				//============Test with the first item of this Views List===============
+2526: 				String text = "Animation";
+2527: 				
+2528: 				if(solo.searchText(text, 1)){
+2529: 					pass("searchText(String, int) Correct: success search text '"+text+"' for first occurance.");
+2530: 					
+2531: 					String uid = solo.getText(text);
+2532: 					if(uid!=null){
+2533: 						pass("getText(String) Correct: get uid '"+uid+"' for text '"+text+"'");
+2534: 					}else{
+2535: 						fail("getText(String) Error: fail to get uid for text '"+text+"'");
+2536: 					}
+2537: 					
+2538: 					//The first text is title "Api Demos"
+2539: 					//The second text is "Animation", so the index is 1
+2540: 					String uid0 = solo.getText(1);
+2541: 					if(uid0!=null){
+2542: 						pass("getText(int) Correct: get uid '"+uid0+"' for the first item in list");
+2543: 						if(uid0.equals(uid)){
+2544: 							pass("the first item in list is '"+text+"'");
+2545: 						}else{
+2546: 							fail("the first item in list is NOT '"+text+"'");
+2547: 						}
+2548: 					}else{
+2549: 						fail("getText(int) Error: fail to get uid for the first item in list");
+2550: 					}
+2551: 					
+2552: 					//Go to the "Animation" List View
+2553: 					if(solo.clickLongOnText(text, 1, 500)){
+2554: 						pass("clickLongOnText(String, int, int) Correct: click the first text '"+text+"' for "+500+" milliseconds.");
+2555: 						
+2556: 						if(solo.waitForView("android.widget.ListView")){
+2557: 							pass("waitForView(String) Correct: 'ListView' appears.");
+2558: 							
+2559: 							secondLevelListUID = solo.getView("android.widget.ListView", 0);
+2560: 							debug("Second level ListView UID= "+secondLevelListUID);
+2561: 							if(secondLevelListUID!=null){
+2562: 								pass("getView(String, int) Correct: 'ListView' was got.");
+2563: 								
+2564: 								text = "3D Transition";
+2565: 								String firstItemId = null;
+2566: 								//Go to the "3D Transition" List view
+2567: 								List<String> itemIDs = solo.getCurrentTextViews();
+2568: 								
+2569: 								if(itemIDs!=null && itemIDs.size()>0){
+2570: 									pass("getCurrentTextViews() Correct: get "+itemIDs.size()+" items");
+2571: 									
+2572: 									//find the item "3D Transition" in list
+2573: 									for(String id: itemIDs){
+2574: 										String value = solo.getTextViewValue(id);
+2575: 										debug("item: '"+value+"'");
+2576: 										if(text.equals(value)){
+2577: 											firstItemId = id;
+2578: 											break;
+2579: 										}
+2580: 									}
+2581: 									
+2582: 									if(firstItemId!=null){
+2583: 										debug("foun the item '"+text+"' in the list.");
+2584: 										if(solo.clickLongOnView(firstItemId)){
+2585: 											pass("clickLongOnView(String) Correct: success to click on the item '"+text+"'");
+2586: 											
+2587: 											if(solo.waitForView("android.widget.ListView")){
+2588: 												pass("waitForView(String) Correct: 'ListView' appears.");
+2589: 												
+2590: 												thirdLevelListUID = solo.getView("android.widget.ListView", 0);
+2591: 												debug("Third level ListView UID= "+thirdLevelListUID);
+2592: 												if(thirdLevelListUID!=null){
+2593: 													pass("getView(String, int) Correct: 'ListView' was got.");
+2594: 													
+2595: 													//Go to the "3D Transition" List view
+2596: 													testIn3DTransitionListView();
+2597: 													
+2598: 													goBackToViewUID(thirdLevelListUID);
+2599: 												}else{
+2600: 													fail("getView(String, int) Error: 'ListView' was NOT got.");
+2601: 												}
+2602: 											}else{
+2603: 												fail("waitForView(String) Correct: 'ListView' does NOT appear.");
+2604: 											}
+2605: 										}else{
+2606: 											pass("clickLongOnView(String) Correct: fail to click on the item '"+text+"'");
+2607: 										}
+2608: 									}else{
+2609: 										fail("can not find the item '"+text+"' in the list.");
+2610: 									}
+2611: 								}else{
+2612: 									fail("getCurrentTextViews Error: fail to get items.");
+2613: 								}
+2614: 								
+2615: 								goBackToViewUID(secondLevelListUID);
+2616: 							}else{
+2617: 								fail("getView(String, int) Error: 'ListView' was NOT got.");
+2618: 							}
+2619: 							
+2620: 						}else{
+2621: 							fail("waitForView(String) Correct: 'ListView' does NOT appear.");
+2622: 						}
+2623: 						
+2624: 					}else{
+2625: 						fail("clickLongOnText(String, int, int) Error: fail to click the first text '"+text+"' for "+500+" milliseconds.");
+2626: 					}
+2627: 					
+2628: 				}else{
+2629: 					fail("searchText(String, int) Error: Fail to search text '"+text+"' for first occurance.");	
+2630: 				}
+2631: 				
+2632: 				goBackToViewUID(firstLevelListUID);
+2633: 
+2634: 			}else{
+2635: 				fail("getView(String, int) Error: 'ListView' was NOT got.");
+2636: 			}
+2637: 						
+2638: 		}else{
+2639: 			fail("waitForView(String) Error: ListView NOT appear!");
+2640: 		}
+2641: 	}
+2642: 	
+2643: 	/**
+2644: 	 * <pre>
+2645: 	 * Tested methods:
+2646: 	 * 
+2647: 	 * {@link Solo#getView(String, int)}
+2648: 	 * {@link Solo#waitForView(String)}
+2649: 	 * 
+2650: 	 * {@link Solo#searchText(String, int, boolean)}
+2651: 	 * {@link Solo#clickOnText(String)}
+2652: 	 * 
+2653: 	 * {@link Solo#getCurrentImageButtons()}
+2654: 	 * {@link Solo#getImageButton(int)}
+2655: 	 * {@link Solo#clickOnImageButton(int)}
+2656: 	 * 
+2657: 	 * </pre>
+2658: 	 * 
+2659: 	 * All tests are positive.
+2660: 	 */
+2661: 	private void testImageButton() throws Exception{
+2662: 		String firstLevelListUID = null;
+2663: 		
+2664: 		if(solo.waitForView("android.widget.ListView")){
+2665: 			pass("waitForView(String) Correct: 'ListView' appears.");
+2666: 			
+2667: 			scrollToTop();
+2668: 			
+2669: 			firstLevelListUID = solo.getView("android.widget.ListView", 0);
+2670: 			debug("First level ListView UID= "+firstLevelListUID);
+2671: 			if(firstLevelListUID!=null){
+2672: 				pass("getView(String, int) Correct: 'ListView' was got.");
+2673: 				
+2674: 				//=============Test with the item "ImageButton" of this Views List===============
+2675: 				String text = "ImageButton";
+2676: 				if(solo.searchText(text, 1, true)){
+2677: 					pass("searchText(String, int, boolean) Correct: success scroll-search text '"+text+"' for first occurance.");
+2678: 					
+2679: 					//Go to the "ImageButton" View
+2680: 					if(solo.clickOnText(text)){
+2681: 						pass("clickOnText(String) Correct: click the text '"+text+"'");
+2682: 						
+2683: 						int numberOfImageButtons = 3;
+2684: 						List<String> imageButtons = solo.getCurrentImageButtons();
+2685: 						debug("getCurrentButtons(): got "+imageButtons.size()+" image buttons.");
+2686: 						printCurrentViews(TYPE_IMAGEBUTTON);
+2687: 						if(numberOfImageButtons==imageButtons.size()){
+2688: 							pass("getCurrentButtons(): got "+numberOfImageButtons+" image buttons as expected.");
+2689: 							
+2690: 							//Get the second image button
+2691: 							int imageIndex = 1;
+2692: 							String secondImageId = solo.getImage(imageIndex);
+2693: 							if(secondImageId!=null){
+2694: 								pass("getImageButton(int): got "+(imageIndex+1)+"th image button, the ID is '"+secondImageId+"'");
+2695: 							}else{
+2696: 								fail("getImageButton(int): fail to get "+(imageIndex+1)+"th image button");
+2697: 							}
+2698: 							
+2699: 							//Click on the first image button
+2700: 							imageIndex = 0;
+2701: 							if(solo.clickOnImageButton(imageIndex)){
+2702: 								pass("clickOnImageButton(int): clicked on "+(imageIndex+1)+"th image button");
+2703: 							}else{
+2704: 								fail("clickOnImageButton(int): fail to click on "+(imageIndex+1)+"th image button");
+2705: 							}
+2706: 							
+2707: 						}else{
+2708: 							fail("getCurrentButtons(): fail to get "+numberOfImageButtons+" image buttons as expected.");
+2709: 						}
+2710: 						
+2711: 					}else{
+2712: 						pass("clickOnText(String) Error: fail to click the text '"+text+"'");
+2713: 					}
+2714: 					
+2715: 				}else{
+2716: 					fail("searchText(String, int, boolean) Error: Fail to scroll-search text '"+text+"' for first occurance.");	
+2717: 				}
+2718: 				
+2719: 				goBackToViewUID(firstLevelListUID);
+2720: 
+2721: 			}else{
+2722: 				fail("getView(String, int) Error: 'ListView' was NOT got.");
+2723: 			}
+2724: 						
+2725: 		}else{
+2726: 			fail("waitForView(String) Error: ListView NOT appear!");
+2727: 		}
+2728: 	}
+2729: 	
+2730: 	/**
+2731: 	 * <pre>
+2732: 	 * Tested methods:
+2733: 	 * 
+2734: 	 * {@link Solo#getView(String, int)}
+2735: 	 * {@link Solo#waitForView(String)}
+2736: 	 * 
+2737: 	 * {@link Solo#getViews()}
+2738: 	 * {@link Solo#getCurrentViews()}
+2739: 	 * {@link Solo#getViews(String)}
+2740: 	 * 
+2741: 	 * </pre>
+2742: 	 * 
+2743: 	 * All tests are positive.
+2744: 	 */
+2745: 	private void testGetViews() throws Exception{
+2746: 		String firstLevelListUID = null;
+2747: 		
+2748: 		if(solo.waitForView("android.widget.ListView")){
+2749: 			pass("waitForView(String) Correct: 'ListView' appears.");
+2750: 			
+2751: 			firstLevelListUID = solo.getView("android.widget.ListView", 0);
+2752: 			debug("First level ListView UID= "+firstLevelListUID);
+2753: 			if(firstLevelListUID!=null){
+2754: 				pass("getView(String, int) Correct: 'ListView' was got.");
+2755: 				
+2756: 				List<String> currentViews = solo.getCurrentViews();
+2757: 				int currentViewsNumber = currentViews.size();
+2758: 				
+2759: 				List<String> views = solo.getViews();
+2760: 				
+2761: //				List<String> viewsInFirstLevelList = solo.getViews(firstLevelListUID);
+2762: 				
+2763: //				if(currentViewsNumber==views.size() && currentViewsNumber==viewsInFirstLevelList.size()){
+2764: 					if(currentViewsNumber==views.size()){
+2765: //					pass("getViews(),getCurrentViews() and getViews(String): Got the same number of views");
+2766: 					pass("getViews(),getCurrentViews(): Got the same number of views");
+2767: 					String viewId = null;
+2768: 					int viewMatched = 0;
+2769: //					int viewInParentMatched = 0;
+2770: 					for(int i=0;i<currentViewsNumber;i++){
+2771: 						viewId = currentViews.get(i);
+2772: 						for(String view: views){
+2773: 							if(view.equals(viewId)){
+2774: 								viewMatched++;
+2775: 								break;
+2776: 							}
+2777: 						}
+2778: 						
+2779: //						for(String view: viewsInFirstLevelList){
+2780: //							if(view.equals(viewId)){
+2781: //								viewInParentMatched++;
+2782: //								break;
+2783: //							}
+2784: //						}
+2785: 					}
+2786: 					
+2787: 					if(viewMatched==currentViewsNumber){
+2788: 						pass("getViews(),getCurrentViews(): the results are all matched");
+2789: 					}else{
+2790: 						fail("getViews(),getCurrentViews(): the results are NOT all matched");
+2791: 					}
+2792: 					
+2793: //					if(viewInParentMatched==currentViewsNumber){
+2794: //						pass("getViews(String),getCurrentViews(): the results are all matched");
+2795: //					}else{
+2796: //						fail("getViews(String),getCurrentViews(): the results are NOT all matched");
+2797: //					}
+2798: 					
+2799: 				}else{
+2800: 					fail("Fail to get the same number of views");
+2801: 				}
+2802: 				
+2803: 				goBackToViewUID(firstLevelListUID);
+2804: 
+2805: 			}else{
+2806: 				fail("getView(String, int) Error: 'ListView' was NOT got.");
+2807: 			}
+2808: 						
+2809: 		}else{
+2810: 			fail("waitForView(String) Error: ListView NOT appear!");
+2811: 		}
+2812: 	}
+2813: 	
+2814: 	/**
+2815: 	 * <pre>
+2816: 	 * Test methods:
+2817: 	 * 
+2818: 	 * {@link Solo#getCurrentImageViews()}
+2819: 	 * {@link Solo#getImage(int)}
+2820: 	 * {@link Solo#clickOnImage(int)}
+2821: 	 * 
+2822: 	 * {@link Solo#sleep(int)}
+2823: 	 * {@link Solo#waitForText(String, int, long, boolean, boolean)}
+2824: 	 * {@link Solo#clickOnText(String, int, boolean)}
+2825: 	 * 
+2826: 	 * {@link Solo#getText(String)}
+2827: 	 * {@link Solo#clickOnScreen(float, float)}
+2828: 	 * {@link Solo#clickLongOnScreen(float, float)}
+2829: 	 * {@link Solo#clickLongOnScreen(float, float, int)}
+2830: 	 * 
+2831: 	 * {@link Solo#getScreenSize()}
+2832: 	 * {@link Solo#getViewLocation(String)}
+2833: 	 * {@link Solo#waitForViewUID(String)}
+2834: 	 * 
+2835: 	 * </pre>
+2836: 	 * 
+2837: 	 * All tests are positive.
+2838: 	 */
+2839: 	private void testIn3DTransitionListView() throws Exception{
+2840: 		String text = "Lyon";
+2841: 		
+2842: 		//Test the first image
+2843: 		if(solo.clickOnText(text)){
+2844: 			pass("clickOnText(String): click on '"+text+"'");
+2845: 			if(solo.waitForView("android.widget.ImageView")){
+2846: 				pass("waitForView(String): success wait for 'android.widget.ImageView'");
+2847: 				
+2848: 				List<String> imageList = solo.getCurrentImageViews();
+2849: 				if(imageList!=null && imageList.size()>0){
+2850: 					pass("getCurrentImageViews(): get some 'android.widget.ImageView'");
+2851: 					
+2852: 					String imageId = solo.getImage(0);
+2853: 					if(imageId!=null){
+2854: 						if(imageId.equals(imageList.get(0))){
+2855: 							pass("the first item of getCurrentImageViews() equals to getImage(0)");
+2856: 						}else{
+2857: 							fail("the first item of getCurrentImageViews() does NOT equal to getImage(0)");
+2858: 						}
+2859: 						
+2860: 						//click on image so that image disappear and the list will be shown again
+2861: 						if(solo.clickOnImage(0)){
+2862: 							pass("clickOnImage(int): success click the first image.");
+2863: 						}else{
+2864: 							fail("clickOnImage(int): fail to click the first image.");
+2865: 						}
+2866: 					}
+2867: 				}else{
+2868: 					fail("getCurrentImageViews(): fail to get some 'android.widget.ImageView'");
+2869: 				}
+2870: 				
+2871: 			}else{
+2872: 				fail("waitForView(String): fail to wait for 'android.widget.ImageView'");
+2873: 			}
+2874: 			
+2875: 		}else{
+2876: 			fail("clickOnText(String): fail to click on '"+text+"'");
+2877: 		}
+2878: 		
+2879: 		if(solo.sleep(500)){
+2880: 			pass("sleep(int): sleep 500 millis");
+2881: 		}else{
+2882: 			fail("sleep(int): fail to sleep 500 millis");
+2883: 		}
+2884: 		
+2885: 		text = "Grand Canyon";
+2886: 		if(solo.waitForText(text, 1, 100, true, true)){
+2887: 			pass("waitForText(String, int, long, boolean, boolean): suceess wait for visible text '"+text+"' for first occurance in 100 millis");
+2888: 			String uid = solo.getText(text);
+2889: 			if(uid!=null){
+2890: 				pass("getText(String): get uid '"+uid+"' for text '"+text+"'");
+2891: 				if(solo.clickLongOnView(uid, 300)){
+2892: 					pass("clickLongOnView(String, int): click on text '"+text+"' for 300 millis");
+2893: 					
+2894: 					//click on center of screen so that image disappear and the list will be shown again
+2895: 					Dimension dim = solo.getScreenSize();
+2896: 					if(dim!=null){
+2897: 						pass("getScreenSize(): the screen size is ("+dim.width+","+dim.height+")");
+2898: 						if(solo.clickOnScreen(dim.width/2, dim.height/2)){
+2899: 							pass("clickOnScreen(float, float): click screen at ("+dim.width/2+","+dim.height/2+")");
+2900: 						}else{
+2901: 							fail("clickOnScreen(float, float): fail to click screen at ("+dim.width/2+","+dim.height/2+")");
+2902: 						}
+2903: 						
+2904: 					}else{
+2905: 						fail("getScreenSize(): fail to get screen size");
+2906: 					}
+2907: 					
+2908: 				}else{
+2909: 					fail("clickLongOnView(String, int): fail to click on text '"+text+"' for 300 millis");
+2910: 				}
+2911: 			}else{
+2912: 				fail("getText(String): fail to get uid for text '"+text+"'");
+2913: 			}
+2914: 		}else{
+2915: 			fail("waitForText(String, int, long, boolean, boolean): fail to wait for visible text '"+text+"' for first occurance in 100 millis");
+2916: 		}
+2917: 			
+2918: 		text = "Lake Tahoe";
+2919: 		if(solo.waitForText(text, 1, 200, true)){
+2920: 			pass("waitForText(String, int, long, boolean): suceess wait for text '"+text+"' for first occurance in 200 millis");
+2921: 			
+2922: 			if(solo.clickOnText(text, 1, true)){
+2923: 				pass("clickOnText(String, int, boolean): suceess click on text '"+text+"' for first occurance");
+2924: 				
+2925: 				//click on center of screen so that image disappear and the list will be shown again
+2926: 				Dimension dim = solo.getScreenSize();
+2927: 				if(dim!=null){
+2928: 					pass("getScreenSize(): the screen size is ("+dim.width+","+dim.height+")");
+2929: 					if(solo.clickLongOnScreen(dim.width/2, dim.height/2)){
+2930: 						pass("clickLongOnScreen(float, float): click long at screen ("+dim.width/2+","+dim.height/2+")");
+2931: 					}else{
+2932: 						fail("clickLongOnScreen(float, float): fail to click long at screen ("+dim.width/2+","+dim.height/2+")");
+2933: 					}
+2934: 				}else{
+2935: 					fail("getScreenSize(): fail to get screen size");
+2936: 				}
+2937: 			}else{
+2938: 				fail("clickOnText(String, int, boolean): fail to click on text '"+text+"' for first occurance");
+2939: 			}
+2940: 						
+2941: 		}else{
+2942: 			fail("waitForText(String, int, long, boolean): fail to wait for text '"+text+"' for first occurance in 200 millis");
+2943: 		}
+2944: 		
+2945: 		text = "Tahoe Pier";
+2946: 		if(solo.waitForText(text, 1, 200, true)){
+2947: 			pass("waitForText(String, int, long, boolean): suceess wait for text '"+text+"' for first occurance in 200 millis");
+2948: 			
+2949: 			if(solo.clickOnText(text, 1, true)){
+2950: 				pass("clickOnText(String, int, boolean): suceess click on text '"+text+"' for first occurance");
+2951: 				
+2952: 				String imageId = solo.getImage(0);
+2953: 				if(imageId != null){
+2954: 					pass("getImage(String): get image '"+imageId+"'");
+2955: 					//click on center of image so that image disappear and the list will be shown again
+2956: 					Rectangle loc = solo.getViewLocation(imageId);
+2957: 					
+2958: 					if(loc!=null){
+2959: 						pass("getViewLocation(String): the image location is at ("+loc.x+","+loc.y+"), size is ("+loc.width+","+loc.height+")");
+2960: 						int x = loc.x + loc.width/2;
+2961: 						int y = loc.y + loc.height/2;
+2962: 						if(solo.clickLongOnScreen(x, y, 200)){
+2963: 							pass("clickLongOnScreen(float, float, int): click on ("+x+","+y+")");
+2964: 						}else{
+2965: 							fail("clickLongOnScreen(float, float, int): fail to click on ("+x+","+y+")");
+2966: 						}
+2967: 					}else{
+2968: 						fail("getViewLocation(String): fail to get image location.");
+2969: 					}
+2970: 				}else{
+2971: 					pass("getImage(String): fail to get image.");
+2972: 				}
+2973: 				
+2974: 			}else{
+2975: 				fail("clickOnText(String, int, boolean): fail to click on text '"+text+"' for first occurance");
+2976: 			}
+2977: 						
+2978: 		}else{
+2979: 			fail("waitForText(String, int, long, boolean): fail to wait for text '"+text+"' for first occurance in 200 millis");
+2980: 		}
+2981: 		
+2982: 	}
+2983: 	
+2984: 	/**
+2985: 	 * <pre>
+2986: 	 * "App -> Menu -> Inflate from XML" is the path to 'MenuInflateFromXml Activity'.
+2987: 	 * This method will open the 'MenuInflateFromXml Activity', then it will call {@link #testMenu(String)} to
+2988: 	 * test some methods related to Menu, finally it will go back to the first page of ApiDemos.
+2989: 	 * During this process, it will test the following methods
+2990: 	 * 
+2991: 	 * Tested methods:
+2992: 	 * {@link Solo#waitForView(String)}
+2993: 	 * {@link Solo#waitForView(String, int, long)}
+2994: 	 * 
+2995: 	 * {@link Solo#getView(String, int)}
+2996: 	 * 
+2997: 	 * {@link Solo#clickOnText(String)}
+2998: 	 * {@link Solo#clickOnText(String, int)}
+2999: 	 * {@link Solo#clickOnText(String, int, boolean)}
+3000: 	 * 
+3001: 	 * {@link Solo#clickInList(int)}
+3002: 	 * 
+3003: 	 * {@link Solo#goBackToActivity(String)}
+3004: 	 * 
+3005: 	 * </pre>
+3006: 	 * 
+3007: 	 * All tests are positive.
+3008: 	 * @see #testMenu()
+3009: 	 */
+3010: 	void gotoInflateMenu() throws Exception{
+3011: 		String firstLevelListUID = null;
+3012: 		String secondLevelListUID = null;
+3013: 		String thirdLevelListUID = null;
+3014: 		
+3015: 		if(solo.waitForView("android.widget.ListView")){
+3016: 			pass("waitForView(String) Correct: 'ListView' appears.");
+3017: 			
+3018: 			scrollToTop();
+3019: 			
+3020: 			firstLevelListUID = solo.getView("android.widget.ListView", 0);
+3021: 			debug("First level ListView UID= "+firstLevelListUID);
+3022: 			if(firstLevelListUID!=null){
+3023: 				pass("getView(String, int) Correct: 'ListView' was got.");
+3024: 				
+3025: 				String text = "App";
+3026: 				if(solo.clickOnText(wrapRegex(text), 1)){
+3027: 					pass("clickOnText(String, int) Correct: Text '"+text+"' was clicked.");
+3028: 					
+3029: 					if(solo.waitForView("android.widget.ListView", 1, 1000)){
+3030: 						pass("waitForView(String, int, long) Correct: 'ListView' appears within timeout");
+3031: 						
+3032: 						secondLevelListUID = solo.getView("android.widget.ListView", 0);
+3033: 						debug("Second level ListView UID= "+secondLevelListUID);
+3034: 						if(secondLevelListUID!=null){
+3035: 							pass("getView(String, int) Correct: 'ListView' was got.");
+3036: 							
+3037: 							text = "Menu";
+3038: 							//review the source code of Robotium: clickOnText() will only scroll down to search text, never up
+3039: 							//If the text is above, the method clickOnText will certainly fail.
+3040: 							if(solo.clickOnText(wrapRegex(text), 1, true)){
+3041: 								pass("clickOnText(String, int, boolean) Correct: Text '"+text+"' was clicked.");
+3042: 								
+3043: 								if(solo.waitForView("android.widget.ListView")){
+3044: 									pass("waitForView(String) Correct: 'ListView' appears within timeout");
+3045: 									
+3046: 									thirdLevelListUID = solo.getView("android.widget.ListView", 0);
+3047: 									debug("Third level ListView UID= "+thirdLevelListUID);
+3048: 									if(thirdLevelListUID!=null){
+3049: 										pass("getView(String, int) Correct: 'ListView' was got.");
+3050: 										
+3051: 										text = "Inflate from XML";
+3052: 										if(solo.clickOnText(wrapRegex(text))){
+3053: 											pass("clickOnText(String, int) Correct: Click on '"+text+"' successfully.");
+3054: 											testMenu(thirdLevelListUID);
+3055: 											
+3056: 										}else{
+3057: 											fail("clickOnText(String, int) Error: There is no Text '"+text+"'!");
+3058: 										}
+3059: 										
+3060: 										goBackToViewUID(thirdLevelListUID);
+3061: 										
+3062: 									}else{
+3063: 										fail("getView(String, int) Error: 'ListView' was NOT got.");
+3064: 									}
+3065: 									
+3066: 								}else{
+3067: 									fail("waitForView(String) Error: ListView NOT appear!");
+3068: 								}
+3069: 								
+3070: 							}else{
+3071: 								fail("clickOnText(String, int, boolean) Error: Fail to click on Text '"+text+"'!");
+3072: 							}
+3073: 							
+3074: 							goBackToViewUID(secondLevelListUID);
+3075: 						}else{
+3076: 							fail("getView(String, int) Error: 'ListView' was NOT got.");
+3077: 						}
+3078: 						
+3079: 					}else{
+3080: 						fail("waitForView(String, int, long) Error: 'ListView' NOT appear within timeout.");
+3081: 					}
+3082: 					
+3083: 				}else{
+3084: 					fail("clickOnText(String, int) Error: Fail to click on Text '"+text+"'!");	
+3085: 				}
+3086: 				
+3087: 				goBackToViewUID(firstLevelListUID);
+3088: 
+3089: 			}else{
+3090: 				fail("getView(String, int) Error: 'ListView' was NOT got.");
+3091: 			}
+3092: 						
+3093: 		}else{
+3094: 			fail("waitForView(String) Error: ListView NOT appear!");
+3095: 		}
+3096: 		
+3097: 	}
+3098: 	
+3099: 	/**
+3100: 	 * <pre>
+3101: 	 * Test some methods as:
+3102: 	 * {@link Solo#sendKey(int)}
+3103: 	 * {@link Solo#pressMenuItem(int)}
+3104: 	 * {@link Solo#pressMenuItem(int, int)}
+3105: 	 * {@link Solo#clickOnMenuItem(String)}
+3106: 	 * {@link Solo#clickOnMenuItem(String, boolean)}
+3107: 	 * {@link Solo#clickLongOnTextAndPress(String, int)}
+3108: 	 * 
+3109: 	 * {@link Solo#waitForText(String)}
+3110: 	 * {@link Solo#clickOnText(String)}
+3111: 	 * 
+3112: 	 * </pre>
+3113: 	 * 
+3114: 	 * @see #gotoInflateMenu()
+3115: 	 */
+3116: 	private void testMenu(String parentListID) throws Exception{
+3117: 
+3118: 		String text = "Jump";
+3119: 		String resultLabel = "Jump up";
+3120: 		
+3121: 		try {
+3122: 			//Manually to show the menu
+3123: 			if(solo.sendKey(Solo.MENU)){
+3124: 				pass("sendKey(int) Correct: send key 'MENU'");
+3125: 				
+3126: 				//Click menu item "Jump"
+3127: 				if(solo.clickOnText(text)){
+3128: 					pass("clickOnText(String): click on menu item 'Jump'");
+3129: 					
+3130: 					//Verify that item "Jump" was clicked
+3131: 					if(solo.waitForText(wrapRegex(resultLabel))){
+3132: 						pass("waitForText(String): verify that menu item 'Jump' was clicked");
+3133: 						//wait for the "result text" disappear
+3134: 						solo.sleep(2000);
+3135: 					}else{
+3136: 						fail("waitForText(String): fail to verify that menu item 'Jump' was clicked");
+3137: 					}
+3138: 					
+3139: 				}else{
+3140: 					fail("clickOnText(String): fail to click on menu item 'Jump'");
+3141: 				}
+3142: 			}else{
+3143: 				fail("sendKey(int) Error: fail to send key 'MENU'");
+3144: 			}
+3145: 
+3146: 			//pressXXXMenuItem and clickXXXMenuItem will show the menu automatically
+3147: 			int index = 0;
+3148: 			if(solo.pressMenuItem(index)){
+3149: 				pass("pressMenuItem(int): press on first menu item of the first row");
+3150: 				
+3151: 				//Verify that item "Jump" was clicked
+3152: 				if(solo.waitForText(wrapRegex(resultLabel))){
+3153: 					pass("waitForText(String): verify that menu item 'Jump' was clicked");
+3154: 					//wait for the "result text" disappear
+3155: 					solo.sleep(2000);
+3156: 				}else{
+3157: 					fail("waitForText(String): fail to verify that menu item 'Jump' was clicked");
+3158: 				}
+3159: 			}else{
+3160: 				fail("pressMenuItem(int): fail to press on first menu item of the first row");
+3161: 			}
+3162: 			
+3163: 			index = 1;
+3164: 			int itemsPerRow = 2;
+3165: 			resultLabel = "Dive into";
+3166: 			if(solo.pressMenuItem(index, itemsPerRow)){
+3167: 				pass("pressMenuItem(int, int): press on second menu item of the first row");
+3168: 				
+3169: 				//Verify that item "Dive" was clicked
+3170: 				if(solo.waitForText(wrapRegex(resultLabel))){
+3171: 					pass("waitForText(String): verify that menu item 'Dive' was clicked");
+3172: 					//wait for the "result text" disappear
+3173: 					solo.sleep(2000);
+3174: 				}else{
+3175: 					fail("waitForText(String): fail to verify that menu item 'Dive' was clicked");
+3176: 				}
+3177: 			}else{
+3178: 				fail("pressMenuItem(int, int): fail to press on second menu item of the first row");
+3179: 			}
+3180: 			
+3181: 			
+3182: 			//Go back to parent list
+3183: 			goBackToViewUID(parentListID);
+3184: 			String listItem = "Inflate from XML";
+3185: 			if(solo.clickOnText(wrapRegex(listItem), 1)){
+3186: 				pass("clickOnText(String): click on text '"+listItem+"'");	
+3187: 				
+3188: 				if(solo.waitForView("android.widget.Spinner")){
+3189: 					pass("waitForView(String): success wait for 'android.widget.Spinner'");
+3190: 					int spinnerIndex = 0;//As there is only one spinner
+3191: 					int itemRelativeIndex = 5;//relative to the current selected item
+3192: 					String item = "Shortcuts";//the item that should be clicked
+3193: 					
+3194: 					if(solo.pressSpinnerItem(spinnerIndex, itemRelativeIndex)){
+3195: 						pass("pressSpinnerItem(int, int) correct: the sixth item of "+spinnerIndex+"th spinner is pressed.");
+3196: 						
+3197: 						if(solo.isSpinnerTextSelected(spinnerIndex,item)){
+3198: 							pass("isSpinnerTextSelected(int, String) correct: the item '"+item+"' of "+spinnerIndex+"th spinner is selected.");
+3199: 							
+3200: 							String menuText = "Eric";
+3201: 							if(solo.clickOnMenuItem(menuText)){
+3202: 								pass("clickOnMenuItem(String): press on menu item '"+menuText+"'");
+3203: 								
+3204: 								//Verify that item "Eric" was clicked
+3205: 								if(solo.waitForText(wrapRegex(menuText))){
+3206: 									pass("waitForText(String): verify that menu item '"+menuText+"' was clicked");
+3207: 									//wait for the "result text" to disappear
+3208: 									solo.sleep(2000);
+3209: 								}else{
+3210: 									fail("waitForText(String): fail to verify that menu item '"+menuText+"' was clicked");
+3211: 								}
+3212: 							}else{
+3213: 								fail("clickOnMenuItem(String): fail to press on menu item '"+menuText+"'");
+3214: 							}
+3215: 							
+3216: 							menuText = "Bart";
+3217: 							if(solo.clickOnMenuItem(menuText, false)){//TODO Should test with 'true'
+3218: 								pass("clickOnMenuItem(String, boolean): press on menu item '"+menuText+"'");
+3219: 								
+3220: 								//Verify that item "Bart" was clicked
+3221: 								if(solo.waitForText(wrapRegex(menuText))){
+3222: 									pass("waitForText(String): verify that menu item '"+menuText+"' was clicked");
+3223: 									//wait for the "result text" to disappear
+3224: 									solo.sleep(2000);
+3225: 								}else{
+3226: 									fail("waitForText(String): fail to verify that menu item '"+menuText+"' was clicked");
+3227: 								}
+3228: 							}else{
+3229: 								fail("clickOnMenuItem(String, boolean): fail to press on menu item '"+menuText+"'");
+3230: 							}
+3231: 							
+3232: 							//Manually to show the menu
+3233: 							if(solo.sendKey(Solo.MENU)){
+3234: 								pass("sendKey(int) Correct: send key 'MENU'");
+3235: 								
+3236: 								menuText = "More";
+3237: 								int subMenuIndex = 2;
+3238: 								if(solo.clickLongOnTextAndPress(menuText, subMenuIndex)){
+3239: 									pass("clickLongOnTextAndPress(String, int): click on text '"+menuText+"' and press item index '"+subMenuIndex+"'");
+3240: 									
+3241: 									//Verify that item "Henry" was clicked
+3242: 									String subMenuText = "Henry";
+3243: 									if(solo.waitForText(wrapRegex(subMenuText))){
+3244: 										pass("waitForText(String): verify that menu item '"+subMenuText+"' was clicked");
+3245: 										//wait for the "result text" to disappear
+3246: 										solo.sleep(2000);
+3247: 									}else{
+3248: 										fail("waitForText(String): fail to verify that menu item '"+subMenuText+"' was clicked");
+3249: 									}
+3250: 								}else{
+3251: 									fail("clickLongOnTextAndPress(String, int): fail to click on text '"+menuText+"' and press item index '"+subMenuIndex+"'");
+3252: 								}
+3253: 							
+3254: 							}else{
+3255: 								fail("sendKey(int) Error: fail to send key 'MENU'");
+3256: 							}
+3257: 							
+3258: 						}else{
+3259: 							fail("isSpinnerTextSelected(int, String) error: the item '"+item+"' of "+spinnerIndex+"th spinner is not selected.");
+3260: 						}
+3261: 					}else{
+3262: 						fail("pressSpinnerItem(int, int) error: fail to press the sixth item of "+spinnerIndex+"th spinner.");
+3263: 					}
+3264: 					
+3265: 				}else{
+3266: 					fail("waitForView(String): fail to wait for 'android.widget.Spinner'");
+3267: 				}
+3268: 			}else{
+3269: 				fail("clickOnText(String): fail to click on text '"+listItem+"'");		
+3270: 			}
+3271: 			
+3272: 		} catch (RemoteSoloException e) {
+3273: 			fail("waitForText(String) Error!");
+3274: 			debug("Met RemoteSoloException="+e.getMessage());
+3275: 			e.printStackTrace();
+3276: 		}
+3277: 	}
+3278: 	
+3279: 	
+3280: 	/**
+3281: 	 * <pre>
+3282: 	 * "Views -> Gallery -> 1. Photos" is the path to 'Gallery1 Activity'.
+3283: 	 * This method will open the 'Gallery1 Activity', then it will call {@link #testDrag()} to
+3284: 	 * test some methods related to drag, finally it will go back to the first page of ApiDemos.
+3285: 	 * During this process, it will test the following methods
+3286: 	 * 
+3287: 	 * Tested methods:
+3288: 	 * {@link Solo#waitForView(String)}
+3289: 	 * {@link Solo#waitForView(String, int, long)}
+3290: 	 * 
+3291: 	 * {@link Solo#getView(String, int)}
+3292: 	 * 
+3293: 	 * {@link Solo#clickOnText(String)}
+3294: 	 * {@link Solo#clickOnText(String, int)}
+3295: 	 * {@link Solo#clickOnText(String, int, boolean)}
+3296: 	 * 
+3297: 	 * {@link Solo#clickInList(int)}
+3298: 	 * 
+3299: 	 * {@link Solo#goBackToActivity(String)}
+3300: 	 * 
+3301: 	 * </pre>
+3302: 	 * 
+3303: 	 * All tests are positive.
+3304: 	 * @see #testDrag()
+3305: 	 */
+3306: 	void gotoPhotoGallery() throws Exception{
+3307: 		String firstLevelListUID = null;
+3308: 		String secondLevelListUID = null;
+3309: 		String thirdLevelListUID = null;
+3310: 		
+3311: 		if(solo.waitForView("android.widget.ListView")){
+3312: 			pass("waitForView(String) Correct: 'ListView' appears.");
+3313: 			scrollToTop();
+3314: 			
+3315: 			firstLevelListUID = solo.getView("android.widget.ListView", 0);
+3316: 			debug("First level ListView UID= "+firstLevelListUID);
+3317: 			if(firstLevelListUID!=null){
+3318: 				pass("getView(String, int) Correct: 'ListView' was got.");
+3319: 				
+3320: 				String text = "Views";
+3321: 				if(solo.clickOnText(wrapRegex(text), 1, true)){
+3322: 					pass("clickOnText(String, int, boolean) Correct: Text '"+text+"' was clicked.");
+3323: 					
+3324: 					if(solo.waitForView("android.widget.ListView", 1, 1000)){
+3325: 						pass("waitForView(String, int, long) Correct: 'ListView' appears within timeout");
+3326: 						
+3327: 						secondLevelListUID = solo.getView("android.widget.ListView", 0);
+3328: 						debug("Second level ListView UID= "+secondLevelListUID);
+3329: 						if(secondLevelListUID!=null){
+3330: 							pass("getView(String, int) Correct: 'ListView' was got.");
+3331: 							
+3332: 							text = "Gallery";
+3333: 							//review the source code of Robotium: clickOnText() will only scroll down to search text, never up
+3334: 							//If the text is above, the method clickOnText will certainly fail.
+3335: 							if(solo.clickOnText(wrapRegex(text), 1, true)){
+3336: 								pass("clickOnText(String, int, boolean) Correct: Text '"+text+"' was clicked.");
+3337: 								
+3338: 								if(solo.waitForView("android.widget.ListView")){
+3339: 									pass("waitForView(String) Correct: 'ListView' appears within timeout");
+3340: 									
+3341: 									thirdLevelListUID = solo.getView("android.widget.ListView", 0);
+3342: 									debug("Third level ListView UID= "+thirdLevelListUID);
+3343: 									if(thirdLevelListUID!=null){
+3344: 										pass("getView(String, int) Correct: 'ListView' was got.");
+3345: 										
+3346: 										text = "Photos";
+3347: 										if(solo.clickOnText(wrapRegex(text))){
+3348: 											pass("clickOnText(String, int) Correct: Click on '"+text+"' successfully.");
+3349: 											testDrag();
+3350: 											
+3351: 										}else{
+3352: 											fail("clickOnText(String, int) Error: There is no Text '"+text+"'!");
+3353: 										}
+3354: 										
+3355: 										goBackToViewUID(thirdLevelListUID);
+3356: 										
+3357: 									}else{
+3358: 										fail("getView(String, int) Error: 'ListView' was NOT got.");
+3359: 									}
+3360: 									
+3361: 								}else{
+3362: 									fail("waitForView(String) Error: ListView NOT appear!");
+3363: 								}
+3364: 								
+3365: 							}else{
+3366: 								fail("clickOnText(String, int, boolean) Error: Fail to click on Text '"+text+"'!");
+3367: 							}
+3368: 							
+3369: 							goBackToViewUID(secondLevelListUID);
+3370: 						}else{
+3371: 							fail("getView(String, int) Error: 'ListView' was NOT got.");
+3372: 						}
+3373: 						
+3374: 					}else{
+3375: 						fail("waitForView(String, int, long) Error: 'ListView' NOT appear within timeout.");
+3376: 					}
+3377: 					
+3378: 				}else{
+3379: 					fail("clickOnText(String, int, boolean) Error: Fail to click on Text '"+text+"'!");	
+3380: 				}
+3381: 				
+3382: 				goBackToViewUID(firstLevelListUID);
+3383: 
+3384: 			}else{
+3385: 				fail("getView(String, int) Error: 'ListView' was NOT got.");
+3386: 			}
+3387: 						
+3388: 		}else{
+3389: 			fail("waitForView(String) Error: ListView NOT appear!");
+3390: 		}
+3391: 		
+3392: 	}
+3393: 	
+3394: 	/**
+3395: 	 * <pre>
+3396: 	 * Test some methods as:
+3397: 	 * {@link Solo#getScreenSize()}
+3398: 	 * {@link Solo#getImage(int)}
+3399: 	 * {@link Solo#getViewLocation(String)}
+3400: 	 * {@link Solo#clickOnImage(int)}
+3401: 	 * 
+3402: 	 * {@link Solo#waitForText(String)}
+3403: 	 * {@link Solo#scrollToSide(int)}
+3404: 	 * {@link Solo#drag(float, float, float, float, int)}
+3405: 	 * 
+3406: 	 * </pre>
+3407: 	 * 
+3408: 	 * @see #gotoPhotoGallery()
+3409: 	 */
+3410: 	private void testDrag() throws Exception{
+3411: 		
+3412: 		Dimension screen = solo.getScreenSize();
+3413: 		info("Screen size is "+screen.toString());
+3414: 		
+3415: 		//Store the image that we have viewed, the order should be from first to last
+3416: 		List<String> images = new ArrayList<String>();
+3417: 		//The index of ImageView on the screen, we want to get middle image,
+3418: 		//for the first image, the middle image's index is 0
+3419: 		//for other imaage, the middle image's index is 1
+3420: 		int index = 0;
+3421: 		//currentIndex is the absolute index of the whole imageview
+3422: 		int currentIndex = 0;
+3423: 		String image = solo.getImage(index);
+3424: 		String longPressText = "Longpress: ";
+3425: 		String longPressResult = "Testing";
+3426: 		
+3427: 		if(image!=null){
+3428: 			pass("getImage(int): get the "+index+"th ImageView.");
+3429: 			images.add(image);
+3430: 			
+3431: 			if(solo.clickOnImage(index)){
+3432: 				pass("clickOnImage(int): click the "+index+"th ImageView.");
+3433: 				
+3434: 				//Verify that the first image was clicked
+3435: 				if(solo.waitForText(String.valueOf(currentIndex))){
+3436: 					pass("waitForText(String): verify that the "+index+"th ImageView was clicked");
+3437: 					//wait for the "notification" to disappear
+3438: 					solo.sleep(2000);
+3439: 					
+3440: 					//for other image, the index should be 1
+3441: 					index = 1;
+3442: 					
+3443: 					//TODO solo.scrollToSide(Solo.LEFT) has no effect, because robotium use drag API and drag
+3444: 					//at from (0,screenHeight/2), but the point (0,screenHeight/2) can't be dragged.
+3445: 					//Scroll to left and get the next image
+3446: 					//scrollToSide will scroll horizontally half screen.
+3447: //					if(solo.scrollToSide(Solo.LEFT)){
+3448: //						pass("scrollToSide(int): success scroll to LEFT");
+3449: //						currentIndex++;
+3450: //						
+3451: //						image = solo.getImage(index);
+3452: //						
+3453: //						if(image!=null){
+3454: //							pass("getImage(int): get the "+index+"th ImageView.");
+3455: //							if(!image.equals(images.get(currentIndex-1))){
+3456: //								images.add(image);
+3457: //								info("getImage(int): get a new ImageView.");
+3458: //								
+3459: //								if(solo.clickLongOnView(image)){
+3460: //									pass("clickLongOnView(String): click the ImageView '"+image+"'");
+3461: //									
+3462: //									if(solo.waitForText(longPressResult) && solo.clickOnText(longPressResult)){
+3463: //										pass("Wait and Click on text '"+longPressResult+"'");
+3464: //										if(solo.waitForText(longPressText+currentIndex)){
+3465: //											pass("waitForText(String): verify that the "+currentIndex+"th ImageView was clicked");
+3466: //											//wait for the "notification" to disappear
+3467: //											solo.sleep(2000);
+3468: //										}else{
+3469: //											fail("waitForText(String): fail to verify that the "+currentIndex+"th ImageView was clicked");
+3470: //										}
+3471: //									}else{
+3472: //										pass("Fail to Wait and Click on text '"+longPressResult+"'");
+3473: //									}
+3474: //								}else{
+3475: //									fail("clickLongOnView(String): fail to click the ImageView '"+image+"'");
+3476: //								}
+3477: //								
+3478: //							}else{
+3479: //								info("getImage(int): get the same ImageView.");
+3480: //								currentIndex--;
+3481: //							}
+3482: //						}else{
+3483: //							fail("getImage(int): fail to get the "+index+"th ImageView.");
+3484: //						}
+3485: //						
+3486: //					}else{
+3487: //						fail("scrollToSide(int): fail to scroll to LEFT");
+3488: //					}
+3489: 					
+3490: 					image = images.get(currentIndex);
+3491: 					Rectangle location = solo.getViewLocation(image);
+3492: 					if(location!=null){
+3493: 						pass("getViewLocation(String): success get image location="+location.toString());
+3494: 						
+3495: 						int centerx = location.x + location.width/2;
+3496: 						int centery = location.y + location.height/2;
+3497: 						int destx = centerx - screen.width/2;
+3498: 						int desty = centery;
+3499: 						
+3500: 						if(destx<0) destx=0;
+3501: 						info("drag from ("+centerx+","+centery+") to ("+destx+","+desty+")");
+3502: 						if(solo.drag(centery, destx, centery, desty, 20)){
+3503: 							pass("drag(float, float, float, float, int): success drag from ("+centerx+","+centery+") to ("+destx+","+desty+")");
+3504: 							
+3505: 							currentIndex++;
+3506: 							
+3507: 							image = solo.getImage(index);
+3508: 							
+3509: 							if(image!=null){
+3510: 								pass("getImage(int): get the "+index+"th ImageView.");
+3511: 								if(!image.equals(images.get(currentIndex-1))){
+3512: 									images.add(image);
+3513: 									info("getImage(int): get a new ImageView.");
+3514: 									
+3515: 									if(solo.clickLongOnView(image)){
+3516: 										pass("clickLongOnView(String): click the ImageView '"+image+"'");
+3517: 										
+3518: 										if(solo.waitForText(longPressResult) && solo.clickOnText(longPressResult)){
+3519: 											pass("Wait and Click on text '"+longPressResult+"'");
+3520: 											if(solo.waitForText(longPressText+currentIndex)){
+3521: 												pass("waitForText(String): verify that the "+currentIndex+"th ImageView was clicked");
+3522: 												//wait for the "notification" to disappear
+3523: 												solo.sleep(2000);
+3524: 											}else{
+3525: 												fail("waitForText(String): fail to verify that the "+currentIndex+"th ImageView was clicked");
+3526: 											}
+3527: 										}else{
+3528: 											pass("Fail to Wait and Click on text '"+longPressResult+"'");
+3529: 										}
+3530: 									}else{
+3531: 										fail("clickLongOnView(String): fail to click the ImageView '"+image+"'");
+3532: 									}
+3533: 									
+3534: 								}else{
+3535: 									info("getImage(int): get the same ImageView.");
+3536: 									currentIndex--;
+3537: 								}
+3538: 							}else{
+3539: 								fail("getImage(int): fail to get the "+index+"th ImageView.");
+3540: 							}
+3541: 							
+3542: 						}else{
+3543: 							fail("drag(float, float, float, float, int): fail to drag from ("+centerx+","+centery+") to ("+destx+","+desty+")");
+3544: 						}
+3545: 						
+3546: 					}else{
+3547: 						fail("getViewLocation(String): fail to get image location");
+3548: 					}
+3549: 					
+3550: 				}else{
+3551: 					fail("waitForText(String): fail to verify that the "+index+"th ImageView was clicked");
+3552: 				}
+3553: 			}else{
+3554: 				fail("clickOnImage(int): fail to click the "+index+"th ImageView.");
+3555: 			}
+3556: 			
+3557: 		}else{
+3558: 			fail("getImage(int): fail to get the "+index+"th ImageView.");
+3559: 		}
+3560: 	
+3561: 	}
+3562: 	
+3563: 	/**
+3564: 	 * <pre>
+3565: 	 * "Views -> Grid -> 1. Icon Grid" is the path to 'Grid1 Activity'.
+3566: 	 * This method will open the 'Grid1 Activity', then it will call {@link #testGrid()} to
+3567: 	 * test some methods related to grid, finally it will go back to the first page of ApiDemos.
+3568: 	 * During this process, it will test the following methods
+3569: 	 * 
+3570: 	 * Tested methods:
+3571: 	 * {@link Solo#waitForView(String)}
+3572: 	 * {@link Solo#waitForView(String, int, long)}
+3573: 	 * 
+3574: 	 * {@link Solo#getView(String, int)}
+3575: 	 * 
+3576: 	 * {@link Solo#clickOnText(String)}
+3577: 	 * {@link Solo#clickOnText(String, int)}
+3578: 	 * {@link Solo#clickOnText(String, int, boolean)}
+3579: 	 * 
+3580: 	 * {@link Solo#clickInList(int)}
+3581: 	 * 
+3582: 	 * {@link Solo#goBackToActivity(String)}
+3583: 	 * 
+3584: 	 * </pre>
+3585: 	 * 
+3586: 	 * All tests are positive.
+3587: 	 * @see #testGrid()
+3588: 	 */
+3589: 	void gotoIconGrid() throws Exception{
+3590: 		String firstLevelListUID = null;
+3591: 		String secondLevelListUID = null;
+3592: 		String thirdLevelListUID = null;
+3593: 		
+3594: 		if(solo.waitForView("android.widget.ListView")){
+3595: 			pass("waitForView(String) Correct: 'ListView' appears.");
+3596: 			
+3597: 			scrollToTop();
+3598: 			
+3599: 			firstLevelListUID = solo.getView("android.widget.ListView", 0);
+3600: 			debug("First level ListView UID= "+firstLevelListUID);
+3601: 			if(firstLevelListUID!=null){
+3602: 				pass("getView(String, int) Correct: 'ListView' was got.");
+3603: 				
+3604: 				String text = "Views";
+3605: 				if(solo.clickOnText(wrapRegex(text), 1, true)){
+3606: 					pass("clickOnText(String, int, boolean) Correct: Text '"+text+"' was clicked.");
+3607: 					
+3608: 					if(solo.waitForView("android.widget.ListView", 1, 1000)){
+3609: 						pass("waitForView(String, int, long) Correct: 'ListView' appears within timeout");
+3610: 						
+3611: 						secondLevelListUID = solo.getView("android.widget.ListView", 0);
+3612: 						debug("Second level ListView UID= "+secondLevelListUID);
+3613: 						if(secondLevelListUID!=null){
+3614: 							pass("getView(String, int) Correct: 'ListView' was got.");
+3615: 							
+3616: 							text = "Grid";
+3617: 							//review the source code of Robotium: clickOnText() will only scroll down to search text, never up
+3618: 							//If the text is above, the method clickOnText will certainly fail.
+3619: 							if(solo.clickOnText(wrapRegex(text), 1, true)){
+3620: 								pass("clickOnText(String, int, boolean) Correct: Text '"+text+"' was clicked.");
+3621: 								
+3622: 								if(solo.waitForView("android.widget.ListView")){
+3623: 									pass("waitForView(String) Correct: 'ListView' appears within timeout");
+3624: 									
+3625: 									thirdLevelListUID = solo.getView("android.widget.ListView", 0);
+3626: 									debug("Third level ListView UID= "+thirdLevelListUID);
+3627: 									if(thirdLevelListUID!=null){
+3628: 										pass("getView(String, int) Correct: 'ListView' was got.");
+3629: 										
+3630: 										text = "Icon Grid";
+3631: 										if(solo.clickOnText(wrapRegex(text))){
+3632: 											pass("clickOnText(String, int) Correct: Click on '"+text+"' successfully.");
+3633: 											testGrid();
+3634: 											
+3635: 										}else{
+3636: 											fail("clickOnText(String, int) Error: There is no Text '"+text+"'!");
+3637: 										}
+3638: 										
+3639: 										goBackToViewUID(thirdLevelListUID);
+3640: 										
+3641: 									}else{
+3642: 										fail("getView(String, int) Error: 'ListView' was NOT got.");
+3643: 									}
+3644: 									
+3645: 								}else{
+3646: 									fail("waitForView(String) Error: ListView NOT appear!");
+3647: 								}
+3648: 								
+3649: 							}else{
+3650: 								fail("clickOnText(String, int, boolean) Error: Fail to click on Text '"+text+"'!");
+3651: 							}
+3652: 							
+3653: 							goBackToViewUID(secondLevelListUID);
+3654: 						}else{
+3655: 							fail("getView(String, int) Error: 'ListView' was NOT got.");
+3656: 						}
+3657: 						
+3658: 					}else{
+3659: 						fail("waitForView(String, int, long) Error: 'ListView' NOT appear within timeout.");
+3660: 					}
+3661: 					
+3662: 				}else{
+3663: 					fail("clickOnText(String, int, boolean) Error: Fail to click on Text '"+text+"'!");	
+3664: 				}
+3665: 				
+3666: 				goBackToViewUID(firstLevelListUID);
+3667: 
+3668: 			}else{
+3669: 				fail("getView(String, int) Error: 'ListView' was NOT got.");
+3670: 			}
+3671: 						
+3672: 		}else{
+3673: 			fail("waitForView(String) Error: ListView NOT appear!");
+3674: 		}
+3675: 		
+3676: 	}
+3677: 	
+3678: 	/**
+3679: 	 * <pre>
+3680: 	 * Test some methods as:
+3681: 	 * {@link Solo#getCurrentGridViews()}
+3682: 	 * {@link Solo#getCurrentScrollViews()}
+3683: 	 * 
+3684: 	 * </pre>
+3685: 	 * 
+3686: 	 * @see #gotoIconGrid()
+3687: 	 */
+3688: 	private void testGrid() throws Exception{
+3689: 		
+3690: 		List<String> grids = solo.getCurrentGridViews();
+3691: 		if(grids!=null && grids.size()>0){
+3692: 			pass("getCurrentGridViews(): success get '"+grids.size()+"' GridView.");
+3693: 		}else{
+3694: 			fail("getCurrentGridViews(): fail to get GridView.");
+3695: 		}
+3696: 	
+3697: 		List<String> scrolls = solo.getCurrentScrollViews();
+3698: 		if(scrolls!=null && scrolls.size()>0){
+3699: 			pass("getCurrentScrollViews(): success get '"+scrolls.size()+"' ScrollView.");
+3700: 		}else{
+3701: 			fail("getCurrentScrollViews(): fail to get ScrollView.");
+3702: 		}
+3703: 		
+3704: 	}
+3705: 	
+3706: 	/**
+3707: 	 * Before you call this method, you MUST execute a command by solo.<br>
+3708: 	 * Otherwise, you will NOT get the correct result information.<br>
+3709: 	 * 
+3710: 	 * If you just want to print message, call {@link super#fail(String)} instead.<br>
+3711: 	 */
+3712: 	public void fail( String message) {
+3713: 		super.fail(message);
+3714: 		showRemoteResult();
+3715: 	}
+3716: 	
+3717: 	/**
+3718: 	 * Before you call this method, you MUST execute a command by solo.<br>
+3719: 	 * Otherwise, you will NOT get the correct result information.<br>
+3720: 	 * 
+3721: 	 * When you want to know the remote result info, call this method.<br>
+3722: 	 * Normally, when you fail, you want to know the reason, you can call this.<br>
+3723: 	 */
+3724: 	void showRemoteResult(){
+3725: 		System.out.println("======= Remote Result Info: "+solo._last_remote_result.getProperty(Message.KEY_REMOTERESULTINFO)+" =====");
+3726: 		System.err.println("======= Remote Error Message: "+solo._last_remote_result.getProperty(Message.PARAM_ERRORMSG)+" =====");
+3727: 	}
+3728: 	
+3729: 	/**
+3730: 	 * @param args	Array of String passed from commnand line: messenger=XXX runner=XXX instrument=XXX
+3731: 	 */
+3732: 	public static void main(String[] args){
+3733: 		SoloTest soloTest = new SoloTestAndroidApi(args);
+3734: 
+3735: //		soloTest.setInstallAUT(false);
+3736: //		soloTest.setInstallMessenger(false);
+3737: //		soloTest.setInstallRunner(false);
+3738: 		soloTest.setAUTApk(DEFAULT_AUT_APK);
+3739: 		
+3740: 		soloTest.process();
+3741: 	}
+3742: }

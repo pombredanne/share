@@ -1,0 +1,241 @@
+001: /** 
+002:  ** Copyright (C) SAS Institute, All rights reserved.
+003:  ** General Public License: http://www.opensource.org/licenses/gpl-license.php
+004:  **/
+005: package com.jayway.android.robotium.remotecontrol.solo;
+006: 
+007: import java.io.CharArrayReader;
+008: import java.io.CharArrayWriter;
+009: import java.io.InvalidObjectException;
+010: import java.util.Properties;
+011: 
+012: import org.safs.sockets.AbstractProtocolRunner;
+013: import org.safs.sockets.SocketProtocolListener;
+014: import org.safs.sockets.android.DroidSocketProtocol;
+015: 
+016: public class SoloRemoteControlRunner extends AbstractProtocolRunner implements SocketProtocolListener{
+017: 	
+018: 	/**
+019: 	 * a convenient wrapper to {@link AbstractProtocolRunner#protocolserver}
+020: 	 * we should use this field instead of {@link AbstractProtocolRunner#protocolserver}
+021: 	 */
+022: 	public DroidSocketProtocol droidprotocolserver = null;
+023: 	
+024: 	private SoloRemoteControlRunner() {
+025: 		protocolserver = droidprotocolserver = new DroidSocketProtocol(this);
+026: 	}
+027: 	
+028: 	public SoloRemoteControlRunner(SocketProtocolListener listener){
+029: 		this();
+030: 		setListenerName(listener.getListenerName());
+031: 		addListener(listener);		
+032: 	}
+033: 
+034: 	@Override
+035: 	public void processProtocolMessage(String message) {
+036: 		int sepindex = -1;
+037: 		String lcprefix;
+038: 		// route message to appropriate listener callbacks
+039: 		if(message != null && message.length() > 0){
+040: 			sepindex = message.indexOf(Message.msg_sep);
+041: 			if(sepindex < 1){
+042: 				if(message.equalsIgnoreCase(Message.msg_connected)){
+043: 					onReceiveConnection();
+044: 				}else 
+045: 				if(message.equalsIgnoreCase(Message.msg_ready)){
+046: 					onReceiveReady();
+047: 				}else 
+048: 				if(message.equalsIgnoreCase(Message.msg_running)){
+049: 					onReceiveRunning();
+050: 				}else{
+051: 					//unknown message
+052: 					onReceiveMessage(message);
+053: 				}
+054: 			}else{
+055: 				try{
+056: 					lcprefix = message.substring(0, sepindex).toLowerCase();
+057: 					if(lcprefix.equals(Message.msg_debug)){
+058: 						onReceiveDebug(message.substring(sepindex + 1));
+059: 					}else 
+060: 					if(lcprefix.equals(Message.msg_exception)){
+061: 						onReceiveException(message.substring(sepindex + 1));
+062: 					}else 
+063: 					if(lcprefix.equals(Message.msg_result)){
+064: 						String tempmsg = message.substring(sepindex +1);
+065: 						String rcmsg = null;
+066: 						String infomsg = null;
+067: 						// "-1"   or
+068: 						// "-1:statusinfo"
+069: 						sepindex = tempmsg.indexOf(Message.msg_sep);
+070: 						if(sepindex < 1){ 
+071: 							rcmsg = tempmsg.trim();
+072: 						}
+073: 						else{
+074: 							rcmsg = tempmsg.substring(0, sepindex);
+075: 							try{ infomsg = tempmsg.substring(sepindex+1);}
+076: 							catch(Exception x){infomsg="";}
+077: 						}
+078: 						int rc = -99;
+079: 						try{ rc = Integer.parseInt(rcmsg); }
+080: 						catch(NumberFormatException x){
+081: 							debug("Received immproperly formatted Result code: "+ rcmsg);
+082: 							onReceiveMessage(message);
+083: 						}
+084: 						onReceiveResult(rc, infomsg);
+085: 					}else 
+086: 					if(lcprefix.equals(Message.msg_resultprops)){
+087: 						Properties props = new Properties();
+088: 						try{
+089: 							props.load(new CharArrayReader(message.substring(sepindex + 1).toCharArray()));
+090: 							onReceiveResultProperties(props);
+091: 						}catch(Exception x){
+092: 							debug("Error loading results Properties: "+
+093: 									          x.getClass().getSimpleName()+", "+ x.getMessage());
+094: 							onReceiveMessage(message);
+095: 						}
+096: 					}else
+097: 					if(lcprefix.equals(Message.msg_remoteshutdown)){
+098: 						String tempmsg = message.substring(sepindex +1);
+099: 						int rc = -99;
+100: 						try{ rc = Integer.parseInt(tempmsg); }
+101: 						catch(NumberFormatException x){
+102: 							debug("Received immproperly formatted Remote Shutdown cause: "+ tempmsg);
+103: 							onReceiveMessage(message);
+104: 						}
+105: 						onReceiveRemoteShutdown(rc);
+106: 						//shutdownThread(); // ???
+107: 					}else
+108: 					if(lcprefix.equals(Message.msg_shutdown)){
+109: 						String tempmsg = message.substring(sepindex +1);
+110: 						int rc = -99;
+111: 						try{ rc = Integer.parseInt(tempmsg); }
+112: 						catch(NumberFormatException x){
+113: 							debug("Received immproperly formatted Shutdown cause: "+ tempmsg);
+114: 							onReceiveMessage(message);
+115: 						}
+116: 						onReceiveLocalShutdown(rc);
+117: 						//shutdownThread(); // ???
+118: 					}else
+119: 					if(lcprefix.equals(Message.msg_message)){
+120: 						onReceiveMessage(message.substring(sepindex +1));
+121: 					}else{
+122: 						// unknown message type
+123: 						onReceiveMessage(message);
+124: 					}							
+125: 				}catch(Exception x){// unknown or malformed message
+126: 					// unknown message type
+127: 					onReceiveMessage(message);
+128: 				}
+129: 			}
+130: 		}
+131: 	}
+132: 	
+133: 	public void onReceiveReady() {
+134: 		boolean sent = false;
+135: 		for(int n = 0; n < runnerlisteners.size(); n++){
+136: 			try{
+137: 				((SocketProtocolListener)runnerlisteners.get(n)).onReceiveReady();
+138: 				sent = true;
+139: 			}catch(ClassCastException e){}
+140: 		}
+141: 		if(!sent) System.out.println("Received a remote Ready signal.");
+142: 	}
+143: 
+144: 	public void onReceiveRunning() {
+145: 		boolean sent = false;
+146: 		for(int n = 0; n < runnerlisteners.size(); n++){
+147: 			try{
+148: 				((SocketProtocolListener)runnerlisteners.get(n)).onReceiveRunning();
+149: 				sent = true;
+150: 			}catch(ClassCastException e){}
+151: 		}
+152: 		if(!sent) System.out.println("Received a remote Running signal.");
+153: 	}
+154: 
+155: 	public void onReceiveResult(int rc, String info) {
+156: 		boolean sent = false;
+157: 		for(int n = 0; n < runnerlisteners.size(); n++){
+158: 			try{
+159: 				((SocketProtocolListener)runnerlisteners.get(n)).onReceiveResult(rc, info);
+160: 				sent = true;
+161: 			}catch(ClassCastException e){}
+162: 		}
+163: 		if(!sent) System.out.println("Received a remote Result: "+ rc +", "+ info);
+164: 	}
+165: 
+166: 	public void onReceiveResultProperties(Properties props) {
+167: 		boolean sent = false;
+168: 		for(int n = 0; n < runnerlisteners.size(); n++){
+169: 			try{
+170: 				((SocketProtocolListener)runnerlisteners.get(n)).onReceiveResultProperties(props);
+171: 				sent = true;
+172: 			}catch(ClassCastException e){}
+173: 		}
+174: 		if(!sent) System.out.println("Received a remote Result Properties: "+ props.toString());
+175: 	}
+176: 
+177: 	public void onReceiveMessage(String message) {
+178: 		boolean sent = false;
+179: 		for(int n = 0; n < runnerlisteners.size(); n++){
+180: 			try{
+181: 				((SocketProtocolListener)runnerlisteners.get(n)).onReceiveMessage(message);
+182: 				sent = true;
+183: 			}catch(ClassCastException e){}
+184: 		}
+185: 		if(!sent) System.out.println("Received a remote Message: "+ message);
+186: 	}
+187: 
+188: 	public void onReceiveException(String message) {
+189: 		boolean sent = false;
+190: 		for(int n = 0; n < runnerlisteners.size(); n++){
+191: 			try{
+192: 				((SocketProtocolListener)runnerlisteners.get(n)).onReceiveException(message);
+193: 				sent = true;
+194: 			}catch(ClassCastException e){}
+195: 		}
+196: 		if(!sent) System.out.println("Received a Remote Exception: "+ message);
+197: 	}
+198: 
+199: 	@Override
+200: 	public boolean sendShutdown() {
+201: 		try{ return sendProtocolMessage(Message.msg_remoteshutdown);}
+202: 		catch(InvalidObjectException x){ return false;}
+203: 	}
+204: 
+205: 	@Override
+206: 	public boolean sendDispatchProps(Properties trd) {
+207: 		try{ 
+208: 			StringBuffer buffer = new StringBuffer(Message.msg_dispatchprops+ Message.msg_sep);
+209: 			CharArrayWriter writer = new CharArrayWriter();
+210: 			trd.store(writer, "testRecordData");
+211: 			buffer.append(writer.toCharArray());
+212: 			return sendProtocolMessage(buffer.toString());
+213: 		}
+214: 		catch(Exception x){	return false; }
+215: 	}
+216: 
+217: 	@Override
+218: 	public boolean sendDispatchFile(String filepath) {
+219: 		try{ return sendProtocolMessage(Message.msg_dispatchfile+ Message.msg_sep + filepath);}
+220: 		catch(InvalidObjectException x){ return false;}
+221: 	}
+222: 	
+223: 	/**
+224: 	 * Send the remote client and arbitrary MESSAGE content.
+225: 	 * <p>
+226: 	 * The remote client is expected to forward the message to the test app with  
+227: 	 * the "message:" prefix stripped off.  These messages are NOT part of the standard 
+228: 	 * protocol and it is up to the local and remote code to know what to do with 
+229: 	 * them.
+230: 	 * @param message
+231: 	 * @return true if the message was successfully sent.
+232: 	 */
+233: 	public boolean sendMessage(String message){
+234: 		String fullmsg = Message.msg_message + Message.msg_sep;
+235: 		if(message != null && message.length() > 0) fullmsg += message;
+236: 		try{ return sendProtocolMessage(fullmsg);}
+237: 		catch(InvalidObjectException x){ return false;}
+238: 	}
+239: 	
+240: 	
+241: }

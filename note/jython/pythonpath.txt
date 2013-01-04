@@ -13,27 +13,39 @@ Jython 2.5.2
 /tmp
 $
 $ jython -c "import sys; print sys.path"
-['', '/home/username/dev/jython-2.5.2/Lib', '__classpath__', '__pyclasspath__/', '/home/username/dev/jython-2.5.2/Lib/site-packages']
+['', '/usr/local/jython-2.5.2/Lib', '__classpath__', '__pyclasspath__/', '/usr/local/jython-2.5.2/Lib/site-packages']
+$
+$ jython -Dpython.path=/tmp --print <1>
+/usr/lib/jvm/java-6-openjdk/bin/java -Xmx512m -Xss1024k -classpath /usr/local/jython/jython.jar: -Dpython.home=/usr/local/jython -Dpython.executable=/usr/local/jython/bin/jython org.python.util.jython -Dpython.path=/tmp
+$ jython -Dpython.path=/tmp -c "import sys; print sys.path" <2>
+['', '/tmp', '/usr/local/jython-2.5.2/Lib', '__classpath__', '__pyclasspath__/', '/usr/local/jython-2.5.2/Lib/site-packages']
+$
+$ export JYTHONPATH=foo/path:bar/path <3>
+$ jython --print
+/usr/lib/jvm/java-6-openjdk/bin/java -Xmx512m -Xss1024k -classpath /usr/local/jython/jython.jar: -Dpython.home=/usr/local/jython -Dpython.executable=/usr/local/jython/bin/jython org.python.util.jython
+$ jython -c "import sys; print sys.path" <4>
+['', '/tmp/foo/path', '/tmp/bar/path', '/usr/local/jython-2.5.2/Lib', '__classpath__', '__pyclasspath__/', '/usr/local/jython-2.5.2/Lib/site-packages']
 $
 $ jython -Dpython.path=/tmp -c "import sys; print sys.path"
-['', '/tmp', '/home/username/dev/jython-2.5.2/Lib', '__classpath__', '__pyclasspath__/', '/home/username/dev/jython-2.5.2/Lib/site-packages']
-$
-$ export JYTHONPATH=foo/path:bar/path
-$ jython -c "import sys; print sys.path"
-['', '/tmp/foo/path', '/tmp/bar/path', '/home/username/dev/jython-2.5.2/Lib', '__classpath__', '__pyclasspath__/', '/home/username/dev/jython-2.5.2/Lib/site-packages']
-$
-$ jython -Dpython.path=/tmp -c "import sys; print sys.path"
-['', '/tmp', '/home/username/dev/jython-2.5.2/Lib', '__classpath__', '__pyclasspath__/', '/home/username/dev/jython-2.5.2/Lib/site-packages']
+['', '/tmp', '/usr/local/jython-2.5.2/Lib', '__classpath__', '__pyclasspath__/', '/usr/local/jython-2.5.2/Lib/site-packages']
 --------------------------------------------------------------------------------
-
-從上面的實驗，可以觀察到幾個規則：
-
- * `python.path` 或 `JYHTONPATH` 會安插在 `$JYTHON_HOME/Lib` 之前。
- * `python.path` 和 `JYHTONPATH` 同時有指定時，會採用 `python.path` 的設定。
+<1> `-Dpython.path=...` 也是轉成 Java system properties，最後成為 `sys.path` 的一部份。
+<2> `python.path` 或 `JYHTONPATH` 會安插在 `$JYTHON_HOME/Lib` 之前，跟 `jython --help` 的說法一致。
++
+--------------------------------------------------------------------------------
+$ jython --help
+...
+JYTHONPATH: ':'-separated list of directories prefixed to the default module
+            search path.  The result is sys.path.
+--------------------------------------------------------------------------------
++
+<3> 透過 `JYTHONPATH` 來設定 module search path 時，並不會反應在 Java command 上，不過最後還是會作用在 `sys.path`。
+<4> 同時給定 `python.path` 和 `JYHTONPATH` 時，會優先採用 `python.path`。
 
 == 延伸閱讀 ==
 
  * link:classpath.html[Classpath]
+ * link:command-line.html[Command Line]
 
 == 參考資料 ==
 

@@ -1,0 +1,27 @@
+= link:safs.html[SAFS] / TCP Messenger for Android =
+:title: [SAFS] TCP Messenger for Android
+
+SAFS TCP Messenger (`org.safs.android.messenger`) 執行在 emulator/device 裡做為一個中間人（intermediary），是個 general-purpose messaging services，搭配 ADB 的 port forwarding（local 2411 -> remote 2410），讓執行在 host 上的程式（Remote TCP Client），得以透過 TCP sockets 跟執行在 emulator/device 上的 app 做雙向的溝通，而且 app 本身不用為此額外要求 `INTERNET` 權限。
+
+[quote,Carl Nagle,'https://groups.google.com/forum/#!topic/robotium-developers/IbRQfv59Cng[Robotium Remote Control]']
+________________________________________________________________________________
+The problem here is that it doesn't look like Android can support Sockets UDP, and likely not RMI (I believe I read that somewhere), and definitely a test APK is not supposed to have access to TCP Sockets if the test application (AUT) does not have INTERNET permissions. 
+________________________________________________________________________________
+
+.架構圖（圖片來源：http://safsdev.sourceforge.net/sqabasic2000/UsingSAFSTCPMessenger.htm[SAFSDEV]）
+image::android-tcp-messenger/architecture.png[]
+
+雖然 SAFS TCP Messenger 起初是為了做 test automation 而被開發出來的，但 protocol 本身只定義了雙方如何交換 UTF-8 編碼的文字訊息（下達 test command，然後取回 test data/results），因此也可以應用在其他的領域，未來甚至有機會從 Android market 上直接安裝？
+
+== 延伸閱讀 ==
+
+ * link:android-testing.html[Android Testing]
+ * link:../android/adb/port-forwarding.html[ADB Port Forwarding]
+ * link:../robotium/rc/architecture.html[Robotium RC Architecture] - Robotium RC 算是 SAFS TCP Messenger 的一種應用。
+
+== 參考資料 ==
+
+ * http://safsdev.sourceforge.net/doc/org/safs/android/messenger/MessengerService.html[MessengerService] ^http://diigo.com/0v7a1[閱讀]^ - 說明了 remote controller 跟 messenger 間的 handshake，以及 messenger 與 test package 之間是走 inter-process communication。
+ * http://safsdev.sourceforge.net/sqabasic2000/UsingSAFSTCPMessenger.htm[SAFS TCP Messenger Service for Android] ^http://diigo.com/0v8g4[閱讀]^ - 有架構圖，談到 protocol 以及一般的 app 如何與 SAFS TCP Messenger 整合。
+ * http://safsdev.sourceforge.net/doc/org/safs/sockets/SocketProtocol.html[SocketProtocol] ^http://diigo.com/0vblg[閱讀]^ - 交換 UTF-8 編碼的 string messages
+

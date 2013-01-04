@@ -1,0 +1,111 @@
+= link:api.html[RC Solo API] / Command Processing =
+:title: [RC Solo API] Command Processing
+
+先從最簡單的 `Solo.startMainLauncher()` 開始。
+
+[quote,'http://safsdev.sourceforge.net/doc/com/jayway/android/robotium/remotecontrol/solo/Solo.html#startMainLauncher()[Solo.startMainLauncher()]']
+________________________________________________________________________________
+Start the AUT app by launching its main launcher Activity.
+
+Returns:
+
+true if successful. Field _last_remote_result contains the returned Properties object.
+
+The KEY_, PARAM_, STATUS_, cmd_, and target_ constants all come from the Message class and are used here and in the device/emulator Robotium Test Runner.
+
+ (in ):KEY_TARGET=target_solo
+ (in ):KEY_COMMAND=cmd_startmainlauncher
+ (out):KEY_ISREMOTERESULT=true
+ (out):KEY_REMOTERESULTCODE=String:int:0=success/normal=STATUS_REMOTERESULT_OK
+ (out):KEY_REMOTERESULTINFO=String
+ (in/out):PARAM_ERRORMSG=String
+ (out):PARAM_NAME=String Name of the Activity that was launched.
+ (out):PARAM_CLASS=String full Classname of the Activity that was launched.
+________________________________________________________________________________
+
+使用起來像是這個樣子：
+
+--------------------------------------------------------------------------------
+>>> solo.startMainLauncher()
+DroidSocketProtocol.waitForInput(): Received client input: running
+DroidSocketProtocol.waitForInput(): Received client input: resultprops:#ResultProperties
+#Thu Jan 03 17:40:26 GMT+08:00 2013
+remoteresultcode=0
+command=startmainlauncher
+target=solo
+class=com.android.example.spinner.SpinnerActivity
+remoteresultinfo=\ \: 'startmainlauncher'  success. 
+name=SpinnerActivity
+isremoteresult=true
+--------------------------------------------------------------------------------
+
+從 `Solo.startMainLauncher()` 的原始碼開始追起。
+
+.`Solo.java`
+--------------------------------------------------------------------------------
+...
+0076: public class Solo extends SoloWorker{
+...
+0215: 	private boolean runNoArgCommand(String typecommand) throws IllegalThreadStateException, RemoteException, TimeoutException, ShutdownInvocationException{
+0216: 		Properties props = prepSoloDispatch(typecommand);
+0217: 		_last_remote_result = control.performRemotePropsCommand(props, default_ready_stimeout, default_running_stimeout, default_result_stimeout);
+0218: 		int rc = Message.STATUS_REMOTERESULT_UNKNOWN;
+0219: 		try{rc = Integer.parseInt(_last_remote_result.getProperty(Message.KEY_REMOTERESULTCODE));}
+0220: 		catch(NumberFormatException x){}
+0221: 		return rc==Message.STATUS_REMOTERESULT_OK ? true: false;
+0222: 	}
+...
+4466: 	public boolean startMainLauncher() throws IllegalThreadStateException, RemoteException, TimeoutException, ShutdownInvocationException{
+4467: 		return runNoArgCommand(Message.cmd_startmainlauncher);
+4468: 	}
+
+--------------------------------------------------------------------------------
+
+.`SoloWorker.java`
+--------------------------------------------------------------------------------
+...
+058: 	protected SoloRemoteControl control = null;
+...
+375: 	protected Properties prepSoloDispatch(String command){
+376: 		try{_props.clear();}catch(NullPointerException x){_props = new Properties();}
+377: 		_props.setProperty(Message.KEY_COMMAND, command);
+378: 		_props.setProperty(Message.KEY_TARGET, Message.target_solo);
+379: 		return _props;
+380: 	}		
+--------------------------------------------------------------------------------
+
+.`SoloRemoteControl.java`
+--------------------------------------------------------------------------------
+...
+047: 	protected SoloRemoteControlRunner runner = null;
+...
+573: 	public Properties performRemotePropsCommand(Properties props, int secsWaitReady, int secsWaitRunning, int secsWaitResult) throws IllegalThreadStateException, RemoteException, TimeoutException, ShutdownInvocationException{
+574: 		resetResults();
+575: 		waitForRemoteReady(secsWaitReady);
+576: 		if(runner.sendDispatchProps(props)) {
+577: 			waitForRemoteRunning(secsWaitRunning);
+578: 			return waitForRemoteResult(secsWaitResult);
+579: 		}
+580: 		throw new IllegalThreadStateException("Local ProtocolRunner failed to sendDispatchProps.");
+581: 	}
+--------------------------------------------------------------------------------
+
+.`SoloRemoteControlRunner.java`
+--------------------------------------------------------------------------------
+206: 	public boolean sendDispatchProps(Properties trd) {
+207: 		try{ 
+208: 			StringBuffer buffer = new StringBuffer(Message.msg_dispatchprops+ Message.msg_sep);
+209: 			CharArrayWriter writer = new CharArrayWriter();
+210: 			trd.store(writer, "testRecordData");
+211: 			buffer.append(writer.toCharArray());
+212: 			return sendProtocolMessage(buffer.toString());
+213: 		}
+214: 		catch(Exception x){	return false; }
+215: 	}
+--------------------------------------------------------------------------------
+
+
+== 延伸閱讀 ==
+
+ * link:extensions.html[Extensions]
+

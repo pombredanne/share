@@ -1,0 +1,53 @@
+= link:../rc.html[Robotium RC] / Solo API =
+:title: [Robotium RC] Solo API
+
+ * 畫面如果有切 tabs，`getCurrentXXX()` 還是會取得所有 tabs 的內容。需要檢查 visible 的功能。
+ * http://developer.android.com/reference/android/widget/Button.html[Button] 也是個 `TextView`。
+ * 很缺的一個 API 是取用 view 的 properties，莫非要懂 protocol 再加 command。
+ * timeout 預設值是多少？
+ * 由於 Solo API 沒有太多說明，用法可以參考 RemoteControlUI
+ * `shutdown()` 跟 `shutdownRemote()` 要怎麼搭配使用？因為呼叫 `shutdown()` 後就不能再呼叫 `shutdownRemote()`，反過來也是。
+ * Solo extends SoloWorker, use SoloRemoteControl -> 畫成 UML 圖
+ * getIdentifier() 可以從 name 取得 resource ID, 如果沒 source 可以放進 emulator 查看。
+
+主要的 API 只有一個，就是 `Solo` (`com.jayway.android.robotium.remotecontrol.solo.Solo`)。不過多達 150 幾個 methods，就跟當初 link:../../../selenium/rc/api.html[Selenium 1/RC API] 一樣，很容讓人搞不清楚要用哪一個...
+
+--------------------------------------------------------------------------------
+$ adb shell am instrument -w com.jayway.android.robotium.remotecontrol.client/com.jayway.android.robotium.remotecontrol.client.RobotiumTestRunner
+$ jython -J-cp robotium-remotecontrol.jar:safsautoandroid.jar:safssockets.jar
+>>> from com.jayway.android.robotium.remotecontrol.solo import Solo
+>>> solo = Solo()     
+>>> solo.initialize()
+SocketProtocol.addListener(): AbstractRunner was successfully registered.
+DroidSocketProtocol.addListener(): AbstractRunner was successfully registered.
+Port forwarding will be from '2411'
+DroidSocketProtocol.createRemoteClientConnection(): Local Runner attempting to make remote Runner connection...
+Forwarding port from 'local:2411' to 'device/emulator:2410'
+Attempting to initialize Android Tools...
+toolHome is null, can't set it.
+Setting Android Tools SDK Dir to /home/jeremy/dev/android
+DroidSocketProtocol.createRemoteClientConnection(): Remote Runner seems to be connected!
+DroidSocketProtocol.waitForInput(): Received client input: PROTOCOLVERSION=1
+DroidSocketProtocol.verifyRemoteClient():  client protocol 1 connected.
+DroidSocketProtocol.createRemoteClientConnection(): Remote Runner has been connected!
+DroidSocketProtocol.waitForInput(): Received client input: ready
+>>>
+>>> solo.startMainLauncher()
+>>> # ...
+>>> solo.finishOpenedActivities()
+>>> solo.shutdown()
+--------------------------------------------------------------------------------
+
+== 延伸閱讀 ==
+
+ * link:logs.html[Debug Logs]
+ * link:extensions.html[Extensions]
+
+== 參考資料 ==
+
+ * http://safsdev.sourceforge.net/doc/com/jayway/android/robotium/remotecontrol/solo/Solo.html[Solo] ^http://diigo.com/0v7i0[閱讀]^
+ * http://safsdev.sourceforge.net/doc/com/jayway/android/robotium/remotecontrol/solo/SoloWorker.html[SoloWorker] ^http://diigo.com/0vehf[閱讀]^
+ * http://safsdev.sourceforge.net/doc/com/jayway/android/robotium/remotecontrol/solo/Message.html[Message]
+ * http://safsdev.sourceforge.net/doc/com/jayway/android/robotium/remotecontrol/solo/RemoteResults.html[RemoteResults]
+ * http://safsdev.sourceforge.net/doc/com/jayway/android/robotium/remotecontrol/solo/RemoteSoloException.html[RemoteSoloException]
+

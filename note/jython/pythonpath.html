@@ -58,31 +58,43 @@ Jython 2.5.2
 /tmp
 $
 $ jython -c "import sys; print sys.path"
-['', '/home/username/dev/jython-2.5.2/Lib', '__classpath__', '__pyclasspath__/', '/home/username/dev/jython-2.5.2/Lib/site-packages']
+['', '/usr/local/jython-2.5.2/Lib', '__classpath__', '__pyclasspath__/', '/usr/local/jython-2.5.2/Lib/site-packages']
+$
+$ jython -Dpython.path=/tmp --print <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+/usr/lib/jvm/java-6-openjdk/bin/java -Xmx512m -Xss1024k -classpath /usr/local/jython/jython.jar: -Dpython.home=/usr/local/jython -Dpython.executable=/usr/local/jython/bin/jython org.python.util.jython -Dpython.path=/tmp
+$ jython -Dpython.path=/tmp -c "import sys; print sys.path" <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+['', '/tmp', '/usr/local/jython-2.5.2/Lib', '__classpath__', '__pyclasspath__/', '/usr/local/jython-2.5.2/Lib/site-packages']
+$
+$ export JYTHONPATH=foo/path:bar/path <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+$ jython --print
+/usr/lib/jvm/java-6-openjdk/bin/java -Xmx512m -Xss1024k -classpath /usr/local/jython/jython.jar: -Dpython.home=/usr/local/jython -Dpython.executable=/usr/local/jython/bin/jython org.python.util.jython
+$ jython -c "import sys; print sys.path" <img src="../../_asciidoc/images/icons/callouts/4.png" alt="4" />
+['', '/tmp/foo/path', '/tmp/bar/path', '/usr/local/jython-2.5.2/Lib', '__classpath__', '__pyclasspath__/', '/usr/local/jython-2.5.2/Lib/site-packages']
 $
 $ jython -Dpython.path=/tmp -c "import sys; print sys.path"
-['', '/tmp', '/home/username/dev/jython-2.5.2/Lib', '__classpath__', '__pyclasspath__/', '/home/username/dev/jython-2.5.2/Lib/site-packages']
-$
-$ export JYTHONPATH=foo/path:bar/path
-$ jython -c "import sys; print sys.path"
-['', '/tmp/foo/path', '/tmp/bar/path', '/home/username/dev/jython-2.5.2/Lib', '__classpath__', '__pyclasspath__/', '/home/username/dev/jython-2.5.2/Lib/site-packages']
-$
-$ jython -Dpython.path=/tmp -c "import sys; print sys.path"
-['', '/tmp', '/home/username/dev/jython-2.5.2/Lib', '__classpath__', '__pyclasspath__/', '/home/username/dev/jython-2.5.2/Lib/site-packages']</code></pre>
+['', '/tmp', '/usr/local/jython-2.5.2/Lib', '__classpath__', '__pyclasspath__/', '/usr/local/jython-2.5.2/Lib/site-packages']</code></pre>
 </div></div>
-<div class="paragraph"><p>從上面的實驗，可以觀察到幾個規則：</p></div>
-<div class="ulist"><ul>
-<li>
-<p>
-<code>python.path</code> 或 <code>JYHTONPATH</code> 會安插在 <code>$JYTHON_HOME/Lib</code> 之前。
-</p>
-</li>
-<li>
-<p>
-<code>python.path</code> 和 <code>JYHTONPATH</code> 同時有指定時，會採用 <code>python.path</code> 的設定。
-</p>
-</li>
-</ul></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+<code>-Dpython.path=...</code> 也是轉成 Java system properties，最後成為 <code>sys.path</code> 的一部份。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+<code>python.path</code> 或 <code>JYHTONPATH</code> 會安插在 <code>$JYTHON_HOME/Lib</code> 之前，跟 <code>jython --help</code> 的說法一致。
+<div class="listingblock">
+<div class="content">
+<pre><code>$ jython --help
+...
+JYTHONPATH: ':'-separated list of directories prefixed to the default module
+            search path.  The result is sys.path.</code></pre>
+</div></div>
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+透過 <code>JYTHONPATH</code> 來設定 module search path 時，並不會反應在 Java command 上，不過最後還是會作用在 <code>sys.path</code>。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/4.png" alt="4" /></td><td>
+同時給定 <code>python.path</code> 和 <code>JYHTONPATH</code> 時，會優先採用 <code>python.path</code>。
+</td></tr>
+</table></div>
 </div>
 </div>
 <div class="sect1">
@@ -92,6 +104,11 @@ $ jython -Dpython.path=/tmp -c "import sys; print sys.path"
 <li>
 <p>
 <a href="classpath.html">Classpath</a>
+</p>
+</li>
+<li>
+<p>
+<a href="command-line.html">Command Line</a>
 </p>
 </li>
 </ul></div>
@@ -159,7 +176,7 @@ dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
 <div id="footnotes"><hr /></div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2012-12-25 23:34:43 CST
+Last updated 2012-12-27 13:48:08 CST
 </div>
 </div>
 </div>

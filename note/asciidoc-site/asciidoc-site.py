@@ -340,7 +340,7 @@ def main():
 
     docsys = DocumentSystem(site_dir)
     docsys.parse()
-    docsys.build(force=True) # TODO: option -f --force, debug level
+    docsys.build(force=False) # TODO: option -f --force, debug level
 
 if __name__ == '__main__':
    main()

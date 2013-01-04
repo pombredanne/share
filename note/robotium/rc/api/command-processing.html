@@ -1,0 +1,187 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[RC Solo API] Command Processing</title>
+<link rel="stylesheet" href="../../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" />
+<script type="text/javascript" src="../../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div>
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="api.html">RC Solo API</a> / Command Processing</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>先從最簡單的 <code>Solo.startMainLauncher()</code> 開始。</p></div>
+<div class="quoteblock">
+<div class="content">
+<div class="paragraph"><p>Start the AUT app by launching its main launcher Activity.</p></div>
+<div class="paragraph"><p>Returns:</p></div>
+<div class="paragraph"><p>true if successful. Field _last_remote_result contains the returned Properties object.</p></div>
+<div class="paragraph"><p>The KEY_, PARAM_, STATUS_, cmd_, and target_ constants all come from the Message class and are used here and in the device/emulator Robotium Test Runner.</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>(in ):KEY_TARGET=target_solo
+(in ):KEY_COMMAND=cmd_startmainlauncher
+(out):KEY_ISREMOTERESULT=true
+(out):KEY_REMOTERESULTCODE=String:int:0=success/normal=STATUS_REMOTERESULT_OK
+(out):KEY_REMOTERESULTINFO=String
+(in/out):PARAM_ERRORMSG=String
+(out):PARAM_NAME=String Name of the Activity that was launched.
+(out):PARAM_CLASS=String full Classname of the Activity that was launched.</code></pre>
+</div></div>
+</div>
+<div class="attribution">
+&#8212; <a href="http://safsdev.sourceforge.net/doc/com/jayway/android/robotium/remotecontrol/solo/Solo.html#startMainLauncher()">Solo.startMainLauncher()</a>
+</div></div>
+<div class="paragraph"><p>使用起來像是這個樣子：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; solo.startMainLauncher()
+DroidSocketProtocol.waitForInput(): Received client input: running
+DroidSocketProtocol.waitForInput(): Received client input: resultprops:#ResultProperties
+#Thu Jan 03 17:40:26 GMT+08:00 2013
+remoteresultcode=0
+command=startmainlauncher
+target=solo
+class=com.android.example.spinner.SpinnerActivity
+remoteresultinfo=\ \: 'startmainlauncher'  success.
+name=SpinnerActivity
+isremoteresult=true</code></pre>
+</div></div>
+<div class="paragraph"><p>從 <code>Solo.startMainLauncher()</code> 的原始碼開始追起。</p></div>
+<div class="listingblock">
+<div class="title"><code>Solo.java</code></div>
+<div class="content">
+<pre><code>...
+0076: public class Solo extends SoloWorker{
+...
+0215:   private boolean runNoArgCommand(String typecommand) throws IllegalThreadStateException, RemoteException, TimeoutException, ShutdownInvocationException{
+0216:           Properties props = prepSoloDispatch(typecommand);
+0217:           _last_remote_result = control.performRemotePropsCommand(props, default_ready_stimeout, default_running_stimeout, default_result_stimeout);
+0218:           int rc = Message.STATUS_REMOTERESULT_UNKNOWN;
+0219:           try{rc = Integer.parseInt(_last_remote_result.getProperty(Message.KEY_REMOTERESULTCODE));}
+0220:           catch(NumberFormatException x){}
+0221:           return rc==Message.STATUS_REMOTERESULT_OK ? true: false;
+0222:   }
+...
+4466:   public boolean startMainLauncher() throws IllegalThreadStateException, RemoteException, TimeoutException, ShutdownInvocationException{
+4467:           return runNoArgCommand(Message.cmd_startmainlauncher);
+4468:   }</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="title"><code>SoloWorker.java</code></div>
+<div class="content">
+<pre><code>...
+058:    protected SoloRemoteControl control = null;
+...
+375:    protected Properties prepSoloDispatch(String command){
+376:            try{_props.clear();}catch(NullPointerException x){_props = new Properties();}
+377:            _props.setProperty(Message.KEY_COMMAND, command);
+378:            _props.setProperty(Message.KEY_TARGET, Message.target_solo);
+379:            return _props;
+380:    }</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="title"><code>SoloRemoteControl.java</code></div>
+<div class="content">
+<pre><code>...
+047:    protected SoloRemoteControlRunner runner = null;
+...
+573:    public Properties performRemotePropsCommand(Properties props, int secsWaitReady, int secsWaitRunning, int secsWaitResult) throws IllegalThreadStateException, RemoteException, TimeoutException, ShutdownInvocationException{
+574:            resetResults();
+575:            waitForRemoteReady(secsWaitReady);
+576:            if(runner.sendDispatchProps(props)) {
+577:                    waitForRemoteRunning(secsWaitRunning);
+578:                    return waitForRemoteResult(secsWaitResult);
+579:            }
+580:            throw new IllegalThreadStateException("Local ProtocolRunner failed to sendDispatchProps.");
+581:    }</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="title"><code>SoloRemoteControlRunner.java</code></div>
+<div class="content">
+<pre><code>206:    public boolean sendDispatchProps(Properties trd) {
+207:            try{
+208:                    StringBuffer buffer = new StringBuffer(Message.msg_dispatchprops+ Message.msg_sep);
+209:                    CharArrayWriter writer = new CharArrayWriter();
+210:                    trd.store(writer, "testRecordData");
+211:                    buffer.append(writer.toCharArray());
+212:                    return sendProtocolMessage(buffer.toString());
+213:            }
+214:            catch(Exception x){     return false; }
+215:    }</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_延伸閱讀">延伸閱讀</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="extensions.html">Extensions</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2013-01-04 16:25:40 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script>
+</body>
+</html>

@@ -1,0 +1,115 @@
+= link:debian.html[Debian] / Alternatives System =
+:title: [Debian] Alternatives System
+
+當你的程式需要調用文字編輯器來編輯檔案，或是瀏覽器來瀏覽網頁時，如果系統內同時安裝有多個文字編輯器或瀏覽器時，應該要叫用哪一個呢？
+
+普遍的做法是利用環境變數（例如 `EDITOR`）來決定要採用哪個程式。不過 Debian 另外提出一個不同的做法 - 'Alternatives System'，利用 "兩層 symbolic links" 管理不同類型應用的預設程式。以文字編輯器為例：
+
+ `/usr/bin/editor` -> `/etc/alternatives/editor` -> `/bin/nano`
+
+也就是說，當程式需要調用外部文字編輯器時，可以直接呼叫 `/usr/bin/editor`，最後哪個文字編輯器被執行起來，則由另一個 symbolic link (`/etc/alternatives/editor`) 來決定。其中：
+
+ * `/usr/bin/editor` - 一個 symbolic link，稱做 alternative link（完整的路徑稱做 generic name），可以透過 alternatives system 在一組可替換的 alternatives 中選定一個預設值。
+ * `/etc/alternatives/editor` - `editor` 是位在 alternatives directory (`/etc/alternatives`) 下的一個 symbolic link（檔名就是 alternative name），指向真正的程式。
+ * `/bin/nano` - 稱做 alternative (path)，也就是透過 generic name 最後真正呼叫到的程式。
+
+建議透過 `update-alternatives` 來維護這些 symbolic links。
+
+ update-alternatives [options] command
+
+[listing]
+................................................................................
+$ ls -l /usr/bin/editor <1>
+lrwxrwxrwx 1 root root 24 Dec 31 21:41 /usr/bin/editor -> /etc/alternatives/editor
+$ ls -l /etc/alternatives/editor
+lrwxrwxrwx 1 root root 9 Jan  1 18:57 /etc/alternatives/editor -> /bin/nano
+$
+$ update-alternatives --list editor <2>
+/bin/ed
+/bin/nano
+/usr/bin/vim.basic
+/usr/bin/vim.tiny
+$ sudo update-alternatives --set editor /usr/bin/vim.basic <3>
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/editor (editor) in manual mode.
+$ readlink -f /usr/bin/editor
+/usr/bin/vim.basic
+$
+$ sudo update-alternatives --config editor <4>
+There are 4 choices for the alternative editor (providing /usr/bin/editor).
+
+  Selection    Path                Priority   Status
+------------------------------------------------------------
+  0            /bin/nano            40        auto mode
+  1            /bin/ed             -100       manual mode
+  2            /bin/nano            40        manual mode
+* 3            /usr/bin/vim.basic   30        manual mode
+  4            /usr/bin/vim.tiny    10        manual mode
+
+Press enter to keep the current choice[*], or type selection number: 0
+update-alternatives: using /bin/nano to provide /usr/bin/editor (editor) in auto mode.
+................................................................................
+<1> 目前 `/usr/bin/editor` 指向 `/bin/nano`。
+<2> `--list <name>` 可以列出其他可替換的 alternatives。
+<3> `--set <name> <path>` 可以修改對應的 alternative。
+<4> `--config <name>` 同 `--set` 可以修改對應的 alternative，但以互動的方式做選取。
+
+--------------------------------------------------------------------------------
+$ update-alternatives --get-selections <1>
+awk                            auto     /usr/bin/mawk
+builtins.7.gz                  auto     /usr/share/man/man7/bash-builtins.7.gz
+c89                            auto     /usr/bin/c89-gcc
+c99                            auto     /usr/bin/c99-gcc
+cc                             auto     /usr/bin/gcc
+cpp                            auto     /usr/bin/cpp
+default.plymouth               auto     /lib/plymouth/themes/ubuntu-logo/ubuntu-logo.plymouth
+editor                         manual   /bin/nano
+...
+x-www-browser                  auto     /usr/bin/google-chrome
+$
+$ update-alternatives --list x-www-browser
+/usr/bin/firefox
+/usr/bin/google-chrome
+--------------------------------------------------------------------------------
+<1> `--get-selections` 可以列出所有的 alternative names。
+
+上面 `--list` 列出的 alternatives 是事先經過 register 的。假設手動安裝了一個 MyEditor 在 `/usr/local/bin/myeditor`：
+
+[listing]
+................................................................................
+$ sudo update-alternatives --set editor /usr/local/bin/myeditor <1>
+update-alternatives: error: alternative /usr/local/bin/myeditor for editor not registered, not setting.
+$ sudo update-alternatives --install /usr/bin/editor editor /usr/local/bin/myeditor 1 <2>
+$ sudo update-alternatives --config editor
+There are 5 choices for the alternative editor (providing /usr/bin/editor).
+
+  Selection    Path                     Priority   Status
+------------------------------------------------------------
+  0            /bin/nano                 40        auto mode
+  1            /bin/ed                  -100       manual mode
+* 2            /bin/nano                 40        manual mode
+  3            /usr/bin/vim.basic        30        manual mode
+  4            /usr/bin/vim.tiny         10        manual mode
+  5            /usr/local/bin/myeditor   1         manual mode
+
+Press enter to keep the current choice[*], or type selection number: ^C
+$
+$ sudo update-alternatives --remove editor /usr/local/bin/myeditor <3>
+$ sudo update-alternatives --list editor
+/bin/ed
+/bin/nano
+/usr/bin/vim.basic
+/usr/bin/vim.tiny
+................................................................................
+<1> alternative path 若沒有事先 register，是無法用 `--set` 直接指定的。
+<2> `--install` 可以將 alternative path 註冊到某個 alternative name 底下。
++
+ update-alternatives --install <link> <name> <path> <priority>
++
+<3> `--remove <name> <path>` 則可以將 alternative 從候選清單中移除。
+
+== 參考資料 ==
+
+ * http://wiki.debian.org/DebianAlternatives[DebianAlternatives - Debian Wiki] ^http://diigo.com/0vdas[閱讀]^
+ * http://www.debian-administration.org/articles/91[Using the Debian alternatives system] ^http://diigo.com/0vdax[閱讀]^ (2005-02-11)
+ * http://manpages.debian.net/cgi-bin/man.cgi?query=update-alternatives[update-alternatives] ^http://diigo.com/0vdd8[閱讀]^
+

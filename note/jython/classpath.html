@@ -45,19 +45,69 @@ asciidoc.install();
 <div id="content">
 <div id="preamble">
 <div class="sectionbody">
+<div class="paragraph"><p>官方文件很少提到要怎麼設定 Java classpath，不過從 <a href="command-line.html"><code>jython</code></a> (startup script) 的內容，可以發現其實 <code>jython</code> 接受幾種不同的方式來做設定：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>-J-classpath</code>
+</p>
+</li>
+<li>
+<p>
+<code>-J-cp</code>
+</p>
+</li>
+<li>
+<p>
+<code>CLASSPATH</code> 環境變數
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>透過 <code>--print</code> 可以觀察到，classpath 裡原本只有 <code>jython.jar</code> 自己：</p></div>
 <div class="listingblock">
 <div class="content">
-<pre><code>&gt;&gt;&gt; import sys
-&gt;&gt;&gt; sys.path
-['', '/home/username/jython/Lib', '__classpath__', '__pyclasspath__/', '/home/username/jython/Lib/site-packages']
-&gt;&gt;&gt;</code></pre>
+<pre><code>$ jython --print
+/usr/lib/jvm/java-6-openjdk/bin/java -Xmx512m -Xss1024k -classpath /usr/local/jython/jython.jar:foot/path:bar/path -Dpython.home=/usr/local/jython -Dpython.executable=/usr/local/jython/bin/jython org.python.util.jython</code></pre>
 </div></div>
+<div class="paragraph"><p>接著來觀察透過不同方式設定 classpath，會對 <code>jython</code> 拼接出來的 Java command 產生什麼影響：（都會成為 <code>-classpath</code> 的一部份）</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ jython -J-classpath mylib.jar --print <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+/usr/lib/jvm/java-6-openjdk/bin/java -Xmx512m -Xss1024k -classpath /usr/local/jython/jython.jar:mylib.jar: -Dpython.home=/usr/local/jython -Dpython.executable=/usr/local/jython/bin/jython org.python.util.jython
+$
+$ export CLASSPATH=path/to/foo.jar:path/to/bar.jar <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+$ jython -J-cp mylib.jar --print
+/usr/lib/jvm/java-6-openjdk/bin/java -Xmx512m -Xss1024k -classpath /usr/local/jython/jython.jar:mylib.jar:path/to/foo.jar:path/to/bar.jar -Dpython.home=/usr/local/jython -Dpython.executable=/usr/local/jython/bin/jython org.python.util.jython
+$
+$ jython -J-cp mylib.jar <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+&gt;&gt;&gt; from java.lang import System
+&gt;&gt;&gt; System.getProperty('java.class.path') <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+u'/usr/local/jython/jython.jar:mylib.jar:path/to/foo.jar:path/to/bar.jar'
+&gt;&gt;&gt; System.getProperty('java.ext.dirs')
+u'/usr/lib/jvm/java-6-openjdk/jre/lib/ext:/usr/java/packages/lib/ext'</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+<code>-J-classpath</code> 跟 <code>-J-cp</code> 的設定都會串在 <code>jython.jar</code> 之後。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+<code>CLASSPATH</code> 環境變數的設定也會反應在 <code>-classpath</code>，串接在 <code>-J-classpath</code> 和 <code>-J-cp</code> 的設定之後。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+最後都可以從 <code>java.class.path</code> 這個 system property 做 double-check。
+</td></tr>
+</table></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_延伸閱讀">延伸閱讀</h2>
 <div class="sectionbody">
 <div class="ulist"><ul>
+<li>
+<p>
+<a href="module-search-path.html">Module Search Path</a>
+</p>
+</li>
 <li>
 <p>
 <a href="pythonpath.html"><code>PYTHONPATH</code></a>
@@ -69,23 +119,50 @@ asciidoc.install();
 <div class="sect1">
 <h2 id="_參考資料">參考資料</h2>
 <div class="sectionbody">
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
 <div class="ulist"><ul>
 <li>
 <p>
-<a href="http://www.jython.org/jythonbook/en/1.0/ModulesPackages.html">Chapter 8: Modules and Packages for Code Reuse &gt; Module Search Path and Loading — Jython Book</a> <sup><a href="http://diigo.com/0v95k">閱讀</a></sup> - 在 module search path 裡，如果第一個找到的是 Python module/package，會有 "winner-take-all" 的效應，如果是 Java package 則會有 "merged Java packages" 的效果。
+<a href="http://www.jython.org/jythonbook/en/1.0/ModulesPackages.html">Chapter 8: Modules and Packages for Code Reuse — Jython Book</a> <sup><a href="http://diigo.com/0v95k">閱讀</a></sup>
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+Module Search Path and Loading - 示範了 <code>sys.path.append("path/to/jar")</code> 的用法。
 </p>
 </li>
 <li>
 <p>
-<a href="http://stackoverflow.com/questions/537682/how-can-i-add-jars-to-the-classpath-when-i-invoke-jython-without-adding-them-t">How can I add jars to the classpath when I invoke Jython <strong>without</strong> adding them to $CLASSPATH? - Stack Overflow</a> (2009-02-11)
-</p>
-</li>
-<li>
-<p>
-<a href="http://stackoverflow.com/questions/5839300/defining-a-classpath-for-a-jython-virtual-environment">python - Defining a classpath for a Jython virtual environment - Stack Overflow</a> (2011-04-30)
+How Jython Finds the Jars and Classes to Scan - 跟 classpath 有關的兩個 system properties (<code>java.class.path</code> <code>java.ext.dirs</code>)
 </p>
 </li>
 </ul></div>
+</li>
+<li>
+<p>
+<a href="http://www.jython.org/jythonbook/en/1.0/appendixB.html">Appendix B: Jython Cookbook — Jython Book v1.0 documentation</a> <sup><a href="http://diigo.com/0va26">閱讀</a></sup> - 提到 <code>CLASSPATH</code> 環境變數的用法，不過 "You must ensure that the log4j.jar archive resides somewhere within your Jython PATH (usually this entails setting the CLASSPATH to include necessary files)." 的說法似乎在暗示 <code>-Dpython.path</code> 也可以用來設定 classpath？
+</p>
+</li>
+<li>
+<p>
+<a href="http://wiki.python.org/jython/LearningJython">LearningJython &gt; Classpath and python path - JythonWiki</a> <sup><a href="http://diigo.com/0va1k">閱讀</a></sup> - 感覺 Jython 會在 <code>sys.path</code> 找 <code>.class</code> 跟 <code>.py</code>，但不會在 <code>CLASSPATH</code> 裡找 <code>.py</code>。
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">其他文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/537682/how-can-i-add-jars-to-the-classpath-when-i-invoke-jython-without-adding-them-t">How can I add jars to the classpath when I invoke Jython <strong>without</strong> adding them to $CLASSPATH? - Stack Overflow</a> <sup><a href="http://diigo.com/0va2a">閱讀</a></sup> (2009-02-11) - <code>-Dpython.path</code> 也可以用來加 classpath?
+</p>
+</li>
+</ul></div>
+</div></div>
 </div>
 </div>
 <div id="disqus_thread"></div>
@@ -103,7 +180,7 @@ dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
 <div id="footnotes"><hr /></div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2012-12-25 23:22:43 CST
+Last updated 2012-12-27 13:47:51 CST
 </div>
 </div>
 </div>

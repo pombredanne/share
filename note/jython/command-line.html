@@ -45,6 +45,13 @@ asciidoc.install();
 <div id="content">
 <div id="preamble">
 <div class="sectionbody">
+<div class="paragraph"><p><code>jython</code> 不過是個 startup script，整合 command-line options 跟 environment variables 之後，最後也是轉呼叫 <code>java</code>。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ jython --print
+/usr/lib/jvm/java-6-openjdk/bin/java -Xmx512m -Xss1024k -classpath /usr/local/jython/jython.jar: -Dpython.home=/usr/local/jython -Dpython.executable=/usr/local/jython/bin/jython org.python.util.jython</code></pre>
+</div></div>
+<div class="paragraph"><p>用法如下：</p></div>
 <div class="literalblock">
 <div class="content">
 <pre><code>jython [option] ... [-c cmd | file | -] [arg] ...</code></pre>
@@ -58,8 +65,25 @@ asciidoc.install();
 </li>
 <li>
 <p>
-<code>-D&lt;name&gt;=&lt;value&gt;</code> - 設定 <a href="registry.html">Jython properties</a>。（跟 <code>-J-D&lt;name&gt;=&lt;value&gt;</code> 的 Java system properties 有什麼不同？）
+<code>-J&lt;arg&gt;</code> - 直接傳給 JVM 的 options。
 </p>
+</li>
+<li>
+<p>
+<code>-D&lt;name&gt;=&lt;value&gt;</code> - 設定 <a href="registry.html">Jython properties</a>。事實上，最後一樣會轉成 Java system properties：
+</p>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ jython -Dfoo=bar -J-Dbar=foo --print
+/usr/lib/jvm/java-6-openjdk/bin/java -Xmx512m -Xss1024k -Dbar=foo -classpath /usr/local/jython/jython.jar: -Dpython.home=/usr/local/jython -Dpython.executable=/usr/local/jython/bin/jython org.python.util.jython -Dfoo=bar
+$
+$ jython -Dfoo=bar -J-Dbar=foo
+&gt;&gt;&gt; from java.lang import System
+&gt;&gt;&gt; System.getProperty('bar')
+u'foo'
+&gt;&gt;&gt; System.getProperty('foo')
+u'bar'</code></pre>
+</div></div>
 </li>
 <li>
 <p>
@@ -69,6 +93,11 @@ asciidoc.install();
 <li>
 <p>
 <code>-V</code> - 印出 Jython 的版號。
+</p>
+</li>
+<li>
+<p>
+<code>--print</code> - 單純印出最後拼接出來的 Java command 而不是真的執行，可以用來確認 command-line options 或 environment variables 是否真的有產生效果。
 </p>
 </li>
 </ul></div>
@@ -156,7 +185,7 @@ dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
 <div id="footnotes"><hr /></div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2012-12-25 23:26:46 CST
+Last updated 2012-12-27 13:47:55 CST
 </div>
 </div>
 </div>

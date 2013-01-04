@@ -1,19 +1,58 @@
 = link:jython.html[Jython] / Java Classpath =
 :title: [Jython] Java Classpath
 
+官方文件很少提到要怎麼設定 Java classpath，不過從 link:command-line.html[`jython`] (startup script) 的內容，可以發現其實 `jython` 接受幾種不同的方式來做設定：
+
+ * `-J-classpath`
+ * `-J-cp`
+ * `CLASSPATH` 環境變數
+
+透過 `--print` 可以觀察到，classpath 裡原本只有 `jython.jar` 自己：
+
 --------------------------------------------------------------------------------
->>> import sys
->>> sys.path
-['', '/home/username/jython/Lib', '__classpath__', '__pyclasspath__/', '/home/username/jython/Lib/site-packages']
->>> 
+$ jython --print
+/usr/lib/jvm/java-6-openjdk/bin/java -Xmx512m -Xss1024k -classpath /usr/local/jython/jython.jar:foot/path:bar/path -Dpython.home=/usr/local/jython -Dpython.executable=/usr/local/jython/bin/jython org.python.util.jython
 --------------------------------------------------------------------------------
+
+接著來觀察透過不同方式設定 classpath，會對 `jython` 拼接出來的 Java command 產生什麼影響：（都會成為 `-classpath` 的一部份）
+
+--------------------------------------------------------------------------------
+$ jython -J-classpath mylib.jar --print <1>
+/usr/lib/jvm/java-6-openjdk/bin/java -Xmx512m -Xss1024k -classpath /usr/local/jython/jython.jar:mylib.jar: -Dpython.home=/usr/local/jython -Dpython.executable=/usr/local/jython/bin/jython org.python.util.jython
+$
+$ export CLASSPATH=path/to/foo.jar:path/to/bar.jar <2>
+$ jython -J-cp mylib.jar --print
+/usr/lib/jvm/java-6-openjdk/bin/java -Xmx512m -Xss1024k -classpath /usr/local/jython/jython.jar:mylib.jar:path/to/foo.jar:path/to/bar.jar -Dpython.home=/usr/local/jython -Dpython.executable=/usr/local/jython/bin/jython org.python.util.jython
+$
+$ jython -J-cp mylib.jar <1>
+>>> from java.lang import System
+>>> System.getProperty('java.class.path') <3>
+u'/usr/local/jython/jython.jar:mylib.jar:path/to/foo.jar:path/to/bar.jar'
+>>> System.getProperty('java.ext.dirs')
+u'/usr/lib/jvm/java-6-openjdk/jre/lib/ext:/usr/java/packages/lib/ext'
+--------------------------------------------------------------------------------
+<1> `-J-classpath` 跟 `-J-cp` 的設定都會串在 `jython.jar` 之後。
+<2> `CLASSPATH` 環境變數的設定也會反應在 `-classpath`，串接在 `-J-classpath` 和 `-J-cp` 的設定之後。
+<3> 最後都可以從 `java.class.path` 這個 system property 做 double-check。
 
 == 延伸閱讀 ==
 
+ * link:module-search-path.html[Module Search Path]
  * link:pythonpath.html[`PYTHONPATH`]
 
 == 參考資料 ==
 
- * http://www.jython.org/jythonbook/en/1.0/ModulesPackages.html[Chapter 8: Modules and Packages for Code Reuse > Module Search Path and Loading — Jython Book] ^http://diigo.com/0v95k[閱讀]^ - 在 module search path 裡，如果第一個找到的是 Python module/package，會有 "winner-take-all" 的效應，如果是 Java package 則會有 "merged Java packages" 的效果。
- * http://stackoverflow.com/questions/537682/how-can-i-add-jars-to-the-classpath-when-i-invoke-jython-without-adding-them-t[How can I add jars to the classpath when I invoke Jython *without* adding them to $CLASSPATH? - Stack Overflow] (2009-02-11)
- * http://stackoverflow.com/questions/5839300/defining-a-classpath-for-a-jython-virtual-environment[python - Defining a classpath for a Jython virtual environment - Stack Overflow] (2011-04-30)
+.文件
+--
+ * http://www.jython.org/jythonbook/en/1.0/ModulesPackages.html[Chapter 8: Modules and Packages for Code Reuse — Jython Book] ^http://diigo.com/0v95k[閱讀]^
+   ** Module Search Path and Loading - 示範了 `sys.path.append("path/to/jar")` 的用法。
+   ** How Jython Finds the Jars and Classes to Scan - 跟 classpath 有關的兩個 system properties (`java.class.path` `java.ext.dirs`)
+ * http://www.jython.org/jythonbook/en/1.0/appendixB.html[Appendix B: Jython Cookbook — Jython Book v1.0 documentation] ^http://diigo.com/0va26[閱讀]^ - 提到 `CLASSPATH` 環境變數的用法，不過 "You must ensure that the log4j.jar archive resides somewhere within your Jython PATH (usually this entails setting the CLASSPATH to include necessary files)." 的說法似乎在暗示 `-Dpython.path` 也可以用來設定 classpath？
+ * http://wiki.python.org/jython/LearningJython[LearningJython > Classpath and python path - JythonWiki] ^http://diigo.com/0va1k[閱讀]^ - 感覺 Jython 會在 `sys.path` 找 `.class` 跟 `.py`，但不會在 `CLASSPATH` 裡找 `.py`。
+--
+
+.其他文件
+--
+ * http://stackoverflow.com/questions/537682/how-can-i-add-jars-to-the-classpath-when-i-invoke-jython-without-adding-them-t[How can I add jars to the classpath when I invoke Jython *without* adding them to $CLASSPATH? - Stack Overflow] ^http://diigo.com/0va2a[閱讀]^ (2009-02-11) - `-Dpython.path` 也可以用來加 classpath?
+--
+

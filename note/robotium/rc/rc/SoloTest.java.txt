@@ -1,0 +1,755 @@
+001: /** 
+002:  ** Copyright (C) SAS Institute, All rights reserved.
+003:  ** General Public License: http://www.opensource.org/licenses/gpl-license.php
+004:  **/
+005: package com.jayway.android.robotium.remotecontrol.solo;
+006: 
+007: import java.awt.image.BufferedImage;
+008: import java.util.List;
+009: import java.util.Properties;
+010: import java.util.concurrent.TimeoutException;
+011: 
+012: import org.safs.android.auto.lib.DUtilities;
+013: import org.safs.sockets.RemoteException;
+014: import org.safs.sockets.ShutdownInvocationException;
+015: 
+016: /**
+017:  * This is used to test Remote Solo Implementation.<br>
+018:  * The tested Activity is "com.android.example.spinner.SpinnerActivity"<br>
+019:  * If testing with another Activity, we suggest to subclass this program.<br>
+020:  * <p>
+021:  * 
+022:  * <b>Prerequisite:</b>
+023:  * <pre>
+024:  * 1. Set the android sdk dir (use one of 2 ways):
+025:  * 
+026:  *    1.1 set environment ANDROID_HOME
+027:  *    1.2 launch application with JVM property as: -Dandroid-home="D:\\your\\android-sdk-dir"
+028:  *    
+029:  * 2. (Optional)Set the ant sdk dir if you need rebuild the test-runner-apk (use one of 2 ways):
+030:  * 
+031:  *    2.1 set environment ANT_HOME
+032:  *    2.2 launch application with JVM property as: -Dant-home="D:\\your\\ant-sdk-dir"
+033:  *       
+034:  * 3. Command-line args to set the APK of AUT, SAFSMessenger and TestRunner to be installed:
+035:  *    
+036:  *    aut=D:\\Eclipse\\workspace\\ApiDemos\\bin\\ApiDemos.apk  (sets installAUT=true)
+037:  *    messenger=d:\\buildFilePath\\SAFSTCPMessenger-debug.apk  (sets installMessenger=true)
+038:  *    runner=d:\\buildFilePath\\RobotiumTestRunner-debug.apk   (sets installRunner=true)
+039:  *      (or runnersource=d:\\testRunnerSourcePath like below:)
+040:  *    runnersource=d:\\Eclipse\\workspace\\android\\SAFSEngine (sets rebuildRunner=true) 
+041:  *    
+042:  *    OR, to bypass individual installs and use what is already installed:
+043:  *    
+044:  *    -noaut
+045:  *    -nomessenger
+046:  *    -norunner
+047:  *    
+048:  *    
+049:  * 4. Command-line arg to set the instrument:
+050:  * 
+051:  *    instrument=com.jayway.android.robotium.remotecontrol.client/com.jayway.android.robotium.remotecontrol.client.RobotiumTestRunner
+052:  * 
+053:  * 5. Command-line arg to set the avd name to launch, or the device/emulator serial number to look for:
+054:  *    
+055:  *    avd="avdName" or avd="devOrEmuSerial"
+056:  *    
+057:  * 6. Command-line arg to set the persistence of launched emulator:
+058:  *    
+059:  *    persistavd="True" or persistavd="False" (default=false)
+060:  *    
+061:  * </pre>
+062:  *   
+063:  * <p><pre>  
+064:  * Run as:
+065:  * 
+066:  *   java com.jayway.android.robotium.remotecontrol.solo.SoloTest aut=d:\\buildFilePath\\ApiDemos.apk messenger=d:\\buildFilePath\\SAFSTCPMessenger-debug.apk runner=d:\\buildFilePath\\RobotiumTestRunner-debug.apk instrument=com.jayway.android.robotium.remotecontrol.client/com.jayway.android.robotium.remotecontrol.client.RobotiumTestRunner
+067:  *   
+068:  *   or, rebuild testrunner and use it
+069:  *   java -Dant-home="C:\\pathTo\\ant-sdk" com.jayway.android.robotium.remotecontrol.solo.SoloTest aut=d:\\buildFilePath\\ApiDemos.apk messenger=d:\\buildFilePath\\SAFSTCPMessenger-debug.apk runnersource=d:\\testRunnerSourcePath\\ instrument=com.jayway.android.robotium.remotecontrol.client/com.jayway.android.robotium.remotecontrol.client.RobotiumTestRunner
+070:  *   
+071:  *   or, assuming everything is already installed:
+072:  *   
+073:  *   java -Dandroid-home="C:\\pathTo\\android-sdk" com.jayway.android.robotium.remotecontrol.solo.SoloTest -noaut -nomessenger -norunner instrument=com.jayway.android.robotium.remotecontrol.client/com.jayway.android.robotium.remotecontrol.client.RobotiumTestRunner
+074:  *   
+075:  *   
+076:  * </pre>
+077:  * @author Lei Wang, SAS Institute, Inc.
+078:  *
+079:  */
+080: public class SoloTest{
+081: 	public Solo solo = null;
+082: 	
+083: 	private boolean enableProtocolDebug = true;
+084: 	private boolean enableRunnerDebug = true;
+085: 	
+086: 	private boolean installAUT = true;
+087: 	private boolean installMessenger = true;
+088: 	private boolean installRunner = true;
+089: 	
+090: 	/**
+091: 	 * Rebuilding testrunner will depend on {@link #autApk} and {@link #testRunnerSourceDir}
+092: 	 * 
+093: 	 */
+094: 	private boolean rebuildRunner = false;
+095: 	
+096: 	/**
+097: 	 * autApk is the path to AUT's apk<br>
+098: 	 * it is set to {@link #DEFAULT_AUT_APK} by default<br>
+099: 	 * it will be modified by the value pass in as 'aut=' argument<br>
+100: 	 */
+101: 	private String autApk = DEFAULT_AUT_APK;
+102: 	/**
+103: 	 * messengerApk is the path to messenger's apk<br>
+104: 	 * it is set to {@link #DEFAULT_MESSENGER_APK} by default<br>
+105: 	 * it will be modified by the value pass in as 'messenger=' argument<br>
+106: 	 */
+107: 	private String messengerApk = DEFAULT_MESSENGER_APK;
+108: 	/**
+109: 	 * messengerApk is the path to testrunner's apk<br>
+110: 	 * it is set to {@link #DEFAULT_TESTRUNNER_APK} by default<br>
+111: 	 * it will be modified by the value pass in as 'runner=' argument<br>
+112: 	 */
+113: 	private String testRunnerApk = DEFAULT_TESTRUNNER_APK;
+114: 	
+115: 	/**
+116: 	 * testRunnerSourceDir is the path where the testrunner's source locates<br>
+117: 	 * it is set to {@link #DEFAULT_TESTRUNNER_SOURCE_DIR} by default<br>
+118: 	 * it will be modified by the value pass in as 'runnersource=' argument<br>
+119: 	 */
+120: 	private String testRunnerSourceDir = DEFAULT_TESTRUNNER_SOURCE_DIR;
+121: 	
+122: 	/**
+123: 	 * messengerApk is the path to messenger's apk<br>
+124: 	 * it is set to {@link #DEFAULT_INSTRUMENT_ARG} by default<br>
+125: 	 * it will be modified by the value pass in as 'instrument=' argument<br>
+126: 	 */
+127: 	private String instrumentArg = DEFAULT_INSTRUMENT_ARG;
+128: 	
+129: 	/**
+130: 	 * avdSerialNo is device or emulator's serial number, it is "" by default<br>
+131: 	 * it will be modified by the value pass in as 'avd=' argument<br>
+132: 	 * 
+133: 	 * If there is no device/emulator is attached/launched, we will try to<br>
+134: 	 * launch the emulator with this serial number.<br>
+135: 	 * If there is one device/emulator is attached/launched, we will ignore<br>
+136: 	 * this serial number.<br>
+137: 	 * If there are multiple devices/emulators are attached/launched, we<br>
+138: 	 * use this serial number to locate the device/emulator.<br>
+139: 	 *  
+140: 	 */
+141: 	protected String avdSerialNo = "";
+142: 
+143: 	/**
+144: 	 * If this is true, we will keep the launched emulator running even after the<br>
+145: 	 * test has finished.<br>
+146: 	 * The default value is false.<br>
+147: 	 * it will be modified by the value pass in as 'persistavd=' argument<br>
+148: 	 * 
+149: 	 */
+150: 	protected boolean persistEmulators = false;
+151: 
+152: 	protected boolean weLaunchedEmulator = false;
+153: 	
+154: 	/** flag defaults to true to unlock the screen of any emulator we wish to connect to. */
+155: 	protected boolean unlockEmulatorScreen = true;
+156: 	
+157: 	/**
+158: 	 * This field will store the activity UID of you launch AUT.<br>
+159: 	 * It will be set in method {@link #initialize()}<br>
+160: 	 * 
+161: 	 * It will be used in method {@link #goBackToViewUID(String)} to prevent infinite loop.<br>
+162: 	 */
+163: 	protected String mainActivityUID = null;
+164: 	
+165: 	/** 
+166: 	 * Modify {@link #DEFAULT_AUT_APK} according to your system.<br>
+167: 	 * Modify {@link #DEFAULT_MESSENGER_APK} according to your system.<br>
+168: 	 * Modify {@link #DEFAULT_TESTRUNNER_APK} according to your system.<br>
+169: 	 * Modify {@link #DEFAULT_TESTRUNNER_SOURCE_DIR} according to your system.<br>
+170: 	 * Modify {@link #DEFAULT_INSTRUMENT_ARG} according to your system.<br>
+171: 	 */
+172: 	public static final String DEFAULT_AUT_APK = "D:\\Eclipse\\workspace\\ApiDemos\\bin\\ApiDemos.apk";
+173: 	public static final String DEFAULT_MESSENGER_APK = "D:\\Eclipse\\workspace\\android\\SAFSMessenger\\bin\\SAFSTCPMessenger-debug.apk";
+174: 	public static final String DEFAULT_TESTRUNNER_APK = "D:\\Eclipse\\workspace\\android\\SAFSEngine\\bin\\RobotiumTestRunner-debug.apk";
+175: 	public static final String DEFAULT_TESTRUNNER_SOURCE_DIR = "D:\\Eclipse\\workspace\\android\\SAFSEngine";
+176: 	public static final String DEFAULT_INSTRUMENT_ARG = "com.jayway.android.robotium.remotecontrol.client/com.jayway.android.robotium.remotecontrol.client.RobotiumTestRunner";
+177: 	
+178: 	public static final String ARG_KEY_AUT_APK = "aut";
+179: 	public static final String ARG_KEY_MESSENGER_APK = "messenger";
+180: 	public static final String ARG_KEY_TESTRUNNER_APK = "runner";
+181: 	public static final String ARG_KEY_TESTRUNNER_SOURCE = "runnersource";
+182: 	public static final String ARG_KEY_INSTRUMENT_ARG = "instrument";
+183: 	public static final String ARG_KEY_AVD 			  = "avd";
+184: 	public static final String ARG_KEY_PERSIST_AVD	  = "persistavd";
+185: 
+186: 	public static final String ARG_KEY_NO_MESSENGER = "-nomessenger";
+187: 	public static final String ARG_KEY_NO_RUNNER = "-norunner";
+188: 	public static final String ARG_KEY_NO_AUT = "-noaut";
+189: 	
+190: 	
+191: 	public SoloTest(){
+192: 		solo = new Solo();
+193: 		//By default, we disable the debug message of Protocol/Runner so that the console
+194: 		//show only the test log message.
+195: 		setProtocolDebug(false);
+196: 		setRunnerDebug(false);
+197: 	}
+198: 	
+199: 	public SoloTest(String messengerApk, String testRunnerApk, String instrumentArg){
+200: 		this();
+201: 		this.messengerApk = messengerApk;
+202: 		this.testRunnerApk = testRunnerApk;
+203: 		this.instrumentArg = instrumentArg;
+204: 	}
+205: 	
+206: 	/**
+207: 	 * @param args	Array of Strings: "aut=xxx", "messenger=xxx", "runner=xxx", "runnersource=xxx", "instrument=xxx"
+208: 	 */
+209: 	public SoloTest(String[] args){
+210: 		this();
+211: 		//Get 'apk path' and 'instrument' from program's parameters
+212: 		//and set them to soloTest object.
+213: 		String temp = "";
+214: 		String[] tempArray = null;
+215: 		for(int i=0;i<args.length;i++){
+216: 			temp=args[i];
+217: 			tempArray = temp.split("=");
+218: 			if(tempArray!=null && tempArray.length==2){
+219: 				//use temp to contain the parameter key
+220: 				temp = tempArray[0].trim();
+221: 				if(ARG_KEY_AUT_APK.equalsIgnoreCase(temp)){
+222: 					setAUTApk(tempArray[1]); 
+223: 				}else if(ARG_KEY_MESSENGER_APK.equalsIgnoreCase(temp)){
+224: 					setMessengerApk(tempArray[1]); 
+225: 				}else if(ARG_KEY_TESTRUNNER_APK.equalsIgnoreCase(temp)){
+226: 					setTestRunnerApk(tempArray[1]);
+227: 				}else if(ARG_KEY_INSTRUMENT_ARG.equalsIgnoreCase(temp)){
+228: 					setInstrumentArg(tempArray[1]); 						
+229: 				}else if(ARG_KEY_TESTRUNNER_SOURCE.equalsIgnoreCase(temp)){
+230: 					setTestRunnerSourceDir(tempArray[1]);
+231: 					rebuildRunner = true;
+232: 				}else if(ARG_KEY_AVD.equalsIgnoreCase(temp)){
+233: 					avdSerialNo = tempArray[1];
+234: 				}else if(ARG_KEY_PERSIST_AVD.equalsIgnoreCase(temp)){
+235: 					try{ persistEmulators = Boolean.parseBoolean(tempArray[1]);} catch(Exception e){}
+236: 				}
+237: 			}else{
+238: 				if(tempArray.length == 1){
+239: 					if(ARG_KEY_NO_AUT.equalsIgnoreCase(temp)){
+240: 						installAUT = false; 
+241: 					}else if(ARG_KEY_NO_MESSENGER.equalsIgnoreCase(temp)){
+242: 						installMessenger = false; 
+243: 					}else if(ARG_KEY_NO_RUNNER.equalsIgnoreCase(temp)){
+244: 						installRunner = false;
+245: 					}
+246: 				}
+247: 			}
+248: 		}
+249: 	}
+250: 	
+251: 	public String getTestRunnerSourceDir() {
+252: 		return testRunnerSourceDir;
+253: 	}
+254: 
+255: 	public void setTestRunnerSourceDir(String testRunnerSourceDir) {
+256: 		this.testRunnerSourceDir = testRunnerSourceDir;
+257: 	}
+258: 
+259: 	public String getAUTApk() {
+260: 		return autApk;
+261: 	}
+262: 
+263: 	public void setAUTApk(String autApk) {
+264: 		this.autApk = autApk;
+265: 	}
+266: 
+267: 	public String getMessengerApk() {
+268: 		return messengerApk;
+269: 	}
+270: 
+271: 	public void setMessengerApk(String messengerApk) {
+272: 		this.messengerApk = messengerApk;
+273: 	}
+274: 
+275: 	public String getTestRunnerApk() {
+276: 		return testRunnerApk;
+277: 	}
+278: 
+279: 	public void setTestRunnerApk(String testRunnerApk) {
+280: 		this.testRunnerApk = testRunnerApk;
+281: 	}
+282: 
+283: 	public String getInstrumentArg() {
+284: 		return instrumentArg;
+285: 	}
+286: 
+287: 	public void setInstrumentArg(String instrumentArg) {
+288: 		this.instrumentArg = instrumentArg;
+289: 	}
+290: 	
+291: 	/**
+292: 	 * Turn on or off the protocol's debug message
+293: 	 * @param enable
+294: 	 */
+295: 	public void setProtocolDebug(boolean enableProtocolDebug){
+296: 		this.enableProtocolDebug = enableProtocolDebug;
+297: 	}
+298: 	/**
+299: 	 * Turn on or off the runner's debug message
+300: 	 * @param enable
+301: 	 */
+302: 	public void setRunnerDebug(boolean enableRunnerDebug){
+303: 		this.enableRunnerDebug = enableRunnerDebug;
+304: 	}
+305: 		
+306: 	public void setInstallAUT(boolean installAUT) {
+307: 		this.installAUT = installAUT;
+308: 	}
+309: 
+310: 	public void setInstallMessenger(boolean installMessenger) {
+311: 		this.installMessenger = installMessenger;
+312: 	}
+313: 
+314: 	public void setInstallRunner(boolean installRunner) {
+315: 		this.installRunner = installRunner;
+316: 	}
+317: 
+318: 	/**
+319: 	 * Rebuilding testrunner will depend on {@link #autApk} and {@link #testRunnerSourceDir}
+320: 	 * 
+321: 	 * @param rebuildRunner
+322: 	 */
+323: 	public void setRebuildRunner(boolean rebuildRunner) {
+324: 		this.rebuildRunner = rebuildRunner;
+325: 	}
+326: 
+327: 	/**
+328: 	 * A template method.<br>
+329: 	 * 
+330: 	 * @see #preparation()
+331: 	 * @see #initialize()
+332: 	 * @see #test()
+333: 	 * @see #terminate()
+334: 	 */
+335: 	final public void process(){
+336: 		if(!preparation()){
+337: 			error("Preparation error");
+338: 			//stop the emulator if we have launched it.
+339: 			if(!stopEmulator()){
+340: 				warn("We fail to stop the emulator launched by us.");
+341: 			}
+342: 			return;
+343: 		}
+344: 		try{
+345: 			if(initialize()){
+346: 				debug("Begin Test.");
+347: 				test();
+348: 				debug("End Test.");
+349: 			}			
+350: 		}catch(Exception e){
+351: 			error("Met Exception "+e.getClass().getSimpleName()+":"+e.getMessage());
+352: 		}finally{
+353: 			//Whether the 'remote engine' has been started or not
+354: 			//we will call the method terminate() to stop the local controller runner.
+355: 			if(!terminate()){
+356: 				warn("Termination of Solo fail!");
+357: 			}			
+358: 		}
+359: 		
+360: 	}
+361: 	
+362: 	/**
+363: 	 * Install the apk of SAFSTCPMessenger and RobotiumTestRunner<br>
+364: 	 * Forward the tcp port from on-computer-2411 to on-device-2410<br>
+365: 	 * 
+366: 	 * @return	True if the preparation is finished successfully.
+367: 	 */
+368: 	final protected boolean preparation(){
+369: 		String debugPrefix = ".preparation() ";
+370: 
+371: 		try{
+372: 			if(!prepareDevice()){
+373: 				throw new RuntimeException("Can't detect connected device/emulator!");
+374: 			}
+375: 			
+376: 			// 1. Install apks
+377: 			if (installAUT) {
+378: 				debug("INSTALLING " + autApk);
+379: 				DUtilities.installReplaceAPK(autApk);
+380: 			} else {
+381: 				debug("BYPASSING INSTALLATION of target AUT...");
+382: 			}
+383: 	
+384: 			if (installMessenger) {
+385: 				debug("INSTALLING " + messengerApk);
+386: 				DUtilities.installReplaceAPK(messengerApk);
+387: 			} else {
+388: 				debug("BYPASSING INSTALLATION of SAFS Messenger...");
+389: 			}
+390: 	
+391: 			// Before installing the TestRunner apk, we may repackage it.
+392: 			if (installRunner) {
+393: 				if (rebuildRunner) {
+394: 					debug("REBUILDING " + testRunnerApk);
+395: 					testRunnerApk = DUtilities.rebuildTestRunnerApk(testRunnerSourceDir, autApk, testRunnerApk, instrumentArg, true);
+396: 					if (testRunnerApk==null) {
+397: 						throw new RuntimeException(debugPrefix + " Fail to repackage the TestRunner apk!");
+398: 					}
+399: 				}
+400: 	
+401: 				debug("INSTALLING " + testRunnerApk);
+402: 				DUtilities.installReplaceAPK(testRunnerApk);
+403: 			} else {
+404: 				debug("BYPASSING INSTALLATION of Instrumentation Test Runner...");
+405: 			}
+406: 	
+407: 			// 2. Launch the InstrumentationTestRunner
+408: 			if(!DUtilities.launchTestInstrumentation(instrumentArg)){
+409: 				throw new RuntimeException("Fail to launch instrument '"+instrumentArg+"'");
+410: 			}
+411: 			// 3. Forward tcp port is needed? how to know the way of connection, by
+412: 			// USB? by WIFI?
+413: 			boolean portForwarding = true;
+414: 			solo.setPortForwarding(portForwarding);
+415: 				
+416: 			debug("Prepare for test successfully.");
+417: 
+418: 		}catch(RuntimeException e){
+419: 			error("During preparation, met exception="+e.getMessage());
+420: 			return false;
+421: 		}
+422: 		
+423: 		return true;
+424: 	}
+425: 	
+426: 	public boolean prepareDevice(){
+427: 		// see if any devices is attached
+428: 		boolean havedevice = false;
+429: 		
+430: 		List<String> devices = null;
+431: 		try{
+432: 			devices = DUtilities.getAttachedDevices();
+433: 			info("Detected "+ devices.size() +" device/emulators attached.");
+434: 			if(devices.size() == 0){
+435: 				DUtilities.DEFAULT_EMULATOR_AVD = avdSerialNo;
+436: 				if((DUtilities.DEFAULT_EMULATOR_AVD != null) && (DUtilities.DEFAULT_EMULATOR_AVD.length()> 0)){
+437: 					//DUtilities.killADBServer();
+438: 					//try{Thread.sleep(5000);}catch(Exception x){}
+439: 					info("Attempting to launch EMULATOR_AVD: "+ DUtilities.DEFAULT_EMULATOR_AVD);
+440: 					if (! DUtilities.launchEmulatorAVD(DUtilities.DEFAULT_EMULATOR_AVD)){
+441: 						String msg = "Unsuccessful launching EMULATOR_AVD: "+DUtilities.DEFAULT_EMULATOR_AVD +", or TIMEOUT was reached.";
+442: 						debug(msg);
+443: 						return false;							
+444: 					}else{
+445: 						weLaunchedEmulator = true;
+446: 						info("Emulator launch appears to be successful...");
+447: 						havedevice = true;
+448: 						if(unlockEmulatorScreen) {
+449: 							String stat = DUtilities.unlockDeviceScreen()? " ":" NOT ";
+450: 							info("Emulator screen was"+ stat +"successfully unlocked!");
+451: 						}						
+452: 					}
+453: 				}else{
+454: 					String msg = "No Devices found and no EMULATOR_AVD specified in configuration file.";
+455: 					debug(msg);
+456: 					return false;							
+457: 				}				
+458: 			}else if(devices.size() > 1){
+459: 				// if multiple device attached then user DeviceSerial to target device
+460: 				DUtilities.DEFAULT_DEVICE_SERIAL = avdSerialNo;
+461: 				if(DUtilities.DEFAULT_DEVICE_SERIAL.length() > 0){
+462: 					boolean matched = false;
+463: 					int d = 0;
+464: 					String lcserial = DUtilities.DEFAULT_DEVICE_SERIAL.toLowerCase();
+465: 					String lcdevice = null;
+466: 					for(;(d < devices.size())&&(!matched);d++){
+467: 						lcdevice = ((String)devices.get(d)).toLowerCase();
+468: 						info("Attempting match device '"+ lcdevice +"' with default '"+ lcserial +"'");
+469: 						matched = lcdevice.startsWith(lcserial);
+470: 					}
+471: 					// if DeviceSerial does not match one of multiple then abort
+472: 					if(matched){
+473: 						havedevice = true;
+474: 						DUtilities.USE_DEVICE_SERIAL = " -s "+ DUtilities.DEFAULT_DEVICE_SERIAL +" ";
+475: 					}else{
+476: 						String msg = "Requested Device '"+ DUtilities.DEFAULT_DEVICE_SERIAL +"' was not found.";
+477: 						debug(msg);
+478: 						return false;							
+479: 					}
+480: 				}else{
+481: 					// if no DeviceSerial present then use first device
+482: 					String device = null;
+483: 					String tdev = (String)devices.get(0);
+484: 					if(tdev.endsWith("device")){
+485: 						device = tdev.substring(0, tdev.length() -6).trim();
+486: 					}else if(tdev.endsWith("emulator")){// not known to be used
+487: 						device = tdev.substring(0, tdev.length() -8).trim();
+488: 					}else{
+489: 						String msg = "Unknown Device Listing Format: "+ tdev;
+490: 						debug(msg);
+491: 						return false;							
+492: 					}
+493: 					havedevice = true;
+494: 					DUtilities.USE_DEVICE_SERIAL = " -s "+ device +" ";						
+495: 				}
+496: 			}else{
+497: 				// if one device, we don't need to specify -s DEVICE_SERIAL
+498: 				// DUtilities.USE_DEVICE_SERIAL should already be empty ("");
+499: 				havedevice = true;
+500: 			}
+501: 			
+502: 		}catch(Exception x){
+503: 			debug("Aborting due to "+x.getClass().getSimpleName()+", "+ x.getMessage());
+504: 			return false;
+505: 		}			
+506: 		
+507: 		return havedevice;
+508: 	}
+509: 	
+510: 	/**
+511: 	 * Initialize the Solo object and launch the main application.<br>
+512: 	 * You will not modify this method in the sub-class, normally<br>
+513: 	 * 
+514: 	 * @return true if the initialization is successful.
+515: 	 */
+516: 	final protected boolean initialize(){
+517: 		boolean success = false;
+518: 		
+519: 		try {
+520: 			solo.initialize();
+521: 			
+522: 			//We can enable/disable the debug message of Protocol or Runner
+523: 			solo.turnProtocolDebug(enableProtocolDebug);
+524: 			solo.turnRunnerDebug(enableRunnerDebug);
+525: 			
+526: 			//Start the main Activity
+527: 			success = solo.startMainLauncher();
+528: 			//Set the mainActivityUID
+529: 			mainActivityUID = solo.getCurrentActivity();
+530: 			debug("mainActivityUID="+mainActivityUID);
+531: 			
+532: 		} catch (IllegalThreadStateException e) {
+533: 			e.printStackTrace();
+534: 		} catch (RemoteException e) {
+535: 			e.printStackTrace();
+536: 		} catch (TimeoutException e) {
+537: 			e.printStackTrace();
+538: 		} catch (ShutdownInvocationException e) {
+539: 			e.printStackTrace();
+540: 		}
+541: 		
+542: 		if(success){
+543: 			debug("Launch application successfully.");
+544: 		}else{
+545: 			error("Fail to launch application.");
+546: 		}
+547: 		return success; 
+548: 	}
+549: 	
+550: 	/**
+551: 	 * Terminate the remote engine.<br>
+552: 	 * Terminate the local controller runner.<br>
+553: 	 * Terminate the emulator if we have started it.<br>
+554: 	 * 
+555: 	 * You will not modify this method in the sub-class.<br>
+556: 	 * 
+557: 	 * @return true if the initialization is successful.
+558: 	 */
+559: 	final protected boolean terminate(){
+560: 		boolean success = false;
+561: 		
+562: 		try {			
+563: 			if(!solo.shutdownRemote()){
+564: 				warn("Fail to shutdown remote service.");
+565: 			}
+566: 			//Even if we fail to shutdown remote service, we will shutdown RemoteControlRunner
+567: 			solo.shutdown();
+568: 			
+569: 			if(!stopEmulator()){
+570: 				warn("We fail to stop the emulator launched by us.");
+571: 			}
+572: 			success = true;
+573: 		} catch (Exception e) {
+574: 			e.printStackTrace();
+575: 		}
+576: 		
+577: 		if(success){
+578: 			debug("terminate successfully.");
+579: 		}else{
+580: 			warn("Fail to terminate.");
+581: 		}
+582: 		return success;
+583: 	}
+584: 	
+585: 	/**
+586: 	 * Stop the emulator launched by us only if we have launched it and<br>
+587: 	 * we don't want to persist it.<br>
+588: 	 * 
+589: 	 * @return boolean, true if the emulator is stopped successfully or we don't need to stop it.
+590: 	 */
+591: 	final protected boolean stopEmulator(){
+592: 		boolean stopped = true;
+593: 		
+594: 		if(weLaunchedEmulator){
+595: 			//Then we will shutdown any emulator lauched by us.
+596: 			if(!persistEmulators) {
+597: 				info(" checking for launched emulators...");
+598: 				stopped = DUtilities.shutdownLaunchedEmulators(weLaunchedEmulator);		  	
+599: 			}else{
+600: 				info(" attempting to PERSIST any launched emulators...");
+601: 			}
+602: 		}else{
+603: 			info("we didn't start any emulators.");
+604: 		}
+605: 		
+606: 		return stopped;
+607: 	}
+608: 	
+609: 	/**
+610: 	 * Use solo to test.<br>
+611: 	 * You will extend this method in the sub-class, normally<br>
+612: 	 * 
+613: 	 * In the RobotiumTestRunner project, there is a file AndroidManifest.xml:<br>
+614: 	 * There is a tag <instrumentation> like following:
+615: 	 * 
+616: 	 * <instrumentation android:name="com.jayway.android.robotium.remotecontrol.client.RobotiumTestRunner"
+617: 	 *                  android:targetPackage="com.android.example.spinner"
+618: 	 *                  android:label="General-Purpose Robotium Test Runner"/>
+619: 	 *                  
+620: 	 * If you want to test another application, you should modify the property "android:targetPackage"<br>
+621: 	 * For example, android:targetPackage="your.test.application.package"<br>
+622: 	 * 
+623: 	 * And you need to override this method to do the test work.<br>
+624: 	 */
+625: 	protected void test(){
+626: 		//Begin the testing
+627: 		try {
+628: 			
+629: 			String activityID = solo.getCurrentActivity();
+630: 			Properties props = solo._last_remote_result;
+631: 			String activityName = props.getProperty(Message.PARAM_NAME);
+632: 			String activityClass = props.getProperty(Message.PARAM_CLASS);
+633: 
+634: 			info("CurrentActivity   UID: "+ activityID);
+635: 			info("CurrentActivity Class: "+ activityClass);				
+636: 			info("CurrentActivity  Name: "+ activityName);
+637: 			
+638: 			//DEBUG: Verifying the Name we return is the same one used by waitForActivity
+639: 			if(solo.waitForActivity(activityName, 1000)){
+640: 				pass("'"+activityName+"' was found in timeout period.");
+641: 			}else{
+642: 				warn("*** '"+activityName+"' was NOT FOUND in timeout period. ***");
+643: 			}
+644: 			// NEGATIVE TEST
+645: 			if(solo.waitForActivity("BoguActivity", 1000)){
+646: 				warn("*** BogusActivity was reported as found but is not a valid Activity! ***");
+647: 			}else{
+648: 				pass("BogusActivity was not found and was not expected to be found.");
+649: 			}
+650: 
+651: 			String layoutUID = solo.getView("android.widget.LinearLayout", 0);			
+652: 			info("Layout UID= "+layoutUID);
+653: 			
+654: 			String listUID = solo.getView("android.widget.ListView", 0);
+655: 			info("list UID= "+listUID);
+656: 			
+657: 			BufferedImage image = solo.takeScreenshot("ActivityScreenshot");
+658: 			if(image != null) {
+659: 				info("Screenshot image  width:"+ image.getWidth());
+660: 				info("Screenshot image height:"+ image.getHeight());
+661: 				info("Screenshot stored at: "+ solo._last_remote_result.getProperty(Message.PARAM_NAME+"FILE"));
+662: 			}
+663: 			else info("Screenshot returned as NULL!");
+664: 
+665: 			// SHUTDOWN all Activities.  Done Testing.
+666: 			if(solo.finishOpenedActivities()){
+667: 				info("Application finished/shutdown without error.");				
+668: 			}else{
+669: 				warn("Application finished/shutdown with error.");
+670: 			}
+671: 
+672: 		} catch (IllegalThreadStateException e) {
+673: 			e.printStackTrace();
+674: 		} catch (RemoteException e) {
+675: 			e.printStackTrace();
+676: 		} catch (TimeoutException e) {
+677: 			e.printStackTrace();
+678: 		} catch (ShutdownInvocationException e) {
+679: 			e.printStackTrace();
+680: 		} catch (RemoteSoloException e) {
+681: 			e.printStackTrace();
+682: 		} 
+683: 	}
+684: 	
+685: 	public void debug(String message) {
+686: 		System.out.println("SoloTest DEBUG: "+message);
+687: 	}
+688: 	public void info(String message) {
+689: 		System.out.println("SoloTest INFO: "+message);
+690: 	}
+691: 	public void warn(String message) {
+692: 		System.err.println("SoloTest WARN: "+message);
+693: 	}
+694: 
+695: 	public void pass(String message) {
+696: 		System.out.println("SoloTest PASS: "+message);		
+697: 	}
+698: 	public void fail( String message) {
+699: 		System.err.println("SoloTest FAIL: "+message);
+700: 	}
+701: 	public void error( String message) {
+702: 		System.err.println("SoloTest ERROR: "+message);
+703: 	}
+704: 	
+705: 	/**
+706: 	 * @param viewUID
+707: 	 * @throws Exception
+708: 	 */
+709: 	protected void goBackToViewUID(String viewUID) throws Exception{
+710: 		int loopLimit = 10;
+711: 		int looptime = 0;
+712: 		
+713: 		do{
+714: 			if(solo.waitForViewUID(viewUID, 50, true)){
+715: 				debug("Back to view "+viewUID);
+716: 				return;
+717: 			}else{
+718: 				//solo.getCurrentActivity() will never return null? There is always an activity.
+719: 				String currentActivity = solo.getCurrentActivity();
+720: 				debug("Current Activity is "+currentActivity);
+721: 				if(currentActivity==null || currentActivity.equals(mainActivityUID)){
+722: 					debug("Exit the main activity!!!");
+723: 					break;
+724: 				}else{
+725: 					debug("Trying go back...");
+726: 				}
+727: 			}
+728: 			looptime++;
+729: 		}while((looptime<loopLimit) && solo.goBack());
+730: 		
+731: 		debug("Can not go back to view "+viewUID);
+732: 	}
+733: 	
+734: 	/**
+735: 	 * @param args	Array of String passed from command line:
+736: 	 *   messenger=xxx  
+737: 	 *   runner=xxx 
+738: 	 *   runnersource=xxx  
+739: 	 *   instrument=xxx 
+740: 	 */
+741: 	public static void main(String[] args){
+742: 		
+743: 		SoloTest soloTest = new SoloTest(args);
+744: //		soloTest.installAUT = false;
+745: //		soloTest.installMessenger = false;
+746: //		soloTest.installRunner = false;
+747: 		//You can turn on the debug log to see the 'debug message' from protocol or runner
+748: //		soloTest.setProtocolDebug(true);
+749: //		soloTest.setRunnerDebug(true);
+750: //		soloTest.setRebuildRunner(true);
+751: 		
+752: 		soloTest.process();
+753: 	}
+754: 
+755: }

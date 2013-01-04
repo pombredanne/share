@@ -1,0 +1,862 @@
+001: /** 
+002:  ** Copyright (C) SAS Institute, All rights reserved.
+003:  ** General Public License: http://www.opensource.org/licenses/gpl-license.php
+004:  **/
+005: package com.jayway.android.robotium.remotecontrol.solo;
+006: 
+007: import java.util.ArrayList;
+008: import java.util.Properties;
+009: import java.util.Vector;
+010: import java.util.concurrent.TimeoutException;
+011: 
+012: import org.safs.android.auto.lib.DUtilities;
+013: import org.safs.android.auto.lib.AndroidTools;
+014: import org.safs.android.auto.lib.Process2;
+015: import org.safs.sockets.AvailablePortFinder;
+016: import org.safs.sockets.ConnectionListener;
+017: import org.safs.sockets.DebugListener;
+018: import org.safs.sockets.NamedListener;
+019: import org.safs.sockets.RemoteException;
+020: import org.safs.sockets.ShutdownInvocationException;
+021: import org.safs.sockets.SocketProtocol;
+022: import org.safs.sockets.SocketProtocolListener;
+023: import org.safs.sockets.android.DroidSocketProtocol;
+024: 
+025: /** 
+026:  * 
+027:  * @author Carl Nagle, SAS Institute, Inc
+028:  */
+029: public class SoloRemoteControl implements SocketProtocolListener, DebugListener{
+030: 		
+031: 	public static final String listenername = "SoloRemoteControl";
+032: 	
+033: 	/************************************************************************** 
+034: 	 * Default: C:\Program Files\Android\android-sdk\<br>
+035: 	 * Set to the root directory where the Droid Development SDK is located. 	 
+036: 	 **/
+037: 	public static String ROOT_DROID_SDK_DIR = "C:\\Program Files\\Android\\android-sdk\\";
+038: 	
+039: 	/************************************************************************** 
+040: 	 * Default: C:\Program Files\Android\android-sdk\tools<br>
+041: 	 * Set to the directory where the Droid Development SDK Tools are located. 	 
+042: 	 **/
+043: 	public static String ROOT_DROID_SDK_TOOLS = ROOT_DROID_SDK_DIR +"tools";
+044: 	
+045: 	protected static Vector listeners = new Vector();	
+046: 	protected static LogsInterface log = null;
+047: 	protected SoloRemoteControlRunner runner = null;
+048: 	protected Thread runnerThread = null;
+049: 	
+050: 	public int controllerPort = SocketProtocol.DEFAULT_CONTROLLER_PORT;
+051: 	
+052: 	//TODO combine the two fields
+053: 	public boolean portForwarding = true;               // these two might be the combined
+054: 	public boolean startEmulatorPortForwarding = false; // these two might be the combined
+055: 	
+056: 	public static AndroidTools sdk = null;
+057: 	
+058: 	public boolean enableProtocolDebug = true;
+059: 	public boolean enableRunnerDebug = true;
+060: 	
+061: 	/**
+062: 	 * No-arg constructor to instantiate and use all defaults.
+063: 	 * The default implementation does NOT have a LogsInterface object set until a 
+064: 	 * successful call to setLogsInterface is made.
+065: 	 * @see #setLogsInterface(LogsInterface)
+066: 	 */
+067: 	public SoloRemoteControl(){
+068: 		super();
+069: 	}
+070: 
+071: 	/**
+072: 	 * Set our static sdk tool to the one appropriate for the OS (Windows or Unix).
+073: 	 * The routine does nothing if the appropriate sdk instance is already set.
+074: 	 * 
+075: 	 * @see DUtilities#getAndroidTools()
+076: 	 */
+077: 	public static void initAndroidTools(){
+078: 		if (sdk == null){
+079: 			debug("Setting Android Tools SDK Dir to "+ ROOT_DROID_SDK_DIR);
+080: 			sdk = DUtilities.getAndroidTools(ROOT_DROID_SDK_DIR);
+081: 		}
+082: 	}
+083: 	
+084: 	/**
+085: 	 * Set the LogsInterface to be used by the class instance.
+086: 	 * @param ilog
+087: 	 */
+088: 	public void setLogsInterface(LogsInterface ilog){
+089: 		log = ilog;
+090: 	}
+091: 	
+092: 	/**
+093: 	 * Add a listener to this Runner. Could be a DebugListener, ConnectionListener, or a 
+094: 	 * SoloRemoteControlListener--any subclass of NamedListener.
+095: 	 * @param listen
+096: 	 * @see NamedListener
+097: 	 * @see ConnectionListener
+098: 	 * @see SoloRemoteControlListener
+099: 	 */
+100: 	public void addListener(NamedListener listen){
+101: 		if(! listeners.contains(listen)) listeners.add(listen);
+102: 	}
+103: 	
+104: 	/**
+105: 	 * Remove a previously added listener from this Runner.
+106: 	 * @param listen
+107: 	 */
+108: 	public void removeListener(NamedListener listen){
+109: 		if(listeners.contains(listen)) listeners.remove(listen);
+110: 	}
+111: 	
+112: 	/**
+113: 	 * Invoked from start().
+114: 	 * Creates the default instance of our Runner.  
+115: 	 * @return true to allow normal execution to proceed.
+116: 	 * Returning false should cause an abort of the test startup procedure.
+117: 	 * @see #start()
+118: 	 */
+119: 	protected boolean createProtocolRunner(){
+120: 		runner = new SoloRemoteControlRunner(this);
+121: 		return true;
+122: 	}
+123: 	
+124: 	/**
+125: 	 * Must be set before start() is called to have affect.
+126: 	 * @param doForward set true if the controller should attempt EMULATOR port forwarding 
+127: 	 * before starting the runner thread.
+128: 	 */
+129: 	public void setStartEmulatorPortForwarding(boolean doForward){	
+130: 		startEmulatorPortForwarding = doForward;
+131: 	}
+132: 	
+133: 	/**
+134: 	 * should only be called after the runner has been instantiated, but before it is started.
+135: 	 * @return
+136: 	 */
+137: 	protected boolean startEmulatorPortForwarding(){
+138: 		boolean result = false;
+139: 		Process2 process = null;
+140: 		ArrayList rs = new ArrayList();
+141: 		String cmd = "forward tcp:"+ String.valueOf(runner.protocolserver.getControllerPort()).trim()+ 
+142:                             " tcp:"+ String.valueOf(runner.protocolserver.getRemotePort()).trim();
+143: 		debug("Preparing to execute adb "+ cmd);
+144: 		String[] args = cmd.split(" ");
+145: 		try{
+146: 			if(sdk==null)initAndroidTools();
+147: 			process = sdk.adb(args);
+148: 			process.discardStderr();
+149: 			process.discardStdout();
+150: 			boolean notDone = true;
+151: 			int rc = -1;
+152: 			int count = 0;
+153: 			while(notDone){				
+154: 				try{ 
+155: 					rc = process.exitValue(); 
+156: 					notDone = false;
+157: 					try{process.destroy();}catch(Exception x){}
+158: 					process = null;
+159: 				}
+160: 				catch(IllegalThreadStateException x){
+161: 					if(++count > 5){
+162: 						throw new RuntimeException("adb forward TCP Ports timeout reached!");
+163: 					}else{
+164: 						try{Thread.sleep(1000);}catch(Exception x2){}
+165: 					}
+166: 				}
+167: 			}
+168: 			result = (rc == 0);
+169: 		}catch(Exception x){
+170: 			String msg = "startEmulatorPortForwarding "+x.getClass().getSimpleName()+", "+x.getMessage();
+171: 			debug(msg);
+172: 			if(process != null)try{process.destroy();}catch(Exception x2){ process = null;}
+173: 			throw new RuntimeException(msg);
+174: 		}
+175: 		if(process != null)try{process.destroy();}catch(Exception x2){ process = null;}
+176: 		return result;
+177: 	}
+178: 	
+179: 	/**
+180: 	 * Invoked from start().
+181: 	 * Creates the default instance of the runnerThread providing the current Runner 
+182: 	 * as its Runnable argument.  The runnerThread is then immediately started. 
+183: 	 * @return true to allow normal execution to proceed.
+184: 	 * Returning false should cause an abort of the test startup procedure.
+185: 	 * @see #start()
+186: 	 */
+187: 	protected boolean startProtocolRunner() {
+188: 	    try{
+189: 	    	runnerThread = new Thread(runner);
+190: 		    runnerThread.start();
+191: 		    return true;
+192: 	    }catch(Exception x){ return false; }
+193: 	}
+194: 
+195: 	/**
+196: 	 * Creates and Starts the asynchronous RemoteControl runner.
+197: 	 * @throws IllegalThreadStateException if we were unable to create and run the protocol runner.
+198: 	 */
+199: 	public void start() throws IllegalThreadStateException{
+200: 		if(!createProtocolRunner()) throw new IllegalThreadStateException("Failed to create the RemoteControlRunner!");
+201: 		//before we start the protocol runner, we can modify some properties of embedded #DroidSocketProtocol
+202: 		modifyEmbeddedProtocol();
+203: 		if(startEmulatorPortForwarding)
+204: 			if(!startEmulatorPortForwarding())throw new IllegalThreadStateException("Failed to start Emulator Port Forwarding!");		
+205: 		if(!startProtocolRunner()) throw new IllegalThreadStateException("Failed to start the RemoteControlRunner!");
+206: 	}
+207: 	
+208: 	/**
+209: 	 * In this method, we can modify some properties of the embedded protocol {@link DroidSocketProtocol}.<br>
+210: 	 * <b>Note:</b> this method MUST be called after {@link #createProtocolRunner()}
+211: 	 *              and before {@link #startProtocolRunner()}. Just like in {@link #start()}.<br>
+212: 	 * 
+213: 	 * For example, we can modify the controllerPort as {@link DroidSocketProtocol#setControllerPort(int)}<br>
+214: 	 * or modify portForwarding as {@link DroidSocketProtocol#setPortForwarding(boolean)}<br>
+215: 	 * 
+216: 	 * @see #start()
+217: 	 * @see DroidSocketProtocol#setControllerPort(int)
+218: 	 * @see DroidSocketProtocol#setPortForwarding(boolean)
+219: 	 * 
+220: 	 */
+221: 	protected void modifyEmbeddedProtocol(){
+222: 		if(runner!=null && runner.droidprotocolserver!=null){
+223: 			runner.droidprotocolserver.setPortForwarding(portForwarding);
+224: 			if(portForwarding){
+225: 				//verify controllerPort is available, if not, get the next available one.
+226: 				controllerPort = AvailablePortFinder.getNextAvailable(controllerPort);
+227: 				debug("Port forwarding will be from '"+controllerPort+"'");
+228: 				runner.droidprotocolserver.setControllerPort(controllerPort);				
+229: 			}
+230: 		}else{
+231: 			debug("runner or runner.droidprotocolserver is null.");
+232: 		}
+233: 	}
+234: 	
+235: 	/**
+236: 	 * Set the 'controller port' where we will connect for messenger service.<br>
+237: 	 * The 'controller port' should be an available port, if it is not, it will be<br>
+238: 	 * modified to an available one in method {@link #modifyEmbeddedProtocol()}<br>
+239: 	 * 
+240: 	 * @param controllerPort	int,	an available port number
+241: 	 * @see #modifyEmbeddedProtocol()
+242: 	 */
+243: 	public void setControllerPort(int controllerPort){
+244: 		this.controllerPort = controllerPort;
+245: 	}
+246: 	
+247: 	/**
+248: 	 * Set if we will forward 'controller port' to remote messenger service's port.
+249: 	 * @param portForwarding
+250: 	 */
+251: 	public void setPortForwarding(boolean portForwarding){
+252: 		this.portForwarding = portForwarding;
+253: 	}
+254: 	
+255: 	/**
+256: 	 * Command the RemoteControl infrastructure to shutdown.
+257: 	 * @see SoloRemoteControlRunner#shutdownThread()
+258: 	 */
+259: 	public void shutdown(){
+260: 		runner.shutdownThread();
+261: 	}
+262: 	
+263: 	boolean remoteException = false;
+264: 	boolean remoteMessage = false;
+265: 	String remoteMessageString = null;
+266: 	boolean remoteReady = false;	
+267: 	boolean remoteConnected = false;
+268: 	boolean remoteRunning = false;
+269: 	boolean remoteResult = false;
+270: 	int remoteResultCode = 0;
+271: 	String remoteResultInfo = null;
+272: 	Properties remoteResultProperties = null;
+273: 	boolean localShutdown = false;
+274: 	boolean remoteShutdown = false;
+275: 	int shutdownCause = -1;
+276: 	Object lock = new Object();
+277: 
+278: 	/** 
+279: 	 * reset the results fields and properties prior to dispatching a request.
+280: 	 * remoteResult = false<br>
+281: 	 * remoteResultCode = -99<br>
+282: 	 * remoteResultInfo = null<br>
+283: 	 * remoteResultProperties = null<br>
+284: 	 * remoteComment = null<br>
+285: 	 * remoteDetail = null<br>
+286: 	 */
+287: 	public void resetResults(){
+288: 		remoteResult = false;
+289: 		remoteResultCode = Message.STATUS_REMOTERESULT_UNKNOWN;
+290: 		remoteResultInfo = null;
+291: 		remoteResultProperties = null;
+292: 	}
+293: 	
+294: 	/**
+295: 	 * Consolidates the remoteResult, remoteResultCode, and remoteResultInfo into any remoteResultProperties.  
+296: 	 * If remoteResultProperties is null, the routine will create the Properties object before the consolidation. 
+297: 	 * remoteResultInfo will only be written to the Properties if it is a non-null String value. 
+298: 	 * The routine will NOT overwrite any of these remoteResult properties if they already exist in the 
+299: 	 * remoteResultProperties object.
+300: 	 * @return remoteResultProperties
+301: 	 */
+302: 	protected Properties consolidateResults(){
+303: 		if(remoteResultProperties == null) remoteResultProperties = new Properties();
+304: 		if(! remoteResultProperties.containsKey(Message.KEY_ISREMOTERESULT)) 
+305: 			remoteResultProperties.setProperty(Message.KEY_ISREMOTERESULT, String.valueOf(remoteResult));
+306: 		if(!remoteResultProperties.containsKey(Message.KEY_REMOTERESULTCODE))
+307: 			remoteResultProperties.setProperty(Message.KEY_REMOTERESULTCODE, String.valueOf(remoteResultCode));
+308: 		if((!remoteResultProperties.containsKey(Message.KEY_REMOTERESULTINFO))&& 
+309: 				remoteResultInfo != null) 
+310: 			remoteResultProperties.setProperty(Message.KEY_REMOTERESULTINFO, remoteResultInfo);
+311: 		return remoteResultProperties;
+312: 	}
+313: 	
+314: 	public void resetRunningState(){
+315: 		synchronized(lock){
+316: 			resetResults();
+317: 			remoteException = false;
+318: 			remoteRunning = false;
+319: 			remoteMessage = false;
+320: 			remoteMessageString = null;
+321: 			remoteShutdown = false;
+322: 			localShutdown = false;
+323: 			shutdownCause = -1;
+324: 		}		
+325: 	}
+326: 	
+327: 	public void onReceiveConnection() {
+328: 		synchronized(lock){
+329: 			remoteConnected = true;
+330: 			try{ lock.notifyAll();}catch(Throwable e){}
+331: 		}
+332: 		notifyConnectionListeners();
+333: 	}
+334: 
+335: 	public void onReceiveReady() {
+336: 		synchronized(lock){
+337: 			remoteException = false;
+338: 			remoteRunning = false;
+339: 			remoteReady = true;
+340: 			try{ lock.notifyAll();}catch(Throwable e){}
+341: 		}
+342: 		notifyReadyListeners();
+343: 	}
+344: 
+345: 	public void onReceiveRunning() {
+346: 		synchronized(lock){
+347: 			remoteException = false;
+348: 			remoteReady = false;
+349: 			remoteRunning = true;
+350: 			try{ lock.notifyAll();}catch(Throwable e){}
+351: 		}
+352: 		notifyRunningListeners();
+353: 	}
+354: 
+355: 	/**
+356: 	 * Implemented here, but not currently used by this implementation.
+357: 	 * This implementation is using ResultProperties.
+358: 	 * @see #onReceiveResultProperties(Properties)
+359: 	 */
+360: 	public void onReceiveResult(int rc, String info) {
+361: 		synchronized(lock){
+362: 			remoteException = false;
+363: 			remoteRunning = false;
+364: 			remoteResultCode = rc;
+365: 			remoteResultInfo = info;
+366: 			remoteResultProperties = null;
+367: 			remoteResult = true;
+368: 			try{ lock.notifyAll();}catch(Throwable e){}
+369: 		}
+370: 		notifyResultsListeners(rc, info);
+371: 	}
+372: 
+373: 	public void onReceiveResultProperties(Properties result) {
+374: 		synchronized(lock){
+375: 			remoteException = false;
+376: 			remoteRunning = false;
+377: 			remoteResultCode = -1;
+378: 			remoteResultInfo = null;
+379: 			remoteResultProperties = result;
+380: 			remoteResult = true;
+381: 			try{ lock.notifyAll();}catch(Throwable e){}
+382: 		}
+383: 		notifyResultPropsListeners(result);
+384: 	}
+385: 
+386: 	public void onReceiveException(String message) {
+387: 		synchronized(lock){
+388: 			remoteRunning = false;
+389: 			remoteMessageString = message;
+390: 			remoteException = true;
+391: 			try{ lock.notifyAll();}catch(Throwable e){}
+392: 		}
+393: 		notifyExceptionListeners(message);
+394: 	}
+395: 
+396: 	public void onReceiveMessage(String message) {
+397: 		synchronized(lock){
+398: 			remoteException = false;
+399: 			remoteRunning = false;
+400: 			remoteMessageString = message;
+401: 			remoteMessage = true;
+402: 			try{ lock.notifyAll();}catch(Throwable e){}
+403: 		}
+404: 		notifyMessageListeners(message);
+405: 	}
+406: 
+407: 	public void onReceiveLocalShutdown(int shutdownCause) {
+408: 		synchronized(lock){
+409: 			remoteException = false;
+410: 			remoteRunning = false;
+411: 			this.shutdownCause = shutdownCause;
+412: 			localShutdown = true;
+413: 			try{ lock.notifyAll();}catch(Throwable e){}
+414: 		}
+415: 		notifyLocalShutdownListeners(shutdownCause);
+416: 	}
+417: 
+418: 	public void onReceiveRemoteShutdown(int shutdownCause) {
+419: 		synchronized(lock){
+420: 			remoteException = false;
+421: 			remoteRunning = false;
+422: 			this.shutdownCause = shutdownCause;
+423: 			remoteShutdown = true;
+424: 			try{ lock.notifyAll();}catch(Throwable e){}
+425: 		}
+426: 		notifyRemoteShutdownListeners(shutdownCause);
+427: 	}
+428: 
+429: 	public String getListenerName() {
+430: 		return listenername;
+431: 	}
+432: 
+433: 	public void onReceiveDebug(String message) {
+434: 		debug(message);
+435: 	}
+436: 	
+437: 	public static void debug(String message){
+438: 		boolean logged = false;
+439: 		for(int i=0;i< listeners.size(); i++){
+440: 			try{
+441: 				((DebugListener)listeners.get(i)).onReceiveDebug(message);
+442: 				logged = true;
+443: 			}catch(Exception x){}
+444: 		}
+445: 		if(!logged){
+446: 			try{
+447: 				log.debug(message);
+448: 			}
+449: 			catch(Exception x){
+450: 				System.out.println(message);
+451: 			}
+452: 		}
+453: 	}
+454: 
+455: 	/** 
+456: 	 * Throw a ShutdownInvocationException only *IF* we have received a localShutdown 
+457: 	 * or remoteShutdown message.  Throw a RemoteException only *IF* we have received 
+458: 	 * a remoteException.  Otherwise, this routine returns doing nothing.
+459: 	 * @throws ShutdownInvocationException if localShutdown or remoteShutdown have been 
+460: 	 * received.
+461: 	 * @throws RemoteException if remoteException has been received.
+462: 	 */
+463: 	protected void checkExceptions() throws RemoteException, ShutdownInvocationException{
+464: 		if (localShutdown){
+465: 			throw new ShutdownInvocationException("Unexpected Local Shutdown has been initiated.", false, shutdownCause);
+466: 		}else if (remoteShutdown){
+467: 			throw new ShutdownInvocationException("Unexpected Remote Shutdown has been initiated.", true, shutdownCause);			
+468: 		}else if (remoteException){
+469: 			throw new RemoteException(remoteMessageString);		
+470: 		}
+471: 	}
+472: 	
+473: 	/**
+474: 	 * Wait for the remote client to get connected.
+475: 	 * This is typically called from an external Thread.
+476: 	 * @param sTimeout in seconds to wait for connection.  
+477: 	 * If timeout is < 1 then the there is no wait.
+478: 	 * 
+479: 	 * @throws TimeoutException if connection was not made in the timeout period.
+480: 	 * @throws RemoteException if we received an unexpected remote exception instead.  
+481: 	 * @throws ShutdownInvocationException if either a local or remote shutdown has been 
+482: 	 * initiated.
+483: 	 */
+484: 	public void waitForRemoteConnected(int sTimeout)throws TimeoutException, 
+485: 														   RemoteException,
+486: 														   ShutdownInvocationException{		
+487: 		if (sTimeout < 1) {
+488: 			// do nothing
+489: 		}else{
+490: 			long millis = sTimeout * 1000;
+491: 			long maxTicks = System.currentTimeMillis() + millis;
+492: 			while(!remoteConnected && !remoteException &&
+493: 				  !localShutdown   && !remoteShutdown  &&
+494: 				  System.currentTimeMillis() < maxTicks){
+495: 				synchronized(lock){
+496: 					try{ lock.wait(millis); }
+497: 					catch(InterruptedException e){}
+498: 				}
+499: 			}
+500: 		}
+501: 		checkExceptions();
+502: 		if(! remoteConnected) throw new TimeoutException("waitForRemoteConnected Timeout before Connect");
+503: 	}
+504: 	
+505: 	protected void notifyConnectionListeners(){
+506: 		for(int i=0;i< this.listeners.size(); i++){
+507: 			try{
+508: 				((ConnectionListener)listeners.get(i)).onReceiveConnection();
+509: 			}catch(Exception x){}
+510: 		}
+511: 	}
+512: 	
+513: 	/**
+514: 	 * Wait for the remote client to signal Ready for a new command.
+515: 	 * This is typically called from an external Thread.
+516: 	 * @param sTimeout in seconds to wait for ready.  If timeout is < 1 then there 
+517: 	 * is no wait.
+518: 	 * 
+519: 	 * @throws TimeoutException if Ready was not seen in the timeout period. 
+520: 	 * @throws RemoteException if we received an unexpected remote exception instead.  
+521: 	 * @throws ShutdownInvocationException if either a local or remote shutdown has been 
+522: 	 * initiated.
+523: 	 */
+524: 	public void waitForRemoteReady(int sTimeout)throws TimeoutException, 
+525: 													   RemoteException,
+526: 													   ShutdownInvocationException{
+527: 		if (sTimeout < 1) {
+528: 			// do nothing
+529: 		}else{
+530: 			long millis = sTimeout * 1000;
+531: 			long maxTicks = System.currentTimeMillis() + millis;
+532: 			while(!remoteReady && !remoteException &&
+533: 					  !localShutdown   && !remoteShutdown  &&
+534: 					  System.currentTimeMillis() < maxTicks){
+535: 				synchronized(lock){
+536: 					try{ lock.wait(millis); }
+537: 					catch(InterruptedException e){}
+538: 				}
+539: 			}
+540: 		}
+541: 		checkExceptions();
+542: 		if(! remoteReady) throw new TimeoutException("waitForRemoteReady Timeout before Ready");
+543: 	}
+544: 	
+545: 	protected void notifyReadyListeners(){
+546: 		for(int i=0;i< this.listeners.size(); i++){
+547: 			try{
+548: 				((SocketProtocolListener)listeners.get(i)).onReceiveReady();
+549: 			}catch(Exception x){}
+550: 		}
+551: 	}
+552: 	
+553: 	/**
+554: 	 * Default implementation performs the following:
+555: 	 * <p><pre>
+556: 	 * resetResults();
+557: 	 * waitForRemoteReady(secsWaitReady);
+558: 	 * runner.sendDispatchProps(props);
+559: 	 * waitForRemoteRunning(secsWaitRunning);
+560: 	 * return waitForRemoteResult(secsWaitResult);
+561: 	 *  </pre>
+562: 	 * @param props - the Dispatch Properties object containing all required command parameters for the remote client.
+563: 	 * @param secsWaitRead -- timeout in seconds to detect remoteReady.
+564: 	 * @param secsWaitRunning -- timeout in seconds to detect remoteRunning following the dispatch.
+565: 	 * @param secsWaitResults -- timeout in seconds to wait for results from the remote client.
+566: 	 * @return - the Result Properties returned by the remote client.
+567: 	 * @throws ShutdownInvocationException 
+568: 	 * @throws TimeoutException 
+569: 	 * @throws RemoteException 
+570: 	 * @throws IllegalThreadStateException -- if the attempt to send the properties failed for some unknown reason.
+571: 	 * @see SoloRemoteControlRunner#sendDispatchProps(Properties)
+572: 	 */
+573: 	public Properties performRemotePropsCommand(Properties props, int secsWaitReady, int secsWaitRunning, int secsWaitResult) throws IllegalThreadStateException, RemoteException, TimeoutException, ShutdownInvocationException{
+574: 		resetResults();
+575: 		waitForRemoteReady(secsWaitReady);
+576: 		if(runner.sendDispatchProps(props)) {
+577: 			waitForRemoteRunning(secsWaitRunning);
+578: 			return waitForRemoteResult(secsWaitResult);
+579: 		}
+580: 		throw new IllegalThreadStateException("Local ProtocolRunner failed to sendDispatchProps.");
+581: 	}
+582: 	
+583: 	/**
+584: 	 * Default implementation performs the following:
+585: 	 * <p><pre>
+586: 	 * resetResults();
+587: 	 * waitForRemoteReady(secsWaitReady);
+588: 	 * runner.sendDispatchFile(filepath);
+589: 	 * waitForRemoteRunning(secsWaitRunning);
+590: 	 * return waitForRemoteResult(secsWaitResult);
+591: 	 *  </pre>
+592: 	 * @param filepath - the filepath to the File to process.
+593: 	 * @param secsWaitRead -- timeout in seconds to detect remoteReady.
+594: 	 * @param secsWaitRunning -- timeout in seconds to detect remoteRunning following the dispatch.
+595: 	 * @param secsWaitResults -- timeout in seconds to wait for results from the remote client.
+596: 	 * @return - the Result Properties returned by the remote client.
+597: 	 * @throws ShutdownInvocationException 
+598: 	 * @throws TimeoutException 
+599: 	 * @throws RemoteException 
+600: 	 * @throws IllegalThreadStateException -- if the attempt to send failed for some unknown reason.
+601: 	 * @see SoloRemoteControlRunner#sendDispatchProps(Properties)
+602: 	 */
+603: 	public Properties performRemoteFileCommand(String filepath, int secsWaitReady, int secsWaitRunning, int secsWaitResult) throws IllegalThreadStateException, RemoteException, TimeoutException, ShutdownInvocationException{
+604: 		resetResults();
+605: 		waitForRemoteReady(secsWaitReady);
+606: 		if(runner.sendDispatchFile(filepath)) {
+607: 			waitForRemoteRunning(secsWaitRunning);
+608: 			return waitForRemoteResult(secsWaitResult);
+609: 		}
+610: 		throw new IllegalThreadStateException("Local ProtocolRunner failed to sendDispatchProps.");
+611: 	}
+612: 	
+613: 	/**
+614: 	 * Default implementation performs the following:
+615: 	 * <p><pre>
+616: 	 * resetResults();
+617: 	 * waitForRemoteReady(secsWaitReady);
+618: 	 * runner.sendMessage(message);
+619: 	 * waitForRemoteRunning(secsWaitRunning);
+620: 	 * </pre>
+621: 	 * <p>
+622: 	 * The routine does NOT waitForResults.  This allows arbitrary messaging not always expecting a response.
+623: 	 * @param message to send to remote client
+624: 	 * @param secsWaitRead -- timeout in seconds to detect remoteReady.
+625: 	 * @param secsWaitRunning -- timeout in seconds to detect remoteRunning following the dispatch.
+626: 	 * @param secsWaitResults -- timeout in seconds to wait for results from the remote client.
+627: 	 * @throws ShutdownInvocationException 
+628: 	 * @throws TimeoutException 
+629: 	 * @throws RemoteException 
+630: 	 * @throws IllegalThreadStateException -- if the attempt to send the message failed for some unknown reason.
+631: 	 * @see SoloRemoteControlRunner#sendDispatchProps(Properties)
+632: 	 */
+633: 	public void performRemoteMessageCommand(String message, int secsWaitReady, int secsWaitRunning) throws IllegalThreadStateException, RemoteException, TimeoutException, ShutdownInvocationException{
+634: 		resetResults();
+635: 		waitForRemoteReady(secsWaitReady);
+636: 		if(runner.sendMessage(message)) {
+637: 			waitForRemoteRunning(secsWaitRunning);
+638: 			return;
+639: 		}
+640: 		throw new IllegalThreadStateException("Local ProtocolRunner failed to sendDispatchProps.");
+641: 	}
+642: 	
+643: 	/**
+644: 	 * Default implementation performs the following:
+645: 	 * <p><pre>
+646: 	 * resetResults();
+647: 	 * waitForRemoteReady(secsWaitReady);
+648: 	 * runner.sendShutdown();
+649: 	 * waitForRemoteRunning(secsWaitRunning);
+650: 	 * </pre>
+651: 	 * <p>
+652: 	 * The routine does NOT waitForResults.  This allows arbitrary messaging not always expecting a response.
+653: 	 * @param message to send to remote client
+654: 	 * @param secsWaitRead -- timeout in seconds to detect remoteReady.
+655: 	 * @param secsWaitRunning -- timeout in seconds to detect remoteRunning following the dispatch.
+656: 	 * @param secsWaitShutdown -- timeout in seconds to wait to receive shutdown confirmation.
+657: 	 * @throws TimeoutException 
+658: 	 * @throws RemoteException 
+659: 	 * @throws IllegalThreadStateException -- if the attempt to send the message failed for some unknown reason.
+660: 	 * @see SoloRemoteControlRunner#sendDispatchProps(Properties)
+661: 	 */
+662: 	public void performRemoteShutdown(int secsWaitReady, int secsWaitRunning, int secsWaitShutdown) throws IllegalThreadStateException, RemoteException, TimeoutException, ShutdownInvocationException{
+663: 		resetResults();
+664: 		waitForRemoteReady(secsWaitReady);
+665: 		if(runner.sendShutdown()) {
+666: 			try{
+667: 				waitForRemoteRunning(secsWaitRunning);
+668: 				waitForRemoteShutdown(secsWaitRunning);
+669: 				return;
+670: 			}
+671: 			catch(TimeoutException x){
+672: 				debug("performRemoteShutdown ignoring TimeoutException: "+ x.getMessage());
+673: 			}
+674: 			catch(RemoteException x){
+675: 				debug("performRemoteShutdown ignoring RemoteException: "+ x.getMessage());
+676: 			}
+677: 			catch(ShutdownInvocationException x){
+678: 				debug("performRemoteShutdown ignoring ShutdownInvocationException: "+ x.getMessage());
+679: 			}
+680: 		}else{
+681: 			throw new IllegalThreadStateException("Local ProtocolRunner failed to sendShutdown request.");
+682: 		}
+683: 	}
+684: 	
+685: 	/**
+686: 	 * Wait for the remote client to signal Running a new command.
+687: 	 * This is typically called from an external Thread.
+688: 	 * @param sTimeout in seconds to wait for Running.  If timeout is < 1 then there 
+689: 	 * is no wait.
+690: 	 * 
+691: 	 * @throws TimeoutException if Running was not seen in the timeout period. 
+692: 	 * @throws RemoteException if we received an unexpected remote exception instead.  
+693: 	 * @throws ShutdownInvocationException if either a local or remote shutdown has been 
+694: 	 * initiated.
+695: 	 */
+696: 	public void waitForRemoteRunning(int sTimeout)throws TimeoutException, 
+697: 														 RemoteException,
+698: 														 ShutdownInvocationException{
+699: 		if (sTimeout < 1) {
+700: 			// do nothing
+701: 		}else{
+702: 			long millis = sTimeout * 1000;
+703: 			long maxTicks = System.currentTimeMillis() + millis;
+704: 			while(!remoteRunning && !remoteException &&
+705: 					  !localShutdown   && !remoteShutdown  &&
+706: 					  System.currentTimeMillis() < maxTicks){
+707: 				synchronized(lock){
+708: 					try{ lock.wait(millis); }
+709: 					catch(InterruptedException e){}
+710: 				}
+711: 			}
+712: 		}
+713: 		checkExceptions();
+714: 		if(! remoteRunning) throw new TimeoutException("waitForRemoteRunning Timeout before Running");
+715: 	}	
+716: 
+717: 	protected void notifyRunningListeners(){
+718: 		for(int i=0;i< this.listeners.size(); i++){
+719: 			try{
+720: 				((SocketProtocolListener)listeners.get(i)).onReceiveRunning();
+721: 			}catch(Exception x){}
+722: 		}
+723: 	}
+724: 	
+725: 	
+726: 	/**
+727: 	 * Wait for the remote client to signal results are available and return those results.
+728: 	 * This is typically called from an external Thread immediately following a "dispatch" call.
+729: 	 * <p>
+730: 	 * When a valid remote result has been received it is first checked for the presence of a 
+731: 	 * special property {@value Message#KEY_CHANGETIMEOUT}.  If that key is present then the property  
+732: 	 * value is processed for a new timeout value and the routine waits for a new remote result using 
+733: 	 * the new timeout value.  If no new timeout is provided, or the format is non-numeric, the 
+734: 	 * routine will simply wait again using the original sTimeout value.
+735: 	 * <p>
+736: 	 * @param sTimeout in seconds to wait for Results.  If timeout is < 1 then there 
+737: 	 * is no wait.
+738: 	 * @return Properties -- the resultProps returned from the remote client or a new Properties 
+739: 	 * object containing the consolidated remote result information.
+740: 	 * @throws TimeoutException if Results was not seen in the timeout period. 
+741: 	 * @throws RemoteException if we received an unexpected remote exception instead.  
+742: 	 * @throws ShutdownInvocationException if either a local or remote shutdown has been 
+743: 	 * initiated.
+744: 	 * @see #consolidateResults()
+745: 	 */
+746: 	public Properties waitForRemoteResult(int sTimeout)throws TimeoutException, 
+747: 														 RemoteException,
+748: 														 ShutdownInvocationException{
+749: 		if (sTimeout < 1) {
+750: 			// do nothing
+751: 		}else{
+752: 			long millis = sTimeout * 1000;
+753: 			long maxTicks = System.currentTimeMillis() + millis;
+754: 			while(!remoteResult && !remoteException &&
+755: 					  !localShutdown   && !remoteShutdown  &&
+756: 					  System.currentTimeMillis() < maxTicks){
+757: 				synchronized(lock){
+758: 					try{ lock.wait(millis); }
+759: 					catch(InterruptedException e){}
+760: 				}
+761: 			}
+762: 		}
+763: 		checkExceptions();
+764: 		if(! remoteResult) throw new TimeoutException("waitForRemoteResult Timeout before Result");
+765: 		remoteResultProperties = consolidateResults();		
+766: 		if(remoteResultProperties.containsKey(Message.KEY_CHANGETIMEOUT)){
+767: 			try{
+768: 				int newtimeout = Integer.valueOf(remoteResultProperties.getProperty(Message.KEY_CHANGETIMEOUT));
+769: 				if (newtimeout > 0) {
+770: 					debug("waitForRemoteResult detecting device-side timeout extension of "+ newtimeout);
+771: 					resetResults();
+772: 					return waitForRemoteResult(newtimeout);
+773: 				}else{
+774: 					debug("waitForRemoteResult ignoring invalid device-side timeout extension of "+ remoteResultProperties.getProperty(Message.KEY_CHANGETIMEOUT));
+775: 				}
+776: 			}catch(Exception x){
+777: 				debug("waitForRemoteResult ignoring "+ x.getClass().getSimpleName()+" and relooping...");
+778: 				resetResults();
+779: 				return waitForRemoteResult(sTimeout);
+780: 			}
+781: 		}
+782: 		return remoteResultProperties;
+783: 	}	
+784: 
+785: 	protected void notifyResultsListeners(int rc, String info){
+786: 		for(int i=0;i< this.listeners.size(); i++){
+787: 			try{
+788: 				((SocketProtocolListener)listeners.get(i)).onReceiveResult(rc, info);
+789: 			}catch(Exception x){}
+790: 		}
+791: 	}
+792: 	
+793: 	protected void notifyResultPropsListeners(Properties props){
+794: 		for(int i=0;i< this.listeners.size(); i++){
+795: 			try{
+796: 				((SocketProtocolListener)listeners.get(i)).onReceiveResultProperties(props);
+797: 			}catch(Exception x){}
+798: 		}
+799: 	}
+800: 	
+801: 	
+802: 	
+803: 	/**
+804: 	 * Wait for the remote client to signal its shutdown.
+805: 	 * This is typically called from an external Thread.
+806: 	 * @param sTimeout in seconds to wait for shutdown.  If timeout is < 1 then there 
+807: 	 * is no wait.
+808: 	 * 
+809: 	 * @throws TimeoutException if shutdown was not seen in the timeout period. 
+810: 	 * @throws RemoteException if we received an unexpected remote exception instead.  
+811: 	 */
+812: 	public void waitForRemoteShutdown(int sTimeout)throws TimeoutException, 
+813: 														  RemoteException{
+814: 		if (sTimeout < 1) {
+815: 			// do nothing
+816: 		}else{
+817: 			long millis = sTimeout * 1000;
+818: 			long maxTicks = System.currentTimeMillis() + millis;
+819: 			while(!remoteShutdown && !remoteException && !localShutdown && 
+820: 				  System.currentTimeMillis() < maxTicks){
+821: 				synchronized(lock){
+822: 					try{ lock.wait(millis); }
+823: 					catch(InterruptedException e){}
+824: 				}
+825: 			}
+826: 		}
+827: 		if(remoteException) throw new RemoteException(remoteMessageString);
+828: 		if(! (remoteShutdown || localShutdown)) throw new TimeoutException("waitForRemoteShutdown Timeout before Shutdown");
+829: 	}	
+830: 	
+831: 	protected void notifyRemoteShutdownListeners(int cause){
+832: 		for(int i=0;i< this.listeners.size(); i++){
+833: 			try{
+834: 				((SocketProtocolListener)listeners.get(i)).onReceiveRemoteShutdown(cause);
+835: 			}catch(Exception x){}
+836: 		}
+837: 	}
+838: 	
+839: 	protected void notifyLocalShutdownListeners(int cause){
+840: 		for(int i=0;i< this.listeners.size(); i++){
+841: 			try{
+842: 				((SocketProtocolListener)listeners.get(i)).onReceiveLocalShutdown(cause);
+843: 			}catch(Exception x){}
+844: 		}
+845: 	}
+846: 
+847: 	protected void notifyExceptionListeners(String message){
+848: 		for(int i=0;i< this.listeners.size(); i++){
+849: 			try{
+850: 				((SocketProtocolListener)listeners.get(i)).onReceiveException(message);
+851: 			}catch(Exception x){}
+852: 		}
+853: 	}
+854: 
+855: 	protected void notifyMessageListeners(String message){
+856: 		for(int i=0;i< this.listeners.size(); i++){
+857: 			try{
+858: 				((SocketProtocolListener)listeners.get(i)).onReceiveMessage(message);
+859: 			}catch(Exception x){}
+860: 		}
+861: 	}
+862: }

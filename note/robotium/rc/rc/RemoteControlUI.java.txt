@@ -1,0 +1,353 @@
+001: /** 
+002:  ** Copyright (C) SAS Institute, All rights reserved.
+003:  ** General Public License: http://www.opensource.org/licenses/gpl-license.php
+004:  **/
+005: package com.jayway.android.robotium.remotecontrol.solo;
+006: 
+007: import java.awt.Dimension;
+008: import java.awt.HeadlessException;
+009: import java.awt.event.ActionEvent;
+010: import java.awt.event.ActionListener;
+011: import java.io.InvalidObjectException;
+012: import java.util.Enumeration;
+013: import java.util.Properties;
+014: import java.util.concurrent.TimeoutException;
+015: 
+016: import javax.swing.*;
+017: 
+018: import org.safs.sockets.RemoteException;
+019: import org.safs.sockets.ShutdownInvocationException;
+020: import org.safs.sockets.SocketProtocolListener;
+021: 
+022: 
+023: /**
+024:  * Crude Test app for initial manual testing of Robotium Remote Control.
+025:  * This app provides a minimalist crude UI for manually entering and sending messages using SoloRemoteControl 
+026:  * implementing a SocketProtocol to communicate and control Android automation on a remote device or emulator.
+027:  * <p>
+028:  * Note this has been tested on both a real device and the Emulator.  To use the Emulator you 
+029:  * must have a working Emulator and AVD.  
+030:  * <p>
+031:  * SampleCommand used to launch the emulator with an appropriate AVD:
+032:  * <p>
+033:  * emulator -no-snapstorage -avd SprintEvo
+034:  * <p>
+035:  * Steps to test the remote control concept:
+036:  * <ol>
+037:  * <p>
+038:  * <li>Insure the Android SAFS TCP Messenger APK has been built and installed 
+039:  * on the device or emulator:
+040:  * <p>
+041:  *    ant debug<br>
+042:  *    adb install -r bin\SAFSTCPMessenger-debug.apk
+043:  * <p>
+044:  * <li>Insure the Robotium Test Runner  AndroidManifest.xml has the correct android:targetPackage setting 
+045:  * for the application to be tested--whatever that is:<br><pre>
+046:  *    &lt;instrumentation android:name="com.jayway.android.robotium.remotecontrol.client.RobotiumTestRunner"
+047:  *                  android:targetPackage="com.android.example.spinner"
+048:  *                  android:label="General-Purpose Robotium Test Runner"/>
+049:  * </pre>
+050:  * <p>
+051:  * <li>Insure the RobotiumTestRunner APK has been built and installed on the device or emulator:
+052:  * <p>
+053:  *    ant debug<br>
+054:  *    adb install -r bin\RobotiumTestRunner-debug.apk
+055:  * <p>
+056:  * <li>Insure the application to be tested has been installed on the device or emulator.
+057:  * <p>
+058:  * <li>For the emulator, insure port forwarding has been activated:<br>
+059:  * <p>adb forward tcp:2411 tcp:2410<br>
+060:  * <p>
+061:  * <li>In a separate CMD window, monitor "adb logcat"
+062:  * <p>
+063:  * <li>In a separate CMD window, launch the Robotium Test Runner:
+064:  * <p>
+065:  * adb shell am instrument -w com.jayway.android.robotium.remotecontrol.client/com.jayway.android.robotium.remotecontrol.client.RobotiumTestRunner
+066:  * <p>You should see a SAFS TCP Messenger notification appear in the notification area on the device\emulator and 
+067:  * there should be logcat messages showing the status of the Robotium Test Runner registering with the SAFS 
+068:  * TCP Messenger.
+069:  * <p>
+070:  * <li>Launch the RemoteControlUI:
+071:  * <p>java com.jayway.android.robotium.remotecontrol.solo.RemoteControlUI
+072:  * <p>
+073:  * <li>Press the "Connect" button to attempt to establish remote control connection with the SAFS 
+074:  * TCP Messenger on the device/emulator. Monitor the logcat to see the status of this.  If everything worked the RemoteControlUI 
+075:  * status line should read "REMOTE READY".
+076:  * <p>
+077:  * <li>Type "launch" and press "Send".  The target app launcher Activity should get launched.
+078:  * <p>
+079:  * <li>Type "close" and press "Send". The target app should shutdown.
+080:  * <p>
+081:  * <li>Press the "Dispatch" button to perform a roundtrip dispatch of a Properties object.<br>
+082:  * The adb logcat window should show the properties received remotely on the Test Runner and the 
+083:  * RemoteControlUI should then show a Dialog of the same properties PLUS statuscode and statusinfo properties 
+084:  * returned back from the Test Runner.
+085:  * <p><li>Press the "Shutdown" button and the remote Robotium Test Runner and SAFS TCP Messenger 
+086:  * should both shutdown and the Notification icon on the device/emulator should disappear.
+087:  * <p><li>RemoteControlUI will not be able to connect again until you relaunch the Instrumentation test again and 
+088:  * the appropriate Notification is present on the emulator or device.
+089:  * </ol>
+090:  * @author Carl Nagle, SAS Institute, Inc.
+091:  * @see SoloRemoteControl
+092:  */
+093: public class RemoteControlUI extends JFrame implements SocketProtocolListener, ActionListener {
+094: 	
+095: 	SoloRemoteControl server = null;
+096: 	
+097:     JPanel controls = null;
+098:     JLabel cmdLabel = null;
+099:     JTextField cmdField = null;
+100:     String sendAction = "send";
+101:     String connectAction = "connect";
+102:     String shutdownAction = "shutdown_hook";
+103:     String dispatchPropsAction = "dispatchprops";
+104:     JButton sendButton = null;
+105:     JButton connectButton = null;
+106:     JButton shutdownButton = null;
+107:     JButton dispatchPropsButton = null;
+108:     JTextField status = null;
+109:     Properties props = new Properties();
+110:     
+111: 	public RemoteControlUI() throws HeadlessException {
+112: 		super();
+113: 		createUI();
+114: 	}
+115: 
+116: 	public RemoteControlUI(String title) throws HeadlessException {
+117: 		super(title);
+118: 		createUI();
+119: 	}
+120: 
+121: 	Properties fillProperties(){
+122: 		props.clear();
+123: 		props.setProperty("action", "launchapplication");
+124: 		props.setProperty("windowid", "windowObject");
+125: 		props.setProperty("componentid", "childObject");
+126: 		props.setProperty("param1", "any parameter");
+127: 		props.setProperty("recordtype", "t");
+128: 		return props;
+129: 	}
+130: 	
+131: 	void createUI(){		
+132: 		setTitle(getListenerName());
+133: 		setName(getListenerName());
+134: 		getAccessibleContext().setAccessibleName(getListenerName());
+135: 		
+136: 		controls = new JPanel();
+137: 		
+138: 		cmdLabel = new JLabel("Command:");
+139: 		cmdField = new JTextField();
+140: 		cmdField.setEditable(false);
+141: 		cmdField.setEnabled(false);
+142: 		cmdField.setMinimumSize(new Dimension(350,18));
+143: 		cmdField.setPreferredSize(cmdField.getMinimumSize());
+144: 		sendButton = new JButton("Send");
+145: 		sendButton.setActionCommand(sendAction);
+146: 		sendButton.addActionListener(this);
+147: 		sendButton.setEnabled(false);
+148: 		connectButton = new JButton("Connect");
+149: 		connectButton.setActionCommand(connectAction);
+150: 		connectButton.addActionListener(this);
+151: 		connectButton.setEnabled(true);
+152: 		shutdownButton = new JButton("Shutdown");
+153: 		shutdownButton.setActionCommand(shutdownAction);
+154: 		shutdownButton.addActionListener(this);
+155: 		shutdownButton.setEnabled(false);
+156: 		dispatchPropsButton = new JButton("Dispatch");
+157: 		dispatchPropsButton.setActionCommand(dispatchPropsAction);
+158: 		dispatchPropsButton.addActionListener(this);
+159: 		dispatchPropsButton.setEnabled(false);
+160: 		
+161: 		controls.add(cmdLabel);
+162: 		controls.add(cmdField);
+163: 		controls.add(sendButton);
+164: 		controls.add(dispatchPropsButton);
+165: 		controls.add(shutdownButton);
+166: 		controls.add(connectButton);
+167: 		getContentPane().add(controls, "North");
+168: 		
+169: 		status = new JTextField();
+170: 		status.setEditable(false);
+171: 		
+172: 		getContentPane().add(status, "South");
+173: 		pack();
+174: 		int y = getHeight();
+175: 		//setSize(320 + 250,y);
+176: 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+177: 		setVisible(true);
+178: 		setFocusableWindowState(true);
+179: 	}
+180: 	
+181: 	void onConnectAction(){
+182: 		disableInteraction();
+183: 		status.setText("Attempting Remote Server Connection...");
+184: 		server = new SoloRemoteControl();
+185: 		server.addListener(this);
+186: 		server.start();
+187: 	}
+188: 	
+189: 	void onSendAction(){
+190: 		disableInteraction();
+191: 		status.setText("Attempting sendMessage: "+ cmdField.getText());
+192: 		try{
+193: 			server.performRemoteMessageCommand(cmdField.getText(), 3, 3);
+194: 		}
+195: 		catch(IllegalThreadStateException x){ 
+196: 			
+197: 		}
+198: 		catch(RemoteException x){ 
+199: 			
+200: 		}
+201: 		catch(TimeoutException x){ 
+202: 			
+203: 		}
+204: 		catch(ShutdownInvocationException x){
+205: 			
+206: 		}
+207: 	}
+208: 	
+209: 	void onDispatchPropsAction(){
+210: 		try{ 
+211: 			server.performRemotePropsCommand(fillProperties(), 3, 3, 5); 
+212: 		}
+213: 		catch(IllegalThreadStateException x){ 
+214: 			
+215: 		}
+216: 		catch(RemoteException x){ 
+217: 			// TODO:
+218: 		}
+219: 		catch(TimeoutException x){ 
+220: 			// TODO:
+221: 		}
+222: 		catch(ShutdownInvocationException x){ 
+223: 			// TODO:
+224: 		}
+225: 	}
+226: 	
+227: 	void onShutdownAction() {
+228: 		disableInteraction();
+229: 		status.setText("Attempting Remote Client Shutdown...");
+230: 		try{
+231: 			server.performRemoteShutdown(3,3,5);
+232: 		}
+233: 		catch(IllegalThreadStateException x){ 
+234: 			
+235: 		}
+236: 		catch(RemoteException x){ 
+237: 			
+238: 		}
+239: 		catch(TimeoutException x){ 
+240: 			
+241: 		}
+242: 		catch(ShutdownInvocationException x){ 
+243: 			
+244: 		}		
+245: 		shutdownRemoteControl();
+246: 	}
+247: 	
+248: 	protected void disableInteraction(){
+249: 		cmdField.setEnabled(false);
+250: 		cmdField.setEditable(false);
+251: 		sendButton.setEnabled(false);
+252: 		shutdownButton.setEnabled(false);
+253: 		dispatchPropsButton.setEnabled(false);
+254: 		connectButton.setEnabled(false);
+255: 	}
+256: 	
+257: 	protected void enableInteraction(){
+258: 		cmdField.setEnabled(true);
+259: 		cmdField.setEditable(true);
+260: 		sendButton.setEnabled(true);
+261: 		shutdownButton.setEnabled(true);
+262: 		dispatchPropsButton.setEnabled(true);
+263: 	}
+264: 	
+265: 	public String getListenerName() {
+266: 		return getClass().getSimpleName();
+267: 	}
+268: 
+269: 	public void onReceiveConnection() {
+270: 		status.setText("REMOTE CONNECTED");
+271: 	}
+272: 
+273: 	public void onReceiveDebug(String message) {
+274: 		status.setText("REMOTE DEBUG: "+ message);
+275: 		System.out.println(message);
+276: 	}
+277: 
+278: 	public void onReceiveReady() {
+279: 		status.setText("REMOTE READY");
+280: 		enableInteraction();
+281: 		connectButton.setEnabled(false);
+282: 	}
+283: 
+284: 	public void onReceiveRunning() {
+285: 		status.setText("REMOTE RUNNING");
+286: 		connectButton.setEnabled(false);
+287: 		disableInteraction();
+288: 	}
+289: 
+290: 	public void onReceiveResult(int rc, String info) {
+291: 		status.setText("REMOTE RESULT: "+ rc +" : "+ info);
+292: 	}
+293: 
+294: 	public void onReceiveResultProperties(Properties result) {
+295: 		String alertmsg = "Received Properties:\n\n";
+296: 		Enumeration keys = result.keys();
+297: 		String key;
+298: 		while(keys.hasMoreElements()){
+299: 			key = (String)keys.nextElement();
+300: 			alertmsg += key +" = "+ result.getProperty(key)+"\n";
+301: 		}
+302: 		JOptionPane.showMessageDialog(this, alertmsg);
+303: 	}
+304: 
+305: 	public void onReceiveMessage(String message) {
+306: 		status.setText("REMOTE MESSAGE: "+ message);
+307: 	}
+308: 
+309: 	public void actionPerformed(ActionEvent e) {
+310: 		// there is only one action: send
+311: 		if(e.getActionCommand().equals(connectAction)) {
+312: 			onConnectAction();
+313: 		}else if(e.getActionCommand().equals(sendAction)) {
+314: 			onSendAction();
+315: 		}else if(e.getActionCommand().equals(shutdownAction)) {
+316: 			onShutdownAction();
+317: 		}else if(e.getActionCommand().equals(dispatchPropsAction)) {
+318: 			onDispatchPropsAction();
+319: 		}
+320: 	}
+321: 	
+322: 	/**
+323: 	 * java org.safs.android.RemoteControlUI
+324: 	 * 
+325: 	 * @param args -- none
+326: 	 */
+327: 	public static void main(String[] args) {
+328: 		new RemoteControlUI("Test SocketServer");
+329: 	}
+330: 
+331: 	protected void shutdownRemoteControl(){
+332: 		disableInteraction();
+333: 		connectButton.setEnabled(true);
+334: 		try{server.shutdown();}catch(Exception x){}
+335: 		try{server.removeListener(this);}catch(Exception x){}
+336: 		server = null;
+337: 	}
+338: 	
+339: 	public void onReceiveLocalShutdown(int cause) {
+340: 		status.setText("LocalShutdown: "+ cause);
+341: 		shutdownRemoteControl();
+342: 	}
+343: 
+344: 	public void onReceiveRemoteShutdown(int cause) {
+345: 		status.setText("RemoteShutdown: "+ cause);
+346: 		shutdownRemoteControl();
+347: 	}
+348: 
+349: 	public void onReceiveException(String message) {
+350: 		status.setText("REMOTE EXCEPTION: "+ message);
+351: 	}
+352: 
+353: }

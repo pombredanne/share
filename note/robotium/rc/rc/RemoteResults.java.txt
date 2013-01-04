@@ -1,0 +1,125 @@
+001: /** Copyright (C) SAS Institute All rights reserved.
+002:  ** General Public License: http://www.opensource.org/licenses/gpl-license.php
+003:  **/
+004: package com.jayway.android.robotium.remotecontrol.solo;
+005: 
+006: import java.util.Properties;
+007: 
+008: /**
+009:  * Parses a SoloRemoteControl results Properties object into useful primitives. 
+010:  * @author canagl
+011:  */
+012: public class RemoteResults {
+013:  
+014: 	private Properties _resultProperties = null;
+015: 	private boolean _isRemoteResult = false;
+016: 	private int _statusCode = Message.STATUS_REMOTE_NOT_EXECUTED;
+017: 	private String _statusInfo = null;
+018: 	private String _errorMessage = null;
+019: 	
+020: 	private RemoteResults(){}
+021: 	
+022: 	/**
+023: 	 * Instantiate a RemoteResults Properties object and parse the known values from 
+024: 	 * the Properties into useful primitive methods.
+025: 	 * @param resultProperties
+026: 	 */
+027: 	public RemoteResults(Properties resultProperties){
+028: 		this._resultProperties = resultProperties;
+029: 		try{
+030: 			_isRemoteResult = getBoolean(Message.KEY_ISREMOTERESULT);
+031: 			_statusCode = getInt(Message.KEY_REMOTERESULTCODE);
+032: 			try{ _statusInfo = getString(Message.KEY_REMOTERESULTINFO);}catch(Exception x){}
+033: 			try{ _errorMessage = getString(Message.PARAM_ERRORMSG);}catch(Exception x){}
+034: 		}catch(Exception x){}
+035: 	}
+036: 
+037: 	/** @return the original Properties used when created, if any. */
+038: 	public Properties getResultsProperties(){ return _resultProperties; }
+039: 	/** @return true if the parsed results set this to true. */
+040: 	public boolean isRemoteResult()         { return _isRemoteResult; }
+041: 	/** @return the statusCode parsed from the results. */
+042: 	public int getStatusCode()              { return _statusCode; }
+043: 	/** @return the statusInfo parsed from the results, if any.  Can be null. */
+044: 	public String getStatusInfo()           { return _statusInfo; }
+045: 	/** @return the errorMessage parsed from the results, if any. Can be null. */
+046: 	public String getErrorMessage()         { return _errorMessage; }
+047: 	
+048: 	/** @return true if the wrapped result contains a value for the provided key. */
+049: 	public boolean hasItem(String key){
+050: 		try{ return _resultProperties.containsKey(key);}
+051: 		catch(Exception x){ return false;}
+052: 	}
+053: 	
+054: 	/**
+055: 	 * Retrieves an item out of the results.
+056: 	 * @param key name of the item in the results to retrieve.  This is case-sensitive. 
+057: 	 * Subclasses could override this method to make item names insensitive to case.
+058: 	 * @return the item as stored in the results.
+059: 	 * @throws RuntimeException if the item does not exist in the results.
+060: 	 */
+061: 	public String getString(String item){
+062: 		if(hasItem(item)) return _resultProperties.getProperty(item);
+063: 		throw new RuntimeException(item +" does not exist in RemoteResults.");
+064: 	}
+065: 	
+066: 	/**
+067: 	 * Retrieves an item out of the results or a defaultValue if the item was not found.
+068: 	 * @param key name of the item in the results to retrieve.  This is case-sensitive. 
+069: 	 * Subclasses could override this method to make item names insensitive to case.
+070: 	 * @param defaultValue to return if the sought item is not in the result.
+071: 	 * @return the item as stored in the results, or the default if results does not contain the item.
+072: 	 */
+073: 	public String getString(String item, String defaultValue){
+074: 		try{ return getString(item); }catch(Exception x){}
+075: 		return defaultValue;
+076: 	}
+077: 	
+078: 	/**
+079: 	 * Retrieve an expected int value from the results.
+080: 	 * @param item Key or Parameter name expected to be stored in the results.
+081: 	 * @return the int value of a results item expected to be an integer.
+082: 	 * @throws NumberFormatException if the requested item is not a parsable integer.
+083: 	 * @throws RuntimeException if the requested item does not exist in the results.
+084: 	 * @see Integer#parseInt(String)
+085: 	 */
+086: 	public int getInt(String item){
+087: 		return Integer.parseInt(getString(item));
+088: 	}
+089: 	
+090: 	/**
+091: 	 * Retrieve an expected int value from the results or a defaultValue if the item was not found.
+092: 	 * @param item Key or Parameter name expected to be stored in the results.
+093: 	 * @param defaultValue to return if the sought item is not in the result.
+094: 	 * @return the int value of a results item expected to be an integer, or the defaultValue.
+095: 	 */
+096: 	public int getInt(String item, int defaultValue){
+097: 		try{ return getInt(item);}catch(Exception x){}
+098: 		return defaultValue;
+099: 	}
+100: 	
+101: 	/**
+102: 	 * Retrieve an expected boolean value from the results.
+103: 	 * @param item Key or Parameter name expected to be stored in the results.
+104: 	 * @return true if the requested item exists and the Boolean class recognizes the 
+105: 	 * value as equivalent to boolean true.  Otherwise, returns false.
+106: 	 * @throws RuntimeException if the requested item does not exist in the results.
+107: 	 * @see Boolean#parseBoolean(String)
+108: 	 */
+109: 	public boolean getBoolean(String item){
+110: 		return Boolean.parseBoolean(getString(item));
+111: 	}
+112: 
+113: 	/**
+114: 	 * Retrieve an expected boolean value from the results or a defaultValue if the item is not found.
+115: 	 * @param item Key or Parameter name expected to be stored in the results.
+116: 	 * @param defaultValue to return if the sought item is not in the result.
+117: 	 * @return true if the requested item exists and the Boolean class recognizes the 
+118: 	 * value as equivalent to boolean true.  Otherwise, returns false.
+119: 	 * @see Boolean#parseBoolean(String)
+120: 	 */
+121: 	public boolean getBoolean(String item, boolean defaultValue){
+122: 		try{ return getBoolean(item);}catch(Exception x){}
+123: 		return defaultValue;
+124: 	}
+125: }

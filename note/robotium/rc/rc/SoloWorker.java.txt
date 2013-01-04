@@ -1,0 +1,381 @@
+001: /** 
+002:  ** Copyright (C) SAS Institute, All rights reserved.
+003:  ** General Public License: http://www.opensource.org/licenses/gpl-license.php
+004:  **/
+005: package com.jayway.android.robotium.remotecontrol.solo;
+006: 
+007: import java.io.PrintStream;
+008: import java.util.ArrayList;
+009: import java.util.Properties;
+010: import java.util.concurrent.TimeoutException;
+011: 
+012: import org.safs.sockets.DebugListener;
+013: import org.safs.sockets.RemoteException;
+014: import org.safs.sockets.ShutdownInvocationException;
+015: import org.safs.sockets.SocketProtocol;
+016: 
+017: /**
+018:  * Normally, this class would not be used directly.  Use the Solo class, instead.
+019:  * Default abstract usage:
+020:  * <p><pre>
+021:  * SoloWorker solo = new SoloWorker();
+022:  * solo.setLogsInterface(alog);
+023:  * solo.initialize();
+024:  * (use the API)
+025:  * solo.shutdown();
+026:  * </pre>
+027:  * @author Carl Nagle, SAS Institute, Inc.
+028:  * @see Solo
+029:  * 
+030:  * (LeiWang)	Mar 09, 2012	Add methods to turn on/off debug log of protocol/runner.
+031:  *                              Add method to shutdown remote service on device.
+032:  */
+033: public class SoloWorker implements DebugListener{
+034: 
+035: 	public final String TAG = getClass().getSimpleName();
+036: 	/** How long to wait for a remote connection before issuing timeout.  Default 120 seconds. */
+037: 	public static int default_connect_stimeout = 120;
+038: 	/** How long to wait for a READY signal before issuing timeout. Default 120 seconds. */
+039: 	public static int default_ready_stimeout   = 120;
+040: 	/** How long to wait for a RUNNING signal after dispatch before issuing timeout. Default 60 seconds. */
+041: 	public static int default_running_stimeout = 60;
+042: 	/** How long to wait for a RESULT signal after dispatch before issuing timeout. Default 120 seconds. */
+043: 	public static int default_result_stimeout = 120;
+044: 	/** How long to wait for remote shutdown confirmation after dispatch before aborting the wait. Default 7 seconds. */
+045: 	public static int default_shutdown_stimeout = 7;
+046: 	/** Average Network TCP transaction latency allowance for sockets communications. Default 2 seconds. */
+047: 	public static int tcp_delay = 2; //previous use of + 1 was insufficient in Solo subclass
+048: 	
+049: 	
+050: 	public static String listenername = "Solo";
+051: 	
+052: 	/** Initializes to System.out */
+053: 	public static PrintStream out = System.out;
+054: 	/** Initializes to System.err */
+055: 	public static PrintStream err = System.err;
+056: 	
+057: 	protected LogsInterface log = null;
+058: 	protected SoloRemoteControl control = null;
+059: 	
+060: 	private int controllerPort = SocketProtocol.DEFAULT_CONTROLLER_PORT;
+061: 	private boolean portForwarding = true;
+062: 	
+063: 	public SoloWorker() {	}
+064: 
+065: 	/**
+066: 	 * Set the LogsInterface to be used by the class instance.
+067: 	 * This call also attempts to set the ProtocolRunner to use the same LogsInterface.
+068: 	 * @param ilog
+069: 	 * @see LogsInterface
+070: 	 */
+071: 	public void setLogsInterface(LogsInterface ilog){
+072: 		log = ilog;
+073: 		try{ control.setLogsInterface(log);}catch(Exception x){}
+074: 	}
+075: 
+076: 	/**
+077: 	 *@see DebugListener
+078: 	 */
+079: 	public String getListenerName() {return listenername; }
+080: 
+081: 	/**
+082: 	 *@see DebugListener
+083: 	 */
+084: 	public void onReceiveDebug(String message) {
+085: 		debug(message);
+086: 	}
+087: 	
+088: 	/**
+089: 	 * Output debug messages to our LogsInterface, or to our out PrintStream if the LogsInterface is not set.
+090: 	 * @param message
+091: 	 * @see #out
+092: 	 */
+093: 	protected void debug(String message) {
+094: 		try{log.debug(message);}
+095: 		catch(Exception x){
+096: 			out.println(message);
+097: 		}
+098: 	}
+099: 	
+100: 	/**
+101: 	 * Called internally by the initialize() routine to get the desired instance/subclass of 
+102: 	 * SoloRemoteControl.  This routine returns a new instance of a SoloRemoteControl subclass 
+103: 	 * even if we already have a controller set.
+104: 	 * @return new SoloRemoteControl().  Subclasses may wish to provide a different subclass of 
+105: 	 * SoloRemoteControl().
+106: 	 */
+107: 	protected SoloRemoteControl createRemoteControl(){
+108: 		return new SoloRemoteControl();
+109: 	}
+110: 	
+111: 	/**
+112: 	 * @return current SoloRemoteControl subclass or null if not set.
+113: 	 */
+114: 	public SoloRemoteControl getRemoteControl(){
+115: 		return control;
+116: 	}
+117: 	
+118: 	/**
+119: 	 * Set the SoloRemoteControl instance to be used by this worker. 
+120: 	 * We will not override an existing controller unless force = true.
+121: 	 * @param controller
+122: 	 * @param force true to overwrite an existing controller with a different one, or null.
+123: 	 * @return calls {@link #getRemoteControl()}
+124: 	 */
+125: 	public SoloRemoteControl setRemoteControl(SoloRemoteControl controller, boolean force){
+126: 		if(control == null || force){
+127: 			control = controller;
+128: 		}
+129: 		return getRemoteControl();
+130: 	}
+131: 	
+132: 	/**
+133: 	 * Called to initialize RemoteControl communications with a remote client and get it to the Ready state. 
+134: 	 * However, the routine only performs this initialization if it is instancing a new remote controller. 
+135: 	 * If the remote controller already exists, then we must assume initialization of that remote control 
+136: 	 * object has opened or will happen elsewhere since it was not instanced by this class. 
+137: 	 * Initial default implementation performs:
+138: 	 * <p><pre>
+139: 	 * control = createRemoteControll();
+140: 	 * control.addListener(this);
+141: 	 * control.setLogsInterface(log);
+142: 	 * control.start();
+143: 	 * control.waitForRemoteConnected(default_connect_stimeout);
+144: 	 * control.waitForRemoteReady(default_ready_stimeout);
+145: 	 * </pre>
+146: 	 * @throws RemoteException -- if there is a problem with RemoteControl initialization.
+147: 	 * @throws TimeoutException -- if the initialization and remote connection does not complete in timeout period.
+148: 	 * @throws ShutdownInvocationException -- if the remote client unexpectedly performs a shutdown.
+149: 	 * @see #setRemoteControl(SoloRemoteControl, boolean)
+150: 	 * @see SoloRemoteControl#waitForRemoteReady(int)
+151: 	 * @see SoloRemoteControl#setLogsInterface(LogsInterface)
+152: 	 */
+153: 	public void initialize() throws RemoteException, TimeoutException, ShutdownInvocationException{
+154: 		if(control == null){
+155: 			control = createRemoteControl();
+156: 			control.setPortForwarding(portForwarding);
+157: 			control.setControllerPort(controllerPort);
+158: 			control.addListener(this);
+159: 			control.setLogsInterface(log);
+160: 			control.start();
+161: 			control.waitForRemoteConnected(default_connect_stimeout);
+162: 			control.waitForRemoteReady(default_ready_stimeout);
+163: 		}
+164: 	}
+165: 	
+166: 	/**
+167: 	 * Set the controller port where we will connect for messenger service.
+168: 	 * @param controllerPort
+169: 	 */
+170: 	public void setControllerPort(int controllerPort){
+171: 		this.controllerPort = controllerPort;
+172: 	}
+173: 	
+174: 	/**
+175: 	 * Set if we will forward 'controller port' to remote messenger service's port.
+176: 	 * @param portForwarding
+177: 	 */
+178: 	public void setPortForwarding(boolean portForwarding){
+179: 		this.portForwarding = portForwarding;
+180: 	}
+181: 	
+182: 	/**
+183: 	 * Turn on/off the runner's debug message.<br>
+184: 	 * This MUST be called after invoking {@link #initialize()}<br>
+185: 	 * @param enableDebug
+186: 	 */
+187: 	public void turnRunnerDebug(boolean enableDebug){
+188: 		String debugPrefix = TAG+".turnRunnerDebug() ";
+189: 		if(control==null || control.runner==null){
+190: 			debug(debugPrefix+" you MUST call initialize() before calling this method.");
+191: 		}else{
+192: 			control.runner._debugEnabled = enableDebug;
+193: 		}
+194: 	}
+195: 	
+196: 	/**
+197: 	 * Turn on/off the protocol's debug message.<br>
+198: 	 * This MUST be called after invoking {@link #initialize()}<br>
+199: 	 * @param enableDebug
+200: 	 */
+201: 	public void turnProtocolDebug(boolean enableDebug){
+202: 		String debugPrefix = TAG+".turnRunnerDebug() ";
+203: 		if(control==null || control.runner==null || control.runner.protocolserver==null){
+204: 			debug(debugPrefix+" you MUST call initialize() before calling this method.");
+205: 		}else{
+206: 			control.runner.protocolserver._debugEnabled = enableDebug;
+207: 		}
+208: 	}
+209: 	
+210: 	/**
+211: 	 * @param text expected format: ";UID;UID;UID"<br>
+212: 	 * The first character is the delimiter used to delimit each item followed by each item separated by the delimiter. 
+213: 	 * @return  ArrayList with 0 or more String elements.  It is possible that 0-length String elements might exist 
+214: 	 * in the returned ArrayList.
+215: 	 */
+216: 	public static final ArrayList parseStringArrayList(String text){
+217: 		ArrayList list = new ArrayList(0);
+218: 		if(text != null && text.length() > 1){
+219: 			String sep = String.valueOf(text.charAt(0));
+220: 			String uids = text.substring(1);
+221: 			String[] ids = uids.split(sep);
+222: 			for(int i = 0; i<ids.length;i++) {
+223: 				//test for null might be over protective :)
+224: 				list.add(ids[i] != null ? ids[i]: "");
+225: 			}				
+226: 		}
+227: 		return list;
+228: 	}
+229: 	
+230: 	/** ": " */
+231: 	public static String CAUSE_SEP = ": ";
+232: 	/** "  OK  " */
+233: 	public static String PASS_SUFFIX = "  OK  ";
+234: 	/** "FAILED" */
+235: 	public static String FAIL_SUFFIX = "FAILED";
+236: 
+237: 	/** 
+238: 	 * Set this value to false to bypass or ignore default failure processing. 
+239: 	 * This allows the API caller to handle the failures in their own way.
+240: 	 * @see #processFailure(String, String) 
+241: 	 */
+242: 	public boolean doProcessFailure = true;
+243: 		
+244: 	/**
+245: 	 * Handle the reporting or logging of action or test failures.
+246: 	 * <p>
+247: 	 * This is enabled by default.  Callers can override default failure processing by setting 
+248: 	 * doProcessFailure = false.
+249: 	 * <p>
+250: 	 * This implementation uses the LogsInterface that should be provided at or immediately 
+251: 	 * following the creation of the Class instance.  Subclasses may wish to use true 
+252: 	 * jUnit reporting or other mechanisms.
+253: 	 * <p>
+254: 	 * If the LogsInterface call throws an Exception for any reason--including a NullPointerException 
+255: 	 * because it was never provided or initialized--the implementation will log to our err PrintStream  
+256: 	 * with the following format: cause +": "+ message
+257: 	 * 
+258: 	 * @param cause -- Normally, the action or id of the call that generated the failure.
+259: 	 * @param message -- The failure message provided for that action or id.  If the message 
+260: 	 * is null the implementation will use FAIL_SUFFIX. 
+261: 	 * @see LogsInterface#fail(String, String)
+262: 	 * @see #FAIL_SUFFIX 
+263: 	 */
+264: 	public void processFailure(String action, String message){
+265: 		if(doProcessFailure){
+266: 			if(message == null) message = FAIL_SUFFIX;
+267: 			try{ log.fail(action, message);}
+268: 			catch(Exception x){
+269: 				err.println(action +CAUSE_SEP+ message);
+270: 			}
+271: 		}
+272: 	}
+273: 
+274: 	/** 
+275: 	 * Set this value to false to bypass or ignore default success processing. 
+276: 	 * This allows the API caller to handle success in their own way.
+277: 	 * @see #processSuccess(String, String) 
+278: 	 */
+279: 	public boolean doProcessSuccess = true;
+280: 		
+281: 	/**
+282: 	 * Handle the reporting or logging of action or test success.
+283: 	 * <p>
+284: 	 * This is enabled by default.  A truer jUnit experience can be achieved by setting 
+285: 	 * doHandleSuccess = false.
+286: 	 * <p>
+287: 	 * This implementation uses the LogsInterface that should be provided at or immediately 
+288: 	 * following the creation of the Class instance.  Subclasses may wish to use true 
+289: 	 * jUnit reporting or other mechanisms.
+290: 	 * <p>
+291: 	 * If the LogsInterface call throws an Exception for any reason--including a NullPointerException 
+292: 	 * because it was never provided or initialized--the implementation will log to our out PrintStream 
+293: 	 * with the following format: cause +": "+ message
+294: 	 * 
+295: 	 * @param cause -- Normally, the action or id of the call that generated the success.
+296: 	 * @param message -- The success message provided for that action or id, if any. This can be 
+297: 	 * null.  If the message is null this implementation will use PASS_SUFFIX.
+298: 	 * @see #doHandleSuccess 
+299: 	 * @see LogsInterface#pass(String, String)
+300: 	 * @see #PASS_SUFFIX
+301: 	 */
+302: 	public void processSuccess(String action, String message){
+303: 		if(doProcessSuccess){
+304: 			if(message == null) message = PASS_SUFFIX;			
+305: 			try{ log.pass(action, message);}
+306: 			catch(Exception x){
+307: 				out.println(action +CAUSE_SEP+ message);
+308: 			}
+309: 		}
+310: 	}
+311: 	
+312: 	
+313: 	/**
+314: 	 * Initial default implementation performs:
+315: 	 * <p><pre>
+316: 	 * control.shutdown();
+317: 	 * This will stop the {@link SoloRemoteControlRunner} on the computer side.
+318: 	 * </pre>  
+319: 	 * 
+320: 	 * <b>Note:</b> If you want to stop the remote service on the device side, <br>
+321: 	 * you should call {@link #shutdownRemote()}, and you MUST call it before <br>
+322: 	 * calling this {@link #shutdown()} method.<br>
+323: 	 * 
+324: 	 * @see SoloRemoteControl#shutdown()
+325: 	 * @see #shutdownRemote()
+326: 	 */
+327: 	public void shutdown(){
+328: 		control.shutdown();
+329: 	}
+330: 
+331: 	/**
+332: 	 * Initial default implementation performs:
+333: 	 * <p><pre>
+334: 	 * control.performRemoteShutdown(int,int,int);
+335: 	 * </pre>  
+336: 	 * 
+337: 	 * <b>Note:</b> This method will stop the remote service on the device side, <br>
+338: 	 * you MUST call it before calling {@link #shutdown()} method.<br>
+339: 	 * 
+340: 	 * @see SoloRemoteControl#performRemoteShutdown(int, int, int)
+341: 	 * @see #shutdown()
+342: 	 */
+343: 	public boolean shutdownRemote(){
+344: 		String debugPrefix = TAG+".shutdownRemote() ";
+345: 		boolean remoteShutdown = false;
+346: 		try {
+347: 			control.performRemoteShutdown(default_ready_stimeout, default_running_stimeout, default_shutdown_stimeout);
+348: 			remoteShutdown = true;
+349: 		} catch (Exception e) {
+350: 			debug(debugPrefix+" During shutdown remote service, met Exception="+e.getMessage());
+351: 		}
+352: 		
+353: 		return remoteShutdown;
+354: 	}
+355: 	
+356: 	protected Properties _props = new Properties();
+357: 
+358: 	/**
+359: 	 * Prepare a dispatchProps object targeting a remote "instrument" command instead of a remote "solo" command.
+360: 	 * @param command
+361: 	 * @return Properties ready to be populated with command-specific parameters.
+362: 	 */
+363: 	protected Properties prepInstrumentDispatch(String command){
+364: 		try{_props.clear();}catch(NullPointerException x){_props = new Properties();}
+365: 		_props.setProperty(Message.KEY_COMMAND, command);
+366: 		_props.setProperty(Message.KEY_TARGET, Message.target_instrument);
+367: 		return _props;
+368: 	}
+369: 		
+370: 	/**
+371: 	 * Prepare a dispatchProps object targeting a remote "solo" command instead of a remote "instrument" command.
+372: 	 * @param command
+373: 	 * @return Properties ready to be populated with command-specific parameters.
+374: 	 */
+375: 	protected Properties prepSoloDispatch(String command){
+376: 		try{_props.clear();}catch(NullPointerException x){_props = new Properties();}
+377: 		_props.setProperty(Message.KEY_COMMAND, command);
+378: 		_props.setProperty(Message.KEY_TARGET, Message.target_solo);
+379: 		return _props;
+380: 	}		
+381: }
