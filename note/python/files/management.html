@@ -1,0 +1,256 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Python] File Management</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" />
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div>
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="files.html">Python / Files</a> / Management</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>幾乎所有跟檔案目錄操作的工具都落在 <code>os</code> 跟 <code>os.path</code> 這兩個模組。</p></div>
+<div class="paragraph"><p>有一些很基本的概代：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="cwd.html">目前工作目錄（Current Working Directory）</a>
+</p>
+</li>
+<li>
+<p>
+檔案或目錄的路徑
+</p>
+</li>
+<li>
+<p>
+檔案的目錄節屬性
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>檔案管理常見的操作有：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+查看目錄的內容，並過濾出符合條件的檔案清單。
+</p>
+</li>
+<li>
+<p>
+移動。
+</p>
+</li>
+<li>
+<p>
+更名。
+</p>
+</li>
+<li>
+<p>
+複製。
+</p>
+</li>
+<li>
+<p>
+刪除。
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>&#8216;os.listdir(path)` 可以列出某個路徑 <em>path</em> 底下的內容；沒有一定的順序，而且不包括 `.&#8217; 或 &#8216;..&#8217; 等特殊的項目。例如：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>/etc/apt$ ls -al
+total 56
+drwxr-xr-x   6 root root  4096 2011-05-03 10:18 .
+drwxr-xr-x 152 root root 12288 2011-05-27 09:15 ..
+drwxr-xr-x   2 root root  4096 2011-05-03 10:18 apt.conf.d
+drwxr-xr-x   2 root root  4096 2010-10-05 22:15 preferences.d
+-rw-------   1 root root     0 2010-10-07 23:58 secring.gpg
+-rw-r--r--   1 root root  3248 2011-01-01 02:16 sources.list
+drwxr-xr-x   2 root root  4096 2010-10-05 22:15 sources.list.d
+-rw-------   1 root root  1200 2010-10-07 23:58 trustdb.gpg
+-rw-r--r--   1 root root  7304 2010-10-08 00:16 trusted.gpg
+-rw-r--r--   1 root root  6713 2010-10-07 23:58 trusted.gpg~
+drwxr-xr-x   2 root root  4096 2010-10-05 22:15 trusted.gpg.d
+
+/etc/apt$ python
+&gt;&gt;&gt; import os
+&gt;&gt;&gt; os.listdir('.')
+['trusted.gpg', 'secring.gpg', 'sources.list.d', 'apt.conf.d', 'trusted.gpg~', 'sources.list', 'trusted.gpg.d', 'preferences.d', 'trustdb.gpg']</code></pre>
+</div></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>os.path.exists(path)</code> - 檢查檔案目錄是否存在。
+</p>
+</li>
+<li>
+<p>
+<code>os.mkdir(path)</code> - 建立目錄。目錄已存在或父目錄不存在時都會丟出 <code>OSError</code>。
+</p>
+</li>
+<li>
+<p>
+<code>os.makedirs(path)</code> - 建立目錄。如果父目錄不存在會自動建立，但如果目錄已存在會丟出 <code>OSError</code>。
+</p>
+</li>
+<li>
+<p>
+<code>os.remove(path)</code> - 刪除檔案。
+</p>
+</li>
+<li>
+<p>
+<code>os.rmdir(path)</code> - 刪除目錄。
+</p>
+</li>
+<li>
+<p>
+<code>os.rename(src, dst)</code> - 更名。
+</p>
+</li>
+</ul></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; os.path.exists('/tmp'), os.path.exists('/tmp/a')
+(True, False)
+&gt;&gt;&gt; os.mkdir('/tmp')
+Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+OSError: [Errno 17] File exists: '/tmp'
+&gt;&gt;&gt; os.mkdir('/tmp/a/b/c')
+Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+OSError: [Errno 2] No such file or directory: '/tmp/a/b/c'
+&gt;&gt;&gt; os.mkdir('/tmp/a')
+&gt;&gt;&gt; os.makedirs('/tmp/a')
+Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+  File "/usr/lib/python2.6/os.py", line 157, in makedirs
+    mkdir(name, mode)
+OSError: [Errno 17] File exists: '/tmp/a'
+&gt;&gt;&gt; os.makedirs('/tmp/a/b/c')</code></pre>
+</div></div>
+<div class="paragraph"><p>比較進階的操作可以用 <code>shutil</code>：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>shutil.copy(src, dst)</code> - 將來源檔案 <em>src</em> 複製成 <em>dst</em> （指定檔名）或其表示的目錄底下（檔名不變），如果檔案已存在會直接覆蓋。
+</p>
+</li>
+<li>
+<p>
+<code>shutil.copy2(src, dst)</code> - 跟 <code>copy()</code> 一樣，但複製完檔案後會呼叫 <code>copystat()</code> 抄寫 permission bits、atime、mtime 及其他檔案屬性。
+</p>
+</li>
+<li>
+<p>
+<code>shutil.copyfile(src, dst)</code>, <code>shutil.copy(src, dst)</code>, <code>shutil.copy2(src, dst)</code> 都可以用來複製檔案。其中 <code>copyfile()</code> 的 <em>dst</em> 必須要是完整的路徑跟檔案，至於 <code>copy()</code> 與 <code>copy2()</code> 的 <em>dst</em> 則接受路徑，檔案的部份會延用 <em>src</em>。
+</p>
+</li>
+<li>
+<p>
+<code>shutil.rmtree(path)</code> - 將整個目錄刪掉
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://docs.python.org/library/filesys.html">File and Directory Access</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://docs.python.org/library/os.html#os-file-dir">os — Miscellaneous operating system interfaces &gt; Files and Directories</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://docs.python.org/library/shutil.html">shutil — High-level file operations</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://docs.python.org/library/os.path.html">os.path — Common pathname manipulations</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.diveintopython.net/file_handling/os_module.html">Dive Into Python &gt; Working with Directories</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2013-01-24 21:11:45 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script>
+</body>
+</html>

@@ -1,0 +1,148 @@
+= link:csv.html[CSV] / Python =
+:title: [CSV] 用 Python 讀寫 CSV
+
+CSV 很常用來做為試算表或資料庫匯出、匯入的媒介格式。雖然 CSV 並不存在所謂的標準，但 `csv` 模組巧妙地運用 'dialect' 的概念，將不同應用程式對 CSV 處理方式上的差異隱藏起來。
+
+這裡的差異指的是欄位分隔字元（delimiter）跟識別資料內容的引號（quoting character）等。目前 `csv` 模組內建兩種 dialect - `excel` (`.csv`) 及 `excel-tab` (`.tsv`)，可以用來讀取 Excel 寫出、或是寫出 Excel 可以讀取的檔案格式，而不用去管 Excel 慣用的格式為何。
+
+--------------------------------------------------------------------------------
+>>> import csv
+>>> csv.list_dialects()
+['excel-tab', 'excel']
+
+>>> excel = csv.get_dialect('excel') <1>
+>>> type(excel), dir(excel) <2>
+(<type '_csv.Dialect'>, [..., 'doublequote', 'escapechar', 'lineterminator', 'quotechar', 'quoting', 'skipinitialspace', 'strict'])
+>>> excel.delimiter, excel.quotechar
+(',', '"')
+--------------------------------------------------------------------------------
+<1> `get_dialect()` 可以取回名稱對應的 `csv.Dialect` 物件。
+<2> `Dialect` 除了 `delimiter` 與 `quotechar` 之外，還有 `doublequote`、`escapechar` 等，細節可以參考 http://docs.python.org/library/csv.html#dialects-and-formatting-parameters[Dialects and Formatting Parameters]。
+
+假設一個 CSV 檔的內容如下：
+
+.`examples/comma.csv`
+------------------------------------
+"num1","operator","num2","result"
+1,"+",2, <1>
+3,"-",1,
+         <2>
+------------------------------------
+<1> 最後一個欄位的值是空白
+<2> 檔案的結尾有一行空白
+
+可以用下面的程式，把 `comma.csv` 的內容讀出來：
+
+.`examples/read_comma.py`
+--------------------------------------
+import csv
+
+csvfile = open('comma.csv', 'rb') <1>
+for row in csv.reader(csvfile, delimiter=',', quotchar='"'): <2>
+    print repr(row)
+--------------------------------------
+<1> 官方文件提到，讀寫 CSV 檔時，必須要用 binary mode 開啟檔案才行（預設的 text mode 會對 EOL 做額外的處理）。也之所以文件的範例都用 `rb` 或 `wb` 的方式來開啟檔案。
+<2> `csv.reader()` 傳回一個 reader object，可以逐行取出（iterator）檔案內容。
++
+--
+ reader(csvfile, dialect='excel', **fmtparams)
+
+預設採用 `excel` dialect。如果 'fmtparam' 有給定的話，會覆寫 'dialect' 單項的設定。
+--
+
+NOTE: 目前 `csv` 可以讀取 UTF-8 或 ASCII 編碼的檔案。（這或許也是讀寫檔案時要用 binary mode 的原因之一？`csv` 內部自己會做 encoding 的處理）
+
+執行結果：
+
+--------------------------------------------------------------------------------
+$ python read_comma.py
+['num1', 'operator', 'num2', 'result'] <1>
+['1', '+', '2', '']                    <2>
+['3', '-', '1', '']
+[]                                     <3>
+--------------------------------------------------------------------------------
+<1> Headers 並不會被特別地對待。
+<2> 每一行都用一個 'list of strings' 來表示，過程中預設不會做資料型態的轉換。
+<3> 空白行會被轉成 empty list，處理上要小心避開 `IndexError`。
+
+CAUTION: 實驗發現，把這樣後面多一行空白的 `.csv` 叫進 Excel 或 OpenOffice 再存檔，該行多餘的空白會自動被去掉。但使用者有機會直接用一般的文字編輯器修改 `.csv`，所以程式還是得小心處理這種狀況。
+
+下面的程式將 `comma.csv` 的內容讀出來，改寫內容後，再寫出成不同的格式：
+
+.`examples/rewrite_comma.py`
+--------------------------------------------------------------------------------
+import csv
+
+with open('/tmp/output.csv', 'wb') as out:
+    reader = csv.reader(open('comma.csv', 'rb'))
+    writer = csv.writer(out, delimiter=';', quotechar="'", quoting=csv.QUOTE_ALL) <1>
+
+    total = 0
+    for row in reader:
+        if row == [] or not row[0].isdigit():
+          writer.writerow(row) <2>
+          continue
+
+        num1 = int(row[0]); operator = row[1]; num2 = int(row[2])
+        exp = '%i %s %i' % (num1, operator, num2)
+        result = eval(exp)
+
+        row[3] = result
+        total = total + result
+        writer.writerow(row)
+
+    writer.writerow(['', '', 'total', total])
+
+print open('/tmp/output.csv', 'r').read()
+--------------------------------------------------------------------------------
+<1> `csv.writer()` 傳回一個 writer object。
+<2> `writerow()` 會按 dialect 所描述的方式將 sequence 轉換成 'delimited strings'。`None` 會轉成空字串，其餘非字串型態的資料則透過 `str()` 轉成字串。
+
+執行結果：
+
+---------------------------------------------
+$ python rewrite_comma.py
+'num1';'operator';'num2';'result'
+'1';'+';'2';'3'
+'3';'-';'1';'2'
+'';'';'total';'5'
+---------------------------------------------
+
+ csv.reader(csvfile, dialect='excel', **fmtparams)
+ csv.writer(csvfile, dialect='excel', **fmtparams)
+
+'dialect' 可以是 `Dialect` 物件，或是 `list_dialects()` 回傳的字串之一，其中 'fmtparam' 會覆寫 'dialect' 的設定。
+
+除了兩個內建的 dialect 之外，也可以自訂 dialect，讓 CSV 讀取跟寫入採用相同的格式，多少也提高了程式碼的可讀性。
+
+--------------------------------------------------------------------------------
+>>> import csv
+>>> csv.register_dialect('mycsv', 'excel', delimiter='|') <1>
+>>> for row in csv.reader(csvfile, dialect='mycsv')       <2>
+--------------------------------------------------------------------------------
+<1> 用 `register_dialect()` 來註冊自訂的 dialect。
++
+--
+ register_dialect(name[, dialect][, fmtparam])
+
+其中 'fmtparam' 會覆寫 'dialect' 的設定（如果有的話）。如果沒有給 'dialect'，那麼 'fmtparam' 沒有指定到的部份會是怎樣？
+--
++
+<2> 之後就可以直接引用該 dialect。
+
+`csv.reader` 和 `csv.writer` 是用 sequence 的方式來讀寫檔案，但程式裡會充斥著大量的索引值，比較不容易一眼就看出在存取哪個欄位。這個問題可以透過提出常數來解決，例如：
+
+--------------------------------------------------------------------------------
+NUM1 = 0; OPERATOR = 1; NUM2 = 2; RESULT = 3
+
+exp = '%i %s %i' % (int(row[NUM1]), row[OPERATOR], int(row[NUM2]))
+row[RESULT] = eval(exp)
+--------------------------------------------------------------------------------
+
+事實上 `csv` 模組另外提供了 `DictReader` 及 `DictWriter`，可以用 dictionary 的方式來讀寫 CSV 檔...
+
+== 參考資料 ==
+
+ * http://docs.python.org/library/csv.html[csv — CSV File Reading and Writing — The Python Standard Library]
+ * http://www.python.org/dev/peps/pep-0305/[PEP 305 -- CSV File API]
+

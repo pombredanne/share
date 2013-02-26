@@ -1,0 +1,200 @@
+= link:files.html[Python / Files] / Pathname =
+:title: [Python] File Pathname
+
+== 目前所在目錄 ==
+
+ * os.chdir(path)
+ * os.getcwd()
+
+ * `os.sep` - 目錄分隔字元。例如 Windows 下的 `\` 跟 Unix-like 下的 `/`。
+ * `os.pathsep` - 路徑分隔字元。例如 Widdows 下的 `;` 跟 Unix-like 下的 `:`。
+ * `os.path.abspath(path)` - 用目前所在目錄做為起點，傳回相對路徑 'path' 的絕對表示法，也就是 `normpath(join(os.getcwd(), path))` 的結果。
+ * `os.path.exists(path)` - 檢查檔案目錄是否存在。
+ * `os.path.basename(path)` - 也就是 `split()` 傳回的 'tail'。
+ * `os.path.dirname(path)` - 取得檔案所在的目錄，或是目錄的上層目錄，也就是 `split()` 傳回的 'head'。
+ * `os.path.expanduser(path)` - 將 `~\My Documents` 展開成完成的路徑，其中 `~` 會被置換成家目錄。
+ * `os.path.isabs(path)` - 判斷 'path' 是否為絕對路徑的表示法。
++
+--
+>>> import os.path
+>>> os.path.expanduser(r'~\My Documents\Downloads')
+'C:\\Documents and Settings\\Administrator\\My Documents\\Downloads'
+--
+ * `os.path.normpath(path)` - 拿掉多餘的目錄分隔字元或上層目錄的參照（`..`），在 Windows 下更會將斜線（`/`）置換成反斜線（`\`）。
+ * `os.path.normcase(path)` - 聽起來像是會將檔案目錄名稱的大小寫調整成跟檔案系統裡實際的名稱一樣，但實際上並不是這麼回事，跟檔案目錄是否存在也無關。
+ * `os.path.realpath(path) - 將路徑中的 symbolic link 目錄轉換成實際的，跟檔案目錄是否存在也無關。
+ * `os.path.relpath(path[, start]) - 可以用來算出兩個檔案間的相對路徑
+ * `os.path.splitdrive(path)
+ * `os.path.splitext(path)` - 傳回 `(root, ext)`，其中 'ext' 包含 `.` 字元；可以用來取出副檔名
+ * `os.path.split(path)` - 傳回 `(head, tail)`。就結果來看，`path == os.path.join(*os.path.split(path))` 是個恆等式。
+ * `os.path.join(path1[, path2[, ...]])` - 用目錄分隔字元（`os.sep`）將路徑串接起來。
+ * `os.path.isabs(path)` - 判斷 'path' 是不是絕對路徑的表示法
+
+TIP: 為了讓程式可以跨平台執行，目錄分隔字元（例如 Windows 的 `\` 或 Linux 的 `/`）用 `os.sep` 取代，多個路徑的分隔字元（path separator，例如 Windows 的 `;` 或 Linux 的 `:`）則用 `os.pathsep` 取代。
+
+--------------------------------------------------------------------------------
+>>> import os.path as path
+>>> path.split('/tmp/abc.txt')    <1>
+('/tmp', 'abc.txt')
+>>> path.dirname('/tmp/abc.txt')
+'/tmp'
+>>> path.basename('/tmp/abc.txt')
+'abc.txt'
+>>> path.splitext('/tmp/abc.txt') <2>
+('/tmp/abc', '.txt')
+>>> path.splitext('/tmp/abc')     <3>
+('/tmp/abc', '')
+>>> path.splitext(path.basename('/tmp/abc.txt')) <4>
+--------------------------------------------------------------------------------
+<1> 拆出路徑跟檔名。也就是 `dirname()` 跟 `basename()` 結果的集合。
+<2> 單拆出副檔名的部部份。注意副檔名的部份包含前面的點（`.`）。
+<3> 沒有副檔名時，傳回空字串。
+<4> `splitext()` 比較常拿來處理檔名的部份。
+
+其中 `normpath()`、`normcase()` 及 `realpath()` 很容易讓人混淆。透過下面這些實例，可以更清楚它們的區別：
+
+.Unix-like
+--------------------------------------------------------------------------------
+/tmp$ ls -l | grep -i foo
+lrwxrwxrwx  1 user user    6 2011-10-17 16:57 foobar-link -> FOOBAR
+drwxr-xr-x  2 user user 4096 2011-10-17 17:05 FOOBAR
+-rw-r--r--  1 user user    0 2011-10-17 17:04 foobar.file
+
+/tmp$ cd foobar-link; ls -l | grep foo; cd ..
+lrwxrwxrwx 1 user user 16 2011-10-17 17:05 foobar.file -> /tmp/foobar.file
+
+/tmp$ python
+>>> from os import path
+>>> path.exists('/tmp/foo'), path.exists('/tmp/foobar-link'), path.exists('/tmp/FOOBAR')
+(False, True, True)
+>>> path.normpath('//tmp/foobar-link/..//foo')
+'//tmp/foo'                                               <1>
+>>> path.normpath(r'//tmp/foobar-link/..\foo')
+'//tmp/foobar-link/..\\foo'                               <2>
+>>> path.normcase('//tmp/foobar-link/..//foo')
+'//tmp/foobar-link/..//foo'                               <3>
+>>> path.realpath('/tmp/foo')
+'/tmp/foo'
+>>> path.realpath('/tmp/foo//..//foobar-link')
+'/tmp/foobar-link'                                        <4>
+>>> path.realpath(path.normpath('/tmp/foo//..//foobar-link'))
+'/tmp/FOOBAR'                                             <5>
+>>> path.realpath(path.normpath('/tmp/foo//..//foobar-link/foobar.file'))
+'/tmp/foobar.file'                                        <6>
+--------------------------------------------------------------------------------
+<1> `normpath()` 單純做路徑表示法的正規化，跟檔案目錄是否存在無關。（為什麼 root 的 `//` 不會被併成一個？）
+<2> 在非 Non-Windows 下，`normpath()` 並不會自動將反斜線（`\`）置換成斜線（`/`）。
+<3> 在非 Non-Windows 下，`normcase()` 不會將路徑表示法正規化；事實上，它將 'path' 原封不動地回傳，因此它的實用性並不高。
+<4> 可以觀察到，如果過程中如果遇到不存在的檔案目錄（不會丟出例外），`realpath()` 的行為單純就像是 `normpath()`。
+<5> 先用 `normpath()` 處理過，`realpath()` 比較能發揮它的作用。
+<6> 除了目錄之外，`realpath()` 同樣也可以作用在檔案上。
+
+.Windows
+--------------------------------------------------------------------------------
+>>> from os import path
+>>> path.exists(r'C:\tmp\foo'), path.exists(r'C:\tmp\foobar-link'), path.exists(r'C:\tmp\foobar')    <1>
+(False, True, True)
+>>> path.normpath(r'C:\\tmp\foobar-link\..\\foobar')
+'C:\\tmp\\foobar'
+>>> path.normpath(r'C:\tmp\foobar-link/..//FOO')                      <2>
+'C:\\tmp\\FOO'
+>>> path.normcase(r'C:\tmp\foobar-link/..//FOO')
+''c:\\tmp\\foobar-link\\..\\\\foo'                                    <3>
+>>> path.realpath(r'C:\tmp\foo/..//foobar-link')
+'C:\\tmp\\foobar-link'                                                <4>
+>>> path.realpath(path.normpath(r'C:\tmp\foo/..//foobar-link'))
+'C:\\tmp\\foobar-link'                                                <5>
+--------------------------------------------------------------------------------
+<1> Windows 下檔案目錄的名稱不分大小寫，但實際的大小寫是 `C:\tmp\FOOBAR`，而 `C:\tmp\foobar-link` 是指向該目錄的 symbolic link。
+<2> `normpath()` 在 Windows 下除了做路徑表示法的正規化之外（跟檔案目錄是否存在無關），也會將斜線（`/`）置換成反斜線（`\`）。
+<3> 在 Windows 下，`normcase()` 雖然會將斜線（`/`）置換成反斜線（`\`），但它只是將檔案目錄的名稱轉為小寫（跟它是否真的存在無關），也不會對路徑表示法做正規化，因此它的實用性並不高。
+<4> 如果過程中如果遇到不存在的檔案目錄（不會丟出例外），`realpath()` 的行為單純就像是 `normpath()`。
+<5> 用 `normpath()` 先處理過，狀況並不會比較好，因為這是個 http://bugs.python.org/issue9949[bug]...
+
+== 如何取得相對於某個 .py 檔的絕對路徑 ==
+
+Java 的 `Class` 提供有一個 http://download.oracle.com/javase/1.5.0/docs/api/java/lang/Class.html#getResource%28java.lang.String%29[`getResource(name)`] 方法，可以用相對某 `.class` 檔的位置來解讀 `name` 所表示的相對路徑。
+
+在 Python 裡也有類似的需求，為了程式的可攜性，需要以相對於 `.py` 檔的方式來描述某個外部檔的位置。假設下面的目錄結構：
+
+--------------------------------------------------------------------------------
+/tmp$ tree a
+a/
+|-- a.txt <-- 內容為 "content of a.txt"
+`-- b/
+    |-- c/
+    |-- mod.py
+    `-- othermod.py
+
+2 directories, 2 files
+--------------------------------------------------------------------------------
+
+`/tmp/a/b/mod.py` 會將 `/tmp/a.txt` 的內容印容印出。它的內容如下：
+
+--------------------------------------------------------------------------------
+import os
+from os.path import dirname, abspath, join
+
+# 取得 mod.py 所在的路徑 (相對於 current working directory)
+mod_dir = dirname(__file__)
+# 不直接寫成 '../a.txt' 是為了不要跟 OS 相依
+a_pathname = abspath(join(mod_dir, '..', 'a.txt'))
+
+print 'CWD:', os.getcwd()
+print open(a_pathname, 'r').read()
+--------------------------------------------------------------------------------
+
+不論從哪個位置執行 `mod.py` (會導致 current working directory 起變化)，都能正常地印出 `/tmp/a/a.txt` 的內容：
+
+--------------------------------------------------------------------------------
+/tmp$ python a/b/mod.py
+CWD: /tmp
+content of a.txt
+/tmp$ cd a/b/c
+/tmp/a/b/c$ python ../mod.py
+CWD: /tmp/a/b/c
+content of a.txt
+--------------------------------------------------------------------------------
+
+當然也可以藉由其他 module 來定位：
+
+--------------------------------------------------------------------------------
+import os, othermod
+from os.path import dirname, abspath, join
+
+mod_dir = dirname(othermod.__file__) # 取得 othermod.py 所在的路徑
+a_pathname = abspath(join(mod_dir, '..', 'a.txt'))
+
+print 'CWD:', os.getcwd()
+print open(a_pathname, 'r').read()
+--------------------------------------------------------------------------------
+
+根據上面的實驗結果，我們可以寫一個 `abspath(relpath, mod)` 來模擬 Java 中 `Class.getResource(name)` 的行為，也可以做為 `os.path.abspath(path)` 的擴充。
+
+--------------------------------------------------------------------------------
+import os
+
+def abspath(relpath, mod):
+    # 呼叫端不用擔心不同 OS 的分隔字元
+    relpath = relpath.replace('/', os.sep).replace('\\', os.sep)
+    if mod is None: return os.path.abspath(relpath)
+
+    base_dir = os.path.dirname(mod.__file__)
+    pathname = os.path.join(base_dir, relpath)
+    return os.path.abspath(pathname)
+--------------------------------------------------------------------------------
+
+TIP: 可以用 `sys.modules[__name__]` 來取得 current module.
+
+這裡提到的技巧，也很適合用在執行期動態配置 `sys.path` 。
+
+參考資料：
+
+ * http://docs.python.org/library/runpy.html[30.7. runpy — Locating and executing Python modules — Python v2.7 documentation] 說明了 `__file__` 的運作原理。
+ * http://stackoverflow.com/questions/2817264/how-to-get-the-parent-dir-location-using-python[how to get the parent dir location using python.. - Stack Overflow] (2010-05-12)
+
+== 參考資料 ==
+
+ * http://docs.python.org/library/os.path.html[The Python Standard Library > os.path — Common pathname manipulations]
+ * http://docs.python.org/library/os.html[The Python Standard Library > os — Miscellaneous operating system interfaces]
+

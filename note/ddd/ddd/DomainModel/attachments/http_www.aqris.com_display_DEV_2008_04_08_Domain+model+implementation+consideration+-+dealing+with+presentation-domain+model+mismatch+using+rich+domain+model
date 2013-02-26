@@ -1,0 +1,305 @@
+   #[1]alternate
+
+   Quick Search
+
+   _________________________ Search
+
+     * [2]Space
+          + [3]Pages
+          + [4]News
+          + [5]Labels
+          + [6]Attachments
+          + [7]Bookmarks
+          + [8]Mail
+          + [9]Advanced
+          + [10]Activity
+     * [11]Log In
+
+    1. [12]Dashboard
+    2. > [13]Development
+    3. > 2008
+    4. > [14]April
+    5. > [15]08
+    6. > Domain model implementation consideration - dealing with
+       presentation-domain model mismatch using rich domain model
+
+     * [16]Log In
+
+     * [17]Add
+          + [18]Comment
+     * [19]Tools
+          + [20]Attachments (0)
+          + [21]History
+          + [22]Info
+          + [23]View Wiki Markup
+
+Domain model implementation consideration - dealing with presentation-domain
+model mismatch using rich domain model
+
+   [24]Previous Month      [25]April 2008       [26]Next Month
+           Sun          Mon   Tue   Wed  Thu Fri      Sat
+                               1   [27]2 3   4        5
+           6            7    [28]8   9   10  11       12
+         [29]13         14    15    16   17  18       19
+           20         [30]21  22    23   24  25       26
+           27           28    29    30
+   [31]Next Post [32]String concatenation in JavaScript
+   [33]Previous Post [34]Configuring SVN repository for CruiseControl
+   Added by [35]Ürgo Ringo, last edited by [36]Auris Aume on Jul 31, 2008
+    ([37]view change)
+
+   Sorry about the title
+
+   In a typical data management system significant amount of effort is
+   spent on implementing mappings between three different models -
+   presentation, domain and persistence model. In this article I will
+   describe one approach to dealing with these transformations in case
+   special ORM tool cannot be used.
+
+   Absence of sophisticated ORM layer does not only complicate conversions
+   related to persistence but also adds complexity to UI related issues.
+   Usually domain model has the least external restrictions since
+   presentation is specified by non-functional requirements and
+   persistence model is constrained by storage optimizations or legacy
+   compatibility. We can decrease some complexity by designing domain
+   model so that it resembles more closely either persistence or
+   presentation model.
+
+Presentation centric approach
+
+   This solution means that our domain model will be identical to
+   presentation model and both are implemented using same set of classes.
+
+   Database queries will be relatively complex but we are able to optimize
+   data access since we don't need to retrieve anything from database that
+   we don't need for given use case. Once we have the needed data loaded
+   from database it will be quite easy to show it in UI views since we
+   don't have to implement any transformations or presentation wrappers.
+   As database access code is customized for particular use case (each
+   view) it will be quite hard to reuse it between different DAOs. Similar
+   problems arise also in business logic implementation. Unless we pass
+   around only simple types we are forced to make our domain services
+   depend on presentation specific model. This design actually resembles
+   quite closely [38]Transaction Script.
+
+Persistence centric approach
+
+   Alternative option is to let database schema guide our domain model.
+
+   This way queries will be more simple but data access will not be that
+   optimal since we sometimes select fields we really don't need for given
+   use case. Also in many cases we end up executing more queries per UI
+   view than in previous approach because we may need to aggregate data
+   from multiple different entities. The good news is that we can reuse
+   our queries and business logic as the domain model is shared between
+   use cases.
+
+Which one is better?
+
+   Although it seems that presentation centric solution allows better
+   optimizations I don't think it is good option in most cases. Based on
+   some experience with systems built this way I have to say that possible
+   performance gains cannot outweigh the problems caused by code
+   duplication between different use cases.
+
+Dealing with presentation/domain model mismatch
+
+   If we have decided that our domain model will be driven by persistence
+   schema we still need to manage presentation model mappings. Sometimes
+   we don't need to do anything cause persistence model and presentation
+   model are quite similar. However if that is not the case then one
+   solution is to create separate presentation model classes which
+   aggregate multiple domain entities and expose only these attributes of
+   entities that are needed for given view. In our current project we
+   found that it is possible to avoid such classes altogether by using
+   "rich" domain model instead of "flat" domain model. I think this
+   pattern had been used for quite some time in this system but probably
+   it wasn't just acknowledged as a pattern.
+
+   So far attributes of our domain entities map quite one-to-one to the
+   fields of database tables. Lets say we have entity User which has home
+   country. In typical "flat" domain model this association is implemented
+   using countryId field. This isn't very useful if we need to display all
+   users and for each user show his/her country.
+class User {
+  private int countryId;
+  ...
+}
+
+   So why not add whole Country to User:
+class User {
+  private int countryId;
+  private Country country;
+}
+
+   Of course without advanced ORM layer, loading Country entity all the
+   time can become serious performance killer. So why not implement our
+   own lazy initialization? Instead of AOP or proxies all we need is to
+   establish a few rules. First one is that all queries in DAOs will
+   return entities without any associated items. In order to initialize
+   such associations we will implement special loader methods.
+
+   Example:
+void loadCountry(User user) {
+   user.setCountry(countryDao.load(user.getCountryId()));
+}
+
+   If needed we can also have convenience methods for initializing some
+   association for list of entities like loadCountry(List<User>).
+   Internally this can be implemented by either iterating through
+   collection or by single WHERE IN query.
+
+   I don't usually like to have objects laying around which are only
+   partially initialized. However I'm ready to make and exception here
+   because we have a concrete and simple rule which says that whenever you
+   make a DAO call or service call, only simple type attributes are
+   initialized. In essence this is pretty much same stuff that Hibernate
+   does behind the scenes.
+
+   Finally we need to decide where should such initializations be
+   implemented. I don't think it should be responsibility of DAOs because
+   then one DAO would need to manage persistence of more than one domain
+   entity. Second choice are Services. Although I think this is the most
+   commonly used option (and it's used in our current project) I don't
+   like it very much either because ideally Services should deal with real
+   domain logic like orchestrating complex business rules. Third and the
+   best choice in my opinion is having this responsibility in
+   Repositories. Repositories are quite much used in Domain Driven Design
+   but I have never been able to understand the difference between DAO and
+   Repository. However in this scenario it makes perfect sense.
+
+   If we use such initialization it may happen that we need to duplicate
+   some initialization logic for different UI views. To solve this I
+   suggest not to pollute Repositories with additional combined
+   initializations like loadCountryAndCity. Instead I think it's better to
+   introduce separate application logic Facades that encapsulate use case
+   specific behavior (read more about this from my public [39]blog entry.
+
+Labels
+
+
+   [40]domainmodel, [41]ddd, [42]design, [43]orm
+   Add Labels
+                                                        Wait Image
+   Enter labels to add to this page:
+   ________________________________________ Add [BUTTON]
+   Looking for a label? Just start typing.
+
+Comments (2)
+
+
+     * [44]Hide Comments [45]Show Comments
+     * [46]Collapse All Collapsing... Expanding... [47]Expand All
+     * [48]Add Comment
+
+    1. Apr 13, 2008
+
+[49]Sven Filatov says:
+       Nice post! Especially interesting for me was introducing complex
+       type attributes...
+       Nice post! Especially interesting for me was introducing complex
+       type attributes to entities. However, what do you think of having
+       only the complex type in the entity:
+class User {
+  private Country country;
+}
+       In other words, one entity uses another enity. I suppose that would
+       be the usual approach when using Hibernate? And I hope performance
+       penalty can be avoided with using appropriate caching.
+          + [50]Permalink
+          + [51]Reply
+         1. Apr 14, 2008
+
+[52]Ürgo Ringo says:
+            Yes having only complex type field is the purest model that
+            any ORM tool should ...
+            Yes having only complex type field is the purest model that
+            any ORM tool should support.
+            However without any ORM it is much easier to simply add field
+            containing the primary key of associated entity because then
+            we don't need to implement our own caching/proxying for lazy
+            initialization. When first getting User from database we will
+            load only fields having simple types and then later we can
+            initialize the full associated entity if we really need it.
+            Drawback is that we now have two fields per each association
+            but that shouldn't be that big issue since we don't even have
+            to expose the fact of having the field for primary key
+            association.
+               o [53]Permalink
+               o [54]Reply
+
+   [55]Add Comment
+
+     * Powered by [56]Atlassian Confluence 2.8.2, the [57]Enterprise Wiki.
+     * [58]Bug/feature request -
+     * [59]Atlassian news -
+     * [60]Contact administrators
+
+References
+
+   Visible links
+   1. http://www.aqris.com/createrssfeed.action?types=blogpost&sort=modified&showContent=true&showDiff=true&spaces=DEV&labelString=&rssType=rss2&maxResults=10&timeSpan=10&publicFeed=true&title=Aqris+software+development
+   2. http://www.aqris.com/display/DEV/2008/04/08/Domain+model+implementation+consideration+-+dealing+with+presentation-domain+model+mismatch+using+rich+domain+model
+   3. http://www.aqris.com/pages/listpages.action?key=DEV
+   4. http://www.aqris.com/pages/viewrecentblogposts.action?key=DEV
+   5. http://www.aqris.com/labels/listlabels-heatmap.action?key=DEV
+   6. http://www.aqris.com/spaces/listattachmentsforspace.action?key=DEV
+   7. http://www.aqris.com/spaces/space-bookmarks.action?spaceKey=DEV
+   8. http://www.aqris.com/spaces/viewmailarchive.action?key=DEV
+   9. http://www.aqris.com/spaces/viewspacesummary.action?key=DEV
+  10. http://www.aqris.com/spaces/usage/report.action?key=DEV
+  11. http://www.aqris.com/login.action?os_destination=%2Fdisplay%2FDEV%2F2008%2F04%2F08%2FDomain%2Bmodel%2Bimplementation%2Bconsideration%2B-%2Bdealing%2Bwith%2Bpresentation-domain%2Bmodel%2Bmismatch%2Busing%2Brich%2Bdomain%2Bmodel
+  12. http://www.aqris.com/dashboard.action
+  13. http://www.aqris.com/display/DEV
+  14. http://www.aqris.com/display/DEV/2008/04
+  15. http://www.aqris.com/display/DEV/2008/04/08
+  16. http://www.aqris.com/login.action?os_destination=%2Fdisplay%2FDEV%2F2008%2F04%2F08%2FDomain%2Bmodel%2Bimplementation%2Bconsideration%2B-%2Bdealing%2Bwith%2Bpresentation-domain%2Bmodel%2Bmismatch%2Busing%2Brich%2Bdomain%2Bmodel
+  17. http://www.aqris.com/display/DEV/2008/04/08/Domain+model+implementation+consideration+-+dealing+with+presentation-domain+model+mismatch+using+rich+domain+model
+  18. http://www.aqris.com/display/DEV/2008/04/08/Domain+model+implementation+consideration+-+dealing+with+presentation-domain+model+mismatch+using+rich+domain+model?showComments=true&showCommentArea=true#addcomment
+  19. http://www.aqris.com/display/DEV/2008/04/08/Domain+model+implementation+consideration+-+dealing+with+presentation-domain+model+mismatch+using+rich+domain+model
+  20. http://www.aqris.com/pages/viewpageattachments.action?pageId=5406813
+  21. http://www.aqris.com/pages/viewpreviousversions.action?pageId=5406813
+  22. http://www.aqris.com/pages/viewinfo.action?pageId=5406813
+  23. http://www.aqris.com/pages/viewpagesrc.action?pageId=5406813
+  24. http://www.aqris.com/display/DEV/2008/03/
+  25. http://www.aqris.com/display/DEV/2008/04/
+  26. http://www.aqris.com/display/DEV/2008/05
+  27. http://www.aqris.com/display/DEV/2008/04/02/
+  28. http://www.aqris.com/display/DEV/2008/04/08/
+  29. http://www.aqris.com/display/DEV/2008/04/13/
+  30. http://www.aqris.com/display/DEV/2008/04/21/
+  31. http://www.aqris.com/display/DEV/2008/04/13/String+concatenation+in+JavaScript
+  32. http://www.aqris.com/display/DEV/2008/04/13/String+concatenation+in+JavaScript
+  33. http://www.aqris.com/display/DEV/2008/04/02/Configuring+SVN+repository+for+CruiseControl
+  34. http://www.aqris.com/display/DEV/2008/04/02/Configuring+SVN+repository+for+CruiseControl
+  35. http://www.aqris.com/display/~urgo
+  36. http://www.aqris.com/display/~auris
+  37. http://www.aqris.com/pages/diffpages.action?pageId=5406813&originalId=5407157
+  38. http://martinfowler.com/eaaCatalog/transactionScript.html
+  39. http://www.jroller.com/urgo/entry/getting_rid_of_the_all
+  40. http://www.aqris.com/label/DEV/domainmodel
+  41. http://www.aqris.com/label/DEV/ddd
+  42. http://www.aqris.com/label/DEV/design
+  43. http://www.aqris.com/label/DEV/orm
+  44. http://www.aqris.com/display/DEV/2008/04/08/Domain+model+implementation+consideration+-+dealing+with+presentation-domain+model+mismatch+using+rich+domain+model?showComments=false#comments
+  45. http://www.aqris.com/display/DEV/2008/04/08/Domain+model+implementation+consideration+-+dealing+with+presentation-domain+model+mismatch+using+rich+domain+model?showComments=true#comments
+  46. http://www.aqris.com/display/DEV/2008/04/08/Domain+model+implementation+consideration+-+dealing+with+presentation-domain+model+mismatch+using+rich+domain+model
+  47. http://www.aqris.com/display/DEV/2008/04/08/Domain+model+implementation+consideration+-+dealing+with+presentation-domain+model+mismatch+using+rich+domain+model
+  48. http://www.aqris.com/display/DEV/2008/04/08/Domain+model+implementation+consideration+-+dealing+with+presentation-domain+model+mismatch+using+rich+domain+model?showComments=true&showCommentArea=true#addcomment
+  49. http://www.aqris.com/display/~sven
+  50. http://www.aqris.com/display/DEV/2008/04/08/Domain+model+implementation+consideration+-+dealing+with+presentation-domain+model+mismatch+using+rich+domain+model?focusedCommentId=5406936#comment-5406936
+  51. http://www.aqris.com/pages/replycomment.action?commentId=5406936&pageId=5406813
+  52. http://www.aqris.com/display/~urgo
+  53. http://www.aqris.com/display/DEV/2008/04/08/Domain+model+implementation+consideration+-+dealing+with+presentation-domain+model+mismatch+using+rich+domain+model?focusedCommentId=5407083#comment-5407083
+  54. http://www.aqris.com/pages/replycomment.action?commentId=5407083&pageId=5406813
+  55. http://www.aqris.com/display/DEV/2008/04/08/Domain+model+implementation+consideration+-+dealing+with+presentation-domain+model+mismatch+using+rich+domain+model?showComments=true&showCommentArea=true#addcomment
+  56. http://www.atlassian.com/software/confluence
+  57. http://www.atlassian.com/software/confluence
+  58. http://jira.atlassian.com/secure/BrowseProject.jspa?id=10470
+  59. http://www.atlassian.com/about/connected.jsp?s_kwcid=Confluence-stayintouch
+  60. http://www.aqris.com/administrators.action
+
+   Hidden links:
+  61. http://www.aqris.com/display/A
+  62. http://www.aqris.com/display/~sven
+  63. http://www.aqris.com/display/~urgo

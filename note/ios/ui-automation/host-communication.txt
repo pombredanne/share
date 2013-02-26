@@ -1,0 +1,40 @@
+= link:ui-automation.html[UI Automation] / Host Communication =
+:title: [UI Automation] Host Communication
+
+UI Automation 在 iOS 5.0 增加了 `UIAHost.performTaskWithPathArgumentsTimeout()`
+
+ * 要定義 device/host 間的 protocol，建構在 JSON 之上，方便 device 內的 JavaScript 做處理。
+ * test code 跟 JSON 之間要不要隔一層 API？用不同語言慣用的方式重新包裝過...
+ * 有沒有可能透過 `performTaskWithPathArgumentsTimeout()` 將 logs 或 screenshot 傳回來，可能會遇到參數太長的問題...
+ * 取得 screenshot 要怎麼送出來，不能等 instruments 結束才取得。
+ * 如何取得 debug logs？至少可以在 instruemnts 結束時取得
+ * 下達／取用 commands 的雙方（generic test script / robot framework）需要一個中介者，有沒有可能不要用 socket server 來做？
+   ** 測試前的準備工作可以少一項要啟動 server 的動作。
+   ** 無論如何，各語言要循 protocol 來下達 command 或解析 response，所以問題在於如果不用 socket，要考量不同語言都容易讀寫，所以純文字檔應該是最直覺的...
+
+test script <- parameters
+
+ perform('/bin/java', [class_name, 'arg1', arg2']...);
+
+ perform('path_to_script') -> absolute path or relative to working dir of instruemnt
+ 
+ -> test_script (#!/usr/bin/env python) -- network --> server
+ 
+ instrument 
+
+-e UIASCRIPT -e xxx 
+
+== 參考資料 ==
+
+.文件
+--
+ * http://developer.apple.com/library/ios/#documentation/UIAutomation/Reference/UIAHostClassReference/UIAHost/UIAHost.html[UIAHost Class Reference]
+--
+
+.其他文件
+--
+ * http://code.taobao.org/p/athrun/wiki/instrumentDriver/[InstrumentDriver] - 支援單步執行，也就是表格裡面提到的 remote control 跟 server data preparation。
+   ** http://code.taobao.org/p/athrun/src/trunk/iOS/InstrumentDriver/framework/readMe.txt[athrun - /trunk/iOS/InstrumentDriver/framework/readMe.txt More code fun] ^http://diigo.com/0vx74[閱讀]^ - 這裡提到背後是利用 `UIAHost.performTaskWithPathArgumentsTimeout`。
+ * http://stackoverflow.com/questions/6191814/issuing-a-synchronous-http-get-request-or-invoking-shell-script-in-javascript-fr[iphone - Issuing a synchronous HTTP GET request or invoking shell script in JavaScript from iOS UIAutomation - Stack Overflow] (2011-05-31)
+--
+

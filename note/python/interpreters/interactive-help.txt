@@ -1,0 +1,76 @@
+= link:interactive-mode.html[Python / Interpreters / Interactive Mode] / Help =
+:title: [Python] 在 Interactive Mode 下如何即時取得協助？
+
+`help()` 在 interactive shell 裡負責調用 built-in help system。有 3 種不同的用法：
+
+ 1. 不帶參數，會進到 interactive help。
+ 2. 傳入 string，可以是任何 `help>` 可接受的輸入。
+ 3. 傳入 object，會顯示該 object 的說明（主要是 docstring）。
+
+[source,pycon]
+--------------------------------------------------------------------------------
+$ python
+Python 2.7.3 (default, Aug  1 2012, 05:14:39) 
+[GCC 4.6.3] on linux2
+Type "help", "copyright", "credits" or "license" for more information.
+>>> help
+Type help() for interactive help, or help(object) for help about object.
+>>> help() # <1>
+
+Welcome to Python 2.7!  This is the online help utility.
+
+If this is your first time using Python, you should definitely check out
+the tutorial on the Internet at http://docs.python.org/tutorial/.
+
+Enter the name of any module, keyword, or topic to get help on writing
+Python programs and using Python modules.  To quit this help utility and
+return to the interpreter, just type "quit".
+
+To get a list of available modules, keywords, or topics, type "modules",
+"keywords", or "topics".  Each module also comes with a one-line summary
+of what it does; to list the modules whose summaries contain a given word
+such as "spam", type "modules spam".
+
+help> quit # <1>
+
+You are now leaving help and returning to the Python interpreter.
+If you want to ask for help on a particular object directly from the
+interpreter, you can type "help(object)".  Executing "help('string')"
+has the same effect as typing a particular string at the help> prompt.
+>>>
+>>> help('yield') # <2>
+>>> help('os.path.join')
+>>>
+>>> import os
+>>> help(os.path.join) # <3>
+--------------------------------------------------------------------------------
+<1> 不帶參數可以進到 interactive help，之後輸入 `quit` 可以回到 interactive shell。
+<2> 查看 statements、modules 等的用法；不需要事先 import。
+<3> 效果同 `help('os.path.join')`。
+
+除了 `help()` 以外，`dir()` 也很適合用來查看 runtime/dynamic 資訊：
+
+[source,pycon]
+--------------------------------------------------------------------------------
+>>> class obj(object): pass
+... 
+>>> o = obj()
+>>> o.foo = 'bar'
+>>> 
+>>> dir() # <1>
+['__builtins__', '__doc__', '__name__', '__package__', 'o', 'obj']
+>>> dir(obj) # <2>
+['__class__', '__delattr__', '__dict__', '__doc__', '__format__', '__getattribute__', '__hash__', '__init__', '__module__', '__new__', '__reduce__', '__reduce_ex__', '__repr__', '__setattr__', '__sizeof__', '__str__', '__subclasshook__', '__weakref__']
+>>> dir(o)
+['__class__', '__delattr__', '__dict__', '__doc__', '__format__', '__getattribute__', '__hash__', '__init__', '__module__', '__new__', '__reduce__', '__reduce_ex__', '__repr__', '__setattr__', '__sizeof__', '__str__', '__subclasshook__', '__weakref__', 'foo']
+--------------------------------------------------------------------------------
+<1> `dir()` 不帶參數時會列出 local names。
+<2> 傳入 object 時，會列出 object attributes。
+
+== 參考資料 ==
+
+ * http://docs.python.org/2/library/functions.html[Built-in Functions — The Python Standard Library] ^http://diigo.com/0w55s[閱讀]^ - `dir()`, `help()`
+ * http://blog.yjl.im/2009/11/help-in-python-interactive-shell.html[help in Python Interactive shell] (2009-11-08)
+ * http://www.annedawson.net/Python_Help.htm[How to obtain Help on Python by Anne Dawson PhD, Computer Science Education] (2009-02-28)
+ * http://zetcode.com/lang/python/interactivepython/[Interactive Python > Getting Help]
+

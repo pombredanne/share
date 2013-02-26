@@ -1,0 +1,180 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Selenium 2/WebDriver] 定位操作的目標</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div>
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="selenium2.html">Selenium 2/WebDriver</a> / Locating UI Elements</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>要對畫面上的某個 element 進行操作，必須先定位（locate）到它才行。</p></div>
+<div class="paragraph"><p><code>WebDriver</code> 跟 <code>WebElement</code> 都提供有 <code>findElement</code> 跟 <code>findElements</code> 的方法，可以用來取得一或多個 <code>WebElement</code>。兩者的差別在於 <code>findElement</code> 在畫面上找不到符合條件的 element 時，會丟出 <code>NoSuchElementException</code>，但 <code>findElements</code> 並不會丟出例外，而是傳回空的清單。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; from selenium.webdriver.common.by import By
+&gt;&gt;&gt; element = driver.find_element(by=By.ID, value='username_field')
+Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+AttributeError: type object 'By' has no attribute 'Name'
+&gt;&gt;&gt; a = driver.find_element(By.ID, 'username_field')
+Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+  File "/usr/local/lib/python2.6/dist-packages/selenium/webdriver/remote/webdriver.py", line 671, in find_element
+    {'using': by, 'value': value})['value']
+  File "/usr/local/lib/python2.6/dist-packages/selenium/webdriver/remote/webdriver.py", line 156, in execute
+    self.error_handler.check_response(response)
+  File "/usr/local/lib/python2.6/dist-packages/selenium/webdriver/remote/errorhandler.py", line 147, in check_response
+    raise exception_class(message, screen, stacktrace)
+selenium.common.exceptions.NoSuchElementException: Message: u'Unable to locate element: {"method":"id","selector":"username_field"}'
+&gt;&gt;&gt; driver.find_elements(by=By.ID, value='username_field')
+[]
+&gt;&gt;&gt;
+&gt;&gt;&gt; element = driver.find_element(By.NAME, 'username_field')
+&gt;&gt;&gt; type(element)
+&lt;class 'selenium.webdriver.remote.webelement.WebElement'&gt;
+&gt;&gt;&gt; driver.find_elements(By.NAME, 'username_field')
+[&lt;selenium.webdriver.remote.webelement.WebElement object at 0x23d2210&gt;]</code></pre>
+</div></div>
+<div class="paragraph"><p>其中 <code>By.NAME</code> 跟 <code>'username_field'</code> 的組合就是 locator，分別描述定位的方式（location strategy）跟比對的條件（location）。目前 WebDriver 支援九種 location strategy：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+ID (<code>By.ID</code>)
+</p>
+</li>
+<li>
+<p>
+Class Name (<code>By.CLASS_NAME</code>)
+</p>
+</li>
+<li>
+<p>
+Tag Name (<code>By.TAG_NAME</code>)
+</p>
+</li>
+<li>
+<p>
+Name (<code>By.NAME</code>)
+</p>
+</li>
+<li>
+<p>
+Link Text (<code>By.LINK_TEXT</code>)
+</p>
+</li>
+<li>
+<p>
+Partial Link Text (<code>By.PARTIAL_LINK_TEXT</code>)
+</p>
+</li>
+<li>
+<p>
+CSS (<code>By.CSS_SELECTOR</code>)
+</p>
+</li>
+<li>
+<p>
+XPath (<code>By.XPATH</code>)
+</p>
+</li>
+<li>
+<p>
+JavaScript (<code>By.??</code>)
+</p>
+</li>
+</ul></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">
+<div class="paragraph"><p>上面 <code>driver.find_element(By.NAME, 'username_field')</code> 的用法有 Java 的影子，因此 Python binding 另外提供了 <code>find_element_by_xxx</code> 的方法，例如 <code>find_element_by_name('username_field')</code>，比較符合 Python 開發人員的習慣。</p></div>
+<div class="paragraph"><p>不過，<code>find_element_by_xxx</code> 限定了程式可以處理的 location strategy，如果要套用 <a href="../selenium/selenium-ui-mapping.html">UI Mapping</a> 的話，勢必要把 location strategy 跟 location 視為一個單位才行。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; from selenium.webdriver.common.by import By
+&gt;&gt;&gt; loc_username = (By.NAME, 'username_field')
+&gt;&gt;&gt; element = driver.find_element(*loc_username)</code></pre>
+</div></div>
+</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://seleniumhq.org/docs/03_webdriver.html#locating-ui-elements-webelements">Selenium 2.0 and WebDriver &gt; Locating UI Elements (WebElements)</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2013-02-26 13:15:30 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script>
+</body>
+</html>

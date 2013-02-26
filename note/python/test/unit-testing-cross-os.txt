@@ -1,0 +1,93 @@
+= Python Unit Test: 在不同 OS 下跑同一個單元測試 =
+
+理想上，同一個 UT 應該要能夠執行在不同的 OS 下，但要達到這個 "理想"，開發時要多做一些 testability 的考量才行。
+
+以 `os.path` 的使用為例：
+
+.`ospath.py`
+--------------------------------------------------------------------------------
+import os.path as path, unittest
+
+def get_output_dir(install_dir):
+    return path.normpath(path.join(install_dir, 'tmp', 'output'))
+
+class Test(unittest.TestCase):
+
+    def test_get_output_dir(self):
+        self.assertEqual(r'C:\Program Files\MySoftware\tmp\output', get_output_dir(r'C:\Program Files\MySoftware'))
+
+if __name__ == '__main__':
+    unittest.main()
+--------------------------------------------------------------------------------
+
+這個 UT 在 Windows 上跑沒問題，但如果在 Linux 跑就會遇到下面的錯誤：
+
+--------------------------------------------------------------------------------
+Traceback (most recent call last):
+  File "ospath.py", line 9, in test_get_output_dir
+    self.assertEqual(r'C:\Program Files\MySoftware\tmp\output', get_output_dir(r'C:\Program Files\MySoftware'))
+AssertionError: 'C:\\Program Files\\MySoftware\\tmp\\output' != 'C:\\Program Files\\MySoftware/tmp/output'
+--------------------------------------------------------------------------------
+
+如果 `get_output_dir()` 只會用在 Windows，或者是會被執行在 Linux 上用來處理 Windows 的路徑名稱，最簡單的方法就是將 `os.path` 換成 `ntpath`：
+
+.`ospath_windows1.py`
+--------------------------------------------------------------------------------
+import ntpath as path, unittest
+
+...
+--------------------------------------------------------------------------------
+
+但如果不想動原始碼，也可以考慮測試過程中動態將 `path` 換掉：
+
+.`ospath_windows2.py`
+--------------------------------------------------------------------------------
+import os.path as path, unittest
+
+def get_output_dir(install_dir):
+    return path.normpath(path.join(install_dir, 'tmp', 'output'))
+
+class Test(unittest.TestCase):
+
+    def test_get_output_dir(self):
+        global path
+        import ntpath; path = ntpath <1>
+        self.assertEqual(r'C:\Program Files\MySoftware\tmp\output', get_output_dir(r'C:\Program Files\MySoftware'))
+
+if __name__ == '__main__':
+    unittest.main()
+--------------------------------------------------------------------------------
+<1> 模擬 `os.path` 在 Windows 下會指向 `ntpath` 的狀況。
+
+如果 `get_output_dir()` 會被執行在不同平台，就只能用上面動態換掉 `path` 的做法了。
+
+.`ospath_cross.py`
+--------------------------------------------------------------------------------
+import os.path as path, unittest <1>
+
+def get_output_dir(install_dir):
+    return path.normpath(path.join(install_dir, 'tmp', 'output'))
+
+class Test(unittest.TestCase):
+
+    def test_get_output_dir_windows(self):
+        global path
+        import ntpath; path = ntpath       <2>
+        self.assertEqual(r'C:\Program Files\MySoftware\tmp\output', get_output_dir(r'C:\Program Files\MySoftware'))
+
+    def test_get_output_dir_linux(self):
+        global path
+        import posixpath; path = posixpath <3>
+        self.assertEqual(r'/opt/MySoftware/tmp/output', get_output_dir(r'/opt/MySoftware'))
+
+if __name__ == '__main__':
+    unittest.main()
+--------------------------------------------------------------------------------
+<1> 維持用 `os.path`，程式才能跑在不同 OS。
+<2> 測試跑在 Windows 的狀況，模擬 `os.path` 在 Windows 下會指向 `ntpath` 的狀況。
+<3> 測試跑在 Linux 的狀況，模擬 `os.path` 在 Linux 下會指向 `posixpath` 的狀況。
+
+== 參考資料 ==
+
+ * http://docs.python.org/library/os.path.html[os.path — Common pathname manipulations]
+

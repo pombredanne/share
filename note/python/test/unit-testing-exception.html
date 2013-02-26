@@ -1,0 +1,208 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>Python UT: Exception Assertion</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div>
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>Python UT: Exception Assertion</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>最後是跟 exception 相關的驗證方法。</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>assertRaises(exception, callable, *args, **kwargs)</code> - 檢查呼叫 <code>callable(*args, **kwargs)</code> 會丟出 <em>exception</em> 相同型態的錯誤。
+</p>
+</li>
+<li>
+<p>
+<code>assertRaisesRegexp(exception, regexp, callable, *args, **kwargs)</code> - 用法跟 <code>assertRaises()</code> 一樣，除了檢查會丟出 <em>exception</em> 之外，還會進一步檢查 error message 是否符合 <em>regexp</em>。
+</p>
+</li>
+</ul></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">在 message 前面加個識別符號，就可以用 <code>assertRaisesRegexp()</code> 粗略地檢查錯誤確實從特定的源頭丟出來的。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>例如：</p></div>
+<div class="listingblock">
+<div class="title"><code>test_raise.py</code></div>
+<div class="content">
+<pre><code>import unittest
+
+def mod(dividend, divisor):
+    remainder = dividend % divisor
+    quotient = (dividend - remainder) / divisor
+    return quotient, remainder
+
+class RaiseTest(unittest.TestCase):
+
+    def test_raise(self):
+        self.assertRaises(ZeroDivisionError, mod, 7, 0) <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+
+    def test_raise_regexp(self):
+        self.assertRaisesRegexp(ZeroDivisionError, r'.*?Zero', mod, 7, 0)
+
+if __name__ == '__main__':
+    unittest.main()</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+別誤寫成 <code>self.assertRaises(ZeroDivisionError, mod(7, 0))</code>。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>執行結果：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ python test_raise.py
+.F
+======================================================================
+FAIL: test_raise_regexp (__main__.RaiseTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "test_raise.py", line 14, in test_raise_regexp
+    self.assertRaisesRegexp(ZeroDivisionError, r'.*?Zero', mod, 7, 0)
+AssertionError: ".*?Zero" does not match "integer division or modulo by zero" <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.001s
+
+FAILED (failures=1)</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+<code>assertRaisesRegexp()</code> 會比對 error message 的內容，有助於判定 error message 裡內含的關鍵數據。
+</td></tr>
+</table></div>
+<div class="paragraph"><p><code>assertRaises()</code> 跟 <code>assertRaisesRegexp()</code> 還支援 context manager 的用法：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>assertRaises(exception)</code> - 檢查離開這個 context 前，必須丟出特定的 exception。
+</p>
+</li>
+<li>
+<p>
+<code>assertRaisesRegexp(exception, regexp)</code> - 除了檢查會丟出特定的 exception 之外，還會進一步檢查 error message 是否符合 <em>regexp</em>。
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>改寫上面的例子：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>import unittest
+
+def mod(dividend, divisor):
+    remainder = dividend % divisor
+    quotient = (dividend - remainder) / divisor
+    return quotient, remainder
+
+class RaiseTest(unittest.TestCase):
+
+    def test_raise(self):
+        #self.assertRaises(ZeroDivisionError, mod, 7, 0)
+        with self.assertRaises(ZeroDivisionError) as cm:
+             mod(7, 0)
+
+    def test_raise_regexp(self):
+        #self.assertRaisesRegexp(ZeroDivisionError, r'.*?Zero', mod, 7, 0)
+        with self.assertRaisesRegexp(ZeroDivisionError, r'.*?Zero') as cm:
+            mod(7, 0)
+
+if __name__ == '__main__':
+    unittest.main()</code></pre>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/caution.png" alt="Caution" />
+</td>
+<td class="content">
+<div class="title"><code>assertRaises*(exception[, regexp])</code> 的陷阱</div>
+<div class="paragraph"><p>這種 context manager 的用法是 Python 2.7 才有的，單純只是語法上的甜頭（syntax sugar），因為使用上存在著一些陷阱：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>def test_raise(self):
+    with self.assertRaises(ZeroDivisionError) as cm:
+         divisor = a + b / c <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+         mod(7, 0)</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+如果 <code>c</code> 的內容是 0 的話，這一行就會丟出 <code>ZeroDivisionError</code>。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>也就是說 <code>ZeroDivisionError</code> 是丟出來了，但卻不一定 <code>mod()</code> 丟出來的，在某些情況下，就會讓我們誤判 <code>mod()</code> 的實作是沒有問題的。</p></div>
+</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-25 23:24:39 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script>
+</body>
+</html>

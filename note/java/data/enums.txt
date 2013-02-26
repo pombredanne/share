@@ -1,0 +1,60 @@
+= link:data.html[Java / Data] / Enums =
+:title: [Java] Enums
+
+== 參考資料 ==
+
+.參考手冊
+--
+ * http://docs.oracle.com/javase/7/docs/api/java/lang/Enum.html[Enum] ^http://diigo.com/0w7dw[閱讀]^
+ * http://docs.oracle.com/javase/7/docs/api/java/util/EnumSet.html[EnumSet]
+ * http://docs.oracle.com/javase/7/docs/api/java/util/EnumMap.html[EnumMap]
+--
+
+.文件
+--
+ * http://docs.oracle.com/javase/7/docs/technotes/guides/language/enums.html[Enums] ^http://diigo.com/0w7ew[閱讀]^
+ * http://docs.oracle.com/javase/tutorial/java/javaOO/enum.html[Enum Types (The Java™ Tutorials > Learning the Java Language > Classes and Objects)] ^http://diigo.com/0w78a[閱讀]^
+ * http://mindprod.com/jgloss/enum.html[enum : Java Glossary] ^http://diigo.com/0w7dy[閱讀]^ - nested enum, constant-specific methods
+ * http://www.javapractices.com/topic/TopicAction.do?Id=1[Java Practices -> Type-Safe Enumerations] ^http://diigo.com/0w7ez[閱讀]^
+ * http://javarevisited.blogspot.tw/2011/08/enum-in-java-example-tutorial.html[Java Enum Tutorial: 10 Examples of Enum in Java] (2011-08-13)
+--
+
+.其他文件
+--
+ * http://stackoverflow.com/questions/4709175/why-and-what-for-java-enum[Why and what for: java enum - Stack Overflow] ^http://diigo.com/0w7df[閱讀]^ (2011-01-17)
+ * http://javahowto.blogspot.tw/2008/04/java-enum-examples.html[Java How To ...: Java enum examples] ^http://diigo.com/0w7bp[閱讀]^ (2008-04-13)
+--
+
+////////////////////////////////////////////////////////////////////////////////
+
+ * different from `Enumeration`, replaced by `Iterator`
+ * int enum pattern
+   ** not typesafe - any int can be passed in
+   ** no namespace - prefix (like "SEASON_") to avoid 
+   ** brittleness - compile-time constants, change -> recompile needed
+   ** printed values are uninformative (while logging)
+ * typesafe enum pattern - error prone, constants cannot be used in switch statements
+ * type-safe enumerations (enum types, enums), Java 5
+   ** enum declaration - `enum Season { WINTER, SPRING, SUMMER, FALL; }` (結尾的 ; 是 optional)
+   ** nested enum (an enum is a member of a class), it's implicitly static
+   ** implicitly final subclasses of `java.lang.Enum`
+   ** containing 'enum constants' (uppercase letters), singletons (that's why `==` works)
+   ** work with `switch` (like `case WINTER:`)
+   ** compile-time checking, docs/implementation cannot go out of sync.
+   ** data type, full-fledged class
+      ** add arbitrary methods/fields, constructors (package-private or private)
+      ** constants 在 fields/methods 之前，而且 constants 要以 `;` 結尾。
+      ** implements arbitrary interfaces (`Comparable` and `Serializable` are already implemented)
+      ** high-quality implementations of all `Object` methods (`toString()` -> enum constant's `name()`, `hashCode()`, `equals()` ...)
+   ** `values()` - all enum constants, in the order they are declared (`ordinal()`).
+ * when to use
+   ** fixed set of constants, you know all possible values at compile time. ex. weekdays, compass directions
+   ** serial form is designed to withstand arbitrary changes in the enum type, designed to allow for binary compatible evolution
+   ** small set of possible values, as API parameters. -> enforce using enum constants (以前要用不用 constants 隨便，只要 value 對了即可)
+ * each enum constants - `name()` (final), `ordinal()` (zero-based)
+ * constant-specific methods
+   ** An enum can contain an abstract method which is implemented by the enum constants?
+ * enum (single choice) -> `EnumSet` (bit flags, combination of choices), `EnumMap`
+
+////////////////////////////////////////////////////////////////////////////////
+

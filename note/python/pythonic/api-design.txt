@@ -1,0 +1,50 @@
+= link:pythonic.html[Pythonic] / API Design =
+:title: [Pythonic] API Design
+:icons:
+:blogpost-categories: api,design,python
+
+________________________________________________________________________________
+Just follow conventions, document, and hope for the best.
+________________________________________________________________________________
+
+API design 也要遵循 code convention
+
+過度的設計，到底是在防誰？
+
+一開始還是要從 caller 的角度來設計 API。
+
+實作的方面考量好用，小心 module 其 singleton 的特性是 testability 的殺手，還是要有多個 context 的概念，module 只是持有 default instance 而已。就像 urllib2.urlopen() 的設計
+
+.`urllib2.py`
+--------------------------------------------------------------------------------
+_opener = None
+def urlopen(url, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
+    global _opener
+    if _opener is None:
+        _opener = build_opener()
+    return _opener.open(url, data, timeout)
+--------------------------------------------------------------------------------
+
+Python 的使用者很少直接去 new 一個 class，還是透過 function 拿到一個 object。
+
+用 package 在多個 module 前面擋著，可以讓 module 變得好維護，否則一支數千行的 .py 實在很難維護。
+
+參考 mockito-python 的設計。
+
+== member 的命名慣例 ==
+
+要考量的點很多：
+
+ * getter/setter 的使用時機。
+ * is_（有時會用有判斷性質的動詞，例如 exists）, has_, get_ 很常見，但 is/has/get 後好像不會加 '_'？
+ * 要強調它沒有對應的 set_ 時（因為 set_ 沒意義，也沒辦法做），前面什麼都不加。同時有 get_ 跟 set_ 時，硬是設計成 property 時，用起來會很不一致？
+ * exception 的設計，要繼承誰？這跟單純做 error handling 是不同的。
+ * attribute/read-only property 有給人家唯讀，而且變動性不大的感覺，屬於本身的特性...
+ * 如果像個 ATT 就做成 ATT，因為 property 可以昇級。所以一開始只要識別 ATT 跟 method 即可。
+ * 東西要寫在 package 還是 module？從使用者的觀點來看
+
+== 參考資料 ==
+
+ * http://www.python.org/dev/peps/pep-0008/[PEP 8 -- Style Guide for Python Code]
+ 
+

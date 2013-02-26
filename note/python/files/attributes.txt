@@ -1,0 +1,32 @@
+= link:files.html[Python / Files] / Attributes =
+:title: [Python] File Attributes
+
+ * `os.path.getatime(path)` - 取得最後存取的時間；距離 epoch 的秒數，帶有小數點，比對時要小心。
+ * `os.path.getmtime(path)` - 最後一次異動的時間。
+ * `os.path.getctime(path)` - 就 Unix-like 而言是最後一次異動的時間，但就 Windows 而言則是檔案建立的時間。
+ * `os.path.getsize(path)` - 取得檔案的大小（byte）。
+ * `os.path.isdir(path)`
+ * `os.path.isfile(path)`
+ * `os.path.islink(path)`
+ * `os.path.ismount(path)`
+
+--------------------------------------------------------------------------------
+/tmp$ touch src
+/tmp$ touch dst
+/tmp$ python
+>>> import os.path as path, shutil
+>>> path.getatime('src'), path.getmtime('src'), path.getctime('src')
+(1338867866.0825179, 1338867866.0825179, 1338867866.0825179)
+>>> path.getatime('dst'), path.getmtime('dst'), path.getctime('dst') <1>
+(1338867874.5125296, 1338867874.5125296, 1338867874.5125296)
+>>> shutil.copy2('src', 'dst')
+>>> path.getatime('src'), path.getmtime('src'), path.getctime('src') <2>
+(1338867943.8126264, 1338867866.0825179, 1338867866.0825179)
+>>> path.getatime('dst'), path.getmtime('dst'), path.getctime('dst') <3>
+(1338867943.8126259, 1338867866.0825169, 1338867943.8126264)
+>>> 
+--------------------------------------------------------------------------------
+<1> 一開始檔案的 atime, mtime, ctime 都是一樣的。
+<2> 複製檔案，'src' 有被讀取過，只有 atime 有變動。
+<3> 檔案 'dst' 被覆寫，理論上 atime 跟 mtime 都有被同步過。但從結果來看，小數點後的部份還是有差異，因此若要比對 atime/mtime/ctime，最好先將小數去掉。
+

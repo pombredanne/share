@@ -1,0 +1,525 @@
+   #[1]Udi Dahan - The Software Simplist
+
+   Udi Dahan   Udi Dahan  -  The  Software  Simplist
+
+   Enterprise  Development  Expert  &  SOA  Specialist
+
+    [2] [rss_32x32.png]
+   [3]Home [4]Blog [5]Consulting [6]Training [7]Articles [8]Speaking
+   [9]About [10]Contact __________________________
+
+
+[11]Fetching Strategy Design
+
+   Monday, April 23rd, 2007.
+     __________________________________________________________________
+
+   Following up on my previous post on [12]Better Domain-Driven Design
+   Implementation, I wanted to show some more detail on how this actually
+   works. There are two main concepts here.
+
+   The first is that of keeping Service Layer classes independent of
+   [13]Domain Model classes. The reason this is desirable is that the two
+   families change on independent axis. Service Layer classes are affected
+   by changes to the service's external interface, as well as the
+   interfaces of other services it depends on. Domain Model classes change
+   to support changing business rules internal to the service. The
+   solution is quite simply to introduce a set of interfaces between the
+   two.
+
+   The second is tied to performance. When retrieving data from the
+   database, we'd like to cross the wire only once bringing with us all
+   the data we need in order to perform the work required. Lazy loading
+   helps us in one way while hurting us in another. For connected objects
+   that we don't need when retrieving our target object, lazy loading
+   prevents them from being loaded. However, for connected objects that we
+   do need, lazy loading will cause us to return to the database to
+   retrieve each of those objects in turn (sets of the same kind of object
+   are still one DB call). If those objects need to be traversed as well
+   in order to retrieve other objects, we can see that one simple request
+   can cause many (MANY!) calls to the DB. These problems of latency and
+   throughput are solved by eagerly (in one DB call) fetching and loading
+   all the objects we need.
+
+   Here's the package diagram for the solution so that we'll have a
+   reference for the following discussion.
+
+   [14]fetching strategy package diagram - opens in a new window
+
+   Now, the class that is best suited to issue this call to eagerly load
+   all objects is the service layer class, since it is aware of what
+   specific use case we're in. However, the service layer class does not
+   necessarily know exactly what classes will be used in the domain to
+   handle that request. Obviously, this set of classes may change as the
+   domain model and the database schema change. We can therefore say that
+   is not the service layer class' responsibility to handle the definition
+   of which classes need to be loaded. Only the Domain Model has that
+   knowledge. So we need some way to pass the knowledge of the request
+   type into the Domain Model.
+
+   In Object/Role Modeling terms, we represent that request type as a
+   role. And roles are represented by interfaces. So we create an
+   interface in the Domain Model which represents the request type. That
+   interface will most likely contain only one method - the method which
+   the service layer class will call.
+
+   After we have the first role, we can build other things around it, like
+   fetching strategies. We can then define other classes who fullfil the
+   role of "I'm his fetching strategy". Those classes will expose a
+   property defining the exact set of classes to load, when using
+   [15]NHibernate we use HQL.
+
+   Here's the sequence diagram showing how this works.
+
+   [16]fetching strategy sequence diagram - opens in a new window
+
+   One question that you might ask is what if there is more than one class
+   that implements the same interface? How could the infrastructure know
+   which class it should be loading? The answer is simple. You shouldn't
+   do that. Having two classes fulfilling the same role will get you in
+   trouble even if you don't use this design. The Single Responsibility
+   Principle should be our guiding light.
+
+   In summary, achieving high performance is possible when using Domain
+   Models and Object/Relational Mapping, but requires minimizing calls to
+   the database. This design decreases coupling between all the
+   cooperating parts of the solution without giving up the ability to
+   optimize over a specific technology.
+
+   [17]Download the full detailed design (in HTML format). I'll be
+   offering the edittable [18]Enterprise Architect format shortly.
+
+
+
+         If you liked this article, you might also like articles in these
+         categories:
+         [19]Architecture | [20]DDD | [21]Data Access | [22]NHibernate | [23]OO
+           __________________________________________________________________
+
+         [24]Check out my Best Content If you've got a minute, you might enjoy
+         taking a look at some of my [25]best articles.
+         I've gone through the hundreds of articles I've written over the past 4
+         years and put together a list of the best ones as ranked by my 2000+
+         readers.
+         [26]You won't be disappointed.
+           __________________________________________________________________
+
+         [27]Subscribe to my feed If you'd like to get new articles sent to you
+         when they're published, it's easy and free.
+         [28]Subscribe right here.
+           __________________________________________________________________
+
+         Something on your mind? Got a question? I'd be thrilled to hear it.
+         Leave a comment below or [29]email me, whatever works for you.
+
+      11 Comments
+
+          1. [30]Evan Says:
+             [31]April 24th, 2007 at 12:23 am
+             very nice..a question on your packaging however..
+             we know that the Order type is an aggregate root, but we also know
+             that the Customer type could also be an aggregate root (in another
+             context)..
+             Do you duplicate your package diagram for each aggregate in your
+             application/service? How does this packaging work with your
+             Customer Service (where the context of the Customer aggregate
+             includes other non-Order items)
+             This packaging scheme would seem ideal per aggregate (so that
+             changing a table name is a single package change, adding a database
+             column and new method would only affect 2 packages, etc)..but would
+             end up with many dlls (which just means better change/configuration
+             mgmt i suppose)..
+             I get the sneaky feeling you are going to tell me the Customer
+             aggregate goes into a seperate service but figured i'd ask.. ;)
+             Given that packages are supposed to be units of reuse, how does
+             that fit into your package schema (given that the Customer type
+             crosses aggregate boundaries) if at all..
+          2. thesoftwaresimplist Says:
+             [32]April 28th, 2007 at 3:20 pm
+             Evan,
+             Glad you like it.
+             Here's what I think:
+             I do not duplicate the package diagram for each aggregate root. The
+             packages called Interfaces, Infrastructure, and NHibernate are used
+             by all.
+             I often find this pattern repeating (Service->Domain; Domain
+             Objects->Domain; Persistence->Domain & Domain Objects) between
+             bounded contexts.
+             I don't often see the Customer class in a single bounded context.
+             Rather, there is a different Customer class for each context,
+             representing exactly the part it needs. When it comes to the
+             "Customer Care" context, we see different rules around Orders, than
+             in the "Online Shop" context.
+             I don't quite view packages as units of reuse, but rather as a tool
+             for managing dependencies.
+             Does that make sense?
+          3. [33]» First principle of design refined Says:
+             [34]May 12th, 2007 at 10:10 am
+             [...] That feels better. It holds for Views interacting with
+             Controllers, MessageHandlers with Messages, even interactions with
+             Domain Classes. [...]
+          4. [35]» Performant and Explicit Domain Models Says:
+             [36]June 4th, 2007 at 2:31 pm
+             [...] Fetching Strategy Design - showing how to separate the
+             concern of eager loading from both your Domain Model and your
+             Service Layer. [...]
+          5. [37]Fetching Strategy NHibernate Implementation Available Says:
+             [38]September 16th, 2007 at 6:56 pm
+             [...] couple of months ago I put out a post discussing one way to
+             implement custom fetching strategies. Anyway, I finally got around
+             to putting my money where my mouth [...]
+          6. [39]Colin Jack Says:
+             [40]September 21st, 2007 at 5:20 pm
+             I've just re-read this post and couldn't really get what you mean
+             in this bit:
+             "One question that you might ask is what if there is more than one
+             class that implements the same interface? How could the
+             infrastructure know which class it should be loading? The answer is
+             simple. You shouldn't do that. Having two classes fulfilling the
+             same role will get you in trouble even if you don't use this
+             design. The Single Responsibility Principle should be our guiding
+             light."
+             You are not really saying that SRP is driving you to define
+             interfaces and then to only have one implementation?
+             This isn't the way I read SRP at all, I read it as one reason for
+             change. I also don't see what you are suggesting as being the
+             (only?) way to do interface based programming, in fact I'd argue
+             its often silly to extract interfaces if you are 100% sure there
+             will only ever be one implementation.
+             From the term role here I'm thinking of it being a role in the
+             role-responsibility sense, if so I again would say that if multiple
+             concrete classes can sensibly fulfill a role then a common
+             interface is definitely the way to go?
+          7. thesoftwaresimplist Says:
+             [41]September 24th, 2007 at 11:35 pm
+             Colin,
+             The idea is not so much to do a "extract interface" refactoring,
+             but rather to represent a use-case a concrete concept in code. Once
+             that interface is there, we can do lots of useful things with it -
+             for instance, different fetching strategies for different use
+             cases.
+             I'd also like to refine my statements a bit and say that if there
+             were two (or more) concrete classes that implemented the same
+             interface (role), then, by definition, you shouldn't care which
+             class you get. If you think the code HAS to care, then you probably
+             have a role struggling to express itself.
+             Does that make sense?
+          8. [42]Colin Jack Says:
+             [43]September 25th, 2007 at 5:39 am
+             Completely, and I'm enjoying the series of posts relating to the
+             topic (and thanks for providing the code example of how to apply
+             it!).
+          9. awake Says:
+             [44]February 18th, 2008 at 4:51 pm
+             Great job. I was on TechEd 2007 and I saw you presentation about
+             domain models. Good stuff. Could you send me all demos you use on
+             this presentation becouse on post conference dvd i found only
+             presentation and webcast :( thx
+         10. Bjorn Says:
+             [45]November 7th, 2008 at 9:39 am
+             Hi Udi. Great articles all over the place. Now, I was wondering
+             about the package diagram above. What kind of objects does your
+             service layer deliver to the layers above? Objects from the
+             DomainObjects package (or of course rather its interfaces)? Ok, I
+             get that a CalculateCost-method returns a Money-object. But does a
+             method like GetOrder return a Domain.IOrder? But these
+             objects/interfaces are more than just DTOs aren't they and have
+             methods like Update and so on? Or would you create special Message
+             Objects when the data moves across service boundaries to let's say
+             a web application?
+         11. [46]udidahan Says:
+             [47]November 7th, 2008 at 11:54 pm
+             Bjorn,
+             My service layer usually does messaging - those "special Message
+             Objects" you alluded to (which are DTOs).
+             You might like this post describing how these two might work
+             together in a broader perspective here:
+             [48]Command Query Separation and SOA
+
+      Your comment...
+
+         ______________________ Name (required)
+
+         ______________________ Mail (will not be published) (required)
+
+         ______________________ Website
+
+
+         ______________________________________________________________________
+         ______________________________________________________________________
+         ______________________________________________________________________
+         ______________________________________________________________________
+         ______________________________________________________________________
+         ______________________________________________________________________
+         ______________________________________________________________________
+         ______________________________________________________________________
+         ______________________________________________________________________
+         ______________________________________________________________________
+
+         Submit Comment
+
+         IFRAME:
+         [49]http://api.recaptcha.net/noscript?k=6LdCmQMAAAAAAEb0d-G99pIRuvTVEel
+         RGzp2tyEY
+
+
+         ________________________________________
+         ________________________________________
+         ________________________________________
+         Submit Comment
+         If this is your first time commenting, it may take a while to show up.
+         I'm working to make that better.
+         [50]Subscribe here to receive updates on comments.
+
+
+   [51]Don't miss my best content
+                                    [52]Locations of visitors to this page
+   Recommendations
+   Sam Gentile [53]Sam Gentile, Independent WCF & SOA Expert
+   "Udi, one of the great minds in this area.
+   A man I respect immensely."
+   Ian Robinson [54]Ian Robinson, Principal Consultant at ThoughtWorks
+   "Your blog and articles have been enormously useful in shaping, testing
+   and refining my own approach to delivering on SOA initiatives over the
+   last few years. Over and against a certain
+   3-layer-application-architecture-blown-out-to- distributed-proportions
+   school of SOA, your writing, steers a far more valuable course."
+   Simon Segal [55]Simon Segal, Systems Integration Manager at LinFox
+   "Udi is one of the outstanding software development minds in the world
+   today, his vast insights into Service Oriented Architectures and Smart
+   Clients in particular are indeed a rare commodity. Udi is also an
+   exceptional teacher and can help lead teams to fall into the pit of
+   success. I would recommend Udi to anyone considering some Architecural
+   guidance and support in their next project."
+   Ohad Israeli [56]Ohad Israeli, Chief Architect at Hewlett-Packard,
+   Indigo Division
+   "When you need a man to do the job Udi is your man! No matter if you
+   are facing near deadline deadlock or at the early stages of your
+   development, if you have a problem Udi is the one who will probably be
+   able to solve it, with his large experience at the industry and his
+   widely horizons of thinking , he is always full of just in place great
+   architectural ideas.
+   I am honored to have Udi as a colleague and a friend (plus having his
+   cell phone on my speed dial)."
+   [57]Eli Brin, Program Manager at RISCO Group
+   "We hired Udi as a SOA specialist for a large scale project. The
+   development is outsourced to India. SOA is a buzzword used almost for
+   anything today. We wanted to understand what SOA really is, and what is
+   the meaning and practice to develop a SOA based system.
+   We identified Udi as the one that can put some sense and order in our
+   minds. We started with a private customized SOA training for the entire
+   team in Israel. After that I had several focused sessions regarding our
+   architecture and design.
+   I will summarize it simply (as he is the software simplist): We are
+   very happy to have Udi in our project. It has a great benefit. We feel
+   good and assured with the knowledge and practice he brings. He doesn't
+   talk over our heads. We assimilated nServicebus as the ESB of the
+   project. I highly recommend you to bring Udi into your project."
+   Yoel Arnon [58]Yoel Arnon, MSMQ Expert
+   "Udi has a unique, in depth understanding of service oriented
+   architecture and how it should be used in the real world, combined with
+   excellent presentation skills. I think Udi should be a premier choice
+   for a consultant or architect of distributed systems."
+   [59]Vadim Mesonzhnik, Development Project Lead at Polycom
+   "When we were faced with a task of creating a high performance server
+   for a video-tele conferencing domain we decided to opt for a stateless
+   cluster with SQL server approach. In order to confirm our decision we
+   invited Udi.
+   After carefully listening for 2 hours he said: "With your kind of high
+   availability and performance requirements you don't want to go with
+   stateless architecture."
+   One simple sentence saved us from implementing a wrong product and
+   finding that out after years of development. No matter whether our
+   former decisions were confirmed or altered, it gave us great confidence
+   to move forward relying on the experience, industry best-practices and
+   time-proven techniques that Udi shared with us.
+   It was a distinct pleasure and a unique opportunity to learn from
+   someone who is among the best at what he does."
+   Jack Van Hoof [60]Jack Van Hoof, Enterprise Integration Architect at
+   Dutch Railways
+   "Udi is a respected visionary on SOA and EDA, whose opinion I most of
+   the time (if not always) highly agree with. The nice thing about Udi is
+   that he is able to explain architectural concepts in terms of practical
+   code-level examples."
+   Nick Malik [61]Nick Malik, Enterprise Architect at Microsoft
+   Corporation
+   "You are an excellent speaker and trainer, Udi, and I've had the
+   fortunate experience of having attended one of your presentations. I
+   believe that you are a knowledgable and intelligent man."
+   Sean Farmar [62]Sean Farmar, Chief Technical Architect at Candidate
+   Manager Ltd
+   "Udi has provided us with guidance in system architecture and supports
+   our implementation of NServiceBus in our core business application.
+   He accompanied us in all stages of our development cycle and helped us
+   put vision into real life distributed scalable software. He brought
+   fresh thinking, great in depth of understanding software, and ongoing
+   support that proved as valuable and cost effective.
+   Udi has the unique ability to analyze the business problem and come up
+   with a simple and elegant solution for the code and the business alike.
+   With Udi's attention to details, and knowledge we avoided pit falls
+   that would cost us dearly."
+   [63]Motty Cohen, SW Manager at KorenTec Technologies
+   "I know Udi very well from our mutual work at KorenTec. During the
+   analysis and design of a complex, distributed C4I system - where the
+   basic concepts of NServiceBus start to emerge - I gained a lot of
+   "Udi's hours" so I can surely say that he is a professional, skilled
+   architect with a fresh ideas and unique perspective for solving complex
+   architecture challenges. His ideas, concepts and parts of the artifacts
+   are the basis of several state-of-the-art C4I systems that I was
+   involved in their architecture design."
+   Aaron Jensen [64]Aaron Jensen, VP of Engineering at Eleutian Technology
+   "Awesome. Just awesome.
+   We'd been meaning to delve into messaging at Eleutian after multiple
+   discussions with and blog posts from Greg Young and Udi Dahan in the
+   past. We weren't entirely sure where to start, how to start, what tools
+   to use, how to use them, etc. Being able to sit in a room with Udi for
+   an entire week while he described exactly how, why and what he does to
+   tackle a massive enterprise system was invaluable to say the least.
+   We now have a much better direction and, more importantly, have the
+   confidence we need to start introducing these powerful concepts into
+   production at Eleutian."
+   Gad Rosenthal [65]Gad Rosenthal, Department Manager at Retalix
+   "A thinking person. Brought fresh and valuable ideas that helped us in
+   architecting our product. When recommending a solution he supports it
+   with evidence and detail so you can successfully act based on it. Udi's
+   support "comes on all levels" - As the solution architect through to
+   the detailed class design. Trustworthy!"
+   [66]Robert Lewkovich, Product / Development Manager at Eggs Overnight
+   "Udi's advice and consulting were a huge time saver for the project I'm
+   responsible for. The $ spent were well worth it and provided me with a
+   more complete understanding of nServiceBus and most importantly in
+   helping make the correct architectural decisions earlier thereby
+   reducing later, and more expensive, rework."
+   Ray Houston [67]Ray Houston, Director of Development at TOPAZ
+   Technologies
+   "Udi's SOA class made me smart - it was awesome.
+   The class was very well put together. The materials were clear and
+   concise and Udi did a fantastic job presenting it. It was a good
+   mixture of lecture, coding, and question and answer. I fully expected
+   that I would be taking notes like crazy, but it was so well laid out
+   that the only thing I wrote down the entire course was what I wanted
+   for lunch. Udi provided us with all the lecture materials and everyone
+   has access to all of the samples which are in the nServiceBus trunk.
+   Now I know why Udi is the "Software Simplist." I was amazed to find
+   that all the code and solutions were indeed very simple. The patterns
+   that Udi presented keep things simple by isolating complexity so that
+   it doesn't creep into your day to day code. The domain code looks the
+   same if it's running in a single process or if it's running in 100
+   processes."
+   [68]Liron Levy, Team Leader at Rafael
+   "I've met Udi when I worked as a team leader in Rafael. One of the most
+   senior managers there knew Udi because he was doing superb architecture
+   job in another Rafael project and he recommended bringing him on board
+   to help the project I was leading.
+   Udi brought with him fresh solutions and invaluable deep architecture
+   insights. He is an authority on SOA (service oriented architecture) and
+   this was a tremendous help in our project.
+   On the personal level - Udi is a great communicator and can persuade
+   even the most difficult audiences (I was part of such an audience
+   myself..) by bringing sound explanations that draw on his extensive
+   knowledge in the software business. Working with Udi was a great
+   learning experience for me, and I'll be happy to work with him again in
+   the future."
+   Eytan Michaeli [69]Eytan Michaeli, CTO Korentec
+   "Udi was responsible for a major project in the company, and as a chief
+   architect designed a complex multi server C4I system with many
+   innovations and excellent performance."
+   [70]Evgeny-Hen Osipow, Head of R&D at PCLine
+   "Udi has helped PCLine on projects by implementing architectural
+   blueprints demonstrating the value of simple design and code."
+   Nimrod Peleg [71]Nimrod Peleg, Lab Engineer at Technion IIT
+   "One of the best programmers and software engineer I've ever met,
+   creative, knows how to design and implemet, very collaborative and
+   finally - the applications he designed implemeted work for many years
+   without any problems!"
+   [72]Consult with Udi
+   Guest Authored Books
+   [73]Chapter: Introduction to SOA     [74]Article: The Enterprise
+   Service Bus and Your SOA
+   [75]web statistics
+   [76]Creative Commons License   © Copyright 2008, Udi Dahan.
+   [77]email@UdiDahan.com
+
+References
+
+   Visible links
+   1. http://feeds.feedburner.com/UdiDahan-TheSoftwareSimplist
+   2. http://feeds.feedburner.com/UdiDahan-TheSoftwareSimplist
+   3. http://www.udidahan.com/
+   4. http://www.udidahan.com/?blog=true
+   5. http://www.udidahan.com/consulting/
+   6. http://www.udidahan.com/training/
+   7. http://www.udidahan.com/articles/
+   8. http://www.udidahan.com/speaking/
+   9. http://www.udidahan.com/about/
+  10. http://www.udidahan.com/contact/
+  11. http://www.udidahan.com/2007/04/23/fetching-strategy-design/
+  12. http://udidahan.weblogs.us/2007/03/06/better-domain-driven-design-implementation/
+  13. http://udidahan.weblogs.us/2007/04/21/domain-model-pattern/
+  14. http://udidahan.weblogs.us/wp-content/uploads/ea2.png
+  15. http://udidahan.weblogs.us/category/nhibernate/
+  16. http://udidahan.weblogs.us/wp-content/uploads/ea12.png
+  17. http://udidahan.weblogs.us/wp-content/uploads/fetching-strategy-design.zip
+  18. http://www.sparxsystems.com/
+  19. http://www.udidahan.com/category/architecture/
+  20. http://www.udidahan.com/category/ddd/
+  21. http://www.udidahan.com/category/data-access/
+  22. http://www.udidahan.com/category/nhibernate/
+  23. http://www.udidahan.com/category/oo/
+  24. http://udidahan.weblogs.us/first-time-here/
+  25. http://udidahan.weblogs.us/first-time-here/
+  26. http://udidahan.weblogs.us/first-time-here/
+  27. http://feeds.feedburner.com/UdiDahan-TheSoftwareSimplist
+  28. http://feeds.feedburner.com/UdiDahan-TheSoftwareSimplist
+  29. mailto:questions@UdiDahan.com
+  30. http://www.evanhoff.com/
+  31. http://www.udidahan.com/2007/04/23/fetching-strategy-design/#comment-1481
+  32. http://www.udidahan.com/2007/04/23/fetching-strategy-design/#comment-1514
+  33. http://udidahan.weblogs.us/2007/05/12/first-principle-of-design-refined/
+  34. http://www.udidahan.com/2007/04/23/fetching-strategy-design/#comment-1700
+  35. http://udidahan.weblogs.us/2007/06/04/performant-and-explicit-domain-models/
+  36. http://www.udidahan.com/2007/04/23/fetching-strategy-design/#comment-2051
+  37. http://udidahan.weblogs.us/2007/09/16/fetching-strategy-nhibernate-implementation-available/
+  38. http://www.udidahan.com/2007/04/23/fetching-strategy-design/#comment-6937
+  39. http://colinjack.blogspot.com/
+  40. http://www.udidahan.com/2007/04/23/fetching-strategy-design/#comment-7103
+  41. http://www.udidahan.com/2007/04/23/fetching-strategy-design/#comment-7241
+  42. http://colinjack.blogspot.com/
+  43. http://www.udidahan.com/2007/04/23/fetching-strategy-design/#comment-7270
+  44. http://www.udidahan.com/2007/04/23/fetching-strategy-design/#comment-17475
+  45. http://www.udidahan.com/2007/04/23/fetching-strategy-design/#comment-35813
+  46. http://www.UdiDahan.com/
+  47. http://www.udidahan.com/2007/04/23/fetching-strategy-design/#comment-35814
+  48. http://www.udidahan.com/2008/08/11/command-query-separation-and-soa/
+  49. http://api.recaptcha.net/noscript?k=6LdCmQMAAAAAAEb0d-G99pIRuvTVEelRGzp2tyEY
+  50. http://www.udidahan.com/comments/feed/
+  51. http://udidahan.weblogs.us/first-time-here/
+  52. http://www3.clustrmaps.com/counter/maps.php?url=http://udidahan.weblogs.us
+  53. http://www.samgentile.com/
+  54. http://iansrobinson.com/about/
+  55. http://www.linkedin.com/in/simonsegal
+  56. http://www.linkedin.com/in/ohadisraeli
+  57. http://www.linkedin.com/pub/8/314/674
+  58. http://www.linkedin.com/in/yoelarnon
+  59. http://www.linkedin.com/pub/1/a1/607
+  60. http://www.linkedin.com/in/jackvanhoof
+  61. http://www.linkedin.com/pub/1/763/999
+  62. http://www.linkedin.com/pub/6/668/107
+  63. http://www.linkedin.com/pub/7/678/b2b
+  64. http://www.linkedin.com/in/aaronjensen
+  65. http://www.linkedin.com/pub/7/601/542
+  66. http://www.linkedin.com/pub/1/3b2/26a
+  67. http://www.linkedin.com/pub/1/469/885
+  68. http://www.linkedin.com/pub/1/578/ab5
+  69. http://www.linkedin.com/in/eytanm
+  70. http://www.linkedin.com/in/obender
+  71. http://www.linkedin.com/pub/0/674/708
+  72. http://www.udidahan.com/consulting/
+  73. http://www.jnsk.se/weblog/posts/GuestAuthors.htm
+  74. http://www.soa-expertenwissen.de/
+  75. http://www.statcounter.com/
+  76. http://creativecommons.org/licenses/by/3.0/
+  77. mailto:email@UdiDahan.com
+
+   Hidden links:
+  78. http://feeds.feedburner.com/UdiDahan-TheSoftwareSimplist

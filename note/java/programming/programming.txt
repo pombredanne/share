@@ -1,0 +1,63 @@
+= Java Programming =
+
+== 辨識執行環境 ==
+
+幾乎所有的方法都圍遶在 `System.getProperty("os.name")` 與 `System.getProperty("os.arch")`。
+
+.`DetectEnv.java`
+--------------------------------------------------------------------------------
+public class DetectEnv {
+
+  public static void main(String[] args) {
+    String osName = System.getProperty("os.name");
+    String osArch = System.getProperty("os.arch");
+
+    System.out.println("os.name = [" + osName + "], os.arch = [" + osArch + "]");
+  }
+
+}
+--------------------------------------------------------------------------------
+
+執行結果：
+
+--------------------------------------------------------------------------------
+$ uname -a
+Linux jeremy-laptop 2.6.35-31-generic #63-Ubuntu SMP Mon Nov 28 19:29:10 UTC 2011 x86_64 GNU/Linux
+$ java DetectEnv <1>
+os.name = [Linux], os.arch = [amd64]
+
+C:\>ver
+
+Microsoft Windows [Version 6.1.7600]
+
+C:\>java DetectEnv <2>
+os.name = [Windows 7], os.arch = [amd64]
+--------------------------------------------------------------------------------
+<1> 在 Ubuntu 10.10 64-bit 的測試結果。
+<2> 在 Windows 7 64-bit 的測試結果。
+
+發現 https://github.com/twall/jna[JNA] 可以用來判別作業系統別跟 bit 數量...
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://lopica.sourceforge.net/os.html[JNLP os and arch Value Collection]
+ * http://www.mkyong.com/java/how-to-detect-os-in-java-systemgetpropertyosname/[How to detect OS in Java – System.getProperty(“os.name”)] (2011-12-02)
+ * http://stackoverflow.com/questions/2062020/how-can-i-tell-if-im-running-in-64-bit-jvm-or-32-bit-jvm[java - How can I tell if I'm running in 64-bit JVM or 32-bit JVM? - Stack Overflow] (2010-01-14)
+ * http://stackoverflow.com/questions/807263/how-do-i-detect-which-kind-of-jre-is-installed-32bit-vs-64bit[java - How do I detect which kind of JRE is installed -- 32bit vs. 64bit - Stack Overflow] (2009-04-30)
+ * http://javablog.co.uk/2007/05/19/making-jni-cross-platform/[Javablog » Making JNI cross platform] (2007-05-19)
+================================================================================
+
+=== 作業系統別 ===
+
+=== 32-bit 或 64-bit ===
+
+用 `os.name` 來辨別作業系統沒有太大的問題，但用 `os.arch` 來辦別 OS 是 32-bit 或 64-bit 就有點 tricky 了，因為 `os.arch` 裡的 bit 資訊，真正代表的是使用者在 OS 上安裝了 32-bit 或 64-bit 的 JVM。也就是說，如果使用者在 64-bit OS 上安裝了 32-bit JVM，這種方式就會誤判為 32-bit OS。
+
+== 參考資料 ==
+
+.網站
+--
+ * http://www.javacodegeeks.com/[Java Code Geeks]
+--
+

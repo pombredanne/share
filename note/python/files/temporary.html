@@ -1,0 +1,207 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Python] File Pathname</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" />
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div>
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="files.html">Python / Files</a> / Pathname</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="literalblock">
+<div class="content">
+<pre><code>tempfile.NamedTemporaryFile([mode='w+b', bufsize=-1, suffix='', prefix='tmp', dir=None, delete=True])</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ python
+&gt;&gt;&gt; import os.path as path, tempfile <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+&gt;&gt;&gt; tmp = tempfile.NamedTemporaryFile(prefix='abc', suffix='.txt') <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+&gt;&gt;&gt; print tmp.name <img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+/tmp/abcip8K3y.txt
+&gt;&gt;&gt;
+&gt;&gt;&gt; tmp.write('hello')
+&gt;&gt;&gt; tmp.flush()
+&gt;&gt;&gt; f = open(tmp.name, 'rb') <img src="../../../_asciidoc/images/icons/callouts/4.png" alt="4" />
+&gt;&gt;&gt; print r.read()
+hello
+&gt;&gt;&gt;
+&gt;&gt;&gt; path.exists(tmp.name)
+True
+&gt;&gt;&gt; tmp.close()
+&gt;&gt;&gt; path.exists(tmp.name) <img src="../../../_asciidoc/images/icons/callouts/5.png" alt="5" />
+False</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+暫存檔跟目錄的支援，都是透過 <code>tempfile</code> 模組。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+<code>NamedTemporaryFile()</code> 跟 <code>open()</code> 類似，支援預設為 <code>w+b</code> 的 <em>mode</em> 參數，傳回一個 <a href="files.html">file-like</a>，只是多了一個 <code>name</code> 屬性而已。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+暫存檔名可以從 <code>name</code> 屬性取得，是 <em>prefix</em> 加上 6 個亂數字元，再串上 <em>suffix</em>。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/4.png" alt="4" /></td><td>
+在 Linux 下可以開啟還在寫入中的暫存檔，但這個動作在 Windows 下是行不通的。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/5.png" alt="5" /></td><td>
+檔案關閉後就不見了。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>在 Windows 下也是相同的操作方式，只不過暫存檔還在寫入的過程中，不能另外開啟它做讀取的動作：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>C:\&gt; python
+&gt;&gt;&gt; import tempfile
+&gt;&gt;&gt; tmp = tempfile.NamedTemporaryFile(prefix='abc', suffix='.txt')
+&gt;&gt;&gt; print tmp.name
+c:\users\jeremy~1\appdata\local\temp\abciblk12.txt
+&gt;&gt;&gt; tmp.write('hello')
+&gt;&gt;&gt; tmp.flush()
+&gt;&gt;&gt; f = open(tmp.name, 'rb') <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+IOError: [Errno 13] Permission denied: 'c:\\users\\jeremy~1\\appdata\\local\\tem
+p\\abciblk12.txt'
+&gt;&gt;&gt; tmp.close()
+&gt;&gt;&gt; f = open(tmp.name, 'rb') <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+IOError: [Errno 2] No such file or directory: 'c:\\users\\jeremy~1\\appdata\\loc
+al\\temp\\abciblk12.txt'
+&gt;&gt;&gt;
+&gt;&gt;&gt; tmp = tempfile.NamedTemporaryFile(prefix='abc', suffix='.txt', delete=False) <img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+&gt;&gt;&gt; tmp.write('hello')
+&gt;&gt;&gt; tmp.close()
+&gt;&gt;&gt; f = open(tmp.name, 'rb')
+&gt;&gt;&gt; print f.read()
+hello</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+因為暫存檔被鎖定中，所以不能另外做開啟的動作。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+關閉暫存檔後又被刪除了。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+解決的方法是一開始就設定關閉暫存檔時不要將它刪除（<code>delete=False</code>）。
+</td></tr>
+</table></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_暫存目錄">暫存目錄</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>單純要取得系統的暫存目錄，呼叫 <code>tempfile.gettempdir()</code> 即可。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; import tempfile # Linux
+&gt;&gt;&gt; tempfile.gettempdir() <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+'/tmp'
+&gt;&gt;&gt;
+
+&gt;&gt;&gt; import tempfile # Windows
+&gt;&gt;&gt; print tempfile.gettempdir()
+c:\docume~1\user\locals~1\temp
+&gt;&gt;&gt;</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+傳回值的型態是字串。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>但有時候為了保有原來的檔名，也為了避開相同檔名的衝突，把檔案放在某個暫存目錄下是個不錯的做法。</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>tempfile.mkdtemp([sufﬁx='' [, preﬁx='tmp' [, dir=None]]])</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; d = tempfile.mkdtemp()
+&gt;&gt;&gt; type(d), d
+(&lt;type 'str'&gt;, '/tmp/tmplpylEJ') <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+傳回暫存目錄的絕對路徑。跟 <code>NamedTemporaryFile</code> 一樣，是 <em>prefix</em> 加上 6 個亂數字元，再串上 <em>suffix</em>。
+</td></tr>
+</table></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://docs.python.org/library/tempfile.html">tempfile — Generate temporary files and directories</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2013-01-24 21:11:43 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script>
+</body>
+</html>

@@ -1,0 +1,145 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Python] Environment Variables</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" />
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div>
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="environments.html">Python / Environments</a> / Variables</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p><code>os.environ</code> 是個 mapping 物件，內含所有 environment variable 的 key-value pair（初始化的時機是在 <code>os</code> 被 import 時）。讀取、寫入、刪除特定的 environment variable 都可以透過 <code>os.environ</code> 來操作：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>import os
+os.environ['key']</code></pre>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">其實上述的操作分別對應有 <code>os.getenv()</code>、<code>os.putenv()</code> 與 <code>os.unsetenv()</code>，但這些 function 並非所有平台都支援，再加上呼叫這些 function 並不會自動更新 <code>os.environ</code> 的內容，所以官方文件建議直接對 <code>os.environ</code> 進行讀、寫、刪除的動作。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>至於 key 是否區分大小寫，則會依 OS 不同。參考 <code>os</code> 的<a href="http://svn.python.org/projects/python/trunk/Lib/os.py">原始碼</a>：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>if name == "riscos":
+    # On RISC OS, all env access goes through getenv and putenv
+    from riscosenviron import _Environ
+elif name in ('os2', 'nt'):  # Where Env Var Names Must Be UPPERCASE
+    # But we store them as upper case
+    class _Environ(UserDict.IterableUserDict):
+        def __init__(self, environ):
+            UserDict.UserDict.__init__(self)
+            data = self.data
+            for k, v in environ.items():
+                data[k.upper()] = v
+        def __setitem__(self, key, item):
+            putenv(key, item)
+            self.data[key.upper()] = item
+        def __getitem__(self, key):
+            return self.data[key.upper()]      <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+        ...
+else:  # Where Env Var Names Can Be Mixed Case <img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+    class _Environ(UserDict.IterableUserDict):
+        def __init__(self, environ):
+            UserDict.UserDict.__init__(self)
+            self.data = environ
+        def __setitem__(self, key, item):
+            putenv(key, item)
+            self.data[key] = item
+        ...
+
+environ = _Environ(environ) <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+<code>os.environ</code> 就是存取到 <code>_Environ</code> 物件。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+Windows 下不分大寫，雖然內部都是用 <code>key.upper()</code> 轉成大寫存放。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+其他作業系統則區分大小寫。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>異動 environment variable 不外乎是為了跟 subprocess 溝通。<code>subprocess.call()</code> 帶出的 child process 預設會繼承 parent process 的 environment variable：</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://docs.python.org/library/os.html">os — Miscellaneous operating system interfaces — Python documentation</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2013-01-24 20:19:54 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script>
+</body>
+</html>

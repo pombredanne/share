@@ -1,0 +1,165 @@
+= link:oop.html[Python / OOP] / Properties =
+:title: [Python] Properties
+
+[quote,'PEP 8 -- Style Guide for Python Code','http://www.python.org/dev/peps/pep-0008/#designing-for-inheritance[Designing for inheritance]']
+________________________________________________________________________________
+For simple public data attributes, it is best to expose just the attribute name, without complicated accessor/mutator methods. Keep in mind that Python provides *an easy path to future enhancement*, should you find that a simple data attribute needs to *grow functional behavior*. In that case, use properties to hide functional implementation behind simple data attribute access syntax.
+________________________________________________________________________________
+
+這是否意謂著一開始就考慮用 properties 的做法並不妥當？
+
+最新遇到的狀況是，如果 class 裡有的用 property，有的又用 accessor/mutator，用起來會很不一致？或許拿掉 `is_` 跟 `set_` 就會好多了？
+
+--------------------------------------------------------------------------------
+@property
+def name(self): pass
+
+def is_enabled(self): pass
+
+def set_enabled(self, enabled): pass
+--------------------------------------------------------------------------------
+
+如果有多個值要設定，或許可以考慮 tuple 包裝起來...
+
+== Lazy Property ==
+
+Lazy property 最簡單的做法如下：
+
+--------------------------------------------------------------------------------
+class Foo:
+
+    def __init__(self):
+        self._bar = None
+
+    @property
+    def bar(self):
+        if self._bar is None:
+            self._bar = Bar()
+        return self._bar
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+class Foo:
+
+    def __init__(self):
+        self._bar_ = None
+
+    @property
+    def _bar(self):
+        if self._bar_ is None:
+            self._bar_ = Bar()
+        return self._bar_
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+import random
+
+class Foo:
+
+  @property
+  def bar(self, v=[]):
+      if not v:
+          print 'initialize the value'
+          v.append(random.randint(1, 10))
+      return v[0]
+--------------------------------------------------------------------------------
+
+測試結果：
+
+--------------------------------------------------------------------------------
+>>> foo1 = Foo()
+>>> foo2 = Foo()
+>>> foo1.bar
+initialize the value
+3
+>>> foo2.bar
+3
+--------------------------------------------------------------------------------
+
+顯然這麼做是行不通的。
+
+=== Property ===
+
+////////////////////////////////////////////////////////////////////////////////
+A property is ''generated'' by calling the `property` built-in with three methods (handlers for get, set, and delete operations), as well as a docstring (當成第 4 個參數傳進去)
+    If any argument is passed as `None` or omitted, that operation is not supported.
+    Properties are typically assigned at the top level of a `class` statement [e.g., `name = property(...)`]. When thus assigned, accesses to the class attribute itself (e.g., `obj.name`) are automatically ''routed'' to one of the accessor methods passed into the property.
+    Examples
+        >>> class newprops(object):
+...     def getage(self): # 是否該為這些背後的 accessor methods 加前導的底線藏起來？
+...         return 40
+...     age = property(getage, None, None, None) # get, set, del, docs
+...
+>>> x = newprops()
+>>> x.age # Runs getage
+40
+>>> x.name # Normal fetch
+AttributeError: newprops instance has no attribute 'name'
+
+        >>> class newprops(object):
+...     def getage(self):
+...         return 40
+...     def setage(self, value):
+...         print('set age:', value)
+...         self._age = value
+...     age = property(getage, setage, None, None)
+...
+>>> x = newprops()
+>>> x.age # Runs getage
+40
+>>> x.age = 42 # Runs setage
+set age: 42
+>>> x._age # Normal fetch; no getage call
+42
+>>> x.age # Runs getage
+40
+>>> x.job = 'trainer' # Normal assign; no setage call
+>>> x.job # Normal fetch; no getage call
+'trainer'
+>>> x.foo # Runs __getattr__
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+AttributeError: 'newprops' object has no attribute 'foo'
+////////////////////////////////////////////////////////////////////////////////
+
+--------------------------------------------------------------------------------
+class Person(object):
+
+    def __init__(self, first_name, last_name):
+        self._first_name = first_name
+        self._last_name = last_name
+
+    def _get_name(self):
+        return '%s, %s' % (self._first_name, self._last_name)
+
+    name = property(_get_name)
+
+print Person('Jeremy', 'Kao').name
+--------------------------------------------------------------------------------
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://oreilly.com/catalog/9780596158071/[O'Reilly - Learning Python, Fourth Edition]
+   ** Chapter 31. Advanced Class Topics > Class Properties (p792)
+   ** Chapter 37. Managed Attributes (p941)
+ * http://wiki.python.org/jython/JythonFaq/GeneralInfo#How_do_I_learn_more_about_Jython.3F[JythonFaq > General Information] - 這裡提到 Jython 2.5.0 就已經把 Python 2.6 才有的 decorator 做進來了
+ * http://kbyanc.blogspot.com/2007/06/python-property-attribute-tricks.html[The Other Kelly Yancey: Python: property attribute tricks] (2007-06-19)
+================================================================================
+
+== 參考資料 ==
+
+.文件
+--
+ * http://www.python.org/dev/peps/pep-0008/#designing-for-inheritance[PEP 8 -- Style Guide for Python Code > Designing for inheritance]
+ * http://oreilly.com/catalog/9780596158071/[O'Reilly - Learning Python, Fourth Edition > Chapter 37 Managed Attributes] (2009.09)
+--
+
+.其他文件
+--
+ * http://stackoverflow.com/questions/3012421/python-lazy-property-decorator[Python lazy property decorator - Stack Overflow] (2010-06-10)
+ * http://jeetworks.org/node/62[Lazy-Loading/Cached Properties Using Descriptors and Decorators | Jeet Sukumaran] (2010-03-21)
+ * http://code.activestate.com/recipes/363602-lazy-property-evaluation/[Lazy property evaluation « Python recipes « ActiveState Code] (2005-01-18)
+--
+

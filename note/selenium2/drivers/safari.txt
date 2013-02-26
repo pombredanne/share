@@ -1,0 +1,75 @@
+= link:drivers.html[Selenium 2/WebDriver / Drivers] / Safari =
+:title: [Selenium 2/WebDriver] SafariDriver
+
+SafariDriver 以 extension 的形式提供 WebDriver 的支援（Safari 5.1+）。透過 WebDriver API 開啟瀏覽器時，就會動態加裝一個名叫 WebDriver 的 extension：（不影響平時所用的 Safari）
+
+image::safari/extensions.png[]
+
+== Java ==
+
+由於 SafariDriver 內建在 Selenium Server 2.23.0+ 裡，如果要用 link:../java/java.html[Java binding] 操作的話，只要把 JAR 檔加到 classpath 裡。
+
+[source,java]
+.`LaunchSafari.java`
+--------------------------------------------------------------------------------
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.safari.SafariDriver;
+
+public class LaunchSafari {
+
+    public static void main(String[] args) {
+        WebDriver driver = new SarafiDriver();
+        driver.get("http://www.wikipedia.com");
+    }
+
+}
+--------------------------------------------------------------------------------
+
+[source,console]
+--------------------------------------------------------------------------------
+$ java -cp .:selenium-server-standalon.jar LaunchSafari
+Feb 22, 2013 2:30:39 PM org.openqa.selenium.safari.SafariDriverServer start
+INFO: Server started on port 43819
+Feb 22, 2013 2:30:40 PM org.openqa.selenium.safari.SafariDriverChannelHandler$1 operationComplete
+INFO: Connection opened
+--------------------------------------------------------------------------------
+
+image::safari/connecting.png[]
+
+如果搭配 Maven 進行開發，只要引入 `org.seleniumhq.selenium:selenium-java` http://search.maven.org/#search%7Cgav%7C1%7Cg%3A%22org.seleniumhq.selenium%22%20AND%20a%3A%22selenium-safari-driver%22[2.21.0] 以上的版本即可。
+
+--------------------------------------------------------------------------------
+<dependency>
+  <groupId>org.seleniumhq.selenium</groupId>
+  <artifactId>selenium-java</artifactId>
+  <version>2.30.0</version>
+</dependency>
+--------------------------------------------------------------------------------
+
+== Python ==
+
+至於 link:../python/python.html[Python binding]，不知道為什麼到現在（2013-02）仍不支援 Safari？
+
+還好可以透過 link:remote.html[Remote WebDriver] -> Selenium Server 間接叫起 Safari（一樣會動態加裝 extension），只是要多開一個 server 比較麻煩而已。
+
+[source,pycon]
+--------------------------------------------------------------------------------
+>>> from selenium import webdriver
+>>> driver = webdriver.Remote(desired_capabilities={'browserName':'safari'})
+--------------------------------------------------------------------------------
+
+== 參考資料 ==
+
+.文件
+--
+ * http://code.google.com/p/selenium/wiki/SafariDriver[SafariDriver] ^https://diigo.com/0x1sj[閱讀]^
+--
+
+.其他文件
+--
+ * http://grokbase.com/t/gg/webdriver/128zq8k38h/launching-safari-driver-from-python[[webdriver&#93; Launching Safari Driver from Python? - Grokbase] ^https://diigo.com/0x1nt[閱讀]^ (2012-08-31)
+ * https://groups.google.com/forum/?fromgroups=#!topic/webdriver/sVOkUBjEMoI[Safari Driver with Python Bindings - Google Groups] ^https://diigo.com/0x1q2[閱讀]^ (2012-04-27) - SafariDriver 用 WebSockets 很特別？
+ * http://stackoverflow.com/questions/7950980/python-selenium-remote-webdriver-safari-driver[python selenium remote webdriver safari driver - Stack Overflow] ^https://diigo.com/0x1q0[閱讀]^ (2011-10-31)
+ * http://darrellgrainger.blogspot.tw/2011/02/using-selenium-20-with-webdriver-and.html[QA & Testing: Using Selenium 2.0 with WebDriver and Safari] ^https://diigo.com/0x1om[閱讀]^ (2011-02-21)
+--
+

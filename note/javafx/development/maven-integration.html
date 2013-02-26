@@ -1,0 +1,280 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[JavaFX] 用 Maven 進行開發</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" />
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div>
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="development.html">JavaFX / Development</a> / Maven Integration</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>目前礙於 Oracle 授權的問題，JavaFX runtime 可以隨著 JavaFX 應用程式散佈，但不能單獨散佈 JavaFX runtime 本身，所以 Maven Central 不會有 JavaFX JAR (<code>jfxrt.jar</code>)。</p></div>
+<div class="paragraph"><p>另外 <code>jfxrt.jar</code> 好像會以相對路徑相依於其他 native libraries（例如 Windows 的 <code>glass.dll</code>，Linux 的 <code>libglass.so</code> 或 Mac OS X 的 <code>libglass.dylib</code>）？這部份也不是 Maven repository 可以管理的。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">不過在內建 JavaFX 2.2.4 的 Java SE 7u10 (Linux 64-bit) 上有一些有趣的發現。雖然有看到 <code>$JAVA_HOME/jre/lib/amd64/libglass.so</code>，但即便把 <code>$JAVA_HOME/jre/lib/jfxrt.jar</code> 移到其他地方，執行期並不會丟出 native libraries 找不到的錯誤，是因為沒有用到特定的功能嗎？</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>由於 <a href="../install.html#full-integration">JavaFX 最終將完全被整進 JRE</a>，到時候 JavaFX 也不再是個需要額外宣告的 dependency，<a href="http://www.zenjava.com/2012/02/17/javafx-and-maven/">建議</a>暫時採用 system scope 直接引用 JavaFX 安裝位置的 JAR 檔。</p></div>
+<div class="listingblock" id="dependency">
+<div class="content">
+<pre><code>&lt;dependency&gt;
+  &lt;groupId&gt;com.oracle&lt;/groupId&gt; <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+  &lt;artifactId&gt;javafx&lt;/artifactId&gt;
+  &lt;version&gt;2.0&lt;/version&gt;
+  &lt;scope&gt;system&lt;/scope&gt;
+  &lt;systemPath&gt;${java.home}/lib/jfxrt.jar&lt;/systemPath&gt;
+&lt;/dependency&gt;</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+大家習慣用 <code>com.oracle:javafx</code> 來表示 JavaFX，但 <code>javafx:javafx-rt</code> 會不會更好？跟 <a href="http://maven.apache.org/guides/mini/guide-coping-with-sun-jars.html">官方建議的 Sun JARs</a> 命名方式比較相近&#8230;
+</td></tr>
+</table></div>
+<div class="paragraph"><p>這樣的用法也符合 Maven 對 system scope 的定義：</p></div>
+<div class="quoteblock">
+<div class="content">
+<div class="paragraph"><p>Dependencies with the scope system are always available and are not looked up in repository. They are usually used to tell Maven about dependencies which are provided by the JDK or the VM. <em>Thus, system dependencies are especially useful for resolving dependencies on artifacts which are now provided by the JDK, but where available as separate downloads earlier.</em></p></div>
+</div>
+<div class="attribution">
+&#8212; <a href="http://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html">Maven - Introduction to the Dependency Mechanism</a>
+</div></div>
+<div class="paragraph"><p>下面用 Hello World 來做說明：</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span class="n">$</span> <span class="n">mvn</span> <span class="nl">archetype:</span><span class="n">generate</span> <span class="err">\</span>
+      <span class="o">-</span><span class="n">DgroupId</span><span class="o">=</span><span class="n">com</span><span class="o">.</span><span class="na">example</span><span class="o">.</span><span class="na">javafx</span> <span class="err">\</span>
+      <span class="o">-</span><span class="n">DartifactId</span><span class="o">=</span><span class="n">javafx</span><span class="o">-</span><span class="n">examples</span> <span class="err">\</span>
+      <span class="o">-</span><span class="n">Dpackage</span><span class="o">=</span><span class="n">com</span><span class="o">.</span><span class="na">example</span><span class="o">.</span><span class="na">javafx</span>
+<span class="n">$</span>
+<span class="n">$</span> <span class="n">cd</span> <span class="n">javafx</span><span class="o">-</span><span class="n">examples</span>
+<span class="n">$</span> <span class="n">rm</span> <span class="n">src</span><span class="o">/</span><span class="n">main</span><span class="o">/</span><span class="n">java</span><span class="o">/</span><span class="n">com</span><span class="o">/</span><span class="n">example</span><span class="o">/</span><span class="n">javafx</span><span class="o">/</span><span class="n">App</span><span class="o">.</span><span class="na">java</span> <span class="n">src</span><span class="o">/</span><span class="n">test</span><span class="o">/</span><span class="n">java</span><span class="o">/</span><span class="n">com</span><span class="o">/</span><span class="n">example</span><span class="o">/</span><span class="n">javafx</span><span class="o">/</span><span class="n">AppTest</span><span class="o">.</span><span class="na">java</span>
+<span class="n">$</span>
+<span class="n">$</span> <span class="n">vi</span> <span class="n">pom</span><span class="o">.</span><span class="na">xml</span> <span class="o">&lt;</span><span class="mi">1</span><span class="o">&gt;</span>
+<span class="n">$</span> <span class="n">vi</span> <span class="n">src</span><span class="o">/</span><span class="n">main</span><span class="o">/</span><span class="n">java</span><span class="o">/</span><span class="n">com</span><span class="o">/</span><span class="n">example</span><span class="o">/</span><span class="n">javafx</span><span class="o">/</span><span class="n">HelloWorld</span><span class="o">.</span><span class="na">java</span>
+<span class="n">$</span> <span class="n">mvn</span> <span class="n">install</span>
+<span class="n">$</span> <span class="n">mvn</span> <span class="nl">exec:</span><span class="n">java</span> <span class="o">-</span><span class="n">Dexec</span><span class="o">.</span><span class="na">classpathScope</span><span class="o">=</span><span class="n">compile</span> <span class="o">-</span><span class="n">Dexec</span><span class="o">.</span><span class="na">mainClass</span><span class="o">=</span><span class="n">com</span><span class="o">.</span><span class="na">example</span><span class="o">.</span><span class="na">javafx</span><span class="o">.</span><span class="na">HelloWorld</span> <span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span>
+</pre></div></div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+宣告 JavaFX dependency。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+執行 Hello World
+<div class="openblock">
+<div class="content">
+<div class="paragraph"><p><span class="image">
+<img src="maven-integration/helloworld.png" alt="maven-integration/helloworld.png" />
+</span></p></div>
+<div class="paragraph"><p><code>exec:java</code> 用 <code>classpathScope</code> 來決定哪些 dependencies 要納入 classpath（可以透過 <code>-Dexec.classpathScope</code> 指定），預設是 <code>runtime</code>，不會將 system scope 的 dependencies 納進來（換成 <code>system</code> 也一樣），所以要改採 <code>compile</code> 或 <code>test</code> 才行。</p></div>
+</div></div>
+</td></tr>
+</table></div>
+<div class="listingblock">
+<div class="title"><code>HelloWorld.java</code></div>
+<div class="content">
+<pre><code>package com.example.javafx;
+
+import javafx.application.Application;
+import javafx.stage.Stage;
+import javafx.scene.Scene;
+import javafx.scene.text.Text;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.scene.text.TextBuilder;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.StackPaneBuilder;
+import javafx.scene.paint.Color;
+
+public class HelloWorld extends Application {
+
+    public static void main(String[] args) {
+        launch(args);
+    }
+
+    @Override
+    public void start(Stage stage) {
+        StackPane root = StackPaneBuilder.create()
+            .children(
+                TextBuilder.create()
+                    .text("Hello, World!")
+                    .fill(Color.rgb(187, 195, 107))
+                    .font(Font.font("SansSerif", FontWeight.BOLD, 24))
+                    .build()
+            )
+            .build();
+        stage.setScene(new Scene(root, 400, 300));
+        stage.setTitle("Hello JavaFX");
+        stage.show();
+    }
+
+}</code></pre>
+</div></div>
+<div class="paragraph"><p>整合 Ant tasks 是一條路，但有沒有 Maven plugins 可以讓 <code>pom.xml</code> 因此而變得複雜？</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_延伸閱讀">延伸閱讀</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="../../maven/sun-jars.html">Sun JARs</a>
+</p>
+</li>
+<li>
+<p>
+<a href="maven-plugins.html">Maven Plugins</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">網站</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="https://github.com/zonski/hello-javafx-maven-example">zonski/hello-javafx-maven-example · GitHub</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.oracle.com/technetwork/articles/java/enterprisefxpt3-1735081.html">The Enterprise Side of JavaFX: Part Three</a> - 難得官方文件提到 Maven 應用。
+</p>
+</li>
+<li>
+<p>
+<a href="http://blog.cag.se/?p=752">JavaFX 2.2 and Maven | CAG konsultblogg</a> <sup><a href="http://diigo.com/0vwbb">閱讀</a></sup> (2012-09-08) - 提到 JavaFX 尚未完全整合到 JRE 的問題。
+</p>
+</li>
+<li>
+<p>
+<a href="http://java.dzone.com/articles/create-javafx-executables">Create JavaFX Executables with Maven | Javalobby</a> <sup><a href="http://diigo.com/0vw90">閱讀</a></sup> (2012-07-12) - JavaFX 被 boundle 進 JDK 之後，建議用 system scope 引用 <code>com.oracle:javafx</code>。但整合 Ant tasks 讓 <code>pom.xml</code> 變得好複雜&#8230;
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.zenjava.com/2012/02/17/javafx-and-maven/">JavaFX and Maven | Zen Java</a> <sup><a href="http://diigo.com/0vw7p">閱讀</a></sup> (2012-02-17) - 礙於 license 跟 JavaFX runtime 會相依於其他 native libraries，所以無法放到 Maven Central。建議用 system scope 直接引用 JavaFX 安裝位置的 JAR 檔 (<code>com.oracle:javafx</code>)。
+</p>
+</li>
+<li>
+<p>
+<a href="http://code.google.com/p/jacp/wiki/JacpFXTutorial">JacpFXTutorial - jacp</a> - JacpFX 也是用 system scope 將 <code>com.oracle:javafx</code> 引進來。
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">其他文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.guigarage.com/2012/10/building-javafx-applications-with-maven/">Building JavaFX Applications with Maven | GuiGarage</a> <sup><a href="http://diigo.com/0vwap">閱讀</a></sup> (2012-10-13) - Maven 3 才支援 <code>${java.home}</code>？
+</p>
+</li>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/10752102/javafx-native-libraries">swing - JavaFX Native libraries - Stack Overflow</a> <sup><a href="http://diigo.com/0vti3">閱讀</a></sup> (2012-05-25) - <code>jfxrt.jar</code> 會相依於其他 native libraries。
+</p>
+</li>
+<li>
+<p>
+<a href="http://loop81.blogspot.tw/2012/03/javafx-2-get-started-with-maven-eclipse.html">Me and my coding: JavaFX 2 - Get started with Maven, Eclipse and JavaFX</a> (2012-03)
+</p>
+</li>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/9294646/javafx-2-as-a-maven-dependency">java - JavaFX 2 as a Maven dependency - Stack Overflow</a> <sup><a href="http://diigo.com/0vtj4">閱讀</a></sup> (2012-02-15) - Maven 可以直接利用 JavaFX 內建的 Ant tasks。
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.adam-bien.com/roller/abien/entry/how_to_compile_java_fx">How To Compile Java FX 2 Applications With Maven 3 : Adam Bien&#8217;s Weblog</a> <sup><a href="http://diigo.com/0vw7u">閱讀</a></sup> (2011-12-21) - 一樣是以 system 引入 <code>com.oracle:javafx</code>。
+</p>
+</li>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/7105660/javafx-2-0-netbeans-maven">JavaFX 2.0 + NetBeans + Maven - Stack Overflow</a> <sup><a href="http://diigo.com/0vtj1">閱讀</a></sup> (2011-08-18) - 為什麼會有把 <code>bin</code> 資料夾複製到 local repository 的說法？
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2013-02-26 13:04:30 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script>
+</body>
+</html>

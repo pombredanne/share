@@ -1,0 +1,279 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[OpenNI] Data Generation</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" />
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div>
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="concepts.html">OpenNI / Concepts</a> / Data Generation</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+A generator node produces some type of data. 像 device node 就沒有產出
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>org.OpenNI.Generator</code> extends <code>ProductionNode</code>
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+state - generating, or non-generating (initial)
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>isGenerating()</code>, <code>startGenerating()</code>, <code>stopGenerating()</code>
+</p>
+</li>
+<li>
+<p>
+two functions that control all generators in the context - <code>Context.startGeneratingAll()</code>, <code>Context.stopGeneratingAll()</code>
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+created &#8594; non-generating, with default configuration &#8594; change configuration &#8594; start generating
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+non-generating state = configuration stage
+</p>
+</li>
+<li>
+<p>
+也可以在 generating state 時調整 configuration，只是要花一點時間（幾秒鐘？）才會生效。
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+audio, gesture, hands, user, map (image, depth, IR, scense)
+</p>
+</li>
+<li>
+<p>
+"update data" methods
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>Generator.waitAndUpdateData()</code> or <code>Context.waitXXXUpdateAll</code> methods (recommended)
+</p>
+</li>
+<li>
+<p>
+all throws <code>StatusException</code> - no new data available within 2 seconds.
+</p>
+</li>
+<li>
+<p>
+update generator&#8217;s <em>application buffer</em>, making the latest data available for getting.
+</p>
+</li>
+<li>
+<p>
+all subsequent calls to "get data" will return exactly the same data until you call <em>update data</em> again.
+</p>
+</li>
+<li>
+<p>
+data &#8594; frame data, <code>Generator.getFrameID()</code>, <code>Generator.getTimestamp()</code>, <code>Generator.getDataSize()</code>
+</p>
+</li>
+<li>
+<p>
+"get data" methods in subclasses, <code>ImageGenerator.getImageMap()</code>, <code>DepthGenerator.getDepthMap()</code>, &#8230;
+</p>
+</li>
+<li>
+<p>
+<code>Generator.waitAndUpdateData()</code> - cause the node to update its application buffers with new data, if it has new data available. (available &#8594; accessible)
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>Generator.isNewDataAvailable()</code> - the new data is available for updating, but can not yet be accessed by the application.
+</p>
+</li>
+<li>
+<p>
+<code>Generator.isDataNew()</code> - whether this node&#8217;s frame data was updated by the most recent call to any <em>update data</em> methods.
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+if nodes are dependent on each other, it promises that the needed node will be updated before the needing node.
+</p>
+</li>
+<li>
+<p>
+typically, a call to one of these methods will be placed in the "main program loop".
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+"update all" methods (<code>Context</code>)
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>waitAndUpdateAll()</code>, <code>waitOneUpdateAll(waitFor)</code>, <code>waitAnyUpdateAll()</code>, <code>waitNoneUpdateAll()</code>
+</p>
+</li>
+<li>
+<p>
+update the nodes all at once, performs a different type of <em>wait</em> prior to performing the <em>update</em>
+</p>
+</li>
+<li>
+<p>
+ensures that the accessible data from each and every node is the node&#8217;s most recently generated data.
+</p>
+</li>
+<li>
+<p>
+<code>waitOneUpdateAll(waitFor)</code> - especially useful when having several nodes producing data, but only one determines the progress of the application.
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+generating state - generating new data all the time
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+sensor &#8594; generating state &#8594; hold internally &#8594; update &#8594; application buffer (accessible)
+</p>
+</li>
+<li>
+<p>
+holds its new data internally only, until the application explicitly asks the generator to update its data to the new data.
+</p>
+</li>
+<li>
+<p>
+"get data" method only get "consistent data set" - frame, all received at any one time, until it has completed processing the frame.
+</p>
+</li>
+<li>
+<p>
+updated = copy "internal data" to the node&#8217;s application buffer.
+</p>
+</li>
+</ul></div>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+OpenNI Overview &gt; Concepts
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+Data Generation (<code>Documentation/html/conc_generation.html</code>)
+</p>
+</li>
+<li>
+<p>
+Making Data Available using the <code>WaitXUpdateAll()</code> Methods (<code>Documentation/html/conc_updating_data.html</code>)
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+<code>xn::Generator</code> Class Reference (<code>Documentation/html/classxn_1_1_generator.html</code>) &#8594; <a href="https://github.com/OpenNI/OpenNI/blob/Unstable-1.5.4.0/Wrappers/OpenNI.java/src/org/OpenNI/Generator.java"><code>org/OpenNI/Generator.java</code></a>
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2013-02-26 11:45:43 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script>
+</body>
+</html>

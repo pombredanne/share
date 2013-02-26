@@ -1,0 +1,42 @@
+= link:data-generation.html[OpenNI / Data Generation] / Hands Generator =
+:title: [OpenNI] Hands Generator
+
+ * generates tracking data about a single hand or "multiple hands" with persistent IDs (hand ID).
+ * tracking a hand (typical scenario)
+   ** the HandsGenerator DOES NOT provide the mechanism for initially locating the hand. 必須靠其他 generators 來驅動
+   ** the presence of a hand object and its position, can be obtained, for example, from a gesture generator node.
+   ** after "hand recognition" the HandsGenerator class "continues tracking" the hand and sending HandUpdate events until the application sends calls HandsGenerator's StopTracking method.
+   ** uses an algorithm that uses the depth to obtain points and track. too susceptible to jitter of the hand? -> set "smoothing factor" none (0) ~ maximum (1), 0.1 when using the PrimeSense algorithm for hand generation.
+ * working with gesture generator
+   ** the application can use a GestureGenerator to detect that specific gesture and then use the position of that gesture (end point) to initialize the HandsGenerator, asking it to track the hand located at that position.
+   ** there is no inherent connection between the GestureGenerator and the HandsGenerator. Detecting a gesture and using that position to initialize the HandsGenerator is just an example of how applications can use the two
+ * events
+   ** hand creation - when an expected hand has been "positively identified" or when a "new hand" appears. if an additional hand is found internally?
+   ** hand update - when a tracked hand "still present" in a new frame, even the hand is still in the same position
+   ** hand destroy - when a tracked hand disappears.
+ * `org.OpenNI.HandsGenerator`，怎麼突然開頭是大寫？
+   ** `static HandsGenerator create(Context context)`
+   ** `void StopTracking(int id)` -> trigger "hand destroy" event
+   ** `void StopTrackingAll()`
+   ** `void StartTracking(Point3D position)` - if find the hand -> trigger "hand create" event
+   ** `void SetSmoothing(float factor)`
+   ** events
+      *** `IObservable<ActiveHandEventArgs> getHandCreateEvent()`
+      *** `IObservable<ActiveHandEventArgs> getHandUpdateEvent()`
+      *** `IObservable<InactiveHandEventArgs> getHandDestroyEvent()`
+ * `org.OpenNI.ActiveHandEventArgs` - `getId()`, `getPosition()` (real-world coordinates), `getTime()`
+ * `org.OpenNI.InactiveHandEventArgs` - `getId()`, `getTime()`
+
+== 延伸閱讀 ==
+
+ * link:gesture-generator.html[Gesture Generator]
+
+== 參考資料 ==
+
+.文件
+--
+ * `xn::HandsGenerator` Class Reference (`Documentation/html/classxn_1_1_hands_generator.html`) -> https://github.com/OpenNI/OpenNI/blob/Unstable-1.5.4.0/Wrappers/OpenNI.java/src/org/OpenNI/HandsGenerator.java[`org/OpenNI/HandsGenerator.java`]
+ * https://github.com/OpenNI/OpenNI/blob/Unstable-1.5.4.0/Wrappers/OpenNI.java/src/org/OpenNI/ActiveHandEventArgs.java[`org/OpenNI/ActiveHandEventArgs.java`]
+ * https://github.com/OpenNI/OpenNI/blob/Unstable-1.5.4.0/Wrappers/OpenNI.java/src/org/OpenNI/InactiveHandEventArgs.java[`org/OpenNI/InactiveHandEventArgs.java`]
+--
+

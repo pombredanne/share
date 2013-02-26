@@ -1,9 +1,39 @@
 = link:../ios.html[iOS] / UI Automation =
 :title: [iOS] UI Automation
 
+[quote,Instruments User Guide,'http://developer.apple.com/library/mac/#documentation/DeveloperTools/Conceptual/InstrumentsUserGuide/UsingtheAutomationInstrument/UsingtheAutomationInstrument.html[Automating UI Testing]']
+________________________________________________________________________________
+For your protection, the Automation instrument enables you to process only apps that have been code signed with your provisioning profile. These apps include any copy that has been downloaded from the iTunes App Store.
+________________________________________________________________________________
+
+[quote,Jonathan Penn,'http://diigo.com/0vstt[How to test iOS web application using Instruments UIAutomation - Stack Overflow]']
+________________________________________________________________________________
+UI Automation will only work for native applications built by you with Xcode. From your question it sounds like you want to launch Mobile Safari or Chrome for iOS and manipulate that with UI Automation. That won't work. Instruments can let you connect to applications you didn't compile running on the simulator or device, but only some of the instruments work and UI Automation isn't one of them.
+________________________________________________________________________________
+
+ * iOS 4.0 之後才有，可以同時跑在 real devices 跟 simulator。
+   ** iPhone 3GS, iPad 具 iOS 4.0+ 都支援，但 iPhone 3G 完全不支援，不論 iOS 是幾版。
+ * 用 JavaScript 撰寫 test script（透過 instrument 執行在 host 上），可以測 UIKit-based applications。
+ * `#import "<path-to-library-folder>/TestUtilities.js"` 可以引入其他共用的 JavaScript。
+ * 利用 accessibility labels/values 來操控畫面或驗證結果
+ * accessible elements 除了可以用它在 element hierarchy 裡的 position 定位之外，也可以給定 label來識別要操作的對象。
+   ** UI Automation uses the accessibility label (if it’s set) to derive a name property for each element 這是什麼意思？
+ * 支援 touch gestures - tap, pinch, drag, flick, alert, orientation...
+ * 透過 UI automation 持續對畫面進行操作並不會因此讓 auto-locking 失效，因此測試前要手動將 Auto-Lock 調成 Never。
+ * automation instrument = instruments + automation trace template
+ * Product > Profile > Automation 開出來就是 Instruments 的視窗，感覺可以搭配 scripts 做一些動作，然後將 loading 錄下來做比較，而 scripts 也可以應用在 test automation 而已。
+ * 可以確定的是，跑測試的過程中切到其他 app 再回來，並不會造成測試中斷，只是還沒回到 app 前對 target 的操作都會卡在那裡。但似乎真的存取不到其他 app...
+ * automation instrument 只能用在以 provisioning profile 做 code-sign 的 app，所以想要操作 Safari 等 built-in apps 是不可能的。
+ * automation instrument 可以搭配其他 instruments 測試 performance、memory leak 等。如果有 cross app 的需求，同時開兩個 automation instruments 會怎樣？
+ * 當 instrumented app 送到 background 時，test script 會 block 住，一旦變成 frontmost 後才會繼續往下執行。
+ * multitasking？
+
 == 延伸閱讀 ==
 
- * link:page-object.html[套用 Page Object Pattern]
+ * link:command-line.html[Command Line]
+ * link:page-object.html[Page Object Pattern]
+ * link:host-communication.html[Host Communication]
+ * link:accessibility.html[Accessibility]
 
 == 參考資料 ==
 
@@ -18,9 +48,38 @@
  * http://developer.apple.com/library/ios/#documentation/DeveloperTools/Reference/UIAutomationRef/_index.html[UI Automation JavaScript Reference]
 --
 
+.工具
+--
+ * https://github.com/alexvollmer/tuneup_js[alexvollmer/tuneup_js · GitHub]
+--
+
 .文件
 --
- * http://blog.manbolo.com/2012/04/08/ios-automated-tests-with-uiautomation[iOS Automated Tests with UIAutomation] (2012-04-08)
+ * http://developer.apple.com/library/mac/#documentation/DeveloperTools/Conceptual/InstrumentsUserGuide/UsingtheAutomationInstrument/UsingtheAutomationInstrument.html[Instruments User Guide: Automating UI Testing] ^https://dl.dropbox.com/u/42335152/read/developer.apple.com/library/mac/documentation/DeveloperTools/Conceptual/InstrumentsUserGuide/InstrumentsUserGuide.pdf[閱讀]^ (http://developer.apple.com/library/mac/documentation/DeveloperTools/Conceptual/InstrumentsUserGuide/InstrumentsUserGuide.pdf[PDF]) - 非常值得一看，講得非常詳盡。
+ * http://developer.apple.com/devcenter/download.action?path=/wwdc_2010/wwdc_2010_video_assets__pdfs/306__automating_user_interface_testing_with_instruments.pdf[Automating User Interface Testing with Instruments]
+   ** UIKit based applications, touch based
+   ** integrated in instruments, accessibility based
+   ** UIAElement - name, value, elements, parent
+   ** control hierarchy; target application -> main window -> view -> element -> child element = `UIATarget.localTarget().frontMostApp().mainWindows().tableViews()[0].cells()[0].elements()["Chocolate Cake"];`
+   ** tapping buttons, text input, switching tabs, scrolling
+   ** verification, logging, capture screenshots
+   ** handling expected/unexpected alters
+   ** multitasking (deactivate, reactivate applications?)
+   ** orientations, touch (tap, pinch, drag, flick)
+   ** timeout, wait for elements to appear (default 5 seconds)
+ * http://blog.manbolo.com/2012/04/08/ios-automated-tests-with-uiautomation[iOS Automated Tests with UIAutomation] ^http://diigo.com/0vk8i[閱讀]^ (2012-04-08)
+ * http://alexvollmer.com/posts/2010/07/03/working-with-uiautomation/[Alex Vollmer — Working with UIAutomation] (2010-07-03)
+--
+
+.其他文件
+--
+ * http://stackoverflow.com/questions/13246556/how-to-test-ios-web-application-using-instruments-uiautomation[How to test iOS web application using Instruments UIAutomation - Stack Overflow] ^http://diigo.com/0vstt[閱讀]^ (2012-11-06) - instruments 的對象不一定是要由你 compile 出來的 app，但 UI Automation 是個例外。
+ * http://stackoverflow.com/questions/12045621/using-instruments-to-test-an-ios-app-without-having-source-code-to-the-applicati[ipad - Using Instruments to test an iOS app without having source code to the application - Stack Overflow] ^http://diigo.com/0vs70[閱讀]^ (2012-08-20) - 這裡 "open the automator and bind your test with an application installed on the device" 要怎麼做？
+ * http://stackoverflow.com/questions/10325548/when-using-uiautomation-instruments-for-ios-is-there-a-way-to-keep-my-app-open-b[javascript - When using UIAutomation Instruments for iOS is there a way to keep my app open between tests? - Stack Overflow] ^http://diigo.com/0vmhy[閱讀]^ (2012-04-26) - 描述過程中需要離開 device 取得 passcode 的動作，提到 `target.delay()` 可以等待某條件成立，但要怎麼把 passcode 傳進去？
+ * http://cocoamanifest.net/articles/2011/11/changes-to-ui-automation-in-ios-5.html[Changes to UI Automation in iOS 5 - Cocoa Manifest] (2011-11-30)
+ * http://cocoamanifest.net/articles/2011/07/ui-automation-part-2-assertions-and-imports.html[UI Automation Part 2: Assertions and Imports - Cocoa Manifest] (2011-07-14)
+ * http://cocoamanifest.net/articles/2011/05/uiautomation-an-introduction.html[UI Automation: An Introduction - Cocoa Manifest] (2011-05-27)
+ * http://stackoverflow.com/questions/6191814/issuing-a-synchronous-http-get-request-or-invoking-shell-script-in-javascript-fr[iphone - Issuing a synchronous HTTP GET request or invoking shell script in JavaScript from iOS UIAutomation - Stack Overflow] （2011-05-31)
 --
 
 ////////////////////////////////////////////////////////////////////////////////

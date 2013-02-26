@@ -1,0 +1,47 @@
+= link:sharepoint.html[SharePoint] / AsciiDoc Integration =
+:title: [SharePoint] 用 AsciiDoc 撰寫文件
+
+AsciiDoc 預設的產出有下面這些問題：
+
+ * 直接用 SharePoint 的 WYSIWIG 編寫 wiki 真的會吐血，但用 AsciiDoc 產出的文件直接貼上去又不能看。
+ * AsciiDoc 產出後，可以取出 `<div id="content">...</div>` 的部份，或是用 `--no-header-footer` 或 `-s` 產出即可。
+ * 文件的 title 不會輸出，但由於 wiki name 有字元上的限制，所以 wiki name 跟實際的 title 可能不同，應該要輸出在最上面才對。
+ * Table 裡的文字都會被放大，整個畫面會很不協調，看來需要自訂 CSS 了。
+ * `[[wiki_page_name]]` 要寫成 `\[[wiki_page_name]]`，語法上相衝突，用起來不是很方便。
+ * 將 `<table` 置換成 `<table style="display: inline; border-collapse: collapse; font-size: 1em" border="1"`
+ * 將 `./images/` 置換成 `http://ishare.trendmicro.com/enggroup/SMBPDG/WFBS-H30/wiki_imgs/`
+ * 將 `<div class="content"` 置換成 `<div class="content" style="background-color: LightGray"`
+ * 將 `<h2` 置換成 `<h2 style="background-color: SkyBlue"`
+ * 將 `<h3` 置換成 `<h3 style="background-color: LightCyan"`
+ * 將 `<div class="imageblock"` 置換成 `<div class="imageblock" style="margin:1em 0 1em 0"`。
+ * List 會變成 `<li><p>[[QA Settings in CI]]</p></li>`，所以行距會拉很大，把 `<p>` 拿掉就好了。
+ * 圖片手動貼好像滿麻煩的，或許可以考慮搭配 `-a data-uri -a icons`？但這又會讓不用 AsciiDoc 的人很難直接編輯 HTML。
+
+最後找到一個很簡單的方式，就是自訂一個 backend configuration - `sharepoint.conf`，並且將調整過的 `asciidoc.css` 設定成 SharePoint site 的 alternative CSS 即可：
+
+.`sharepoint.conf`
+--------------------------------------------------------------------------------
+include::xhtml11.conf[]
+
+[attributes]
+wikibase=http://ishare.trendmicro.com/enggroup/SMBPDG/WFBS-H30/WFBSS%20QA%20Wiki2/
+icons=
+iconsdir=http://ishare.trendmicro.com/enggroup/SMBPDG/WFBS-H30/wiki_imgs/icons
+imagesdir=http://ishare.trendmicro.com/enggroup/SMBPDG/WFBS-H30/wiki_imgs
+
+[header]
+<div id="asciidoc">
+<h1>{doctitle}</h1>
+
+[footer]
+</div>
+
+[link-inlinemacro]
+<a href="{eval:'{wikibase}' + r'{target}'.split('#')[0] + '.aspx#' + ''.join(r'{target}'.split('#', 1)[1:])}">{0={target}}</a>
+--------------------------------------------------------------------------------
+
+之後用 `asciidoc -b sharepoint` 就可以...
+
+ * 用 "link" 來取代 SharePoint 原有的 `[[wiki_page_name]]`，還多了 anchor 的支援。
+ * 把 `asciidoc -s` 的結果外加一層 `<div class="asciidoc">`，然後將 `asciidoc.css` 的所有 style 都加上 `div.asciidoc` 就不會影響到其他人了。
+

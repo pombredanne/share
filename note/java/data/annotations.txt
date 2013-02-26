@@ -1,0 +1,91 @@
+= link:data.html[Java / Data] / Annotations =
+:title: [Java] Annotations
+
+ * introduced in Java SE 5
+   ** ad hoc annotation mechanisms - `transient` (serialization), `@deprecated` (Javadoc)
+ * metadata
+   ** compile-time processing - generate boilerplate code, XML files, detect errors, suppress warnings
+   ** runtime processing - annotations can be examined/queried at runtime (via reflections `getAnnotation(annotationType)`)
+   ** no direct effect, used by various tools
+ * pain of cumbersome configuration -> annotation-based development -> "declarative" programming style
+ * annotate (= apply to) declarations of types (class/interface/annotation), fields, methods, method parameters, local variables, package?, enum?
+   ** `@AnnotationType(elements)`, where elements = comma-separated element-value pairs, or an unnamed value (value)
+   ** a special kind of modifier, 習慣擺在其他 modifiers 之前。often on its own line，但 marker 通常跟 declaration 同一行
+   ** array 以 `@SuppressWarnings` 的 `String[] value()` 為例，單一個 element 可以不用加 `{}`，例如 `@SuppressWarnings({"unchecked", "deprecation"})` 或 `@SuppressWarnings("deprecation")`。
+   ** values should be "compile-time constants" (strong type)
+ * 先看 predefined (simple) annotation types 怎麼用，再介紹剩下的用法（多個 elements，單一個 element 時）
+   ** `@Deprecated`, documented with Javadoc tag `@deprecated`
+   ** `@SuppressWarnings("deprecation")` - compiler warning category 有兩種 - deprecation 跟 unchecked (generics)。效果擴及 sub-elements，因此儘可能套用在較低的層級，否則可能意外讓其他 warnings 禁聲。
+   ** `@Override` (marker) - implement or override
+ * 跟 Javadoc 的關係是 complementary 的，跟 documentation 有關用 Javadoc tag，否則用 annotations。`@Deprecated` 跟 `@deprecated` 就是最好的例子。
+ * define/declare annotation types - a form of interface
+   ** `@interface` (@ = AT = Annotation Type)
+   ** no `extends`, but implicitly extend `Annotation` interface
+   ** element declaration, looks like methods (no parameters, not `throws`), optional default values, works like fields
+   ** return types = primitives, `String`, `Class`, enums, annotations?, and arrays of the preceding types
+   ** 如果只有一個 element，建議取做 `value`，使用時才能省略 `value =`。
+   ** no elements -> marker annotation type
+ * predefined meta-annotations (annotations of annotations)
+   ** `@Retention(policy)` - when they can be used? can be read from source files, class files, reflectively at runtime
+      *** `RetentionPolicy.SOURCE` - ignored by compiler
+      *** `RetentionPolicy.CLASS` - retained in class file, but not available to VM
+      *** `RetentionPolicy.RUNTIME` - retained, and available to VM
+   ** `@Target(ElementType.METHOD)` - where they can be used?
+   ** `@Documented` -> appear in Javadoc, 只不過是將 annotation 整個 `@xxx(ooo=xxx)` 顯示出來而已，做什麼用？
+   ** `@Inherited`?
+ * annotation-based test framework
+ * annotation processor (as compiler plug-ins)
+   ** annotation processing tool (apt), introduced in JDK 5. integrated into the compiler in JDK 6.
+
+--------------------------------------------------------------------------------
+@SuppressWarnings(value = "unchecked")
+void myMethod()
+--------------------------------------------------------------------------------
+
+如果只有一個 element（名字一定是 "value"），則 name 的部份可以省略。
+
+--------------------------------------------------------------------------------
+@SuppressWarnings("unchecked")
+void myMethod() { }
+--------------------------------------------------------------------------------
+
+如果沒有 element 要給值時（例如 marker annotation types，也可能所有 elements 都有 reasonable default values），則括號也可以省略。
+
+--------------------------------------------------------------------------------
+@Override
+void mySuperMethod() { }
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+@AnnotationType(
+    name1 = value1,
+    name2 = value2
+)
+class MyClass { }
+--------------------------------------------------------------------------------
+
+.`MyAnnotation.java`
+--------------------------------------------------------------------------------
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface MyAnnotation {
+    String value() default "Hello";
+}
+--------------------------------------------------------------------------------
+
+== 延伸閱讀 ==
+
+ * link:../configuration/configuration.html[Configuration]
+
+== 參考資料 ==
+
+ * http://jcp.org/en/jsr/detail?id=250[JSR 250]
+ * http://docs.oracle.com/javase/6/docs/technotes/guides/language/enhancements.html[Java Programming Language Enhancements (JDK 5)] ^http://diigo.com/0w2tn[閱讀]^
+ * http://docs.oracle.com/javase/tutorial/java/javaOO/annotations.html[Annotations (The Java™ Tutorials > Learning the Java Language > Classes and Objects)] ^http://diigo.com/0w2a1[閱讀]^
+ * http://docs.oracle.com/javase/7/docs/technotes/guides/language/annotations.html[Annotations] ^http://diigo.com/0w2ns[閱讀]^
+ * http://en.wikipedia.org/wiki/Java_annotation[Java annotation - Wikipedia, the free encyclopedia]
+ * http://www.codeproject.com/Articles/272736/Understanding-Annotations-in-Java[Understanding Annotations in Java - CodeProject] ^http://diigo.com/0w2b8[閱讀]^ (2011-10-23)
+ * Java Annotations: An Introduction - Developer.com (2005-10-14) - Page http://www.developer.com/java/other/article.php/3556176/An-Introduction-to-Java-Annotations.htm[1] ^http://diigo.com/0w2te[閱讀]^, http://www.developer.com/java/other/article.php/10936_3556176_2/An-Introduction-to-Java-Annotations.htm[2] ^http://diigo.com/0w2u0[閱讀]^, http://www.developer.com/java/other/article.php/10936_3556176_3/An-Introduction-to-Java-Annotations.htm[3] ^http://diigo.com/0w2uc[閱讀]^
+ * http://www.ibm.com/developerworks/library/j-annotate2/index.html[Annotations in Tiger, Part 2: Custom annotations] (2004-09-02)
+ * http://www.ibm.com/developerworks/java/library/j-annotate1/[Annotations in Tiger, Part 1: Add metadata to Java code] (2004-09-02)
+

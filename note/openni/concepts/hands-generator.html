@@ -1,0 +1,250 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[OpenNI] Hands Generator</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" />
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div>
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="data-generation.html">OpenNI / Data Generation</a> / Hands Generator</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+generates tracking data about a single hand or "multiple hands" with persistent IDs (hand ID).
+</p>
+</li>
+<li>
+<p>
+tracking a hand (typical scenario)
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+the HandsGenerator DOES NOT provide the mechanism for initially locating the hand. 必須靠其他 generators 來驅動
+</p>
+</li>
+<li>
+<p>
+the presence of a hand object and its position, can be obtained, for example, from a gesture generator node.
+</p>
+</li>
+<li>
+<p>
+after "hand recognition" the HandsGenerator class "continues tracking" the hand and sending HandUpdate events until the application sends calls HandsGenerator&#8217;s StopTracking method.
+</p>
+</li>
+<li>
+<p>
+uses an algorithm that uses the depth to obtain points and track. too susceptible to jitter of the hand? &#8594; set "smoothing factor" none (0) ~ maximum (1), 0.1 when using the PrimeSense algorithm for hand generation.
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+working with gesture generator
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+the application can use a GestureGenerator to detect that specific gesture and then use the position of that gesture (end point) to initialize the HandsGenerator, asking it to track the hand located at that position.
+</p>
+</li>
+<li>
+<p>
+there is no inherent connection between the GestureGenerator and the HandsGenerator. Detecting a gesture and using that position to initialize the HandsGenerator is just an example of how applications can use the two
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+events
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+hand creation - when an expected hand has been "positively identified" or when a "new hand" appears. if an additional hand is found internally?
+</p>
+</li>
+<li>
+<p>
+hand update - when a tracked hand "still present" in a new frame, even the hand is still in the same position
+</p>
+</li>
+<li>
+<p>
+hand destroy - when a tracked hand disappears.
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+<code>org.OpenNI.HandsGenerator</code>，怎麼突然開頭是大寫？
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>static HandsGenerator create(Context context)</code>
+</p>
+</li>
+<li>
+<p>
+<code>void StopTracking(int id)</code> &#8594; trigger "hand destroy" event
+</p>
+</li>
+<li>
+<p>
+<code>void StopTrackingAll()</code>
+</p>
+</li>
+<li>
+<p>
+<code>void StartTracking(Point3D position)</code> - if find the hand &#8594; trigger "hand create" event
+</p>
+</li>
+<li>
+<p>
+<code>void SetSmoothing(float factor)</code>
+</p>
+</li>
+<li>
+<p>
+events
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>IObservable&lt;ActiveHandEventArgs&gt; getHandCreateEvent()</code>
+</p>
+</li>
+<li>
+<p>
+<code>IObservable&lt;ActiveHandEventArgs&gt; getHandUpdateEvent()</code>
+</p>
+</li>
+<li>
+<p>
+<code>IObservable&lt;InactiveHandEventArgs&gt; getHandDestroyEvent()</code>
+</p>
+</li>
+</ul></div>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+<code>org.OpenNI.ActiveHandEventArgs</code> - <code>getId()</code>, <code>getPosition()</code> (real-world coordinates), <code>getTime()</code>
+</p>
+</li>
+<li>
+<p>
+<code>org.OpenNI.InactiveHandEventArgs</code> - <code>getId()</code>, <code>getTime()</code>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_延伸閱讀">延伸閱讀</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="gesture-generator.html">Gesture Generator</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<code>xn::HandsGenerator</code> Class Reference (<code>Documentation/html/classxn_1_1_hands_generator.html</code>) &#8594; <a href="https://github.com/OpenNI/OpenNI/blob/Unstable-1.5.4.0/Wrappers/OpenNI.java/src/org/OpenNI/HandsGenerator.java"><code>org/OpenNI/HandsGenerator.java</code></a>
+</p>
+</li>
+<li>
+<p>
+<a href="https://github.com/OpenNI/OpenNI/blob/Unstable-1.5.4.0/Wrappers/OpenNI.java/src/org/OpenNI/ActiveHandEventArgs.java"><code>org/OpenNI/ActiveHandEventArgs.java</code></a>
+</p>
+</li>
+<li>
+<p>
+<a href="https://github.com/OpenNI/OpenNI/blob/Unstable-1.5.4.0/Wrappers/OpenNI.java/src/org/OpenNI/InactiveHandEventArgs.java"><code>org/OpenNI/InactiveHandEventArgs.java</code></a>
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2013-02-26 11:45:51 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script>
+</body>
+</html>

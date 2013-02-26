@@ -1,0 +1,47 @@
+= link:magic-methods.html[Python / OOP / Magic Methods] / `__str__()` =
+:title: [Python] Magic Method - __str__()
+
+--------------------------------------------------------------------------------
+class Name:
+
+    def __init__(self, first, last):
+        self.first = first
+        self.last = last
+
+print Name('Jeremy', 'Kao') <1>
+--------------------------------------------------------------------------------
+<1> 這一行會印出類似 `<__main__.Name instance at 0x7f152d48bf80>` 的內容。
+
+如果想要印出 `first = [Jeremy], last = [Kao]`，就必須自訂 `__str__()` 才行。
+
+--------------------------------------------------------------------------------
+def __str__(self):
+    return 'first = [%s], last = [%s]' % (self.first, self.last)
+--------------------------------------------------------------------------------
+
+上面這種做法，遇到 attribute 數量一多時就麻煩了。所幸每一個 object 內部都有一個 `__dict` 負責維護所有自訂 attribute 的 name-value pair，`__str__()` 可以善用它來自動串出所有 attribute 的內容：
+
+--------------------------------------------------------------------------------
+class Name:
+
+    def __init__(self, first, last):
+        self.first = first
+        self.last = last
+
+    def __str__(self):
+        attrs = []
+        for key in self.__dict__:
+            value = self.__dict__[key]
+            attrs.append('%s = [%s]' % (key, value))
+        return ', '.join(attrs)
+
+print Name('Jeremy', 'Kao') <1>
+--------------------------------------------------------------------------------
+<1> 這一行會印出 `last = [Kao], first = [Jeremy]`。
+
+== 參考資料 ==
+
+ * http://stackoverflow.com/questions/1436703/difference-between-str-and-repr-in-python[Difference between __str__ and __repr__ in Python - Stack Overflow] (2009-09-17) - `__repr__` goal is to be unambiguous, `__str__` goal is to be readable
+ * http://pythonadventures.wordpress.com/2011/10/30/using-__str__-print-all-the-attributes-of-an-object/[Using __str__(), print all the attributes of an object « Python Adventures] (2011-10-30)
+ * http://www.cafepy.com/article/python_attributes_and_methods/python_attributes_and_methods.html#the-dynamic-dict[Python Attributes and Methods > The Dynamic __dict__]
+

@@ -1,0 +1,89 @@
+= link:regex.html[Python / Regex] / Multiline Matching =
+:title: [Python][Regex] Multiline Matching
+
+透過 `re.DOTALL` 跟 `re.MULTILINE` 這兩個旗標，`re` 的 matching 就可以跨越多行。
+
+假設有一份文字檔的內容如下：
+
+--------------------------------------------------------------------------------
+block1
+line1
+line2
+line3
+
+block2
+line1
+line2
+line3
+--------------------------------------------------------------------------------
+
+由於各平台的link:../../text/text-newline.html[換行字元]不同，文字檔實際的內容可能是：
+
+--------------------------------------------------------------------------------
+>>> windows = 'block1\r\nline1\r\nline2\r\nline3\r\n\r\nblock2\r\nline1\r\nline2\r\nline3'
+>>> unix = 'block1\nline1\nline2\nline3\n\nblock2\nline1\nline2\nline3'
+>>> mac  = 'block1\rline1\rline2\rline3\r\rblock2\rline1\rline2\rline3'
+--------------------------------------------------------------------------------
+
+試著用 regex 取出這兩塊文字：
+
+--------------------------------------------------------------------------------
+>>> re.findall(r'^\w+?\d+.*?^$', unix, re.DOTALL | re.MULTILINE) <1>
+['block1\nline1\nline2\nline3\n']
+>>> re.findall(r'^\w+?\d+.*?^$', unix + '\n', re.DOTALL | re.MULTILINE)
+['block1\nline1\nline2\nline3\n', 'block2\nline1\nline2\nline3\n']
+>>>
+>>> re.findall(r'^\w+?\d+.*?^$', windows, re.DOTALL | re.MULTILINE)
+[] <2>
+>>> re.findall(r'^\w+?\d+.*?^\r$', windows, re.DOTALL | re.MULTILINE)
+['block1\r\nline1\r\nline2\r\nline3\r\n\r'] <3>
+>>> re.findall(r'^\w+?\d+.*?^\r$', windows + '\r\n', re.DOTALL | re.MULTILINE)
+['block1\r\nline1\r\nline2\r\nline3\r\n\r'] <4>
+--------------------------------------------------------------------------------
+<1> 用 `^$` 來表示空白行，但結果只拆出了一塊文字。
++
+--
+搭配 `re.MULTILINE`，`^` 與 `$` 分別表示 start of the string / beginning of each line (immediately following each newline) 與 end of the string / end of each line (immediately preceding each newline)。
+
+也就是說 `^$` 在找 `\n\n` 或 `\n<EOF>`，但結果不包含結尾的 `\n` 或 EOF。這也就是為什麼第二塊文字沒有被拆出來的原因，在字串後面加上 Unix-like 換行字元就好了。
+--
++
+<2> 完全拆不出東西，是因為 `^` 與 `$` 之間多了個 `\r`，找不到 `\n\n` 或 `\n<EOF>`。
+<3> 將 `^$` 調整成 `^\r$` 之後還是沒有達到預期，因為 `^\r$` 其實是在找 `\n\r\n` 或 `\n\r<EOF>`，也難怪只能拆出一塊文字。
+<4> 在字串後面加上 Windows 換行字元還是拆不出第二塊文字，因為結尾是 `\r\n<EOF>`，跟 `^\r$` 要找的 `\n\r<EOF>` 不符。
+
+上面這段程式在 Unix-like 或 Windows 下執行都會得到相同的結果，因為 newline 指的永遠是 `\n`，不論在 Windows 或 Unix-like 下都一樣。實驗結果突顯了兩個問題：
+
+ * 結尾有沒有換行字元有關係
+ * `re` 並不能自己解決各平台換行字元不同的差異。
+
+其實最大的問題是 `^` 跟 `$` 相對的那個 newline 指的永遠是 `\n`，這跟現實世界裡 Unix-like 跟 Windows 分別採用 `\n` 與 `\r\n` 做為 newline character 的做法有落差。為了簡化問題，可以先把 `\r\n` (Windows) 與 `\r` (Mac) 全部取代成 `\n`，然後再解決檔案結尾可能沒有換行字元的問題：
+
+--------------------------------------------------------------------------------
+>>> universal_pattern = re.compile(r'^\w+?\d+.*?(?=\n\n|\n\Z|\Z)', re.DOTALL | re.MULTILINE) <1>
+>>> _windows = windows.replace('\r\n', '\n')
+>>> _mac = mac.replace('\r', '\n')
+>>> universal_pattern.findall(unix)
+['block1\nline1\nline2\nline3', 'block2\nline1\nline2\nline3']
+>>> re.findall(ununiversal_pattern.findall(_mac)
+['block1\nline1\nline2\nline3', 'block2\nline1\nline2\nline3']
+>>> universal_pattern.findall(_windows)
+['block1\nline1\nline2\nline3', 'block2\nline1\nline2\nline3']
+>>>
+>>> _windows = (windows + '\r\n').replace('\r\n', '\n')
+>>> _mac = (mac + '\r').replace('\r', '\n')
+>>> universal_pattern.findall(unix)
+['block1\nline1\nline2\nline3', 'block2\nline1\nline2\nline3']
+>>> universal_pattern.findall(_mac)
+['block1\nline1\nline2\nline3', 'block2\nline1\nline2\nline3']
+>>> universal_pattern.findall(_windows)
+['block1\nline1\nline2\nline3', 'block2\nline1\nline2\nline3']
+--------------------------------------------------------------------------------
+<1> 用 `^\w+?\d+.*?(?=\n\n|\n\Z|\Z)` 做為一個通用的 pattern，不論檔案結尾有沒有換行字元，而且分隔區塊用的換行字元不會出現在結果裡。
+
+== 參考資料 ==
+
+ * http://docs.python.org/library/re.html[re — Regular expression operations]
+ * http://answers.oreilly.com/topic/224-how-to-search-line-by-line-with-a-regular-expression/[How to search line by line with a regular expression - O'Reilly Answers] (2009-09-18)
+ * http://stackoverflow.com/questions/1331815/regular-expression-to-match-cross-platform-newline-characters[python - Regular Expression to match cross platform newline characters - Stack Overflow]
+

@@ -1,0 +1,385 @@
+= Domain Model (領域模型) =
+<<TableOfContents>>
+
+== Overview ==
+
+domainmodelsketch.gif
+
+At its worst business logic can be very complex. Rules and logic describe many different cases and slants(觀點) of behavior, and it's this complexity that objects were designed to work with (意指 domain model 必須含括 behaviors). A Domain Model creates a web of interconnected objects, where each object represents some meaningful individual, whether as large as a corporation or as small as a single line on an order form.
+
+== Anemic Domain Model (貧血領域模型) ==
+http://www.martinfowler.com/bliki/AnemicDomainModel.html
+
+This is one of those anti-patterns that's been around for quite a long time, yet seems to be having a particular spurt(衝刺) at the moment. I was chatting with http://domainlanguage.com/about/ericevans.html[Eric Evans] on this, and we've both noticed they seem to be getting more popular. As great boosters(擁護者) of a proper http://martinfowler.com/eaaCatalog/domainModel.html[Domain Model], this is not a good thing. (這份文件在 2003/11/25 就提出, 沒想到今天 @2007/10/05 包括我及大部份的其他人都犯了同樣的錯...)
+
+__The basic symptom(徵兆) of an ''Anemic Domain Model'' is that at first blush(一瞥) it looks like the real thing. There are objects, many named after the nouns in the domain space, and these objects are connected with the rich relationships and structure that true domain models have. '''The catch(識破) comes when you look at the ''behavior'', and you realize that there is very little behavior on these objects. Indeed often these models come with design rules that say that you are not to put any domain logic in the the domain objects. Instead there are a set of ''service objects'' which capture all the domain logic. These services live on top of the domain model and use the domain model for ''data.'''''__
+
+__The fundamental horror(恐怖) of this anti-pattern is that '''it's so contrary(矛盾的) to the basic idea of object-oriented design; which is to combine data and process together.''' The anemic domain model is really just a ''procedural style design'', exactly the kind of thing that object bigots(偏執的人) like me (and Eric) have been fighting since our early days in Smalltalk. What's worse, '''many people think that anemic objects are real objects, and thus completely miss the point(要點) of what object-oriented design is all about.'''__
+
+Now object-oriented purism(純正主義) is all very well, but I realize that I need more fundamental arguments(論證) against this anemia(貧血症). In essence(本質上) the problem with anemic domain models is that they incur(蒙受) all of the costs of a domain model, without yielding(產生) any of the benefits. __'''The primary cost is the awkwardness(麻煩) of mapping to a database, which typically results in a whole layer of ''O/R mapping'' (採用 Hibernate 類似的 O/R Mapping 工具時, 最容易誤將 persistent object 直接拿來當做 domain model 用). This is worthwhile iff(=if and only if) you use the powerful OO techniques to organize complex logic. By pulling all the behavior out into services, however, you essentially end up with http://martinfowler.com/eaaCatalog/transactionScript.html[Transaction Scripts] (這裡的 "script" 在強調 "procedural" style design), and thus lose the advantages that the domain model can bring.'''__
+
+__'''It's also worth emphasizing that putting behavior into the domain objects should not contradict(抵觸) the solid approach of using layering to separate domain logic from persistence (指透過 Hibernate 或 SQL 直接存取資料庫的動作, 但這並不表示 domain model 不能存取 persistent class 或 DAO) and presentation responsibilities. The logic that should be in a domain object is ''domain logic'' - validations, calculations, business rules - whatever you like to call it.''' (There are cases when you make an argument for putting data source or presentation logic in a domain object, but that's orthogonal(正交的) to my view of anemia.)__
+
+__One source of confusion in all this is that many OO experts do recommend putting a layer of procedural services ''on top of a domain model'', to form a http://martinfowler.com/eaaCatalog/serviceLayer.html[Service Layer]. '''But this isn't an argument(理由) to make the domain model void of(沒有) behavior, indeed service layer advocates(主張) use a service layer in conjunction with a ''behaviorally rich domain model''. (也就是說 service layer 還是有存在的必要, 但不是極端地把所有的 domain logic 全部自 domain model 抽出...)'''__
+
+Eric Evans's excellent book Domain Driven Design has the following to say about these layers.
+
+ * __''Application Layer'' [his name for Service Layer]: '''Defines the jobs the software is supposed to(應該) do and ''directs(指揮; 而非親力親為)'' the expressive(=rich) domain objects to work out problems.''' The tasks this layer is responsible for are ''meaningful to the business'' or necessary for interaction with the application layers of other systems. '''This layer is ''kept thin''. It does NOT contain business rules or knowledge (因在此命名上採用 `XXXService` 會比 `XXXBusiness` 來得恰當, 況且 business rules 應該包裝在 domain object 裡才是), but only coordinates tasks and ''delegates'' work to collaborations of domain objects in the next layer down.''' It does not have state reflecting the business situation, but it can have state that reflects the progress of a task for the user or the program. (這裡指的是 use case 嗎? 但 use case 不是 facade 的責任嗎[?])__
+
+   .__由於 "協調" 多個 domain objects 的本質, 因此涉及多個 domain objects 的邏輯放在 service layer, 而涉及單一個 domain object 的邏輯則放在 domain model? 當邏輯放在 service layer 時, 在語意上有 "這個操作並不單純, 會影響到其他很多資料" 的味道, 這也是 API 設計時所要考量的... 但這會不會造成 "涉及多個 domain object" 的實作細節外漏? domain model 應該在不考慮實作細節的前題之下自由發揮吧?__
+
+   .__不過 service 可以省掉, home interface 好像就不行了? '''什麼東西可以放到 service 呢? 呼應上面 "meaningful to the business" 的說法 - 兜資料 (無法簡單計算求得的部份), 取得 "整合資訊" 的功能應該可以做在 service, 例如 "取得門市業績排行榜, 除了各門市的業績外, 也要統計各品牌的小計" 的功能, 如果不將這些計算提出來, 每一個呼叫端就要重新計算一次... facade 應該專心處理 "權限" 跟 "資料如何以特定前端技術呈現" 的問題即可 - 兜畫面!! 但這會不會造成畫面與後端邏輯綁在一起的問題[?]'''__
+
+   .__'''基於相同的理由, home (= factory) 也不應該涉入太多的 business logic, 儘可能提供足夠的相依性, 讓 domain model 可以自行做運算即可. 至於 domain object 內部是要採取 eager 或 lazy 的策略, 那也是內部實作的事了. 如此才能將邏輯儘可能地集中在 domain object 裡...'''__
+
+ * __''Domain Layer'' (or Model Layer): '''Responsible for representing concepts of the business, information about the business situation, and business rules.''' State that reflects the business situation is controlled and used here, even though the technical details of storing it are ''delegated'' to the infrastructure (這意思著在 domain model 注入 DAO 的可行性). This layer is the heart of business software.__
+
+The key point here is that the Service Layer is thin - all the key logic lies in the domain layer. He reiterates(重申) this point in his service pattern:
+
+ Now, the more common mistake is to give up too easily on fitting the behavior into an appropriate object, gradually slipping(滑落) toward procedural programming (單一個 class 的內部實作會變得很長、很複雜; 在實務上還到的困難是, 第一次好不容易寫出來了, 但後續的修改卻變得很困難...).
+
+__I don't know why this anti-pattern is so common. I suspect(猜想) it's due to '''many people who haven't really worked with a proper domain model, particularly if they come from a data background. Some technologies encourage it; such as J2EE's Entity Beans (沒想到 EJB 的禍害這麼深!!)''' which is one of the reasons I prefer http://www.martinfowler.com/bliki/POJO.html[POJO] domain models.__
+
+__'''In general, the more behavior you find in the services, the more likely you are to be robbing(剝奪) yourself of the benefits of a domain model. If all your logic is in services, you've robbed yourself blind(失明; 按照這樣的邏輯, 在設計 API 時應儘可能地把 behavior 放在 domain model 上, 除非邏輯上產生矛盾時才移到 service 上來).'''__
+
+在 http://www.springframework.org/files/active/0/IntroductionToSpring.ppt[Introduction to the Spring Framework] 有一個頁面做了很好的比較 - Where do we code business logic?
+
+ * Domain objects
+   * __Heavy domain model / thin service layer approach '''(這裡的 heavy 指的是 "behavior rich", 在實作上要注意, 不要因為 domain model 這一層的包裝, 削減了太多的效能)'''__
+   * Business logic is embedded in domain objects
+   * Takes advantage of OO programming
+   * Behavior rich domain model
+ * Service Layer
+   * Thin domain model / heavy service layer approach
+   * Wraps procedural business logic over domain objects
+   * Anti-pattern according to Fowler – ‘Anemic Domain Model’
+   * Provides a separation of business logic concerns from the domain model
+   * __'''Treats the domain model as ORM objects'''__
+
+__在 http://www.javabeat.net/javabeat/toplink/index.php[關於 TopLink 的一份文件] 裡有提到: TopLink does not force a developer to subclass from one of its classes or use special types to maintain relationships. '''You could build a domain model to map persistently that has no dependencies on TopLink.'''__
+
+至於 service layer 到底該長成什麼樣? 這篇 http://weblogs.asp.net/pgielens/archive/2006/09/03/Domain-Model-Service.aspx[Domain Model Service] 做了以下的總結:
+
+ __'''So, essentially the Domain Model Service is an integral(整合的) part of the application and may therefore have knowledge of the internal structure of the domain, like business exception handling, object discovery etc. A Domain Model Service encapsulates behavior of the domain that does not ''fit in'' (該如何解釋? 選擇放在 domain/service layer 的不同, 是否會漏出實作細節[?]) the domain objects themselves (因此 domain model 內部會碰觸到的東西, 例如 pesistent object, DAO 等, 在 service 裡如果也產生類似的相依性, 也是可以接受的, 只是要儘量避免而已). Typical characteristics of a Domain Model Service is that it tends to be ''procedural'' and does not carry any state.'''__
+
+== Domain model implementation consideration - dealing with presentation-domain model mismatch using rich domain model ==
+http://www.aqris.com/display/DEV/2008/04/08/Domain+model+implementation+consideration+-+dealing+with+presentation-domain+model+mismatch+using+rich+domain+model @2008/11/27
+
+Sorry about the title. (太長!!)
+
+__'''In a typical data management system significant amount of effort is spent on implementing mappings between three different models - ''presentation'', ''domain'' and ''persistence'' model.'''__ In this article I will describe one approach to dealing with these transformations in case special ORM tool cannot be used.
+
+Absence of sophisticated ORM layer does not only complicate conversions related to persistence but also adds complexity to UI related issues. __'''Usually domain model has the least ''external restrictions'' since presentation is specified by http://en.wikipedia.org/wiki/Non-functional_requirement[non-functional requirements] and persistence model is constrained by storage optimizations or legacy compatibility.'''__ We can decrease some complexity by designing domain model so that it resembles(類似於) more closely either persistence or presentation model.
+
+=== Presentation centric approach ===
+
+This solution means that our domain model will be identical to presentation model and both are implemented using same set of classes.
+
+Database queries will be relatively complex but we are able to optimize data access since we don't need to retrieve anything from database that we don't need for given use case. Once we have the needed data loaded from database it will be quite easy to show it in UI views since we don't have to implement any transformations or presentation wrappers. As database access code is customized for particular use case (each view) it will be quite hard to reuse it between different DAOs. Similar problems arise also in business logic implementation. Unless we pass around only simple types we are forced to make our domain services depend on presentation specific model. This design actually resembles quite closely http://martinfowler.com/eaaCatalog/transactionScript.html[Transaction Script] (這在 http://www.martinfowler.com/bliki/AnemicDomainModel.html[Anemic Domain Model] 一文中也曾提及).
+
+=== Persistence centric approach ===
+
+Alternative option is to let database schema guide our domain model.
+
+This way queries will be more simple but data access will not be that optimal since we sometimes select fields we really don't need for given use case. Also in many cases we end up executing more queries per UI view than in previous approach because we may need to aggregate data from multiple different entities. The good news is that we can reuse our queries and business logic as the domain model is shared between use cases.
+
+=== Which one is better? ===
+
+Although it seems that presentation centric solution allows better optimizations I don't think it is good option in most cases. Based on some experience with systems built this way I have to say that possible performance gains cannot outweigh the problems caused by code duplication between different use cases.
+
+=== Dealing with presentation/domain model mismatch ===
+
+If we have decided that our domain model will be driven by persistence schema we still need to manage presentation model mappings. Sometimes we don't need to do anything cause persistence model and presentation model are quite similar. However if that is not the case then one solution is to create separate presentation model classes which aggregate multiple domain entities and expose only these attributes of entities that are needed for given view. In our current project we found that it is possible to avoid such classes altogether by using "rich" domain model instead of "flat" domain model. I think this pattern had been used for quite some time in this system but probably it wasn't just acknowledged as a pattern.
+
+So far attributes of our domain entities map quite one-to-one to the fields of database tables. Lets say we have entity `User` which has home country. In typical "flat" domain model this association is implemented using `countryId` field. This isn't very useful if we need to display all users and for each user show his/her country.
+
+ {{{
+class User {
+  private int countryId;
+  ...
+}
+ }}}
+
+So why not add whole `Country` to `User`:
+
+ {{{
+class User {
+  private int countryId;
+  private Country country;
+}
+ }}}
+
+Of course without advanced ORM layer, loading `Country` entity all the time can become serious performance killer. So why not implement our own lazy initialization? Instead of AOP or proxies all we need is to establish a few rules. First one is that all queries in DAOs will return entities without any associated items. In order to initialize such associations we will implement special loader methods.
+
+Example:
+
+ {{{
+void loadCountry(User user) {
+   user.setCountry(countryDao.load(user.getCountryId()));
+}
+ }}}
+
+If needed we can also have convenience methods for initializing some association for list of entities like `loadCountry(List<User>)`. Internally this can be implemented by either iterating through collection or by single `WHERE IN` query.
+
+I don't usually like to have objects laying around which are only partially initialized. However I'm ready to make and exception here because we have a concrete and simple rule which says that whenever you make a DAO call or service call, only simple type attributes are initialized. __In essence(大體上) this is pretty much same stuff that Hibernate does behind the scenes.__
+
+Finally we need to decide where should such initializations be implemented. I don't think it should be responsibility of DAOs because then one DAO would need to manage persistence of more than one domain entity. Second choice are Services. Although I think this is the most commonly used option (and it's used in our current project) __I don't like it very much either because ideally Services should deal with real domain logic like orchestrating complex business rules. Third and the best choice in my opinion is having this responsibility in Repositories. Repositories are quite much used in Domain Driven Design but I have never been able to understand the difference between DAO and Repository. However in this scenario it makes perfect sense.__
+
+If we use such initialization it may happen that we need to duplicate some initialization logic for different UI views. To solve this I suggest not to pollute(沾汙) Repositories with additional combined initializations like `loadCountryAndCity`. __Instead I think it's better to introduce separate application logic Facades that encapsulate use case specific behavior (read more about this from my public http://www.jroller.com/urgo/entry/getting_rid_of_the_all[blog entry].__
+
+== Fetching Strategy Design (2007/04/23) ==
+http://www.udidahan.com/2007/04/23/fetching-strategy-design/ @2008/12/24
+
+Following up on my previous post on http://udidahan.weblogs.us/2007/03/06/better-domain-driven-design-implementation/[Better Domain-Driven Design Implementation], I wanted to show some more detail on how this actually works. There are two main concepts here.
+
+The first is that of keeping Service Layer classes independent of http://udidahan.weblogs.us/2007/04/21/domain-model-pattern/[Domain Model] classes. The reason this is desirable is that the two families change on independent axis. Service Layer classes are affected by changes to the service’s external interface, as well as the interfaces of other services it depends on. Domain Model classes change to support changing business rules internal to the service. The solution is quite simply to introduce a set of interfaces between the two. (這裡不過是要強調 domain model 最好也用 interface 來規劃而已, 因為一般都會直接拿 entity class 來充當)
+
+The second is tied to performance. __When retrieving data from the database, we’d like to cross the wire(跑到終點線) only once bringing with us all the data we need in order to perform the work required. '''Lazy loading helps us in one way while hurting us in another.'''__ For connected objects that we don’t need when retrieving our target object, lazy loading prevents them from being loaded. However, for connected objects that we do need, lazy loading will cause us to return to the database to retrieve each of those objects in turn (sets of the same kind of object are still one DB call). If those objects need to be traversed as well in order to retrieve other objects, we can see that one simple request can cause many (MANY!) calls to the DB. __These problems of latency(等待時間) and throughput are solved by eagerly (in one DB call) fetching and loading all the objects we need.__
+
+Here’s the package diagram for the solution so that we’ll have a reference for the following discussion.
+
+[[attachment:ea2.png|fetching strategy package diagram]]
+
+__Now, the class that is best suited to issue this call to eagerly load all objects is the service layer class, '''since it is aware of what specific ''use case'' we’re in. (應該是 facade 才會知道 use case 吧?)'''__ However, the service layer class does not necessarily know exactly what classes will be used in the domain to handle that request. Obviously, this set of classes may change as the domain model and the database schema change. We can therefore say that is not the service layer class’ responsibility to handle the definition of which classes need to be loaded. __Only the Domain Model has that knowledge. So we need some way to pass the knowledge of the ''request type'' into the Domain Model.__
+
+In http://en.wikipedia.org/wiki/Object_role_modelling[Object/Role Modeling] terms, we represent that request type as a role. And roles are represented by interfaces. So we create an interface in the Domain Model which represents the request type. That interface will most likely contain only one method - the method which the service layer class will call. (從這裡往下都不知道在說些什麼[?])
+
+After we have the first role, we can build other things around it, like ''fetching strategies''. We can then define other classes who fullfil the role of “I’m his fetching strategy”. __Those classes will expose a property defining the exact set of classes to load, when using NHibernate we use HQL. (無論如何, 這些 hint 都要傳到 DAO 層才行...)__
+
+Here’s the sequence diagram showing how this works.
+
+[[attachment:ea12.png|fetching strategy sequence diagram]]
+
+One question that you might ask is what if there is more than one class that implements the same interface? How could the infrastructure know which class it should be loading? The answer is simple. You shouldn’t do that. Having two classes fulfilling the same role will get you in trouble even if you don’t use this design. The Single Responsibility Principle should be our guiding light.
+
+__'''In summary, achieving high performance is possible when using Domain Models and Object/Relational Mapping, but requires minimizing calls to the database.''' This design decreases coupling between all the cooperating(協同操作的) parts of the solution without giving up the ability to optimize over a specific technology.__
+
+== Resource ==
+
+=== Reference ===
+
+=== Attachments ===
+
+|| Filename || Description ||
+||  ||  ||
+
+=== Links ===
+
+=== Search ===
+
+== Scratch ==
+
+ * findByInterval() 也是 home interface 上常見的方法之一, 因為它可以有效限縮資料的範圍; 其他 caller 可以採 "組合應用" 的方式再做過濾...
+ * home interface 最常用的 `findByXXX()` 可以做 `findByXXX(xxx, int filters, int[] sortings, Pagination pagination)` 的配置
+   * __'''這樣的配置提供了 filters/sortings 很大的彈性, 但這並不代表我們要將所有的可能性一次做完...'''__ 要標明支援的 filter 或 sorting 有哪些 (因為內部要分開處理, 後續增加的 filter/sorting 認不得). 做多少就寫多少, 否則一個簡單的方法也會被 filter/sorting 搞得很複雜... (也因此常數可以先定義佔住常數值的位置, 但不一定要實作)
+   * 可以考慮將 filters 更名為 flags, 可以做比較具彈性的發揮 - 例如在 DAO 上可以控制要不要做 eager fetching? (`EAGER_FETCH_ITEMS`) 或者是單頭的 home interface 上? @2009/05/11
+   * 定義常數時最好能將常數值錯開, 因為常數值之間通常都有順序, 為了將來原始碼不會亂了順序, 最好間隔 50 ~ 100, 留空間給後來要插入的其他常數用.
+     * home interface 上 sorting 的控制, 由於是定義在 domain model 上 (需要被繼承, 因為上層有的概念, 下層一定有...), 所以改用錯開的常數來定義, 例如 `BY_CODE_DESC`, `BY_ORDER_DATE_ASC`... (不要用 `ORDER_` 起頭, 因為 order 有訂單的意思)
+   * Flag 控制
+     * @2009/03/19 想到有很多時候要做 confirmedOnly, includesDisabled 等控制, 當要控制的點變多時, 參數就會變得很長... 這種控制最讓人為難的地方是 confirmedOnly 永遠無法取得 "只有未確認者"...
+     * 很多 filter 的用法並沒有限定它是 "濾出" 還是 "濾除", 因為 filter 通常都有很豐富的語法... 但採用二分法的 flags 控制會產生混亂, 例如 CONFIRMED_ONLY 與 NOT_CONFIRMED_ONLY 一起出現時, 該以誰為主呢?
+     * __比較好的做法是 API 要描述都沒有 filter 時 (傳入 0 而言) 的預設值, 然後再去加加減減..., 用起來會像是: `findByXXX(xxx, INCLUDES_NOT_CONFIRMED | EXCLUDES_CANCELED)`, 比 `findByXXX(xxx, true)` 的可讀性還高!! (常數以 `INCLUDES_` 或 `EXCLUDES_` 開頭就好, 不用特別再冠上 `FILETER_`; 定義在 home interface 上, 因為它不需要被繼承)__
+     * __'''發現只定義 `_OLNY` 的常數再輔以 `INCLUDES_` 的規劃用起來比較順手, 因為 `EXCLUDES_` 會讓人懷疑 " 排除的基礎是什麼? 排除了那個, 就真的只剩下我們要的部份了嗎?", 採用 `_ONLY` 白名單的寫法, 相對是比較明確的. `INCLUDES_` 只適用預設上會排除的項目 - "停用" 或 "作廢". 這樣做的好處是大家都知道除了停用或作廢者不納入考量之外, 其餘的都要透過 `_ONLY` 限縮, 不需要在 Javadoc 上特別提及預設會做哪些過濾... @2009/03/27 @2009/04/07'''__
+     * 例如 `INCLUDES_DISABLED`, `CONFIRMED_ONLY`, `NOT_CONFIRMED_ONLY` `CLOSED_ONLY`, `NOT_CLOSED_ONLY`, `DISABLED_ONLY`
+       * 最大的問題在於這些 flags 之間是 AND 還是 OR 的運算? .... 對應到資料庫確實是多個 where 條件式做 and 運算...
+       * 語意會變得不清? 或許真如 Jack 所說的, 定義幾個不同參數組合的方法即可? 因為有些組合是沒有意義的...
+       * 上面 `INCLUDES_DISABLED/DISABLED_ONLY`、`CONFIRMED_ONLY/NOT_CONFIRMED_ONLY`、`CLOSED_ONLY/NOT_CLOSED_ONLY` 等都分別控制不同的面向, 最後會對應到 SQL 語法的 WHERE 子句.
+ * 如果遇到後來才包裝的欄位, 千萬別在 Javadoc 上寫說 "可能傳回 null, 因為舊資料...", 再怎麼樣都應該給舊資料一個合理的預設值, 這一點在包裝 ERP 客制欄位時很重要 (尤其是必填的欄位), 否則 API 的 caller 就必須要額外擔負判斷的工作...
+ * @2009/03/09 跟 Jack 討論到 SalesCase 要增加一個統計的頁面, 列出接待記錄、發送簡訊、其他互動的次數, 我們一致認為在 SalesCase 下增加多個 getXXXCount 的方法是不好的, 但 SalesCase.getInteractionStaticstics 就好嗎? 每個畫面所要的 report 內容可能不一樣, 建議把它做在 service 層 - SalesService.getInteractionStaticstics()?
+ * 透過 domain model 來做批次運算時, 效能可能會變得很差. 有幾個方案可以考慮:
+   * 問題通常出在資料庫查詢次數過高, 條件比對的欄位沒有設 index, 伺服器效能不好等...
+   * 減少每一頁要呈現的資料量, 也可以有效提昇單頁的回應速度... 
+   * 內部要實作快取, 提供 refresh 方法來重置, 至少在同一次的 request 內不用做重複的計算
+   * 取消 lazy loading (no proxy) 或實作 eager fetching.
+   * 採用 Native SQL (或 stored procedure) 做關鍵的查詢, 後續再用 domain model 接手; 用在資料需要即時取得時.
+   * @2008/12/26 想到 page/component class 是搭配 presentation model 做 cache 最好的地方
+     * 如此連 facade 的交易邊界都不用進入. 由於 view 是單純的資料, 甚至可以被 serialized 到另一個地方去...
+     * 即便規格上沒有特別提到 "定期更新" 資料, 如果資料更新的頻率不高, 在實作時也可以引入快取的概念, 只要將 "更新週期" 控制在合理的範圍之內即可.
+     * __只要每次在回應前檢查快取是否過期即可 (或許透過 Spring AOP Cache 來對 facade 做快取會更容易?), '''快取值可以拿 getXXXView() 的 "所有參數組合" 來做為鍵值, 快取的資料量變大時可能就要考慮其他 cache framework 的支援了... 但如果不用 AOP 的話, 程式碼可能又會摻雜一堆快取的控制了...'''__
+     * 把 user id 納入上面 "參數組合" 的考量, 可以避開權限檢查上的漏洞, 但快取的資料量可能會激增, 這種做法並不適用於 user specific 的頁面.
+     * 如果 Tapestry 支援更底層的快取, 就不要做不必要的重畫, 因為我們也只做到資料的快取而已.
+     * 如果單純把 view 快取起來, 會不會造成權限檢查上的漏洞? 可以每次都向 facade 做權限檢查的動作, 如果通過的話再考慮要不要直接取用自快取... 這麼說來, 或許 facade 才是真正要快取資料的地方? 這樣不就要把 AOP Cache 套用的對象往後挪? 或許權限檢查的部份也可以用 AOP 來做? 就像 Tapestry 的 validate 與 render 會分開一樣...
+     * __'''user specific 的頁面 (包括使用者專屬, 或對不同使用者群組做不同的權限控制; page class 不該假設 facade 的內部實作), 只能快取在 facade, 其餘通用的頁面才能考慮快取在 page class.'''__
+     * 對於 "新增或刪除資料後" 要更新資料的 "清單" 畫面, 可能要實作 event listener 被及時通知到畫面是否要更新...
+     * 如果做長時間快取的話, 只有第一次存取時才需要等待
+       * 這有點像是 JSP 第一次編譯要花一點時間的問題, 可以用 preloading 的方式來解決. 
+       * 不過 preloading 頁面可能會有 "權限" 上的問題 (跟 precompile 不同), 或許最終還是要採用 AOP Cache 的方式比較 transparent.
+   * reporting service 要分頁嗎? 如果分頁的話, 好像就限定了 model 的用途? 或許分頁該由前端來分?
+     * __'''如果權限的檢查不能免, 那麼分頁的工作似乎應該由 facade 來做? 還是 reporting service 直接提供分頁的參數? 或許 facade 分的是 UI 上的頁, 而 service 分的單純只是筆數上的頁?'''__
+     * 一旦將分頁的責任攬在身上, 那麼與之相關的 "排序" 問題就來了... 這顯然與一般 report "在某個時間點生成之後就不會再動" 的印象不同, 這樣還叫 reporting 嗎?
+     * __這讓我想起 BIRT 可以對資料來源進一步做排序、分組、過濾等... '''或許 reporting service 如果有需要的話應該是要支援這些選項 (主要是排序跟分頁), 但內部資料要怎麼安排就屬於實入細節了... 如果 BIRT 也要用到這些資料, 他們之間共用的是底層的 raw data, 而非 service 公佈出來的那個樣子. (當然最好是一樣, 那麼用 XStream 直接取出資料是最方便的了!!) reporting service 在做的就像 BIRT 取得資料後可再做排序、過濾等程式端的加工一樣...'''__
+   * 由於 page class 快取的做法只適用於第一次存取不會太長時 (如果長達 10 分鐘, 誰願意當那第一個), 因此背景運算還是有其必要:
+     * 用在資料可以定期取得時, 報表跑個一兩分鐘是正常的...
+     * 需加開資料庫存放運算結果, 雖然後續的修改可能同時要動到程式碼與資料庫的結構, 但與直接存取底層資料庫相較之下是比較有彈性的[?]
+     * 運算結果通常都是階層式的資料, 如果不需要留做歷史存查的話, 可以考慮用 XStream 來實作... 但存放的格式可能要考量前端應用方便為主.
+       * 通常都會由 service 來產出報表, 而 service 通常都是 singleton, 它提供了一個 "快取報表" 很好的處所, 但要小心 caller 不小心改到快取的報表.
+       * 或許快取在 page class 是最好的, 只要取得報表時被告知過期時間即可, 這樣就不用進入交易邊界了!!
+       * __如果報表是被快取的, 那麼從 service 取得的 report object 就可以直接被拿到 page 上使用 (沒有用到全部的資料也沒關係), 不用針對不同的 facade 重寫一次, 因為報表欄位通當都很複雜. (因此 reporting service layer 很適合當來做為 AOP Cache 套用的對象?)__
+       * 這一類的方法可以用 `reportXXX` 或 `getXXXReport` 來命名 (前者暗示當下產生, 後者則有事先已產出報表的意味, 對應 `generateXXXReport`), 暗示回傳值是可以脫離交易邊界, 甚至是可以被序列化到其他地方的...
+       * 這個 report 可以做為 MVC 裡的 model 嗎? 然後可交由不同的 renderer 畫出, 例如 Excel, PDF, Web 等...
+       * 可以用 public fields 來強調 report 本身沒有 business logics 嗎? 不過就會需要用到 deep clone, 到頭來好像也沒有比較簡單...
+     * @2008/12/02, 如果資料不需要活過來供操作, 可以考慮直接輸出成 PDF 檔. 不過暫時寫出成 XML, 可同時供其他程式或 BIRT 引用, 也是個不錯的選擇...
+ * 目前以 domain model 來包裝 DAO 最大的問題在於, fetch plan 是依 use case 不同, 但 domain model 又不是針對特定 use case 來寫
+   * fetch plan 最初應該是從 Java 與 SQL 的 mismatch 而來, 即便 DAO 有提出 flag 來控制 eager fetching, 但這個 flag 如果浮到 domain model 層可能會有問題?
+   * 這個 hint 應該設定在 domain object 上嗎? 也可以設定在 home 上面, 透過 home 取得的 domain objects 都會繼承該 hint? 如此一直傳導下去?
+   * hint 應該同 sort 一樣, 有需要的時候再加. domain object 直接設定, 但 home 則以參數傳入. 因為 domain object 一定是 threaded, 但 home 不一定是.
+   * 儘可能以 association 的方式來做 ORM, 可以減少回資料庫查詢的次數 (不斷地 findBy), 未來需要的時候也才能直接搭配實現 eager fetching
+ * 系統切這麼多層 - Facade (Web), Domain Model/Service, DAO..., 系統又要拆成許多模組. 這裡提到的 layers 與 modules 是兩個不同的切面, 是互為交錯的.
+   * 在 package 的安排上, 會以分
+   * 怪電腦運效能不夠好, 倒不如做好模組化切額的工作, building 的工作自然就不會那麼吃重.
+ * 由於一個 entity 對應有一個 home, 但通常一個 package 裡只會有一個 service. 為了避免 caller 為了取得 entity, 而注入許多的 home, 建議 service 可以將所有的 home.get 集合起來, 成為 home.getXXX 與 home.getOOO 等...
+ * __Code 與 ID 是不同的, 前者 "可能有" 意義, 後者則 "不該有" 意義. 通常 code 會提供 `findByCode` 與 `findByCodePattern` 的支援.__
+ * 有時候清單項目間的相對位置很敏感, 可以導入 position 的概念 (比 priority 相對直覺, 因為 priority 有 "數值大排在前面還是後面" 的不明確感).
+   * 透過組態檔來取得資料時, 不用在組態檔裡面規劃 position 的屬性, 可以直接以組態的順序為 position 的參考.
+   * domain model 便可以提出 COMPARATOR_POSITION 來 "依序" 排列.
+ * 當 model 引入 enabled/disabled (或 "作廢") 的控制
+   * 由於這個概念影響的層面很廣, 最好能夠在 model 規劃的初期就能夠考慮到, 事後才加入的話很難一次清查所有會受影響的地方.
+   * 若 domain model 事後才加入 disabled 的概念, 那麼 Home 及 DAO 就要全面檢查 query 是否有把停用者濾除?
+   * 只要 "一旦上線使用之後, 這裡的代號可能會被資料庫引用, 因此不能任意刪除或變更用途, 否則會造成資料的不一致" 的考量, 都應該加入停用的概念
+   * 組態時應該以 disabled 的角度切入, 因為預設都是啟用的, 要特別停用時才需要組態.
+   * API 也是以 disabled 為主, 
+     * 因為 boolean 的預設值是 false, 新建立一個 entity 時一般而言也是啟用的 (not disabled)
+     * Javadoc 慣例上, "過濾條件" 沒有特別提及 "是否考慮已停用者" 時, 都是 "不考慮" 的 
+       * 針對目標 object 而言; 例如 `Set<Showroom> findBySalesHierarchyOrDistrict(SalesHierarchy hierarchy, SalesDistrict district);`, 這裡 "不考慮已停用者" 是針對 Showroom 而言, 至於 hierarchy 與 district 則不設限.
+   * 應用在 "過濾條件" 時, 則以 disabled 來看待比較直覺, 因為大部份的情況下是不考慮已停用的部份 (濾除或載入停用的部份, 會浪費運算效能)
+     * 除了 `getAll` 應該要提供兩個版本的方法 (例如 `getAll()`, `getAll(boolean includesDisabled)`), 其餘的 `findByXXX` 應該只留一個有 `includesDisabled` 參數的方法即可
+     * 其中 `getAll` 保留給 "不含停用", 另一個則可以用旗標控制是否要包含停用的部份. 這會比單單提供一個 `getAll(boolean includesDisalbed)` 來得好, 語意比較直覺.
+ * 若 domain model 要提出一些方式供內部使用, 建議將這個方法實作在 internal home 上面, 在 javadoc 上標示這個方法僅供內部使用的做法並不保險, 而且透漏了內部實作細節.
+ * 可以自動計算出來的欄位 (多半是為了效能, 而事先將計算結果儲存起來), 一不小心就會在 domain model 上提出 recalculate 的方法供外部呼叫 (使用上可能連續呼叫, 希望把呼叫 recalculate 的責任丟給 caller):
+   * 儘可能不要提出類似的方法; 這會造成內部實作細節外漏的缺點 ("事先計算出來快取" 的假設), 而且 caller 很有可能會忘了做這樣的呼叫而導致資料的不一致.
+   * 如果是多個不同操作對象所造成的多次呼叫, 例如 addItem(String item), 則可以提供 addItems(Set<String> items) 的方法來做最佳化, 如此內部 recalculate 的次數就會降低, 也不用刻意對外說明, 甚至不用提出 recalculate 方法 - 因為 addItems 在語意上就是 "一起處理"
+   * 如果不得不提出這個方法, 例如 "銷售個案" 有一個 "預估成交率", 異動其他 "數個" 基本資料時都會影響到 "預估成交率" 時 (總不能因為一個 update 的動作而重計幾十次吧), 就必須在這些基本資料的 setter 上註明 "記得要呼叫 recalculate". 
+   * 如果有批次重計的需求, 可以考慮做在 internal home/service? 上, 但千萬不要為此提出 domain model 的 internal 介面.
+ * __'''儘量提供 Set 回傳型態而非 List (除非時 report 的輸出). 因為 interface 不該假設背後 "由資料庫排序" 的成本不會太高, 而應該把排序的功能抽出來. (但 DAO 與 Home 則固定傳回 List, 即使沒有 order by 的動作''')__
+   * __額外提供 order by 參數的做法則不予考慮; '''但可以考慮 ShowroomOne.getLocalRunningCases() 與 SalesCaseHome.findLocalRunningCases(showroomOne, orderBys) 的組合, 需要排序的人只要呼叫 Home 的版本即可.'''__
+   * @2008/11/11 想到一個不錯的折衷方式, 使用者不必為了排序去呼叫 Home. 就是在 Domain Model 的 interface 上直接提供不同的 comparator 供引用.
+     * 不放在 Home 是因為, domain model 會繼承, 但 home interface 則不會; 例如 Department -> Showroom 與 DepartmentHome x ShowroomHome.
+     * 假設在 Department 定義了一個 COMPARATOR_CODE, 那麼 Showroom.COMPARATOR_CODE 也是可以引用得到, 相當直覺!!
+     * @2009/03/19 覺得一個 domain model 要帶出的東西已經夠多了 (home, dao, model), 如果再增加一個 comparator 會更加難以維護... 使用者就自行搭配 Pair 做排序即可, 通常要自行排序的清單都不會太長才對...
+   * 傳回 unmodified 版本時要記得在 Javadoc 上加註, 因為 Collection API 沒有這樣的限制存在; 如果沒有必要, 建議產生一個複本會好一些
+ * __'''persistent class 與 domain model 之間不一定有一對一的關係存在, 這也就是為什麼要在 persistent class 上再包裝出一層 domain model (或者不能將 persistent class 直接拿來當做 domain model) 的原因. 這種考量最常出現在 many-to-many 的對應關係上'''__
+   * 例如 PersistentCustomerRelation 記錄有 relatedCustomer 與 relationship 時, 不太適合往外包裝出 CustomerRelation 而產生 Customer.removeRelatedCustomer(CustomerRelation) 的操作, 應該是用 Customer.removeRelatedCustomer(Customer) 來將底層的實作給隱藏起來
+ * 旗標的控制, 尤其是 includes, excludes, xxxOnly 等, 方向上最好統一一下, 這在某種程度上可以視為 API 設計上的不一致.
+ * "其他" 選項要怎麼規劃? 應該不能成為組態的一員 (但從 `Home.getAll()` 取回時永遠是最後一項, ID 建議規劃成 `0`), 而是另立一個欄位存放手動輸入的值, 只要裡面有值就是勾選了其他? `isOtherSeleted()`[?]
+ * __架構是慢慢成形的, 因此不必在一開始就急於將邏輯提出共用 (但標準/非客製的部份要儘早拆離); '''尤其是單據 create 的動作, 可以先規劃在客製的版本, 待時機成熟之後, 再提出共用的版本. 通常每家公司 create 時必填的欄位都不太一樣, 其他欄位的預設值也不太一樣, 因此 create 很少有共用的版本出現, 可以搭配 parameter object 來實作... 如果依 use case 來做區分, 會不會導致 domain model 一直穩定不下來? 應該是每一家公司一個 create 就好了吧[?]'''__
+   * __可以請使用者操作一次給我們看, 從單據新增時的預設值, 外加後來調整的部份, 合併成資料庫最後的結果. '''我們只要注意結果一樣就好, 過程並不重要.''' 由於畫面操作的過程中會產生 "自動帶入" 的異動, 我們只要從最後結果的每一個欄位去跟使用者對就可以了[...]__
+   * 有從屬關係的者最好一起建立起來, 例如訂單單頭外加多筆單身, 否則單身異動後連帶要調整單頭的工作會很麻煩... 例如 ReceptionFormHome.createDepositOne 之後, 還要用 ReceptionForm.addXXXDeposit 分別建立其他單身, 還要重新統計單頭, 也讓 Item 的 DAO 被 ReceptionForm 的實作相依....
+ * __'''Requirements -> Use Case -> UI Modeling (畫面名稱、功能需求、畫面間的流程等要先完成, 前後台要一起考量, 美工則不急; 通常需求確認文件的畫面已經夠用) -> Facade Interface -> Presentation/Update Model -> Facade Implementation -> Domain Model/Service/Home Interface -> Domain Model Implementation (從這個時候開始, 就可以利用零碎的時間, 慢慢進行畫面的開發) -> Enhance Service/Home/DAO Interface, Persistent Class -> Service Implementation -> Home Implementation -> DAO Interface -> DAO Implementation -> Database Schema, ORM Mapping -> Page Class (最早考慮畫面, 但最後才實作畫面 - 這一個工作最瑣碎、無趣, 要利用零碎時間進行; 在前面這些推導的過程中, 會持續將前端 UI 設計上不合理的地方給揪出來, 所以畫面到後期就會變得比較穩定; 這樣的開發順序, 同時適用於 Desktop 與 Web 的開發... Javadoc 本身就是最好的文件!!)'''__
+   * 2009-09-08 覺得最 "速成" 的方式就是先把 page flow 畫出來, 然後再將 Model/Home/Service 的 interfaces 定義清楚 (為了將畫面上不合理的地方找出來), 就可以做估價的動作了. 要跳過 Facade 而直接規劃出 Model 當然需要一點經驗
+   * @2008/12/15 與益旺一起從 UI 推導出 facade interface 後, 發現在這個階段來補畫 page flow 似乎有點多餘? 直接再往下推導 domain model 即可... 感覺在推導的 facade interface 的過程中, 就可以漸漸理解 page flow (包含那些不用套程式的頁面). page flow 應該在實作 page class 時再補足即可 (很多都是 session 的控制, 跟 facade 無關[?])
+   * 功能驅動: 其中 UI Modeling 階段最重要的工作就是要用圖表規劃出畫面間的流程 (Screen Flow Diagram; ISO 文件會是很好的起點), 並清楚定義每個畫面的功能... (將 UI 與 Model 分別列於 Mind Mapping 的兩側, 交叉分析可以同時發展, 但仍以畫面為優先)
+   * __'''先找出要 "完成" 哪些事情 (從頭到尾, Use Case), 再逐一將要完成的事拆解成一或多個畫面; 直接從 "這個畫面想看到什麼" 提問, 再來想 "如何提供這些資料" 的問題'''__
+   * __'''分析畫面時, 記得要將 "例外" 分開放; 先完成 Happy Path 的規劃; 先求廣度, 再求深度'''__
+   * We even need to leave some parts of the domain out. A domain contains just too much information to include it all into the model. And much of it is not even necessary to be considered. 只考慮跟目標系統相關, 用得到的部份; 因此 Modeling 時最好以功能性驅動, 目標並非要得到完整的企業模型 (頁面規劃是最適合的切入點), 更何況最後簽約確認的是功能, 而非這個 Model 是不是能夠解決問題, 這個承諾太過於沉重了!! (就像 Tapestry 程式套用時, 我們只關心需要動態呈現的頁面)
+   * 可能的工具有:
+     * OpenOffice Impress + Draw
+     * PowerPoint
+     * DENIM
+     * Dia
+   * __'''就因為 "並非要得到完整的企業模型" 這句話, 因此 model 裡出現跟 "軟體系統" 相關的概念時是可以被接受的, 例如 account, password 等...'''__
+   * __問題在於 "下一層的介面要由上一層的實作推導而來" (有點類似 Use-Case 導向的開發, 寫出來的東西不至於 "過度設計"), '''在 Eclipse 之類的開發環境下, 視窗可以分割成左右兩個, 左側放目前開發的程式, 右側放推導出來的程式, 效果很好... (同一支檔案要左右對照時, 也可以用 New Editor 的功能分出兩個視窗)'''__
+   * 用 domain model 來包裝 persistent class 時, domain model 的實作, 儘可能不要呼叫 model 上的方法, 而是直接存取 entity (對 domain model 而言, entity 就像是 private field 一樣) 因為 model 上的方法會去檢查 class invariant, 但 implementation 有 "過渡" 的性質, 需要跳過這一段檢查, 效能上也多少可以提昇一些.
+     * __'''不僅僅是 backend 的那個, 也可以是同 module 下的其他 persistent classes, 基於不同 moudle 間內聚力的考量, 當然也可以是其他 module 下 persistent classes. (千萬別為此又為 domain model 增加了不必要的存取, 徒增後續的維護工作而已...)'''__
+ * __'''對使用者來說, 操作畫面就是一切, 在分析時期就應該依 UI 先把 domain model 建立起來: (分析時期還會建立 persistence/presentation models, 但都在 domain model 之後; 其實 domain model 出來之後, persistent 幾乎就產生了, 畫面相關的必填、什麼時候可以做什麼操作, 一切的一切都有了... 而且元素的命名也都會與 domain model 一致)'''__
+   * 再將所有的畫面 layout 出來, 定義 presentation model (此時先不要做 page class)
+   * 稍微實作 facade, 過程中後端的 domain model 及資料結構已經會慢慢浮現...; __'''定義介面, 將兩方的人切開; 包括 Presentation Mode, Facade, Domain Model, Home Interface, Service...'''__
+   * 撰寫前台的實作, 再次驗證 domain model 的可用性 (由畫面去驅動, 也算是 use case 導向了吧; 或許從 presentation model 開始做起也不錯?, 如此規劃出來的 API 也會是 friendly, 有考量 use case 的... 也符合 test-driven 先寫 caller 的做法)
+   * 將 interface 的實作補齊 (在分析時期就已定義好; 記得不要先實作, 因為可能會由前端反應出後端在設計上的錯誤)
+ * 由於 domain model 是最具彈性的一層, 所以就不要把這些壓力往兩側推, 例如 ORM 通常在多形及繼承上需要搭配特定的資料結構, 如果資料結構 * 這個議題又引起了 DTO 的討論 -> Presentation Model
+   * 從 domain model 轉出 DTO 時, 要仔細斟酌每一個欄位, 因為背後可能由很複雜的一段邏輯在支援.
+   * 今天 @2007/10/21 發現, DTO 不應該直接由 library 來提供, 而應該由 library 的使用端自行建立 (可能需要合併其他資料的結果, 也可能用不到 VO, 會深入幾階取值也不一定, 難怪 Dozer 支援 deep mapping, 甚至有人說 DTO 是 FLAT 扁平的); 即使 library 有提供一些 DTO, 使用端還是建議建立自己的 DTO, 因為每個 use case 需要的 BO -> VO 的對應方式不儘相同...
+ * 對 `CustomerOrderForm` 這個 entity, 我們除了要包裝成 `CustomerOrderForm` 這個 model 外 (這個對應是少不了的?), 還可以另外包裝一個 `CustomerOrder` (好像沒有 ID?), 在語意上會 "這次的訂購", 而非 "這張訂單 (可能是 ERP 的新訂單, 也可能是超特的舊訂單)". 如此我們就可以在 `CustomerOrder` 上延伸出更高層級的操作, 從底層資料表間的關聯跳脫出來.
+ * __'''如果採用 Domain-Model Design, 看來 UML 工具的導入就越形重要, 尤其是 State Diagram (用來定義介面什麼時候要丟出 `IllegalStateException`), 也方便後續單元測試工作 (真正以 class 為最小單位) 的進行, 畫面上某些操作是否要停用等, 真是環環相扣'''__
+ * 可以借用 EJB "home interface" 的概念 (`get()`, `getAllXXX`, `findByXXX`, `createXXX`, bulk operations 內部也可以做 threaded object pooling (否則會產生過量的物件; 另外 `removeXXX` 則應歸回 model 好一些, 讓 domain model 變得更為直覺); 通常回傳值的型態就是該 domain model), 如此 DAO 等比較內部的東西就只要跟 entity 及對應的 home 產生關聯即可. __'''service 的工作單純就是協調多個 domain object (不適合歸入 home interface 及 domain model 者, 通常跟特定 entity 扯不上關係), 會比較少碰到 persistence 才是, 儘量重複使用已經開發的邏輯 (因此造成效能上的問題, 則另當別論)'''__
+ * facade 才會管權限的部份 (或許應該交由 Acegi), service / domain model 只要維持自身狀態的一致性即可.
+ * home interface 確實有存在的必要, 因為有時候它真的不適合放在特定的 domain model 裡, 例如 `SalesmanRankingHome.findBySalesHierarchyOrDistrict` 的條件涉及 SalesHierarchy 及 SalesDistrict, 放任何一方都不太對, 也達到到同時要過濾兩個條件的需求...
+   * home 可以將資料尋找的實作包裝起來, 即使底層的資料不提供直接的查詢, 至少也可以在裡面拼湊結果, 但絕不可將這一段工作丟給 caller... 未來 performance tuning 也可以從這裡下手.
+ * Home Interface 有許多妙用
+   * 除了 `findByXXX`, `getAllXXX`, `createXXX`, `removeXXX`, `get()`, `exists()` 等方法外, 如果是有限的項目, 也可以提供 `List<ID, String> getAllOptions()` 的方法, 建立選項清單 (不過這應該放在 Facade Implementation 才對[?])
+   * 可以統一實作 cache, 但要考慮多緒的問題
+   * __'''邏輯會一路從 facade 轉介到 domain model, home interface, 或 service (將邏輯儘可能地往後推, 才有更多的機會被共用), 但要記得在某些地方煞車, 例如不能再把整個責任丟給 DAO, 因為 DAO 專注在 persistence 上, 理想狀況下也是可被抽換的; 例如廠商代號以 2 為開頭的視為 "商品供應商", 那麼 `SupplierHome.getProductSupplyingOnes()` 內部就要轉呼叫 `SupplierDao.findByCodePattern(String pattern)`, 而非再提供 `SupplierDao.getProductSupplyingOnes()`, 將 "以2開頭" (如果需要在多個地方用到, 可以提出為組態) 這個 "商業邏輯" 推到 DAO 裡面去... 同樣的考量, 也適用於客製 library 的狀況, 例如 bscosmos 是 simpllibs-cosmos 的客製版本, 上述 "以2開頭" 的邏輯也不該藏到 bscosmos 裡, bscosmos 應僅就功能性客製的部份做調整就好, 不該涉及 business 的操作'''__
+   * __'''因此 domain model 與 DAO 分別位在兩端, domain model 的 API 是相對 specific, 而 DAO 的 API 則是相對 generic, 最後介於中間的 home interface 及 service 則要視情況而定.'''__
+ * __'''非 get, getAll, searchXXX (相對於 DAO 的 findXXX), findBy 的方法若被迫要加入 home interface, 都是為了避開相依性所造成 (要注意這可能也是 domain model 規劃錯誤的警訊, 例如 user.getShowroom(), 使用者怎會跟 showroom 直接產生關係呢? 這也難怪無法果斷地將它放到 user 裡),''' 例如 `User.getShowroom()`, 因為不想從 `User` 對 `Showroom` 產生相依時, 可以將該方法放到 `ShowroomHome.getShowroom(User)`, 還滿直覺的... 此時就不適合以 `findXXX` 來命名. (getCustomerOnes -> findByCustomer)__
+   * __'''其實放在 Home 與 Model 上的方法是有差異的, 例如 `CustomerOrderFormItem.getDerivedPurchaseOrderFormItems()` 與 `PurchaseOrderFormItemHome.findBySourceCustomerOrderFormItem(boolean confirmedOnly)`, 前者固定只考慮已確認者, 後者則可以做調整'''__
+ * domain model 重新包裝其他 model 時, 儘可能不要將內部的 model 漏出來 (例如美閣的 customer 會在背後包裝 zappy, ERP 的概念, 尤其 ERP 的客戶資料欄位多很多, 都沒有用到...), 如此才能保留內部實作的彈性. 例如 RTB Item 是包裝採購單項目, 除非明確要呈現採購單的內容時才直接引用採購單, 否則應該透過 RTB Item 取用內部採購單的資料 (我們常常會說 "XXX 指的是 OOO", 例如 RTB Item 上的採購日期是要對應 "單據日期" 還是 "採購日期", 這屬於實作細節, 不應在 RTB Item 的 javadoc 提及... 至於這個日期要複製一份到系統內, 還是即使取自外部系統, 那當然也是實作細節.... 這些細節在需求階段並非主角!!)
+ * 有了 Domain Model 這一層之後, 包裝 legacy database 這一層時就不會覺得什麼都要直接對應成 Hibernate 的組態了, 在實務上是儘可能地透過 Hibernate 組態來完成, 但做不到時也不要強求 Hibernate... (但如果過度相依於 Hibernate, ORM 就會無法抽換)
+ * __'''Domain model 可能會轉存取 home interface, 但 model 上不適宜有排序 (除非有很明顯的排位, 例如訂單項目的序號...) 或分頁的概念.'''__
+ * 把 persistent object 直接當做 DTO 或 domain model 來用時, 會造成資料庫要先規劃才能開發前端需求的尷尬. 應該是由 domain model 來驅動 database 的設計, 有許多違反正規劃的設計, 通常都是因應 domain model 要求的效能而來...
+ * 只要是可以列舉的型態 (穩定性相對比較高, 而且不會想要交給使用者組態的), 一律實作成 Enum. 無法實作成 Enum 的部份, 就肯定是 Entity;
+   * 如果在程式裡面是平等對待每個項目, 就該以 Entity 來實作, 不需要費神去想每個項目的常數名稱. 如果程式會對不同的項目做不同的處理, 就該宣告成 Enum. (否則程式也是要針對不同的 ID 做處理) @2009/02/19
+   * __'''2009/04/30 再跟 Jack 討論到, 連兩個項目的選項也要放入資料庫嗎?  好像真的有點小題大作了... 結論就是: 需求上有遇到使用者想要自己組態時, 才需要將組態提出到程式外部 (至於是用 XML 或 DB 來存放這些組態, 又是另外一回事了), 否則組態就只要寫死在程式裡就好, 如果是清單的話當然就是做成列舉囉.'''__
+     * 有限的項目都應該要做成列舉才是, Hibernate 也支援 collection of values 的用法, 把兩個選項做成 entity, 還要額外開發 DAO、persistent class 等, 多寫多錯!!
+   * @2009/03/09 再次跟 Jack 討論到這個問題, 最終還是覺得用資料庫來實作最好:
+     * 如果需要針對不同的 ID 做處理, 只要增加屬性讓程式判別做不同的處理即可, 好處是 label 不用由程式來給, 以後出報表或做其他不同的應用時, 也不用再手動給定 label...
+     * 不需要為此包裝 domain model, 只要透過 XXXService.getInteractionTypes 傳回 code/label 的清單即可, 例如 SalesComment.getInteractionType 傳回 int (就像以前我們在定義常數一樣).... 只要從頭到尾大家都認為那是代碼、代號或常數就好... 因此 DAO 就要提供 findByCode 的存取... 日後項目的屬性有增加時, 再考慮要不要包裝成 domain model... (這個做法在 2009/04/30 被證明是小題大作!!)
+ * '''Configuration 屬於 implementation (用以支持對外的 domain model), 因此即使 configuration 提供有 interface (組態可能來自於組態檔, 也可能來自於資料庫), 仍屬於內部實作而已)'''
+   * __'''@2008/05/21; 即便 configuration 背後用什麼來實作不那麼重要, 但考量日後可能其他系統會透過 DB 的方式來與這個系統整合 (透過 DB 整合, 仍是目前最常見的整合方式), 因此儘可能將組態放在資料庫裡. (用唯讀快取的方式包裝起來, 存取效能應該還可以接受)'''__
+     * 現在回想起來, HiveMind 的 configuration point 的使用似乎要節制一些; 例如 view 可以當做是 interface 來用, 後端是對照表, 或者混合多個條件運算出來的結果都不重要, 至於 view 載入之後就要快取起來, 定期更新, 還是重複查詢, 都要視應用面而定. 
+     * 甚至可以快速地用 OpenOffice Base 快速建立更改資料庫組態的程式.
+     * 在企業環境下最好建立一個專用的資料庫來存放不同系統間的對照 (感覺 LDAP 好像也是不錯的選擇), 各系統可以即時查詢, 或者定時同步到本地端.
+     * 由於 DB 間要整合 (distributed query), 因此開發企業應用時最好還是選用 MSSQL 或是 Oracle, 可以視企業的喜好而定.
+     * @2008/11/15 意識到資料庫的正規化也不要過頭了, 除了方便做 reporting 以外, 也要考量後續資料分析上的應用.
+     * __'''@2008/11/28 終於認清之前 HiveMind 裡 configuration point 用法上哪裡出了問題; configuration 必須與 data 分清楚, 如果是 data 的話還是放在資料庫比較好, configuration 則比較偏向系統底層的組態. 也就是說之前把 configuration point 用錯地方了!!'''__
+ * 藉由 domain model 包裝 configuration 或 persistence 一層, 可以虛擬出 "實體不存在" 的概念
+ * 要從 persistent/configuration 當成 model 的錯誤中走出來時...
+   * 將 persistent class 全部更名為 PersistentXXX
+   * 不要變更到 string 串接, 尤其是 HQL
+   * Dao, mapping.xml 增加 entity-name
+   * 不影響原先功能, 慢慢再將對 persistent layer 不當的存取轉換為 domain model...
+ * __'''如果資料直接由外部提供, 那麼 ID 型態最好設定成 String, 因為 String 是最有彈性的, 即使外部是以 Integer 來做為 ID, 我們還是可以轉換成 String 表示法... (例如 "1-XXX" 表示 ERP 單據, 2-XXX 代表超特單據, 內部可以做轉譯; 其實 ID 裡頭挾帶的就是 "對照關係", 平常不該拿來做 object lookup 以外的用途, 因為 ID 本身應該是沒有意義的)  雖然 ID 相當程度上屬於實作面的東西, 但由於 ID 型態會浮到 Domain Model 上, 所以型態要慎選...'''__
+   * 以 `Object` 來對待好像也是可行的方式之一, 前台若需要用到型態, 例如 `IPropertySelection` 的 rewinding, 則可以在寫出時先用 session keep 住型態, 用 `<input type="hidden">` 來記錄是可行的方式之一, 也可以提供 type hint 的存取
+   * __'''事情好像搞得太複雜了, 總是會有 type, 只要該 type 不是內部實作專有的就好'''__
+   * @2008/09/30 建議外部系統在包裝 domain model 時, 就應該把 ID 規劃成 String 或 Integer, 避免讓 persistent 層級的 ID 浮上來, 這樣每個有引用到這些 domain models 的專案就不用再重新包裝過. 關鍵在於 ID 的轉換要有效率!!
+   * __'''@2008/12/24 建議外部系統在包裝 entity class 時, 就應該把 ID 規劃成 String 或 Integer, 進一步假設 entity id 與 model id 是一樣的....''' 這樣似乎會讓 EntityModelHome 的實作簡單一些, 因為長時間用下來, 也沒有轉譯需要用到... 如果真需要轉譯, 那也是 EntityTranslator 的事... Model 與 Entity 間也是 Entity-Entity 的關係... 或許 GenericDao 應該要繼承自 EntityHome 才是? 如此就能通用於 EntityTranslator?__
+   * __繼承關係在 Hibernate 裡必須用 "等值" 的 ID 來表現 (對照關係則無此限制), 可以用 String ID 的 Domain Model 來接合不同型態; 這 "等值" 的限制無法打破. __ 例如 RtbSupplier 繼承自 Supplier, Supplier 的 ID 是 "703", 而 RtbSupplier 的 ID 是由數字轉換而來的 "1", 即便兩者都是 String, 但遇到把 RtbSupplier 的 instance 拿去當做 Supplier 使用時就會出狀況, 因為資料庫裡頭並沒有 ID 為 "1" 的供應商; 另外之前採用 Object 時, 會造成前端 UI 無法對 ID 做編碼/解碼的動作 (為了要在 Server/Client 間交換 ID, 但 HTML 又不支援 ID 的序列化), 反而麻煩 [...]
+   * __從 Employee 延伸出 Salesman, ShowroomManager, DistrictManager 時, 後者都只是 "把特定狀態下才有意義的操作" 提出來到特定的介面而已. 其他 Entity 也不應直接參照這些延伸出來的東西? (尤其是歷史、靜態資料) '''不能說因為 Salesman 被用過就不刪 (刪了才能拿掉 Salesman 的身份)'''__
+   * ERP -- 對照 --> Department -- is a --> Showroom -> Persistent Class
+          ^---- ID 若要轉換, 要從 "對照" 的地方開始做, 不能從 "is a" 的地方做
+   * __'''問題在於 ((Department)showroom).getIdentifier() 要與 showroom.getIdentifier() 傳回相同值, 不只是型態要相同.'''__
+   * __XXXConfiguration 應該直接提供物件的轉換, 內部才能統一丟出 "XXX 組態對應的 OOO 不存在" 的問題; '''所有的對照關係 (如果涉及實作的話) 都應該要拉到 Configuration 來做, 並視情況丟出 `IdentityException`'''; 這麼做的好處可以將 home interface 的相依性提出 (@2009/02/25 再次確認這個做法是好的... 而且 configuration 內部可以對組態值做 "正規化" 的工作, 例如將單一個用逗號隔開的關鍵字, 改以字串陣列提供出來...)__
+   * __如果 `CustomerOrderForm` 在建立之初只能選擇業務人員 (`salesEmployee`), 那麼後續被建立的 `CustomerOrderForm` 就應該提供 `getSalesman()` 的存取; `Salesman.get()`, `Salesman.instance()` 等不丟出 (內部不檢查) `IdentityException` 的方向是正確的, 因為後續存取時, 可能已經不具 Salesman 身份了, 但永遠還是個 Employee.__
+ * __程式一開始開發時, 藉由 domain model 及 home interface 將實作細節藏起來即可. 除此之外, 不用做過度的抽象化, 以後真的遇到時再做也不遲, 因為抽象化是沒有終點的...__
+ * 結合 Use Case 與 Domain Model, 這兩者應該是息息相關的 [...]
+ * home interface 會比 model 知道更多的實作細節...
+ * DDD 讓需求面與實作面得以接軌, 例如使用案例分析...
+ * __'''鼎新 Cosmos 有一 CustomerOrderForm 的概念, 美閣加以客制後得到 HtlgmCustomerOrderForm, 但在 Bazzar 建構 Business Domain Model 時, 還是要重新將 HtlgmCustomerOrderForm 包裝一層, 因為 HtlgmCustomerOrderForm 是實作面的東西, 用詞可能與美閣不同, 欄位數也可能不足或過多 (因此不能再繼承自 HtlgmCustomerOrderForm), 除非有需求就是要列出 ERP 的單據, 否則一般的操作都應該透過 Bazaar 專為美閣包裝的那個版本 (用到的部份才包裝出來). 如果想成系統規劃時就有 CustomerOrderForm 的需求, 後來發現 ERP 就有, 因此就直接拿 HtltmCustomerOrderForm 來包裝, 而不另外規劃 persistence, 但這並不會影響 CustomerOrderForm 的設計...'''__
+   * HtlgmCustomerOrderForm 僅就欄位增加的部份? 企業邏輯還是應該放在 Bazaar 的那層包裝? 如果邏輯是客戶在 ERP 下特有的概念, 實作在 ERP 這邊又有什麼不可? 效能上比較有機會得到最佳化? 可以將常用的推導運算包裝起來, 也方便 Bazaar 實作... __這一點在 7/23 Jack 開發 MG-bu-09-0003 時有深入的討論 - '''決定將鼎新專有的邏輯 (公司人員在面對鼎新這套系統時的邏輯) 都寫到 cosmos 去, Bazaar 就只做 delegate 即可, 這使得 simpllibs-cosmos 或 bscosmos-htltw 變得 "有用", 否則所有的功能都綁在 Bazaar, 末來換系統之後, cosmos 套件就可以丟了...'''__
+   * 最近有一種感覺, bscosmos-htltw 裡增加的運算都是 generic 的, 因此要直接拿來用好像也不怎麼好用? 這樣的結果是對的嗎?
+ * __協調 model 是 service 的工作, 例如 sales case 與 sales task 間的關係, 如果要維持 "最後一個自訂工作不能結束" 的要求, 那麼 SalesCase.close 與 SalesTask.close 要如何不公開又能被 service 整合得到? '''顯然 service 在某些情況下還是會碰到 persistence 層 (從上面沒辦法, 只好從底層下手; 因為 `SalesTask.close()` 總是會檢查自己是不是最後一個工作而拒絕被刪除, 但 `SalesCase.close()` 內部其實也是逐一呼叫 `SalesTask.close` 而已, 最後一個還是刪不了... `SalesCase.close()` 與 `SalesTask.close()` 兩者都可以公開吧? 只要 `SalesCase.close()` 內部不要呼叫 `SalesTask.close()`, 而是透過 persistence 層完成即可; 為了實作面的問題, 被迫要將邏輯拆到 service layer 是有點怪, domain model 會變得不直覺 (因為直覺上就是 "最後一項工作不能結案, 不然就是要從個案結案"), 因此要時常檢視 service layer 上的方法是不是應該要回歸到 domain model, 記住要 keep service layer THIN!!)'''__
+   * __可能有 internal home interface 的必要, 但 model/service 就沒有 internal 版本必要; 例如 salesmanranking 的建立與更新都可透過 home interface 的特殊方法, 但 create 與 update 都應該放在 internal home interface. (或者應該要考慮 internal service? 因為一個套件通常只有一個 service, 但會有很多個 home, 有時候還要被覆寫做客製化, 不太好維護. 但 internal model 肯定是不用的!!) '''如此就不用把 setter 強加到 model 上, 因為這個動作即使是再有權限的人, 也不能做這個動作...'''__
+   * 但既然 service (包括 `SalesRankingReporter`, `RtbNotifyPublisher`) 也可能碰到 persistence, 那麼 internal home interface 似乎就沒存在的必要了[?]
+   * 如果這種狀況避免不了, 就只能儘量避免了; 通常在邏輯運算的部份, 可以運用 home interface 及 domain model 即可, 真正要更新狀態時才需要碰到 persistence.
+ * 如果 service 也是 domain model 的一部份, 則建議擺在與 domain model 同一個 package 裡
+ * __實作的過程中, 會遇到底層的實作細節一直要符到上面的情形; 尤其是 configuration? 可以另外提出一個 configuration 供 module 內部使用, 例如 User 有一個欄位在設定與 ERP 使用者代號的對應, 就不該直接提供 User.getErpUserCode 的存取, 而是提供 Configuration.getErpUserCode(User) 的功能, 如此 User 這個往系統外部傳遞時, 才不會被存取到內部的對應...__
+   * __'''在 hivemind 裡可以用來包裝多個 symbole, 否則一堆 `<set property` 很麻煩'''__
+   * __'''configuration 比較特別, 它本質上就是跨 module 的, 甚至是跨不同系統的, 因此不太需要為各個 module 分別建立一個 configuration, 待組態本身變得複雜時再提出也不遲; 把組態集中在一個地方, 也方便一起檢視環境改變時, 有哪些組態要跟著調整, 尤其是組態寫死在程式裡面時...'''__
+   * configuration 物件的特值是會同時提供 ID 與 Entity 的讀取, 例如 `getErpDepartmentCode()`, `getErpDepartment()`; 後者可以將物件生成的邏輯封裝起來, 減少相依性的維護, 而前者則適用於 code 的比對, 避開 entity 的生成...
+   * configuration 本身不應透露內部的是如何組態的細節, 因為 configuration 也是一個 interface
+ * Entity 之間當然會產生關聯, 當有一個特別的概念其實是可以從關聯中求取時, 最好將這種 "x 指的就是 y 的 z" 的對應關係封裝起來, 成為特殊的 property. 如此 model 的使用者就不必去記 "x = y.z" 的關係, 日後內部要修改對應關係也不會造成影響.
+   * __'''最後也是最重要的 - 先規劃出這些 shortcut property 之後, 再考量 persistence 或 cache 的問題 (或許這個欄位是即時計算出來的, 例如小計 = 單價 x 數量, 又或許要考量稅金的問題), 尤其這些資料可能來自外部系統或資料本身是一種 "歷史記錄" (例如 "單據" 的概念, y.z 可能會變動而言) 時, 這麼做更能避免讓內部的實作細節往外浮現'''__
+   * __'''按 UI 的需求配置是最直覺的, 因為需要才會被擺在同一個畫面裡.. (這比直接從資料庫反推 model 要有效得多, 這似乎反應了 "系統是現實世界的映射" 的這個事實)''' 建立這些 shortcut method 可以避免相同的邏輯散落在各處; 例如畫面的輸出一個, 報表的輸出再一個...__
+   * __'''需求分析時期所取得的文件, 有 "XX的OO" 字句者, 代表 XX 這個 Model 必須要有一個 OO 的 shortcut method; 這跟正規化後的 Entity Relation 完全無關, 我們要反應的是 "符合實際的狀況"'''__
+   * __但也要注意別讓 UI 上單純的拼接關係, 反應到 domain model 上. 例如 X 上面有個來自 Y.a 的資料, 除非 X 底層真有另外開一個欄位存放 Y.a 的資料, 否則我們只要額外提出 X.Y, 除非不想透過 X 公開 Y, 才需要增力 X.a 指向 Y.a [...]__
+ * Domain modeling 時, 可以用 mind mapping 打草稿, 然後直接用 interface 進 Java IDE 定義, 最後還可轉出 UML 圖...
+ * __'''可以不要用 null 就不要用, 除非 null 本身是無可取代的, 例如表示沒有填寫、尚未寄出等? 除非要去區隔 "沒有電話" 或 "不確定有沒有電話", 否則用 "空字串" 來表示這兩種狀況就夠了, 因為 null 進到資料庫之後很難處理... @2008/12/23'''__
+ * @2009/03/12 發現 `null` 的使用, 在 API 上有特別的考量, 例如 createBusinessForm(String title, String unifiedNumber), 當使用者沒有發票抬頭與統編時, 更要使用者傳入一個 "空字串" 來表示 "沒有" 這件事確實奇怪... 即便底層在儲存時不會去區分 "沒有" 或 "不確定有沒有", 但 API 還是可以宣告這兩個參數 "沒有XXX時可以傳入 null". 這種說法為 caller 保留了彈性, 因為傳入空字串也是可接受的.... 如果換成 "傳入 null 表示沒有XXX", 就會讓人懷疑傳入空字串會不會出錯[?]
+ * __'''在規劃應用程式時, 有時候提供 "暫存" 的功能是很 friendly 的設計, 但要考量 domain model 內部的 state 控制會變更得更為複雜 (這代表內部將可容許不合法的資料?)'''__
+不能滿足要求, 就反求 domain model 吧...
+ * __DAO 相較於 Domain Model 而言, Javadoc 只會說明 "單一欄位" 可能的狀況, 例如 notifyDate 可能是 `null`, 但不用去說明 "未寄出時為 null" '''(因為語意是由 domain model 賦予的, 這一點同樣適用於 presentation model, 有趣的是 persistent/presentation model 分別位於 call path 的兩個極端; 不過 DB Schema 文件倒是可以稍加說明)''', assertion 當然也不用去檢查未寄出時才能為 `null`... (如何達成 Hibernate Validator 所說的, 從 presentation -> domain -> persistent model 都用同一套 validation rules[?] database 就是 "靜態" data 的地方!!)__
+   * __'''目前遇到一個矛盾的地方, 例如 `PersistentTask` 有 `startDate` 與 `endDate` 兩個欄位, 如果在 `setStartDate()` 檢查 "必須在截止日期之前(含)", 在 `setEndDate()` 檢查 "必須在開始日期之後(含)", 這樣的檢查可能因為 setter 被呼叫的順序不同而發生錯誤, 這個問題跟 Tapestry 中 form validation 必須在單一欄位的驗證都完成之後才能做的道理是一樣的.'''__
+   * 如果 validation 是在所有欄位都設定完畢之後才做, 就不會有這個問題; 但無論如何, 在 domain model 及 persistence layer 都重複同樣的邏輯, 如果運算頗為複雜, 耗時兩倍的成本值得嗎[?]
+ * domain object factory...
+   * 在 http://mojavelinux.com/wiki/doku.php?id=java:developmentnotes[Java Development Notes] 有提到: In general, it is a good idea to delegate the instantiation of domain objects to an object factory. While ORM tools would use the constructors directly, the business logic would request a complete object from the factory.
+   * 在 http://debasishg.blogspot.com/2006/07/spring-20-aop-spruce-up-your-domain.html[Spring 2.0 AOP - Spruce Up Your Domain Model] 這篇文章有提到: A typical domain object is instantiated in the application either from the ORM layer (read Hibernate through persistence services) or by the user using factories.
+   * 最麻煩的問題在於要手動注入相依性, 常常會漏掉..
+ * __'''Entity 間有對照(as)或繼承(is a)關係時, 例如 CosmosSupplier |-> (對照) Supplier -> (衍生) RtbSupplier, 其中 RtbSupplier 的 backened object 應該是 Supplier 而不是 CosmosSupplier, 為了避免在實作上產生相依 (尤其是 factory 在做手動注入相依性時常會漏掉的問題), RtbSupplierImpl 不應直接繼承自 SupplierImpl, 而是採 adapter 的方式做 "轉接" (在介面上繼承, 但實作不繼承). 這種架構也適用於 CosmosEmployee |-> (對照) Employee -> (衍生) Purchaser / Salesman... 的狀況. (實作面用到對照關係時, 可以透過 configuration 取得)'''__
+ * __'''caller 還到要拿 domain model 的某些狀態來做一些一判斷時, 儘可能將它內化成為 domain model 的一部份 (語義上), 否則這個判斷會散落各處, 由此看來, domain model 好像有共用邏輯的概念在裡面.... 例如 caller 可以用 `getConfirmation() == Confirmation.CONFIRMED` 來判斷是否已結案, 但如果能夠額外提供一個 `isConfirmed()` 的方法會更為 friendly!!'''__
+ * 如果 `EmployeeImpl` 同時實作 `Salesman`、`DistrictManager` 及 `ShowroomManager`, 確實可以大幅減少 instance 數量, 但相對地 `EmployeeImpl` 會變得不好測試.
+ * 包裝這麼多層 (CosmosSupplier -> HtlgmSupplier -> Supplier), 在開發 UI 時該直接存取哪一層呢? 除非有需求就是要列出 ERP 的單據才直接存取 HtlgmSupplier, 否則就存取 Supplier. __'''如果將來抽換 ERP 之後, 這項功能還必須保有且功能不變的話, 就該透過 Supplier 存取.'''__
+ * 把 DAO 或 persistence 放在 home interface / domain model 之後, 後續調整 persistence 時, 就可以很直接地感受到 persistence 與 business logic 分層的好處, 因為所有的調整都將被限定在 domain model 的層級;
+   * DAO 的 insert 目的很單純在新增一筆記錄, 使不會違背 constraint 而已. 
+     * __'''@2008/03/30 發現, DAO 的 insert 很容易造成 business logic 掉入 DAO 層, 建議所有的資料在 Home 準備好, 然後呼叫 DAO 的 makePersistent 即可'''__
+   * __'''另外 DAO 應該接受 domain object 為參數 (但傳回 persistent object), 而非 ID 值, 如此可以確保 Identity 的有效性, (因為載入 domain object 可能會連帶載入後面的 persistent object, 因此 lazy-loading 變得很重要, 儘可能減少資料的載入動作) 也避免 home interface 的實作過度相依於 persistence 細節 (當然這造成了 Domain Object 與 Persistent Object "ID 要相同" 的限制, 通常這不會是什麼問題, 若真遇上了這種狀況, 還是可以透過 configuration 居中協調做轉換, 不過還是保持 ID 一致比較單純...)'''__
+ * Domain Modeling 要適可而止, 最好的方式是由 use case 來驅動; 多寫無益.
+ * __'''對於異常的資料, 從 persistent class 就應該加以攔截, 這種異常不應該往上浮現到 domain object (如果設計上沒有注意, 可能進一步污染了 Domain Model 的 API...)''' 內部可以利用 assert 來做確認 (建議一併輸出 entity 的所有資料項目, 方便資料異常時快速定位, 可以從 `toString()` 下手), 若執行期真的遇到這種狀況, 可以直接從修改資料的方向下手.__
+ * __要想個辦法可以對 home service 及 domain object 做 injection 的測試, 否則開始套用 library 時才一一跑出這些問題實在很挫折. '''(可以連同 DAO 一起做測試, 準備空的資料庫, 測試完 insert 之後, 就可以載入 model...)'''__

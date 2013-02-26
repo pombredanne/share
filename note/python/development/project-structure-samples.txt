@@ -1,0 +1,607 @@
+= link:project-structure.html[Python / Development / Project Structure] / Samples =
+:title: [Python][Development] Project Structure Samples
+
+== Django ==
+
+.https://www.djangoproject.com/download/[Django]
+--------------------------------------------------------------------------------
+.
+|-- AUTHORS
+|-- django/
+|   |-- bin/
+|   |-- conf/
+|   |-- contrib/
+|   |-- core/
+|   |-- db/
+|   |-- dispatch/
+|   |-- forms/
+|   |-- http/
+|   |-- __init__.py
+|   |-- middleware/
+|   |-- shortcuts/
+|   |-- template/
+|   |-- templatetags/
+|   |-- test/
+|   |-- utils/
+|   `-- views/
+|-- docs/
+|   |-- conf.py
+|   |-- contents.txt
+|   |-- _ext/
+|   |-- faq/
+|   |-- glossary.txt
+|   |-- howto/
+|   |-- index.txt
+|   |-- internals/
+|   |-- intro/
+|   |-- make.bat
+|   |-- Makefile
+|   |-- man/
+|   |-- misc/
+|   |-- README
+|   |-- ref/
+|   |-- releases/
+|   |-- _theme/
+|   `-- topics/
+|-- extras/
+|   |-- csrf_migration_helper.py*
+|   |-- django_bash_completion*
+|   `-- README.TXT
+|-- INSTALL
+|-- LICENSE
+|-- MANIFEST.in
+|-- README.rst
+|-- scripts/
+|   `-- rpm-install.sh
+|-- setup.cfg
+|-- setup.py
+`-- tests/
+    |-- modeltests/
+    |-- regressiontests/
+    |-- runtests.py*
+    |-- templates/
+    |-- test_sqlite.py
+    `-- urls.py
+--------------------------------------------------------------------------------
+
+.`setup.cfg`
+--------------------------------------------------------------------------------
+[bdist_rpm]
+doc_files = docs extras AUTHORS INSTALL LICENSE README
+install-script = scripts/rpm-install.sh
+--------------------------------------------------------------------------------
+
+.`setup.py`
+--------------------------------------------------------------------------------
+from distutils.core import setup
+from distutils.command.install_data import install_data
+from distutils.command.install import INSTALL_SCHEMES
+import os
+import sys
+
+class osx_install_data(install_data):
+    # On MacOS, the platform-specific lib dir is /System/Library/Framework/Python/.../
+    # which is wrong. Python 2.5 supplied with MacOS 10.5 has an Apple-specific fix
+    # for this in distutils.command.install_data#306. It fixes install_lib but not
+    # install_data, which is why we roll our own install_data class.
+
+    def finalize_options(self):
+        # By the time finalize_options is called, install.install_lib is set to the
+        # fixed directory, so we set the installdir to install_lib. The
+        # install_data class uses ('install_data', 'install_dir') instead.
+        self.set_undefined_options('install', ('install_lib', 'install_dir'))
+        install_data.finalize_options(self)
+
+if sys.platform == "darwin":
+    cmdclasses = {'install_data': osx_install_data}
+else:
+    cmdclasses = {'install_data': install_data}
+
+def fullsplit(path, result=None):
+    """
+    Split a pathname into components (the opposite of os.path.join) in a
+    platform-neutral way.
+    """
+    if result is None:
+        result = []
+    head, tail = os.path.split(path)
+    if head == '':
+        return [tail] + result
+    if head == path:
+        return result
+    return fullsplit(head, [tail] + result)
+
+# Tell distutils not to put the data_files in platform-specific installation
+# locations. See here for an explanation:
+# http://groups.google.com/group/comp.lang.python/browse_thread/thread/35ec7b2fed36eaec/2105ee4d9e8042cb
+for scheme in INSTALL_SCHEMES.values():
+    scheme['data'] = scheme['purelib']
+
+# Compile the list of packages available, because distutils doesn't have
+# an easy way to do this.
+packages, data_files = [], []
+root_dir = os.path.dirname(__file__)
+if root_dir != '':
+    os.chdir(root_dir)
+django_dir = 'django'
+
+for dirpath, dirnames, filenames in os.walk(django_dir):
+    # Ignore dirnames that start with '.'
+    for i, dirname in enumerate(dirnames):
+        if dirname.startswith('.'): del dirnames[i]
+    if '__init__.py' in filenames:
+        packages.append('.'.join(fullsplit(dirpath)))
+    elif filenames:
+        data_files.append([dirpath, [os.path.join(dirpath, f) for f in filenames]])
+
+# Small hack for working with bdist_wininst.
+# See http://mail.python.org/pipermail/distutils-sig/2004-August/004134.html
+if len(sys.argv) > 1 and sys.argv[1] == 'bdist_wininst':
+    for file_info in data_files:
+        file_info[0] = '\\PURELIB\\%s' % file_info[0]
+
+# Dynamically calculate the version based on django.VERSION.
+version = __import__('django').get_version()
+
+setup(
+    name = "Django",
+    version = version,
+    url = 'http://www.djangoproject.com/',
+    author = 'Django Software Foundation',
+    author_email = 'foundation@djangoproject.com',
+    description = 'A high-level Python Web framework that encourages rapid development and clean, pragmatic design.',
+    download_url = 'https://www.djangoproject.com/m/releases/1.4/Django-1.4.1.tar.gz',
+    packages = packages,
+    cmdclass = cmdclasses,
+    data_files = data_files,
+    scripts = ['django/bin/django-admin.py'],
+    classifiers = [
+        'Development Status :: 5 - Production/Stable',
+        'Environment :: Web Environment',
+        'Framework :: Django',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: BSD License',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 2.5',
+        'Programming Language :: Python :: 2.6',
+        'Programming Language :: Python :: 2.7',
+        'Topic :: Internet :: WWW/HTTP',
+        'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
+        'Topic :: Internet :: WWW/HTTP :: WSGI',
+        'Topic :: Software Development :: Libraries :: Application Frameworks',
+        'Topic :: Software Development :: Libraries :: Python Modules',
+   ],
+)
+--------------------------------------------------------------------------------
+
+== SQLAlchemy ==
+
+.http://www.sqlalchemy.org/download.html[SQLAlchemy]
+--------------------------------------------------------------------------------
+.
+|-- CHANGES
+|-- CHANGES_PRE_06
+|-- distribute_setup.py
+|-- doc/
+|   |-- build/
+|   |-- contents.html
+|   |-- copyright.html
+|   |-- core/
+|   |-- dialects/
+|   |-- genindex.html
+|   |-- _images/
+|   |-- index.html
+|   |-- intro.html
+|   |-- orm/
+|   |-- search.html
+|   |-- searchindex.js
+|   |-- _sources/
+|   `-- _static/
+|-- examples/
+|   |-- adjacency_list/
+|   |-- association/
+|   |-- beaker_caching/
+|   |-- custom_attributes/
+|   |-- declarative_reflection/
+|   |-- dynamic_dict/
+|   |-- elementtree/
+|   |-- generic_associations/
+|   |-- graphs/
+|   |-- inheritance/
+|   |-- __init__.py
+|   |-- large_collection/
+|   |-- nested_sets/
+|   |-- postgis/
+|   |-- sharding/
+|   |-- versioning/
+|   `-- vertical/
+|-- ez_setup.py
+|-- lib/
+|   |-- sqlalchemy/
+|   `-- SQLAlchemy.egg-info/
+|-- LICENSE
+|-- MANIFEST.in
+|-- PKG-INFO
+|-- README.py3k
+|-- README.rst
+|-- README.unittests
+|-- sa2to3.py
+|-- setup.cfg
+|-- setup.py
+|-- sqla_nose.py*
+`-- test/
+    |-- aaa_profiling/
+    |-- base/
+    |-- binary_data_one.dat
+    |-- binary_data_two.dat
+    |-- bootstrap/
+    |-- dialect/
+    |-- engine/
+    |-- ex/
+    |-- ext/
+    |-- __init__.py
+    |-- lib/
+    |-- orm/
+    |-- perf/
+    `-- sql/
+--------------------------------------------------------------------------------
+
+== Pylons ==
+
+.http://www.pylonsproject.org/projects/pylons-framework/download[Pylons]
+--------------------------------------------------------------------------------
+.
+|-- CHANGELOG
+|-- ez_setup.py*
+|-- LICENSE
+|-- MANIFEST.in
+|-- pylons/
+|   |-- commands.py
+|   |-- configuration.py
+|   |-- controllers/
+|   |-- decorators/
+|   |-- docs/
+|   |-- error.py
+|   |-- i18n/
+|   |-- __init__.py
+|   |-- log.py
+|   |-- media/
+|   |-- middleware.py
+|   |-- templates/
+|   |-- templating.py
+|   |-- test.py
+|   |-- testutil.py
+|   |-- url.py
+|   |-- util.py
+|   `-- wsgiapp.py
+|-- README.txt
+|-- rtd.txt
+|-- scripts/
+|   |-- gen-go-pylons.py*
+|   |-- go-pylons.py
+|   `-- pylintrc
+|-- setup.cfg
+|-- setup.py
+|-- test_files/
+|   |-- event_file.py
+|   |-- __init__.py
+|   `-- sample_controllers/
+|-- tests/
+|   |-- conftest.py
+|   |-- __init__.py
+|   |-- test_units/
+|   `-- test_webapps/
+`-- UPGRADING
+--------------------------------------------------------------------------------
+
+.`setup.cfg`
+--------------------------------------------------------------------------------
+[egg_info]
+tag_build = dev
+tag_date = true
+
+[easy_install]
+find_links = http://www.pylonshq.com/download/
+
+[nosetests]
+# constrain nosetests to the tests dir for now: 0.10 ends up
+# overwriting pylons.config with the actual module
+where=tests
+cover-package=pylons
+cover-erase=True
+with-doctest=True
+nocapture=1
+--------------------------------------------------------------------------------
+
+[listing]
+.`setup.py`
+................................................................................
+import sys
+
+try:
+    from setuptools import setup, find_packages
+except ImportError:
+    from ez_setup import use_setuptools
+    use_setuptools()
+    from setuptools import setup, find_packages
+
+version = '1.0.1'
+
+tests_require = ['nose', 'Jinja2>=2.2.1']
+if not sys.platform.startswith('java'):
+    tests_require.extend(['Genshi', 'coverage>=2.85'])
+
+setup(
+    name="Pylons",
+    version=version,
+    description='Pylons Web Framework',
+    long_description="""
+Pylons
+======
+
+The Pylons web framework is designed for building web applications and
+sites in an easy and concise manner. They can range from as small as a
+single Python module, to a substantial directory layout for larger and
+more complex web applications.
+
+Pylons comes with project templates that help boot-strap a new web
+application project, or you can start from scratch and set things up
+exactly as desired.
+
+
+Example `Hello World`
+---------------------
+
+..
+
+    from paste.httpserver import serve
+    from pylons import Configurator, Response
+
+    class Hello(object):
+        def __init__(self, request):
+            self.request = request
+
+        def index(self):
+            return Response(body="Hello World!")
+
+
+    if __name__ == '__main__':
+        config = Configurator()
+        config.begin()
+        config.add_handler('home', '/', handler=Hello, action='index')
+        config.end()
+        serve(config.make_wsgi_app(), host='0.0.0.0')
+
+
+Core Features
+-------------
+
+* A framework to make writing web applications in Python easy
+
+* Utilizes a minimalist, component-based philosophy that makes it easy to
+  expand on
+
+* Harness existing knowledge about Python
+
+* Extensible application design
+
+* Fast and efficient, an incredibly small per-request call-stack providing
+  top performance
+
+* Uses existing and well tested Python packages
+
+
+Current Status
+--------------
+
+Pylons 1.0 series is stable and production ready. The Pylons Project now
+maintains the Pyramid web framework for future development. Pylons 1.0 users
+should strongly consider using it for their next project.
+
+
+Download and Installation
+-------------------------
+
+Pylons can be installed with `Easy Install
+<http://peak.telecommunity.com/DevCenter/EasyInstall>`_ by typing::
+
+    > easy_install Pylons
+
+Dependant packages are automatically installed from
+the `Pylons download page <http://pylonshq.com/download/>`_ .
+
+
+Development Version
+-------------------
+
+Pylons development uses the Mercuial distributed version control system (DVCS)
+with BitBucket hosting the main repository here:
+
+    `Pylons Bitbucket repository <https://github.com/Pylons/pylons>`_
+
+
+""",
+    keywords='web wsgi lightweight framework sqlalchemy formencode mako templates',
+    license='BSD',
+    author='Ben Bangert, Philip Jenvey, James Gardner',
+    author_email='ben@groovie.org, pjenvey@underboss.org',
+    url='http://www.pylonshq.com/',
+    packages=find_packages(exclude=['ez_setup', 'tests', 'tests.*']),
+    zip_safe=False,
+    include_package_data=True,
+    test_suite='nose.collector',
+    tests_require=tests_require,
+    install_requires=[
+        "Routes>=1.12.3", "WebHelpers>=0.6.4", "Beaker>=1.5.4",
+        "Paste>=1.7.5.1", "PasteDeploy>=1.5.0", "PasteScript>=1.7.4.2",
+        "FormEncode>=1.2.4", "simplejson>=2.2.1", "decorator>=3.3.2",
+        "nose>=1.1.2", "Mako>=0.5.0", "WebError>=0.10.3",
+        "WebTest>=1.3.1", "Tempita>=0.5.1", "MarkupSafe>=0.15",
+        "WebOb>=1.1.1",
+    ],
+    dependency_links=[
+        "http://www.pylonshq.com/download/1.0"
+    ],
+    classifiers=[
+        "Development Status :: 5 - Production/Stable",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: BSD License",
+        "Framework :: Pylons",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 2 :: Only",
+        "Topic :: Internet :: WWW/HTTP",
+        "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
+        "Topic :: Internet :: WWW/HTTP :: WSGI",
+        "Topic :: Software Development :: Libraries :: Python Modules",
+    ],
+    extras_require={
+        'genshi': ['Genshi>=0.6'],
+        'jinja2': ['Jinja2'],
+    },
+    entry_points="""
+    [paste.paster_command]
+    controller = pylons.commands:ControllerCommand
+    restcontroller = pylons.commands:RestControllerCommand
+    routes = pylons.commands:RoutesCommand
+    shell = pylons.commands:ShellCommand
+
+    [paste.paster_create_template]
+    pylons = pylons.util:PylonsTemplate
+    pylons_minimal = pylons.util:MinimalPylonsTemplate
+
+    [paste.filter_factory]
+    debugger = pylons.middleware:debugger_filter_factory
+
+    [paste.filter_app_factory]
+    debugger = pylons.middleware:debugger_filter_app_factory
+    """,
+)
+................................................................................
+
+== Mock ==
+
+.http://mock.readthedocs.org/en/latest/index.html[Mock]
+--------------------------------------------------------------------------------
+.
+|-- docs/
+|   |-- changelog.txt
+|   |-- compare.txt
+|   |-- conf.py
+|   |-- examples.txt
+|   |-- getting-started.txt
+|   |-- helpers.txt
+|   |-- index.txt
+|   |-- magicmock.txt
+|   |-- mock.txt
+|   |-- patch.txt
+|   `-- sentinel.txt
+|-- extendmock.py
+|-- LICENSE.txt
+|-- MANIFEST.in
+|-- mock.py
+|-- mock.wpr
+|-- README.txt
+|-- setup.cfg
+|-- setup.py*
+|-- tests/
+|   |-- __init__.py
+|   |-- support.py
+|   |-- support_with.py
+|   |-- testcallable.py
+|   |-- testhelpers.py
+|   |-- testmagicmethods.py
+|   |-- testmock.py
+|   |-- testpatch.py
+|   |-- testsentinel.py
+|   |-- _testwith.py
+|   `-- testwith.py
+|-- tox.ini
+`-- unittest.cfg
+--------------------------------------------------------------------------------
+
+.`setup.cfg`
+--------------------------------------------------------------------------------
+[build_sphinx]
+source-dir=docs
+build-dir=html
+[sdist]
+force-manifest = 1
+--------------------------------------------------------------------------------
+
+.`setup.py`
+--------------------------------------------------------------------------------
+#! /usr/bin/env python
+
+# Copyright (C) 2007-2012 Michael Foord & the mock team
+# E-mail: fuzzyman AT voidspace DOT org DOT uk
+# http://www.voidspace.org.uk/python/mock/
+
+from mock import __version__
+
+import os
+
+
+NAME = 'mock'
+MODULES = ['mock']
+DESCRIPTION = 'A Python Mocking and Patching Library for Testing'
+
+URL = "http://www.voidspace.org.uk/python/mock/"
+
+readme = os.path.join(os.path.dirname(__file__), 'README.txt')
+LONG_DESCRIPTION = open(readme).read()
+
+CLASSIFIERS = [
+    'Development Status :: 5 - Production/Stable',
+    'Environment :: Console',
+    'Intended Audience :: Developers',
+    'License :: OSI Approved :: BSD License',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 2',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 2.4',
+    'Programming Language :: Python :: 2.5',
+    'Programming Language :: Python :: 2.6',
+    'Programming Language :: Python :: 2.7',
+    'Programming Language :: Python :: 3.1',
+    'Programming Language :: Python :: 3.2',
+    'Programming Language :: Python :: Implementation :: CPython',
+    'Programming Language :: Python :: Implementation :: PyPy',
+    'Programming Language :: Python :: Implementation :: Jython',
+    'Operating System :: OS Independent',
+    'Topic :: Software Development :: Libraries',
+    'Topic :: Software Development :: Libraries :: Python Modules',
+    'Topic :: Software Development :: Testing',
+]
+
+AUTHOR = 'Michael Foord'
+AUTHOR_EMAIL = 'michael@voidspace.org.uk'
+KEYWORDS = ("testing test mock mocking unittest patching "
+            "stubs fakes doubles").split(' ')
+
+params = dict(
+    name=NAME,
+    version=__version__,
+    py_modules=MODULES,
+
+    # metadata for upload to PyPI
+    author=AUTHOR,
+    author_email=AUTHOR_EMAIL,
+    description=DESCRIPTION,
+    long_description=LONG_DESCRIPTION,
+    keywords=KEYWORDS,
+    url=URL,
+    classifiers=CLASSIFIERS,
+)
+
+try:
+    from setuptools import setup
+except ImportError:
+    from distutils.core import setup
+else:
+    params['tests_require'] = ['unittest2']
+    params['test_suite'] = 'unittest2.collector'
+
+setup(**params)
+--------------------------------------------------------------------------------
+

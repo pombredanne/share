@@ -1,0 +1,129 @@
+= link:development.html[JavaFX / Development] / Maven Integration =
+:title: [JavaFX] 用 Maven 進行開發
+
+目前礙於 Oracle 授權的問題，JavaFX runtime 可以隨著 JavaFX 應用程式散佈，但不能單獨散佈 JavaFX runtime 本身，所以 Maven Central 不會有 JavaFX JAR (`jfxrt.jar`)。
+
+另外 `jfxrt.jar` 好像會以相對路徑相依於其他 native libraries（例如 Windows 的 `glass.dll`，Linux 的 `libglass.so` 或 Mac OS X 的 `libglass.dylib`）？這部份也不是 Maven repository 可以管理的。
+
+TIP: 不過在內建 JavaFX 2.2.4 的 Java SE 7u10 (Linux 64-bit) 上有一些有趣的發現。雖然有看到 `$JAVA_HOME/jre/lib/amd64/libglass.so`，但即便把 `$JAVA_HOME/jre/lib/jfxrt.jar` 移到其他地方，執行期並不會丟出 native libraries 找不到的錯誤，是因為沒有用到特定的功能嗎？
+
+由於 link:../install.html#full-integration[JavaFX 最終將完全被整進 JRE]，到時候 JavaFX 也不再是個需要額外宣告的 dependency，http://www.zenjava.com/2012/02/17/javafx-and-maven/[建議]暫時採用 system scope 直接引用 JavaFX 安裝位置的 JAR 檔。
+
+[[dependency]]
+--------------------------------------------------------------------------------
+<dependency>
+  <groupId>com.oracle</groupId> <1>
+  <artifactId>javafx</artifactId>
+  <version>2.0</version>
+  <scope>system</scope>
+  <systemPath>${java.home}/lib/jfxrt.jar</systemPath>
+</dependency>
+--------------------------------------------------------------------------------
+<1> 大家習慣用 `com.oracle:javafx` 來表示 JavaFX，但 `javafx:javafx-rt` 會不會更好？跟 http://maven.apache.org/guides/mini/guide-coping-with-sun-jars.html[官方建議的 Sun JARs] 命名方式比較相近...
+
+這樣的用法也符合 Maven 對 system scope 的定義：
+
+[quote,'http://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html[Maven - Introduction to the Dependency Mechanism]']
+________________________________________________________________________________
+Dependencies with the scope system are always available and are not looked up in repository. They are usually used to tell Maven about dependencies which are provided by the JDK or the VM. 'Thus, system dependencies are especially useful for resolving dependencies on artifacts which are now provided by the JDK, but where available as separate downloads earlier.'
+________________________________________________________________________________
+
+下面用 Hello World 來做說明：
+
+[source,java]
+--------------------------------------------------------------------------------
+$ mvn archetype:generate \
+      -DgroupId=com.example.javafx \
+      -DartifactId=javafx-examples \
+      -Dpackage=com.example.javafx
+$
+$ cd javafx-examples
+$ rm src/main/java/com/example/javafx/App.java src/test/java/com/example/javafx/AppTest.java
+$
+$ vi pom.xml <1>
+$ vi src/main/java/com/example/javafx/HelloWorld.java
+$ mvn install
+$ mvn exec:java -Dexec.classpathScope=compile -Dexec.mainClass=com.example.javafx.HelloWorld <2>
+--------------------------------------------------------------------------------
+<1> 宣告 JavaFX dependency。
+<2> 執行 Hello World
++
+--
+image:maven-integration/helloworld.png[]
+
+`exec:java` 用 `classpathScope` 來決定哪些 dependencies 要納入 classpath（可以透過 `-Dexec.classpathScope` 指定），預設是 `runtime`，不會將 system scope 的 dependencies 納進來（換成 `system` 也一樣），所以要改採 `compile` 或 `test` 才行。
+--
+
+.`HelloWorld.java`
+--------------------------------------------------------------------------------
+package com.example.javafx;
+
+import javafx.application.Application;
+import javafx.stage.Stage;
+import javafx.scene.Scene;
+import javafx.scene.text.Text;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.scene.text.TextBuilder;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.StackPaneBuilder;
+import javafx.scene.paint.Color;
+
+public class HelloWorld extends Application {
+
+    public static void main(String[] args) {
+        launch(args);
+    }
+
+    @Override
+    public void start(Stage stage) {
+        StackPane root = StackPaneBuilder.create()
+            .children(
+                TextBuilder.create()
+                    .text("Hello, World!")
+                    .fill(Color.rgb(187, 195, 107))
+                    .font(Font.font("SansSerif", FontWeight.BOLD, 24))
+                    .build()
+            )
+            .build();
+        stage.setScene(new Scene(root, 400, 300));
+        stage.setTitle("Hello JavaFX");
+        stage.show();
+    }
+
+}
+--------------------------------------------------------------------------------
+
+整合 Ant tasks 是一條路，但有沒有 Maven plugins 可以讓 `pom.xml` 因此而變得複雜？
+
+== 延伸閱讀 ==
+
+ * link:../../maven/sun-jars.html[Sun JARs]
+ * link:maven-plugins.html[Maven Plugins]
+
+== 參考資料 ==
+
+.網站
+--
+ * https://github.com/zonski/hello-javafx-maven-example[zonski/hello-javafx-maven-example · GitHub]
+--
+
+.文件
+--
+ * http://www.oracle.com/technetwork/articles/java/enterprisefxpt3-1735081.html[The Enterprise Side of JavaFX: Part Three] - 難得官方文件提到 Maven 應用。
+ * http://blog.cag.se/?p=752[JavaFX 2.2 and Maven | CAG konsultblogg] ^http://diigo.com/0vwbb[閱讀]^ (2012-09-08) - 提到 JavaFX 尚未完全整合到 JRE 的問題。
+ * http://java.dzone.com/articles/create-javafx-executables[Create JavaFX Executables with Maven | Javalobby] ^http://diigo.com/0vw90[閱讀]^ (2012-07-12) - JavaFX 被 boundle 進 JDK 之後，建議用 system scope 引用 `com.oracle:javafx`。但整合 Ant tasks 讓 `pom.xml` 變得好複雜...
+ * http://www.zenjava.com/2012/02/17/javafx-and-maven/[JavaFX and Maven | Zen Java] ^http://diigo.com/0vw7p[閱讀]^ (2012-02-17) - 礙於 license 跟 JavaFX runtime 會相依於其他 native libraries，所以無法放到 Maven Central。建議用 system scope 直接引用 JavaFX 安裝位置的 JAR 檔 (`com.oracle:javafx`)。
+ * http://code.google.com/p/jacp/wiki/JacpFXTutorial[JacpFXTutorial - jacp] - JacpFX 也是用 system scope 將 `com.oracle:javafx` 引進來。
+--
+
+.其他文件
+--
+ * http://www.guigarage.com/2012/10/building-javafx-applications-with-maven/[Building JavaFX Applications with Maven | GuiGarage] ^http://diigo.com/0vwap[閱讀]^ (2012-10-13) - Maven 3 才支援 `${java.home}`？
+ * http://stackoverflow.com/questions/10752102/javafx-native-libraries[swing - JavaFX Native libraries - Stack Overflow] ^http://diigo.com/0vti3[閱讀]^ (2012-05-25) - `jfxrt.jar` 會相依於其他 native libraries。
+ * http://loop81.blogspot.tw/2012/03/javafx-2-get-started-with-maven-eclipse.html[Me and my coding: JavaFX 2 - Get started with Maven, Eclipse and JavaFX] (2012-03)
+ * http://stackoverflow.com/questions/9294646/javafx-2-as-a-maven-dependency[java - JavaFX 2 as a Maven dependency - Stack Overflow] ^http://diigo.com/0vtj4[閱讀]^ (2012-02-15) - Maven 可以直接利用 JavaFX 內建的 Ant tasks。
+ * http://www.adam-bien.com/roller/abien/entry/how_to_compile_java_fx[How To Compile Java FX 2 Applications With Maven 3 : Adam Bien's Weblog] ^http://diigo.com/0vw7u[閱讀]^ (2011-12-21) - 一樣是以 system 引入 `com.oracle:javafx`。
+ * http://stackoverflow.com/questions/7105660/javafx-2-0-netbeans-maven[JavaFX 2.0 + NetBeans + Maven - Stack Overflow] ^http://diigo.com/0vtj1[閱讀]^ (2011-08-18) - 為什麼會有把 `bin` 資料夾複製到 local repository 的說法？
+--
+

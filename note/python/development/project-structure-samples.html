@@ -1,0 +1,686 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Python][Development] Project Structure Samples</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" />
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div>
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="project-structure.html">Python / Development / Project Structure</a> / Samples</h1>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_django">Django</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="title"><a href="https://www.djangoproject.com/download/">Django</a></div>
+<div class="content">
+<pre><code>.
+|-- AUTHORS
+|-- django/
+|   |-- bin/
+|   |-- conf/
+|   |-- contrib/
+|   |-- core/
+|   |-- db/
+|   |-- dispatch/
+|   |-- forms/
+|   |-- http/
+|   |-- __init__.py
+|   |-- middleware/
+|   |-- shortcuts/
+|   |-- template/
+|   |-- templatetags/
+|   |-- test/
+|   |-- utils/
+|   `-- views/
+|-- docs/
+|   |-- conf.py
+|   |-- contents.txt
+|   |-- _ext/
+|   |-- faq/
+|   |-- glossary.txt
+|   |-- howto/
+|   |-- index.txt
+|   |-- internals/
+|   |-- intro/
+|   |-- make.bat
+|   |-- Makefile
+|   |-- man/
+|   |-- misc/
+|   |-- README
+|   |-- ref/
+|   |-- releases/
+|   |-- _theme/
+|   `-- topics/
+|-- extras/
+|   |-- csrf_migration_helper.py*
+|   |-- django_bash_completion*
+|   `-- README.TXT
+|-- INSTALL
+|-- LICENSE
+|-- MANIFEST.in
+|-- README.rst
+|-- scripts/
+|   `-- rpm-install.sh
+|-- setup.cfg
+|-- setup.py
+`-- tests/
+    |-- modeltests/
+    |-- regressiontests/
+    |-- runtests.py*
+    |-- templates/
+    |-- test_sqlite.py
+    `-- urls.py</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="title"><code>setup.cfg</code></div>
+<div class="content">
+<pre><code>[bdist_rpm]
+doc_files = docs extras AUTHORS INSTALL LICENSE README
+install-script = scripts/rpm-install.sh</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="title"><code>setup.py</code></div>
+<div class="content">
+<pre><code>from distutils.core import setup
+from distutils.command.install_data import install_data
+from distutils.command.install import INSTALL_SCHEMES
+import os
+import sys
+
+class osx_install_data(install_data):
+    # On MacOS, the platform-specific lib dir is /System/Library/Framework/Python/.../
+    # which is wrong. Python 2.5 supplied with MacOS 10.5 has an Apple-specific fix
+    # for this in distutils.command.install_data#306. It fixes install_lib but not
+    # install_data, which is why we roll our own install_data class.
+
+    def finalize_options(self):
+        # By the time finalize_options is called, install.install_lib is set to the
+        # fixed directory, so we set the installdir to install_lib. The
+        # install_data class uses ('install_data', 'install_dir') instead.
+        self.set_undefined_options('install', ('install_lib', 'install_dir'))
+        install_data.finalize_options(self)
+
+if sys.platform == "darwin":
+    cmdclasses = {'install_data': osx_install_data}
+else:
+    cmdclasses = {'install_data': install_data}
+
+def fullsplit(path, result=None):
+    """
+    Split a pathname into components (the opposite of os.path.join) in a
+    platform-neutral way.
+    """
+    if result is None:
+        result = []
+    head, tail = os.path.split(path)
+    if head == '':
+        return [tail] + result
+    if head == path:
+        return result
+    return fullsplit(head, [tail] + result)
+
+# Tell distutils not to put the data_files in platform-specific installation
+# locations. See here for an explanation:
+# http://groups.google.com/group/comp.lang.python/browse_thread/thread/35ec7b2fed36eaec/2105ee4d9e8042cb
+for scheme in INSTALL_SCHEMES.values():
+    scheme['data'] = scheme['purelib']
+
+# Compile the list of packages available, because distutils doesn't have
+# an easy way to do this.
+packages, data_files = [], []
+root_dir = os.path.dirname(__file__)
+if root_dir != '':
+    os.chdir(root_dir)
+django_dir = 'django'
+
+for dirpath, dirnames, filenames in os.walk(django_dir):
+    # Ignore dirnames that start with '.'
+    for i, dirname in enumerate(dirnames):
+        if dirname.startswith('.'): del dirnames[i]
+    if '__init__.py' in filenames:
+        packages.append('.'.join(fullsplit(dirpath)))
+    elif filenames:
+        data_files.append([dirpath, [os.path.join(dirpath, f) for f in filenames]])
+
+# Small hack for working with bdist_wininst.
+# See http://mail.python.org/pipermail/distutils-sig/2004-August/004134.html
+if len(sys.argv) &gt; 1 and sys.argv[1] == 'bdist_wininst':
+    for file_info in data_files:
+        file_info[0] = '\\PURELIB\\%s' % file_info[0]
+
+# Dynamically calculate the version based on django.VERSION.
+version = __import__('django').get_version()
+
+setup(
+    name = "Django",
+    version = version,
+    url = 'http://www.djangoproject.com/',
+    author = 'Django Software Foundation',
+    author_email = 'foundation@djangoproject.com',
+    description = 'A high-level Python Web framework that encourages rapid development and clean, pragmatic design.',
+    download_url = 'https://www.djangoproject.com/m/releases/1.4/Django-1.4.1.tar.gz',
+    packages = packages,
+    cmdclass = cmdclasses,
+    data_files = data_files,
+    scripts = ['django/bin/django-admin.py'],
+    classifiers = [
+        'Development Status :: 5 - Production/Stable',
+        'Environment :: Web Environment',
+        'Framework :: Django',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: BSD License',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 2.5',
+        'Programming Language :: Python :: 2.6',
+        'Programming Language :: Python :: 2.7',
+        'Topic :: Internet :: WWW/HTTP',
+        'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
+        'Topic :: Internet :: WWW/HTTP :: WSGI',
+        'Topic :: Software Development :: Libraries :: Application Frameworks',
+        'Topic :: Software Development :: Libraries :: Python Modules',
+   ],
+)</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_sqlalchemy">SQLAlchemy</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="title"><a href="http://www.sqlalchemy.org/download.html">SQLAlchemy</a></div>
+<div class="content">
+<pre><code>.
+|-- CHANGES
+|-- CHANGES_PRE_06
+|-- distribute_setup.py
+|-- doc/
+|   |-- build/
+|   |-- contents.html
+|   |-- copyright.html
+|   |-- core/
+|   |-- dialects/
+|   |-- genindex.html
+|   |-- _images/
+|   |-- index.html
+|   |-- intro.html
+|   |-- orm/
+|   |-- search.html
+|   |-- searchindex.js
+|   |-- _sources/
+|   `-- _static/
+|-- examples/
+|   |-- adjacency_list/
+|   |-- association/
+|   |-- beaker_caching/
+|   |-- custom_attributes/
+|   |-- declarative_reflection/
+|   |-- dynamic_dict/
+|   |-- elementtree/
+|   |-- generic_associations/
+|   |-- graphs/
+|   |-- inheritance/
+|   |-- __init__.py
+|   |-- large_collection/
+|   |-- nested_sets/
+|   |-- postgis/
+|   |-- sharding/
+|   |-- versioning/
+|   `-- vertical/
+|-- ez_setup.py
+|-- lib/
+|   |-- sqlalchemy/
+|   `-- SQLAlchemy.egg-info/
+|-- LICENSE
+|-- MANIFEST.in
+|-- PKG-INFO
+|-- README.py3k
+|-- README.rst
+|-- README.unittests
+|-- sa2to3.py
+|-- setup.cfg
+|-- setup.py
+|-- sqla_nose.py*
+`-- test/
+    |-- aaa_profiling/
+    |-- base/
+    |-- binary_data_one.dat
+    |-- binary_data_two.dat
+    |-- bootstrap/
+    |-- dialect/
+    |-- engine/
+    |-- ex/
+    |-- ext/
+    |-- __init__.py
+    |-- lib/
+    |-- orm/
+    |-- perf/
+    `-- sql/</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pylons">Pylons</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="title"><a href="http://www.pylonsproject.org/projects/pylons-framework/download">Pylons</a></div>
+<div class="content">
+<pre><code>.
+|-- CHANGELOG
+|-- ez_setup.py*
+|-- LICENSE
+|-- MANIFEST.in
+|-- pylons/
+|   |-- commands.py
+|   |-- configuration.py
+|   |-- controllers/
+|   |-- decorators/
+|   |-- docs/
+|   |-- error.py
+|   |-- i18n/
+|   |-- __init__.py
+|   |-- log.py
+|   |-- media/
+|   |-- middleware.py
+|   |-- templates/
+|   |-- templating.py
+|   |-- test.py
+|   |-- testutil.py
+|   |-- url.py
+|   |-- util.py
+|   `-- wsgiapp.py
+|-- README.txt
+|-- rtd.txt
+|-- scripts/
+|   |-- gen-go-pylons.py*
+|   |-- go-pylons.py
+|   `-- pylintrc
+|-- setup.cfg
+|-- setup.py
+|-- test_files/
+|   |-- event_file.py
+|   |-- __init__.py
+|   `-- sample_controllers/
+|-- tests/
+|   |-- conftest.py
+|   |-- __init__.py
+|   |-- test_units/
+|   `-- test_webapps/
+`-- UPGRADING</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="title"><code>setup.cfg</code></div>
+<div class="content">
+<pre><code>[egg_info]
+tag_build = dev
+tag_date = true
+
+[easy_install]
+find_links = http://www.pylonshq.com/download/
+
+[nosetests]
+# constrain nosetests to the tests dir for now: 0.10 ends up
+# overwriting pylons.config with the actual module
+where=tests
+cover-package=pylons
+cover-erase=True
+with-doctest=True
+nocapture=1</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="title"><code>setup.py</code></div>
+<div class="content">
+<pre><code>import sys
+
+try:
+    from setuptools import setup, find_packages
+except ImportError:
+    from ez_setup import use_setuptools
+    use_setuptools()
+    from setuptools import setup, find_packages
+
+version = '1.0.1'
+
+tests_require = ['nose', 'Jinja2&gt;=2.2.1']
+if not sys.platform.startswith('java'):
+    tests_require.extend(['Genshi', 'coverage&gt;=2.85'])
+
+setup(
+    name="Pylons",
+    version=version,
+    description='Pylons Web Framework',
+    long_description="""
+Pylons
+======
+
+The Pylons web framework is designed for building web applications and
+sites in an easy and concise manner. They can range from as small as a
+single Python module, to a substantial directory layout for larger and
+more complex web applications.
+
+Pylons comes with project templates that help boot-strap a new web
+application project, or you can start from scratch and set things up
+exactly as desired.
+
+
+Example `Hello World`
+---------------------
+
+..
+
+    from paste.httpserver import serve
+    from pylons import Configurator, Response
+
+    class Hello(object):
+        def __init__(self, request):
+            self.request = request
+
+        def index(self):
+            return Response(body="Hello World!")
+
+
+    if __name__ == '__main__':
+        config = Configurator()
+        config.begin()
+        config.add_handler('home', '/', handler=Hello, action='index')
+        config.end()
+        serve(config.make_wsgi_app(), host='0.0.0.0')
+
+
+Core Features
+-------------
+
+* A framework to make writing web applications in Python easy
+
+* Utilizes a minimalist, component-based philosophy that makes it easy to
+  expand on
+
+* Harness existing knowledge about Python
+
+* Extensible application design
+
+* Fast and efficient, an incredibly small per-request call-stack providing
+  top performance
+
+* Uses existing and well tested Python packages
+
+
+Current Status
+--------------
+
+Pylons 1.0 series is stable and production ready. The Pylons Project now
+maintains the Pyramid web framework for future development. Pylons 1.0 users
+should strongly consider using it for their next project.
+
+
+Download and Installation
+-------------------------
+
+Pylons can be installed with `Easy Install
+&lt;http://peak.telecommunity.com/DevCenter/EasyInstall&gt;`_ by typing::
+
+    &gt; easy_install Pylons
+
+Dependant packages are automatically installed from
+the `Pylons download page &lt;http://pylonshq.com/download/&gt;`_ .
+
+
+Development Version
+-------------------
+
+Pylons development uses the Mercuial distributed version control system (DVCS)
+with BitBucket hosting the main repository here:
+
+    `Pylons Bitbucket repository &lt;https://github.com/Pylons/pylons&gt;`_
+
+
+""",
+    keywords='web wsgi lightweight framework sqlalchemy formencode mako templates',
+    license='BSD',
+    author='Ben Bangert, Philip Jenvey, James Gardner',
+    author_email='ben@groovie.org, pjenvey@underboss.org',
+    url='http://www.pylonshq.com/',
+    packages=find_packages(exclude=['ez_setup', 'tests', 'tests.*']),
+    zip_safe=False,
+    include_package_data=True,
+    test_suite='nose.collector',
+    tests_require=tests_require,
+    install_requires=[
+        "Routes&gt;=1.12.3", "WebHelpers&gt;=0.6.4", "Beaker&gt;=1.5.4",
+        "Paste&gt;=1.7.5.1", "PasteDeploy&gt;=1.5.0", "PasteScript&gt;=1.7.4.2",
+        "FormEncode&gt;=1.2.4", "simplejson&gt;=2.2.1", "decorator&gt;=3.3.2",
+        "nose&gt;=1.1.2", "Mako&gt;=0.5.0", "WebError&gt;=0.10.3",
+        "WebTest&gt;=1.3.1", "Tempita&gt;=0.5.1", "MarkupSafe&gt;=0.15",
+        "WebOb&gt;=1.1.1",
+    ],
+    dependency_links=[
+        "http://www.pylonshq.com/download/1.0"
+    ],
+    classifiers=[
+        "Development Status :: 5 - Production/Stable",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: BSD License",
+        "Framework :: Pylons",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 2 :: Only",
+        "Topic :: Internet :: WWW/HTTP",
+        "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
+        "Topic :: Internet :: WWW/HTTP :: WSGI",
+        "Topic :: Software Development :: Libraries :: Python Modules",
+    ],
+    extras_require={
+        'genshi': ['Genshi&gt;=0.6'],
+        'jinja2': ['Jinja2'],
+    },
+    entry_points="""
+    [paste.paster_command]
+    controller = pylons.commands:ControllerCommand
+    restcontroller = pylons.commands:RestControllerCommand
+    routes = pylons.commands:RoutesCommand
+    shell = pylons.commands:ShellCommand
+
+    [paste.paster_create_template]
+    pylons = pylons.util:PylonsTemplate
+    pylons_minimal = pylons.util:MinimalPylonsTemplate
+
+    [paste.filter_factory]
+    debugger = pylons.middleware:debugger_filter_factory
+
+    [paste.filter_app_factory]
+    debugger = pylons.middleware:debugger_filter_app_factory
+    """,
+)</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_mock">Mock</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="title"><a href="http://mock.readthedocs.org/en/latest/index.html">Mock</a></div>
+<div class="content">
+<pre><code>.
+|-- docs/
+|   |-- changelog.txt
+|   |-- compare.txt
+|   |-- conf.py
+|   |-- examples.txt
+|   |-- getting-started.txt
+|   |-- helpers.txt
+|   |-- index.txt
+|   |-- magicmock.txt
+|   |-- mock.txt
+|   |-- patch.txt
+|   `-- sentinel.txt
+|-- extendmock.py
+|-- LICENSE.txt
+|-- MANIFEST.in
+|-- mock.py
+|-- mock.wpr
+|-- README.txt
+|-- setup.cfg
+|-- setup.py*
+|-- tests/
+|   |-- __init__.py
+|   |-- support.py
+|   |-- support_with.py
+|   |-- testcallable.py
+|   |-- testhelpers.py
+|   |-- testmagicmethods.py
+|   |-- testmock.py
+|   |-- testpatch.py
+|   |-- testsentinel.py
+|   |-- _testwith.py
+|   `-- testwith.py
+|-- tox.ini
+`-- unittest.cfg</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="title"><code>setup.cfg</code></div>
+<div class="content">
+<pre><code>[build_sphinx]
+source-dir=docs
+build-dir=html
+[sdist]
+force-manifest = 1</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="title"><code>setup.py</code></div>
+<div class="content">
+<pre><code>#! /usr/bin/env python
+
+# Copyright (C) 2007-2012 Michael Foord &amp; the mock team
+# E-mail: fuzzyman AT voidspace DOT org DOT uk
+# http://www.voidspace.org.uk/python/mock/
+
+from mock import __version__
+
+import os
+
+
+NAME = 'mock'
+MODULES = ['mock']
+DESCRIPTION = 'A Python Mocking and Patching Library for Testing'
+
+URL = "http://www.voidspace.org.uk/python/mock/"
+
+readme = os.path.join(os.path.dirname(__file__), 'README.txt')
+LONG_DESCRIPTION = open(readme).read()
+
+CLASSIFIERS = [
+    'Development Status :: 5 - Production/Stable',
+    'Environment :: Console',
+    'Intended Audience :: Developers',
+    'License :: OSI Approved :: BSD License',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 2',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 2.4',
+    'Programming Language :: Python :: 2.5',
+    'Programming Language :: Python :: 2.6',
+    'Programming Language :: Python :: 2.7',
+    'Programming Language :: Python :: 3.1',
+    'Programming Language :: Python :: 3.2',
+    'Programming Language :: Python :: Implementation :: CPython',
+    'Programming Language :: Python :: Implementation :: PyPy',
+    'Programming Language :: Python :: Implementation :: Jython',
+    'Operating System :: OS Independent',
+    'Topic :: Software Development :: Libraries',
+    'Topic :: Software Development :: Libraries :: Python Modules',
+    'Topic :: Software Development :: Testing',
+]
+
+AUTHOR = 'Michael Foord'
+AUTHOR_EMAIL = 'michael@voidspace.org.uk'
+KEYWORDS = ("testing test mock mocking unittest patching "
+            "stubs fakes doubles").split(' ')
+
+params = dict(
+    name=NAME,
+    version=__version__,
+    py_modules=MODULES,
+
+    # metadata for upload to PyPI
+    author=AUTHOR,
+    author_email=AUTHOR_EMAIL,
+    description=DESCRIPTION,
+    long_description=LONG_DESCRIPTION,
+    keywords=KEYWORDS,
+    url=URL,
+    classifiers=CLASSIFIERS,
+)
+
+try:
+    from setuptools import setup
+except ImportError:
+    from distutils.core import setup
+else:
+    params['tests_require'] = ['unittest2']
+    params['test_suite'] = 'unittest2.collector'
+
+setup(**params)</code></pre>
+</div></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2013-01-24 20:20:09 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script>
+</body>
+</html>

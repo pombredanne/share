@@ -1,0 +1,47 @@
+= link:automation.html[iOS Test Automation] / Tools =
+:title: [iOS][Test Automation] Tools
+
+ * link:../../ui-automation/ui-automation.html[UI Automation]
+ * link:../../../safs/ios-testing.html[SAFS (Software Automation Framework Support)] - 將 UI Automation 整進 keyword-driven。
+ * link:../../../frank/frank.html[Frank]
+ * link:../../../monkeytalk/monkeytalk.html[MonkeyTalk]
+ * link:../../../calabash/calabash-ios.html[Calabash iOS]
+ * https://github.com/square/KIF[KIF]
+ * http://code.taobao.org/p/athrun/wiki/instrumentDriver/[InstrumentDriver] - 支援單步執行，也就是表格裡面提到的 remote control 跟 server data preparation。
+   ** http://code.taobao.org/p/athrun/src/trunk/iOS/InstrumentDriver/framework/readMe.txt[athrun - /trunk/iOS/InstrumentDriver/framework/readMe.txt More code fun] - 這裡提到背後是利用 `UIAHost.performTaskWithPathArgumentsTimeout`。
+
+需要考量的面向有：
+
+ * 畫面的操作能否橫跨多個 apps？
+ * 對 CI 也就是 command line 的支援？
+ * 能否執行在 simulator 跟 real device 上？確定的是 simulator 上不支援 push notifications。
+ * 需不需要更動 production code？
+ * 過程中有沒有整合其他測試工具的機會？
+ * 是否支援用 ID 或其他跟 UI 呈現無關的方式做定位？
+ * 撰寫測試的語言 QA 是否容易上手？
+ * 是否支援手勢操作？
+ * 如果很難從 device 取出畫面再送入座標做互動，有沒有可能透過 remote control apps 來做到這件事情？
+
+如果要測單一個 app，其實 UI Automation 是很夠用的（搭配 iOS 5.0 的 `UIAHost.performTaskWithPathArgumentsTimeout()` 甚至有機會在測試過程中跟 Host 溝通），但如果要測試它跟其他 app 間的互動（例如內建的 Safari），UI Automation 就沒輒了。
+
+由於 instrumentation 只能作用在單一個 app，而且要有對應的 provisioning profile 才能將它放進 device。
+
+== 參考資料 ==
+
+.文件
+--
+ * http://www.slideshare.net/vikrantchouhan/learnings-from-mobile-testing-verbose[Learning's from mobile testing (ThoughtWorks)] (2012-09-24) - p16 提到 iOS 自動化測試工具有：Frank、Calabash、MonkeyTalk、Sikuli、UIAutomation
+--
+
+.其他文件
+--
+ * http://sqa.stackexchange.com/questions/3391/deciding-a-tool-for-ios-ui-automation-providing-recording-and-inspection-of-elem[automated testing - Deciding a tool for iOS UI automation providing recording and inspection of elements - Software Quality Assurance and Testing Beta - Stack Exchange] ^http://diigo.com/0vk2k[閱讀]^ (2012-07-04) - MonkeyTalk 在 simulator 上常造成 crash？Frank 可以搭配 Symbiote 來檢視 view hierarchy。有不少人推薦用 UI Automation，只是上手比較困難、不具跨平台的特性之外，沒什麼大問題。
+ * http://www.stewgleadow.com/blog/2011/10/26/which-automated-ios-testing-tool-to-use/[Which Automated iOS Testing Tool To Use - Stewart Gleadow's Blog] ^http://diigo.com/0vk08[閱讀]^ (2011-10-26)
+   ** Frank 是基於 link:../../../cucumber/cucumber.html[Cucumber]，支援 CI，但需要改 production code，而且很難跑在 real device 上？
+   ** KIF 用 Objective-C 寫，很難做為 executable spec，支援 CI。其中 "tricky to integrate with back end stubs because it’s all running in-process" 是指很難跟其他測試工具整合嗎？
+   ** UI Automation 用 JavaScript 寫，基於 instruments，能跑在 real device 上，主要是從 UI 下手做測試，但對 CI 的支援度不佳，沒機會跟其他測試工具整合？
+   ** 可以確定的是 UI Automation 完全被排除在外，也唯有 Frank 才有機會跟其他測試工具整合？
+ * http://stackoverflow.com/questions/402389/automated-testing-for-iphone[Automated testing for iPhone - Stack Overflow] (2008-12-31) - 
+ * http://www.automatedtestinginstitute.com/home/index.php?option=com_jforms&view=form&id=22&Itemid=186[4th Annual Automation Honors Voting] - Best Open Source Mobile Automated Test Tool - iOS 的選項有 MonkeyTalk (formerly FoneMonkey/FlexMonkey)、Frank、KIF 跟 Zucchini。
+--
+

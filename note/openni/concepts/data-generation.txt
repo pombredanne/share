@@ -1,0 +1,45 @@
+= link:concepts.html[OpenNI / Concepts] / Data Generation =
+:title: [OpenNI] Data Generation
+
+ * A generator node produces some type of data. 像 device node 就沒有產出
+   ** `org.OpenNI.Generator` extends `ProductionNode`
+ * state - generating, or non-generating (initial)
+   ** `isGenerating()`, `startGenerating()`, `stopGenerating()`
+   ** two functions that control all generators in the context - `Context.startGeneratingAll()`, `Context.stopGeneratingAll()`
+ * created -> non-generating, with default configuration -> change configuration -> start generating
+   ** non-generating state = configuration stage
+   ** 也可以在 generating state 時調整 configuration，只是要花一點時間（幾秒鐘？）才會生效。
+ * audio, gesture, hands, user, map (image, depth, IR, scense)
+ * "update data" methods
+   ** `Generator.waitAndUpdateData()` or `Context.waitXXXUpdateAll` methods (recommended)
+   ** all throws `StatusException` - no new data available within 2 seconds.
+   ** update generator's 'application buffer', making the latest data available for getting.
+   ** all subsequent calls to "get data" will return exactly the same data until you call 'update data' again.
+   ** data -> frame data, `Generator.getFrameID()`, `Generator.getTimestamp()`, `Generator.getDataSize()`
+   ** "get data" methods in subclasses, `ImageGenerator.getImageMap()`, `DepthGenerator.getDepthMap()`, ...
+   ** `Generator.waitAndUpdateData()` - cause the node to update its application buffers with new data, if it has new data available. (available -> accessible)
+      *** `Generator.isNewDataAvailable()` - the new data is available for updating, but can not yet be accessed by the application.
+      *** `Generator.isDataNew()` - whether this node's frame data was updated by the most recent call to any 'update data' methods.
+   ** if nodes are dependent on each other, it promises that the needed node will be updated before the needing node.
+   ** typically, a call to one of these methods will be placed in the "main program loop".
+ * "update all" methods (`Context`)
+   ** `waitAndUpdateAll()`, `waitOneUpdateAll(waitFor)`, `waitAnyUpdateAll()`, `waitNoneUpdateAll()`
+   ** update the nodes all at once, performs a different type of 'wait' prior to performing the 'update' 
+   ** ensures that the accessible data from each and every node is the node's most recently generated data.
+   ** `waitOneUpdateAll(waitFor)` - especially useful when having several nodes producing data, but only one determines the progress of the application.
+ * generating state - generating new data all the time
+   ** sensor -> generating state -> hold internally -> update -> application buffer (accessible)
+   ** holds its new data internally only, until the application explicitly asks the generator to update its data to the new data.
+   ** "get data" method only get "consistent data set" - frame, all received at any one time, until it has completed processing the frame.
+   ** updated = copy "internal data" to the node's application buffer.
+
+== 參考資料 ==
+
+.文件
+--
+ * OpenNI Overview > Concepts
+   ** Data Generation (`Documentation/html/conc_generation.html`)
+   ** Making Data Available using the `WaitXUpdateAll()` Methods (`Documentation/html/conc_updating_data.html`)
+ * `xn::Generator` Class Reference (`Documentation/html/classxn_1_1_generator.html`) -> https://github.com/OpenNI/OpenNI/blob/Unstable-1.5.4.0/Wrappers/OpenNI.java/src/org/OpenNI/Generator.java[`org/OpenNI/Generator.java`]
+--
+

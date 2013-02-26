@@ -1,0 +1,61 @@
+= link:../api.html[Selenium 2/WebDriver / API] / Python Binding =
+:title: [Selenium 2/WebDriver] Python Binding
+
+用 link:../../pip/pip.html[`pip`] 安裝 `selenium` 套件：
+
+ $ pip install selenium
+
+[source,pycon]
+--------------------------------------------------------------------------------
+>>> from selenium import webdriver
+>>> dir(webdriver)
+['ActionChains', 'Chrome', 'ChromeOptions', 'DesiredCapabilities', 'Firefox', 'FirefoxProfile', 'Ie', 'Opera', 'PhantomJS', 'Proxy', 'Remote', 'TouchActions', '__builtins__', '__doc__', '__file__', '__name__', '__package__', '__path__', '__version__', 'chrome', 'common', 'firefox', 'ie', 'opera', 'phantomjs', 'remote']
+>>> driver = webdriver.Firefox() # <1>
+>>> type(driver)
+<class 'selenium.webdriver.firefox.webdriver.WebDriver'>
+--------------------------------------------------------------------------------
+
+搭配 Firefox 簡單做個測試：
+
+[source,pycon]
+--------------------------------------------------------------------------------
+>>> from selenium import webdriver
+>>> from selenium.webdriver.common.keys import Keys
+>>> driver = webdriver.Firefox() # <1>
+>>> driver.get('http://en.wikipedia.org')
+>>>
+>>> search_element = driver.find_element_by_name('search')
+>>> type(search_element)
+<class 'selenium.webdriver.remote.webelement.WebElement'>
+>>> search_element.click()
+>>> search_element.send_keys('selenium' + Keys.ENTER)
+>>> assert driver.current_url.endswith('/wiki/Selenium')
+>>>
+>>> driver.find_element_by_link_text('Selenium (software)').click()
+>>> assert driver.current_url.endswith('wiki/Selenium_(software)')
+>>> driver.close() # <2>
+--------------------------------------------------------------------------------
+<1> Firefox 的視窗會在這個時候被帶出來。
+<2> `close()` 會關閉目前的視窗，如果要關閉所有的視窗，可以改用 `quit()`。
+
+== 參考資料 ==
+
+.參考手冊
+--
+ * http://selenium.googlecode.com/svn/trunk/docs/api/py/index.html[WebDriver Python Docs]
+--
+
+.文件
+--
+ * http://code.google.com/p/selenium/source/browse/py/CHANGES[Changelog]
+ * http://code.google.com/p/selenium/wiki/PythonBindings[Python Bindings]
+--
+
+////////////////////////////////////////////////////////////////////////////////
+
+ * include the full functionality of Selenium 1 (`from selenium import selenium`) and 2 (`from selenium import webdriver`)
+ * supports the Remote, Firefox, Chrome and IE protocols natively. 這裡的 remote 指的是 RemoteWebDriver？ 理論上支援哪些 browsers，跟你採用哪個 language bindings 無關。
+ * Selenium 2 however, does not require the jar file.
+ * pythonic behavior of "flat object hierarchies", `find_element_by_xpath("//h1")` rather than `findElement(By.xpath("//h1"))`
+
+////////////////////////////////////////////////////////////////////////////////

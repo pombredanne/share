@@ -1,0 +1,68 @@
+= link:cli.html[Python / CLI] / Command Line Arguments =
+:title: [Python][CLI] Command Line Arguments
+
+ * Command Line 的 Arguments 可以從 `sys.argv` 取得 `str[]`
+ * `sys.argv[0]` 固定是 Script Name (跟 Command Line 輸入的字面完全一樣)
+ * 單純啟動 Python Interpreter 時, sys.argv 固定為 `['']`
+
+--------------------------------------------------------------------------------
+$ python
+...
+>>> import sys
+>>> print sys.argv
+['']
+--------------------------------------------------------------------------------
+
+.Executable (args)
+--------------------------------------------------------------------------------
+#!/usr/bin/env python
+import sys
+print sys.argv
+        $ ./args
+['./args']
+$ ./args a 'b c' de
+['./args', 'a', 'b c', 'de']
+$ python args
+['args']
+$ python ./args a 'b c' de
+['./args', 'a', 'b c', 'de']
+Examples
+    import sys
+...
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+def main():
+  if len(sys.argv) != n: # 單純判斷數量, 要記得扣除 sys.argv[0] 固定是 Script Name
+    print "Usage: ", sys.argv[0], "...."
+    sys.exit(-1)
+
+if __name__ == "__main__": # 這一行一定要寫在最後面, 否則 main() 會呼叫不到
+    main()
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+def parse_args():
+    parser = argparse.ArgumentParser(description='Create a local of a client build.')
+    parser.add_argument('-v', '--version', metavar='VERSION', required=True) <1>
+    parser.add_argument('-b', '--build', metavar='BUILD', type=int, default=0,
+                        help='Build number. If this option is omitted, the LATEST build will be taken.')
+    args = parser.parse_args()
+
+def main():
+    parse_args()
+
+if __name__ == '__main__':
+    main()
+--------------------------------------------------------------------------------
+
+<1> Option name 不是以 '-' 或 '--' 開頭時，會被視為 positional arguments，順序同加入的順序。`required=True` 可以動態由 environment variables 裡是否有某些特殊的值來決定。（支援 required optional 是 `argparse` 最方便的地方，不過 optional arguments 好像會以 `None` 的值存在回傳的 `args`）
+
+== 延伸閱讀 ==
+
+ * link:options-parsing.html[Options Parsing]
+
+== 參考資料 ==
+
+ * http://www.diveintopython.net/scripts_and_streams/command_line_arguments.html[Handling command-line arguments - Dive Into Python]
+

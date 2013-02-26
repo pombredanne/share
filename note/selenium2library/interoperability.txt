@@ -1,0 +1,119 @@
+= link:selenium2library.html[Selenium2Library] / Interoperability =
+:title: [Selenium2Library] 從其他 Test Libraries 操作瀏覽器（功能擴充）
+
+由於 Selenium2Library 內部維護有一些 states（例如所有透過 `Open Browser` 開啟的瀏覽器、目前選定的視窗等），如果其他 test libraries 也需要對這些瀏覽器進行操作時，就必須透過這個 library 的 link:../robotframework/extending-test-libraries.html[active instance] 才行。
+
+[source,python]
+.link:interoperability/WikipediaMainPage.py[`WikipediaMainPage.py`]
+--------------------------------------------------------------------------------
+from robot.libraries.BuiltIn import BuiltIn
+
+class WikipediaMainPage:
+
+    _builtin = BuiltIn()
+
+    @property
+    def _selenium2_lib(self):
+        return self._builtin.get_library_instance('Selenium2Library') # <1>
+
+    def search(self, keyword):
+        lib = self._selenium2_lib
+        lib.input_text('id=searchInput', keyword)
+        lib.click_button('name=go')
+--------------------------------------------------------------------------------
+<1> 按照link:../robotframework/extending-test-libraries.html[擴充現有 Test Libraries] 的做法，可以透過 `BuiltIn.get_library_instance()` 來取得 active instance。
+
+.link:interoperability/test.txt[`test.txt`]
+--------------------------------------------------------------------------------
+| *Setting* | *Value*
+| Library   | Selenium2Library
+| Library   | WikipediaMainPage
+
+| *Test Case* | *Action* | *Argument*
+| Test        | Open Browser | http://www.wikipedia.org | firefox
+|             | Search | selenium
+|             | Title Should Be | Selenium - Wikipedia, the free encyclopedia
+|             | Close Browser
+--------------------------------------------------------------------------------
+
+另外，如果要直接操作到 link:../selenium2/api.html[WebDriver API]，也可以透過 link:#driver[`Selenium2Library._current_browser()`] 取得 driver。
+
+--------------------------------------------------------------------------------
+    @property
+    def _driver(self):
+        return self._selenium2_lib._current_browser()
+
+    def search(self, keyword):
+        driver = self._driver
+        driver.find_element_by_id('searchInput').send_keys(keyword)
+        driver.find_element_by_name('go').click()
+--------------------------------------------------------------------------------
+
+[[driver]]
+== `_current_browser()` ==
+
+[source,python]
+.https://github.com/rtomac/robotframework-selenium2library/blob/master/src/Selenium2Library/keywords/_browsermanagement.py[`Selenium2Library/keywords/_browsermanagement.py`]
+--------------------------------------------------------------------------------
+from Selenium2Library.utils import BrowserCache
+
+class _BrowserManagementKeywords(KeywordGroup):
+
+    def __init__(self):
+        self._cache = BrowserCache()
+        self._window_manager = WindowManager()
+        self._speed_in_secs = float(0)
+        self._timeout_in_secs = float(5)
+        self._implicit_wait_in_secs = float(0)
+        
+    def open_browser(self, url, browser='firefox', alias=None,remote_url=False,
+                desired_capabilities=None,ff_profile_dir=None):
+        if remote_url:
+            self._info("Opening browser '%s' to base url '%s' through remote server at '%s'"
+                    % (browser, url, remote_url))
+        else:
+            self._info("Opening browser '%s' to base url '%s'" % (browser, url))
+        browser_name = browser
+        browser = self._make_browser(browser_name,desired_capabilities,ff_profile_dir,remote_url)
+        browser.get(url)
+        self._debug('Opened browser with session id %s'
+                    % browser.session_id)
+        return self._cache.register(browser, alias) # <1> <3>
+
+    def maximize_browser_window(self):
+        """Maximizes current browser window."""
+        self._current_browser().maximize_window() # <2>
+
+    def _make_browser(self , browser_name , desired_capabilities=None , profile_dir=None,
+                    remote=None):
+        creation_func = self._get_browser_creation_function(browser_name)
+        browser = getattr(self,creation_func)(remote , desired_capabilities , profile_dir)
+
+        if browser is None:
+            raise ValueError(browser_name + " is not a supported browser.")
+
+        browser.set_speed(self._speed_in_secs) # <1>
+        browser.set_script_timeout(self._timeout_in_secs)
+        browser.implicitly_wait(self._implicit_wait_in_secs)
+
+        return browser
+
+    def _make_ff(self , remote , desired_capabilites , profile_dir):
+        
+        if not profile_dir: profile_dir = FIREFOX_PROFILE_DIR
+        profile = webdriver.FirefoxProfile(profile_dir)
+        if remote:
+            browser = self._create_remote_web_driver(webdriver.DesiredCapabilities.FIREFOX  , 
+                        remote , desired_capabilites , profile)
+        else:
+            browser = webdriver.Firefox(firefox_profile=profile) # <3>
+        return browser
+--------------------------------------------------------------------------------
+<1> 透過 `Open Browser` 開啟的瀏覽器都套用相同的設定，並登記在 `BrowserCache` 裡。
+<2> 目前被選定要操作的瀏覽器可以透過 `Selenium2Library._current_browser()` 取得。
+<3> 快取起來的 'browser'，正是 WebDriver。
+
+== 延伸閱讀 ==
+
+ * link:../robotframework/extending-test-libraries.html[[Robot Framework&#93; 擴充現有的 Test Libraries]
+

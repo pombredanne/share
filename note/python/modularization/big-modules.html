@@ -1,0 +1,154 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Python] 當 `.py` 檔越來越肥...</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" />
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div>
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="modularization.html">Python / Modularization</a> / Big Modules</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>當 <code>.py</code> 檔越來越肥，維護起來會很費力（尤其檔案上方會有一堆不知道用在哪裡的 import），結果就是沒人敢去改它&#8230;</p></div>
+<div class="paragraph"><p>假設一開始 <code>foobar.py</code> 還很單純，寫在同一支 <code>.py</code> 檔裡還容易維護。</p></div>
+<div class="listingblock">
+<div class="title"><code>before/foobar.py</code></div>
+<div class="content">
+<pre><code>def foo(): print 'foo'
+def bar(): print 'bar'</code></pre>
+</div></div>
+<div class="paragraph"><p>用起來像是這個樣子：</p></div>
+<div class="listingblock">
+<div class="title"><code>before/client.py</code></div>
+<div class="content">
+<pre><code>from foobar impor *
+foo(); bar()</code></pre>
+</div></div>
+<div class="paragraph"><p>之後 module 越來越大時，可以考慮拆出 package (multi-file module)，但不影響原有的用法&#8230;</p></div>
+<div class="listingblock">
+<div class="title"><code>after/foobar/__init__.py</code></div>
+<div class="content">
+<pre><code>from foo import *
+from bar import *</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="title"><code>after/foobar/foo.py</code></div>
+<div class="content">
+<pre><code>def foo(): print 'foo'</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="title"><code>after/foobar/bar.py</code></div>
+<div class="content">
+<pre><code>def bar(): print 'bar'</code></pre>
+</div></div>
+<div class="paragraph"><p>至於這些外部看不到的 modules，要怎麼避免被直接引用呢？有人提出 <em>private module</em> 的概念，在檔名名稱前加上底線（<code>_foo.py</code>）似乎很直覺，而且不少 packages 會這麼做。</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>$ find /usr/lib/python2.7 -name '_*.py' | grep --invert-match __init__</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://getpython3.com/diveintopython3/case-study-porting-chardet-to-python-3.html">Case study: porting chardet to Python 3 &gt; A Short Digression Into Multi-File Modules - Dive Into Python 3</a> <sup><a href="http://diigo.com/0w5cj">閱讀</a></sup> - 以 <code>chardet</code> 這個 multi-file module 為例（跟 package 有什麼不同？），對外只公開 main entry points；關鍵在於 relative import
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">其他文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://programmers.stackexchange.com/questions/139869/how-large-should-a-python-module-be">code quality - How large should a Python module be? - Programmers</a> <sup><a href="http://diigo.com/0w5d7">閱讀</a></sup> (2012-03-15) - "上限是多少行" 並沒有一定的答案，重點是要容易維護。
+</p>
+</li>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/5799387/python-module-getting-too-big">Python module getting too big - Stack Overflow</a> <sup><a href="http://diigo.com/0w59e">閱讀</a></sup> (2011-04-27) - 建議提昇成 package 再拆出 modules
+</p>
+</li>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/3602110/python-private-module-in-a-package">Python: <em>Private</em> module in a package - Stack Overflow</a> <sup><a href="http://diigo.com/0w5ei">閱讀</a></sup> (2010-08-30) - private module 在檔名前加上底線？
+</p>
+</li>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/2392704/do-python-packages-multi-file-modules-behave-exactly-as-one-big-module">Do python packages (multi-file modules) behave exactly as one big module? - Stack Overflow</a> <sup><a href="http://diigo.com/0w5d1">閱讀</a></sup> (2010-03-06) - single user-visible module
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2013-02-20 09:45:32 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script>
+</body>
+</html>

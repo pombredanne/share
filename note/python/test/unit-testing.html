@@ -1,0 +1,1201 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>Python 單元測試（Unit Testing）</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div>
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>Python 單元測試（Unit Testing）</h1>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_unittest">unittest</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>Python 自 2.1 起開始內建 <code>unittest</code>，做為標準的 unit testing framework。<code>unittest</code> 在 Python 2.7 做了很多改進，因此以下的說明都以 Python 2.7 為主。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/important.png" alt="Important" />
+</td>
+<td class="content">Python 做為一個 scripting language，許多錯誤在 compile-time 並沒有辦法被找出來，因此更需要 unit testing 的幫忙，在 build-time 跑過所有的程式碼（這部份可以借助 coverage tools 來提供回饋），儘可能把所有的 programming error 都找出來。</td>
+</tr></table>
+</div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content"><code>unittest</code> 的前身是 <a href="http://pyunit.sourceforge.net/">PyUnit</a>，直到 Python 2.1 才成為 standard library 的一部份，因此有時候 <code>unittest</code> 也稱做 PyUnit。使用上會發現有很多地方都跟 JUnit 很類似，那是因為 PyUnit 在設計上是參考 JUnit，這一點在 PyUnit 的官網有提到。</td>
+</tr></table>
+</div>
+<div class="sect2">
+<h3 id="_從_self_test_到_unittest">從 self-test 到 unittest</h3>
+<div class="paragraph"><p>首先用 self-test code 做簡單的測試：</p></div>
+<div class="paragraph"><p><code>calc.py</code></p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>class Calculator:
+
+    def mod(self, dividend, divisor):
+        remainder = dividend % divisor
+        quotient = (dividend - remainder) / divisor
+        return quotient, remainder
+
+if __name__ == '__main__':
+    cal = Calculator()
+    assert cal.mod(5, 3) == (1, 2) # 5 / 3 = 1 ... 2
+    assert cal.mod(8, 4) == (1, 0) # 8 / 4 = 2 ... 0</code></pre>
+</div></div>
+<div class="paragraph"><p>執行結果：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ python calc.py
+Traceback (most recent call last):
+  File "calc.py", line 11, in &lt;module&gt;
+    assert cal.mod(8, 4) == (1, 0) # 8 / 4 = 2 ... 0 <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+AssertionError</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+沒有明確指出實際／預期結果兩者間的差異。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>改成 <code>unittest</code> 的寫法：</p></div>
+<div class="paragraph"><p><code>calc.py</code></p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>import unittest
+
+class Calculator:
+
+    def mod(self, dividend, divisor):
+        remainder = dividend % divisor
+        quotient = (dividend - remainder) / divisor
+        return quotient, remainder
+
+class CalculatorTest(unittest.TestCase):                 <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+
+    def test_mod_with_remainder(self):                   <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+        cal = Calculator()
+        self.assertEqual(cal.mod(5, 3), (1, 2))          <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+
+    def test_mod_without_remainder(self):
+        cal = Calculator()
+        self.assertEqual(cal.mod(8, 4), (1, 0))          <img src="../../_asciidoc/images/icons/callouts/4.png" alt="4" />
+
+    def test_mod_divide_by_zero(self):
+        cal = Calculator()
+        assertRaises(ZeroDivisionError, cal.mod, 7, 1)   <img src="../../_asciidoc/images/icons/callouts/5.png" alt="5" />
+
+if __name__ == '__main__':
+    unittest.main()                                      <img src="../../_asciidoc/images/icons/callouts/6.png" alt="6" /></code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+只要繼承自 <code>unittest.TestCase</code> 即可，類別名稱沒有特別要求，但通常會在後面串上 <code>Test</code>。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+以 <code>test</code> 開頭的方法都會被視為 test method，分別代表不同的 test case。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+用 <code>TestCase.assert*()</code> 來做檢查。下面會說明它跟直接用 <code>assert</code> 來做驗證有什麼差別。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/4.png" alt="4" /></td><td>
+這裡故意寫成 <code>(1, 0)</code>，是為了產生 test failure。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/5.png" alt="5" /></td><td>
+用 <code>TestCase.assertRaises()</code> 來驗證呼叫某個 function 必須丟出 exception。這裡故意少寫了 <code>self.</code>，是為了產生 test error。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/6.png" alt="6" /></td><td>
+透過 <code>unittest.main()</code> 可以執行同一 module 裡所有的 test case。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>重新執行的結果：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ python calc.py
+E.F <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+======================================================================
+ERROR: test_mod_divide_by_zero (__main__.CalculatorTest) <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "calc.py", line 22, in test_mod_divide_by_zero
+    assertRaises(ZeroDivisionError, cal.mod, 7, 1)
+NameError: global name 'assertRaises' is not defined
+
+======================================================================
+FAIL: test_mod_without_remainder (__main__.CalculatorTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "calc.py", line 18, in test_mod_without_remainder
+    self.assertEqual(cal.mod(8, 4), (1, 0))
+AssertionError: Tuples differ: (2, 0) != (1, 0) <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+
+First differing element 0:
+2
+1
+
+- (2, 0)
+?  ^
+
++ (1, 0)
+?  ^
+
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.001s
+
+FAILED (failures=1, errors=1) <img src="../../_asciidoc/images/icons/callouts/4.png" alt="4" /></code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+每一個字元都表示不同 test case 的執行結果。<code>.</code> 表示成功，<code>F</code> 表示失敗（failure），<code>E</code> 表示錯誤（error）。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+逐項列出 test failure/error 的細節。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+同樣是丟出 <code>AssertionError</code>，但透過 <code>TestCase.assert*()</code> 來做驗證，會產生比較詳細的訊息。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/4.png" alt="4" /></td><td>
+測試不成功時區分為 test failure （單純是結果與預期不符） 與 test error （執行期發生其他錯誤）。
+</td></tr>
+</table></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">用不用 <code>TestCase.assert*()</code> 有關係！</div>
+<div class="paragraph"><p><code>unittest</code> 內部是用丟出 exception 的型態來識別 test failure/error；也就是說，丟出的 exception 其型態跟 <code>TestCase.failureException</code> 一致時，會被視為 test failure，其他的 exception type 則會被視為 test error。</p></div>
+<div class="paragraph"><p>事實上，<code>TestCase.failureException</code> 同時也決定了 <code>TestCase.assert*()</code> 可能丟出的例外，也因此 <code>TestCase.assert*()</code> 丟出的例外總會被視為 test failure。雖然說 <code>TestCase.failureException</code> 目前的預設值是 <code>AssertionError</code>，跟直接使用 <code>assert</code> 做驗證的結果一樣，但難保哪一天會預設為其他 exception（官方文件是這麼說的，但機會真的不大！），到時候 <code>assert</code> 丟出的 <code>AssertionError</code>，就會被誤判為 test error。</p></div>
+</td>
+</tr></table>
+</div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/important.png" alt="Important" />
+</td>
+<td class="content">
+<div class="paragraph"><p>上面 3 個字元（<code>E.F</code>）由左到右，表示 test case 執行的順序，有沒有發現這跟原始碼 test method 宣告的順序不同？</p></div>
+<div class="paragraph"><p>由於 <code>unittest</code> 不保證 test case 間執行的順序，所以每一個 test case 都必須要做到 self-contained，不會因執行順序改變就失敗。某種程度上，這也意謂著 <code>unittest</code> 並不適合拿來做 functional test，這部份就得靠其他的工具（例如 nose）來幫忙了。</p></div>
+</td>
+</tr></table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_檢查結果是否符合預期">檢查結果是否符合預期</h3>
+<div class="paragraph"><p>首先從 <code>assertTrue()</code> 跟 <code>assertEqual()</code> 講起：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>assertTrue(expr, msg=None)</code>
+</p>
+</li>
+<li>
+<p>
+<code>assertFalse(expr, msg=None)</code>
+</p>
+</li>
+<li>
+<p>
+<code>assertEqual(first, second, msg=None)</code>
+</p>
+</li>
+<li>
+<p>
+<code>assertNotEqual(first, second, msg=None)</code>
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p><code>assertTrue()</code> 跟 <code>assertFalse()</code> 內部分別會做 <code>bool(expr) is True</code> 與 <code>bool(expr) is False</code> 的檢查，而 <code>assertEqual()</code> 跟 <code>assertNotEqual()</code>，內部則分別會做（簡單地說） <code>first == second</code> 與 <code>first != second</code> 的檢查。例如：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>self.assertTrue(True or False)
+self.assertEqual(2, 2)</code></pre>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">
+<div class="title"><code>assertEqual(actual, expected)</code> 或 <code>assertEqual(expected, actual)</code>？</div>
+<div class="paragraph"><p>在 Python 裡，使用 <code>assertEqual(actual, expected)</code> 或 <code>assertEqual(expected, actual)</code>，從結果來看並沒有什麼差別。</p></div>
+<div class="listingblock">
+<div class="title"><code>test_assert.py</code></div>
+<div class="content">
+<pre><code>import unittest
+
+class AssertTest(unittest.TestCase):
+
+    def test_actual_expected(self):
+        self.assertEqual('actual', 'expected')
+
+    def test_expected_expected(self):
+        self.assertEqual('expected', 'actual')
+
+if __name__ == '__main__':
+    unittest.main()</code></pre>
+</div></div>
+<div class="paragraph"><p>執行結果：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ python test_assert.py
+FF
+======================================================================
+FAIL: test_actual_expected (__main__.AssertTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "test_assert.py", line 6, in test_actual_expected
+    self.assertEqual('actual', 'expected')
+AssertionError: 'actual' != 'expected' <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+
+======================================================================
+FAIL: test_expected_actual (__main__.AssertTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "test_assert.py", line 9, in test_expected_actual
+    self.assertEqual('expected', 'actual')
+AssertionError: 'expected' != 'actual'
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.000s
+
+FAILED (failures=2)</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+<code>'actual' != 'expected'</code> 跟 <code>'expected' != 'actual'</code> 在語意上並沒有差別。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>由於 <code>unittest</code> 設計上是參考 JUnit，如果硬要分出 actual/expected 的順序的話，建議依循 JUnit 的做法－也就是 <em>expected</em> 在前，<em>actual</em> 在後。</p></div>
+</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>雖然 <em>expr</em> 可以發揮的空間很大，但如果有其他更為適用的 <code>assert*()</code> 時，就不建議使用 <code>assertTrue()</code> 或 <code>assertFalse()</code> 來做驗證，原因是可以得到比較詳細的錯誤訊息。最簡單的例子就是，寫成 <code>assertEqual(a, b)</code> 會比 <code>assertTrue(a == b)</code> 來得好。下面用 list 的比對進一步做說明：</p></div>
+<div class="listingblock">
+<div class="title"><code>test_assert.py</code></div>
+<div class="content">
+<pre><code>import unittest
+
+class AssertTest(unittest.TestCase):
+
+    def test_assert_true(self):
+        self.assertTrue([1, 2, 3, 4] == [1, 2, 4, 8])
+
+    def test_assert_equal(self):
+        self.assertEqual([1, 2, 3, 4], [1, 2, 4, 8])
+
+    def test_assert_sequence_equal(self):
+        self.assertListEqual([1, 2, 3, 4], [1, 2, 4, 8])
+
+if __name__ == '__main__':
+    unittest.main()</code></pre>
+</div></div>
+<div class="paragraph"><p>執行結果：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ python test_assert.py
+FFF
+======================================================================
+FAIL: test_assert_equal (__main__.AssertTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "test_assert.py", line 9, in test_assert_equal
+    self.assertEqual([1, 2, 3, 4], [1, 2, 4, 8])
+AssertionError: Lists differ: [1, 2, 3, 4] != [1, 2, 4, 8]
+
+First differing element 2:
+3
+4
+
+- [1, 2, 3, 4]
+?        ^  ^
+
++ [1, 2, 4, 8]
+?        ^  ^
+
+
+======================================================================
+FAIL: test_assert_sequence_equal (__main__.AssertTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "test_assert.py", line 12, in test_assert_sequence_equal
+    self.assertListEqual([1, 2, 3, 4], [1, 2, 4, 8])
+AssertionError: Lists differ: [1, 2, 3, 4] != [1, 2, 4, 8]
+
+First differing element 2:
+3
+4
+
+- [1, 2, 3, 4]
+?        ^  ^
+
++ [1, 2, 4, 8]
+?        ^  ^
+
+
+======================================================================
+FAIL: test_assert_true (__main__.AssertTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "test_assert.py", line 6, in test_assert_true
+    self.assertTrue([1, 2, 3, 4] == [1, 2, 4, 8])
+AssertionError: False is not True
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.002s
+
+FAILED (failures=3)</code></pre>
+</div></div>
+<div class="paragraph"><p>就比較兩個 list 內容的這件事而言，顯然 <code>assertEqual()</code> 跟 <code>assertListEqual()</code> 都比 <code>assertTrue()</code> 來得適用，但從結果來看，使用 <code>asserEqual()</code> 或 <code>assertListEqual()</code> 並沒有差別。那是因為 <code>assertEqual()</code> 發現要比較的兩個對象都是 list 時，內部就會轉呼叫 <code>assertListEqual()</code> 來做處理，同樣的情形也會發生在 tuple、dict、set 或 unicode 等身上。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">既然 <code>assertEqual()</code> 內部會自動做判斷，在實務上就沒有必要直接使用 <code>assertListEqual()</code>、<code>assertTupleEqual()</code> 等，讓測試碼保持彈性。</td>
+</tr></table>
+</div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title"><code>assertEqual()</code> 獨厚 unicode？</div>
+<div class="paragraph"><p>比較特別的地方是 <code>assertEqual()</code> 在比對兩個字串時，只有雙方都是 unicode 時才會詳細指出差異的地方：</p></div>
+<div class="listingblock">
+<div class="title"><code>test_assert_string.py</code></div>
+<div class="content">
+<pre><code>import unittest
+
+class AssertTest(unittest.TestCase):
+
+    def test_unicode(self):
+        self.assertEqual(u'hello world', u'Hello World')
+
+    def test_str(self):
+        self.assertEqual('hello world', 'Hello World')
+
+    def test_mix(self):
+        self.assertEqual('hello world', u'Hello World')
+
+if __name__ == '__main__':
+    unittest.main()</code></pre>
+</div></div>
+<div class="paragraph"><p>執行結果：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ python test_assert_string.py
+FFF
+======================================================================
+FAIL: test_mix (__main__.AssertTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "test_assert_string.py", line 12, in test_mix
+    self.assertEqual('hello world', u'Hello World')
+AssertionError: 'hello world' != u'Hello World' <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+
+======================================================================
+FAIL: test_str (__main__.AssertTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "test_assert_string.py", line 9, in test_str
+    self.assertEqual('hello world', 'Hello World')
+AssertionError: 'hello world' != 'Hello World'
+
+======================================================================
+FAIL: test_unicode (__main__.AssertTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "test_assert_string.py", line 6, in test_unicode
+    self.assertEqual(u'hello world', u'Hello World')
+AssertionError: u'hello world' != u'Hello World' <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+- hello world
+? ^     ^
++ Hello World
+? ^     ^
+
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.001s
+
+FAILED (failures=3)</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+單一方是 unicode 時，並不會指出差異的地方。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+只有雙方都是 unicode 時，內部才會轉呼叫 <code>assertMultiLineEqual()</code> 指出差異的地方（跟字串內容是否有換行字元無關）。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>要讓 <code>assertEqual()</code> 也以相同的方式對待 str，有以下兩種方式：</p></div>
+<div class="listingblock">
+<div class="title"><code>test_assert_string.py</code></div>
+<div class="content">
+<pre><code>import unittest
+
+class AssertTest(unittest.TestCase):
+
+    def test_convert(self):
+        self.assertEqual(unicode('hello world'), unicode('Hello World')) <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+
+    def test_enhance(self):
+        self.addTypeEqualityFunc(str, self.assertMultiLineEqual)         <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+        self.assertEqual('hello world', 'Hello World')
+
+if __name__ == '__main__':
+    unittest.main()</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+事先將兩個字串都強制轉成 unicode。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+讓 <code>assertEqual()</code> 遇到雙方都是 str 時也會轉給 <code>assertMultiLineEqual()</code> 處理。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>執行結果：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ python test_assert_string.py
+FF
+======================================================================
+FAIL: test_convert (__main__.AssertTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "test_assert_string.py", line 6, in test_convert
+    self.assertEqual(unicode('hello world'), unicode('Hello World'))
+AssertionError: u'hello world' != u'Hello World'
+- hello world
+? ^     ^
++ Hello World
+? ^     ^
+
+
+======================================================================
+FAIL: test_enhance (__main__.AssertTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "test_assert_string.py", line 10, in test_enhance
+    self.assertEqual('hello world', 'Hello World')
+AssertionError: 'hello world' != 'Hello World'
+- hello world
+? ^     ^
++ Hello World
+? ^     ^
+
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.001s
+
+FAILED (failures=2)</code></pre>
+</div></div>
+</td>
+</tr></table>
+</div>
+<div class="paragraph"><p><code>assertEqual()</code> 衍生出來，但只適用於字串內容比對的方法有：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>assertRegexpMatches(self, text, regexp, msg=None)</code>
+</p>
+</li>
+<li>
+<p>
+<code>assertNotRegexpMatches(self, text, regexp, msg=None)</code>
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p><code>assertNotEqual()</code> 衍生出來的驗證方法有：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>assertLess(first, second, msg=None)</code> - 檢查 <code>first &lt; second</code>。
+</p>
+</li>
+<li>
+<p>
+<code>assertLessEqual(first, second, msg=None)</code> - 檢查 <code>first &lt;= second</code>。
+</p>
+</li>
+<li>
+<p>
+<code>assertGreater(first, second, msg=None)</code> - 檢查 <code>first &gt; second</code>。
+</p>
+</li>
+<li>
+<p>
+<code>assertGreaterEqual(first, second, msg=None)</code> - 檢查 <code>first &gt;= second</code>。
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>跟 object 相關的驗證方法有：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>assertIsNone(expr, msg=None)</code> - 檢查 <code>expr is None</code>。
+</p>
+</li>
+<li>
+<p>
+<code>assertIsNotNone(expr, msg=None)</code> - 檢查 <code>expr is not None</code>。
+</p>
+</li>
+<li>
+<p>
+<code>assertIs(first, second, msg=None)</code> - 檢查 <code>first is second</code>，也就是 <em>first</em> 與 <em>second</em> 指向同一個 object instance。
+</p>
+</li>
+<li>
+<p>
+<code>assertIsNot(first, second, msg=None)</code> - 檢查 <code>first is not second</code>，也就是 <em>first</em> 與 <em>second</em> 指向不同的 object instance。
+</p>
+</li>
+<li>
+<p>
+<code>assertIsInstance(obj, cls, msg=None)</code> - 檢查 <code>isinstance(obj, cls)</code>。
+</p>
+</li>
+<li>
+<p>
+<code>assertNotIsInstance(obj, cls, msg=None)</code> - 檢查 <code>not isinstance(obj, cls)</code>。（注意是 <code>NotIs</code> 而非慣用的 <code>IsNot</code>）
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>例如：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>def test_something(self):
+    self.assertIsNone(None)
+    self.assertIsNotNone('None')
+
+    s1 = 'hello' + ', world'
+    s2 = unicode('hello, ' + 'world')
+    s3 = s1
+    self.assertIs(s1, s3)
+    self.assertIsNot(s1, s2)
+    self.assertEqual(s1, s2)
+
+    self.assertIsInstance(s2, unicode)
+    self.assertNotIsInstance(s2, str)</code></pre>
+</div></div>
+<div class="paragraph"><p>跟 container 相關的驗證方法有：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>assertIn(self, first, second, msg=None)</code> - 檢查 <code>first in second</code>。
+</p>
+</li>
+<li>
+<p>
+<code>assertNotIn(self, first, second, msg=None)</code> - 檢查 <code>first not in second</code>。
+</p>
+</li>
+<li>
+<p>
+<code>assertItemsEqual(self, first, second, msg=None)</code> - 檢查 <code>sorted(first) == sorted(second)</code>，也就不管順序為何，只要雙方的數量跟項目都相同即可。
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>最後是跟 exception 相關的驗證方法。</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>assertRaises(exception, callable, *args, **kwargs)</code> - 檢查呼叫 <code>callable(*args, **kwargs)</code> 會丟出 <em>exception</em>。
+</p>
+</li>
+<li>
+<p>
+<code>assertRaisesRegexp(exception, regexp, callable, *args, **kwargs)</code> - 用法跟 <code>assertRaises()</code> 一樣，除了檢查會丟出 <em>exception</em> 之外，還會進一步檢查 error message 是否符合 <em>regexp</em>。
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>例如：</p></div>
+<div class="listingblock">
+<div class="title"><code>test_raise.py</code></div>
+<div class="content">
+<pre><code>import unittest
+
+def mod(dividend, divisor):
+    remainder = dividend % divisor
+    quotient = (dividend - remainder) / divisor
+    return quotient, remainder
+
+class RaiseTest(unittest.TestCase):
+
+    def test_raise(self):
+        self.assertRaises(ZeroDivisionError, mod, 7, 0)
+
+    def test_raise_regexp(self):
+        self.assertRaisesRegexp(ZeroDivisionError, r'.*?Zero', mod, 7, 0)
+
+if __name__ == '__main__':
+    unittest.main()</code></pre>
+</div></div>
+<div class="paragraph"><p>執行結果：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ python test_raise.py
+.F
+======================================================================
+FAIL: test_raise_regexp (__main__.RaiseTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "test_raise.py", line 14, in test_raise_regexp
+    self.assertRaisesRegexp(ZeroDivisionError, r'.*?Zero', mod, 7, 0)
+AssertionError: ".*?Zero" does not match "integer division or modulo by zero" <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.001s
+
+FAILED (failures=1)</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+<code>assertRaisesRegexp()</code> 會比對 error message 的內容，有助於判定 error message 裡內含的關鍵數據。
+</td></tr>
+</table></div>
+<div class="paragraph"><p><code>assertRaises()</code> 跟 <code>assertRaisesRegexp()</code> 還支援 context manager 的用法：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>assertRaises(exception)</code> - 檢查離開這個 context 前，必須丟出特定的 exception。
+</p>
+</li>
+<li>
+<p>
+<code>assertRaisesRegexp(exception, regexp)</code> - 除了檢查會丟出特定的 exception 之外，還會進一步檢查 error message 是否符合 <em>regexp</em>。
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>改寫上面的例子：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>import unittest
+
+def mod(dividend, divisor):
+    remainder = dividend % divisor
+    quotient = (dividend - remainder) / divisor
+    return quotient, remainder
+
+class RaiseTest(unittest.TestCase):
+
+    def test_raise(self):
+        #self.assertRaises(ZeroDivisionError, mod, 7, 0)
+        with self.assertRaises(ZeroDivisionError) as cm:
+             mod(7, 0)
+
+    def test_raise_regexp(self):
+        #self.assertRaisesRegexp(ZeroDivisionError, r'.*?Zero', mod, 7, 0)
+        with self.assertRaisesRegexp(ZeroDivisionError, r'.*?Zero') as cm:
+            mod(7, 0)
+
+if __name__ == '__main__':
+    unittest.main()</code></pre>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/caution.png" alt="Caution" />
+</td>
+<td class="content">
+<div class="title"><code>assertRaises*(exception[, regexp])</code> 的陷阱</div>
+<div class="paragraph"><p>這種 context manager 的用法是 Python 2.7 才有的，單純只是語法上的甜頭（syntax sugar），因為使用上存在著一些陷阱：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>def test_raise(self):
+    with self.assertRaises(ZeroDivisionError) as cm:
+         divisor = a + b / c <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+         mod(7, 0)</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+如果 <code>c</code> 的內容是 0 的話，這一行就會丟出 <code>ZeroDivisionError</code>。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>也就是說 <code>ZeroDivisionError</code> 是丟出來了，但卻不一定 <code>mod()</code> 丟出來的，在某些情況下，就會讓我們誤判 <code>mod()</code> 的實作是沒有問題的。</p></div>
+</td>
+</tr></table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_test_fixture">Test Fixture</h3>
+<div class="paragraph"><p><code>unittest</code> 支援 test fixture，包括測試開始前的準備工作，以及測試結束後的善後（清理）工作。</p></div>
+<div class="paragraph"><p><code>calc.py</code></p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>class CalculatorTest(unittest.TestCase):
+
+    def test_mod_with_remainder(self):
+        cal = Calculator()
+        self.assertEqual(cal.mod(5, 3), (1, 2))
+
+    def test_mod_without_remainder(self):
+        cal = Calculator()
+        self.assertEqual(cal.mod(8, 4), (2, 0))
+
+    def test_mod_divide_by_zero(self):
+        cal = Calculator()
+        self.assertRaises(ZeroDivisionError, calc.mod, 7, 0)</code></pre>
+</div></div>
+<div class="paragraph"><p>上面每一個 test method 的開頭都有一行 <code>cal = Calculator()</code>，就屬於測試開始前的準備工作。將這些通用的準備工作抽離出來：</p></div>
+<div class="paragraph"><p><code>calc.py</code></p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>import unittest
+
+class Calculator:
+
+    def mod(self, dividend, divisor):
+        remainder = dividend % divisor
+        quotient = (dividend - remainder) / divisor
+        return quotient, remainder
+
+class CalculatorTest(unittest.TestCase):
+
+    def setUp(self):    <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+        self.cal = Calculator()
+
+    def tearDown(self): <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+        self.cal = None
+
+    def test_mod_with_remainder(self):
+        self.assertEqual(self.cal.mod(5, 3), (1, 2)) <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+
+    def test_mod_without_remainder(self):
+        self.assertEqual(self.cal.mod(8, 4), (2, 0))
+
+    def test_mod_divide_by_zero(self):
+        self.assertRaises(ZeroDivisionError, self.cal.mod, 7, 0)
+
+if __name__ == '__main__':
+    unittest.main()</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+將測試前的準備工作寫在 <code>setUp()</code> 裡，在每一個 test case 開始前執行。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+將測試後的清理工作寫在 <code>tearDown()</code> 裡，在每一個 test case 結束後執行，無論測試結果如何（甚至是 test error）。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+直接使用 <code>setUp()</code> 準備好的測試資料。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>為了確保 test isolation，每一個 test method 都是透過一個全新的 <code>TestCase</code> 來執行。下面透過一個簡單的範例來證實這一點，也順便觀察 <code>setUp()</code>、test method 以及 <code>tearDown()</code> 的執行順序：</p></div>
+<div class="paragraph"><p><code>fixture.py</code></p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>import unittest
+
+class FixtureTest(unittest.TestCase):
+
+    def log(self, msg):
+        objid = hex(id(self))
+        print '&lt;%s&gt;: %s -- %s' % (objid, msg, self._testMethodName) <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+
+    def setUp(self):
+        self.log('setUp() invoked.')
+
+    def tearDown(self):
+        self.log('tearDown() invoked.')
+
+    def test_case_1(self):
+        self.log('conduct test #1.')
+
+    def test_case_2(self):
+        self.log('conduct test #2. [fail]')
+        self.fail('test fail')
+
+    def test_case_3(self):
+        self.log('conduct test #3. [error]')
+        raise Exception('test error')
+
+if __name__ == '__main__':
+    unittest.main()</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+<code>TestCase._testMethodName</code> 記錄著該 <code>TestCase</code> instance 是對應到哪個 test method。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>執行結果：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ python fixture.py
+&lt;0x2204610&gt;: setUp() invoked. -- test_case_1       <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+&lt;0x2204610&gt;: conduct test #1. -- test_case_1
+&lt;0x2204610&gt;: tearDown() invoked. -- test_case_1
+&lt;0x22045d0&gt;: setUp() invoked. -- test_case_2
+&lt;0x22045d0&gt;: conduct test #2. [fail] -- test_case_2
+&lt;0x22045d0&gt;: tearDown() invoked. -- test_case_2
+&lt;0x2204690&gt;: setUp() invoked. -- test_case_3
+&lt;0x2204690&gt;: conduct test #3. [error] -- test_case_3
+&lt;0x2204690&gt;: tearDown() invoked. -- test_case_3    <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+.FE
+======================================================================
+ERROR: test_case_3 (__main__.FixtureTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "fixture.py", line 24, in test_case_3
+    raise Exception('test error')
+Exception: test error
+
+======================================================================
+FAIL: test_case_2 (__main__.FixtureTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "fixture.py", line 20, in test_case_2
+    self.fail('test fail')
+AssertionError: test fail
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.001s
+
+FAILED (failures=1, errors=1)</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+<code>setUp()</code> 固定會在 test case 開始前被呼叫。注意訊息前面帶的 object ID，可以看出 3 個 test case 都是不同的 instance。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+<code>tearDown()</code> 固定會在 test case 結束後被呼叫。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>如果 <code>setUp()</code> 或 <code>tearDown()</code> 自己發生錯誤會怎樣？同樣做個簡單的實驗：</p></div>
+<div class="paragraph"><p><code>fixture_error.py</code></p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>import unittest
+
+class BaseTest(unittest.TestCase):
+
+    def log(self, msg):
+        objid = hex(id(self))
+        print '&lt;%s&gt;: %s -- %s' % (objid, msg, self._testMethodName)
+
+class SetUpTest(BaseTest):
+
+    def setUp(self):
+        self.log('SetUpTest &gt; setUp() invoked. [error]')
+        raise Exception('Error in setUp()')
+
+    def tearDown(self):
+        self.log('SetUpTest &gt; tearDown() invoked.')
+
+    def test_case_1(self):
+        self.log('SetUpTest &gt; conduct test #1.')
+
+    def test_case_2(self):
+        self.log('SetUpTest &gt; conduct test #2.')
+
+class TearDownTest(BaseTest):
+
+    def setUp(self):
+        self.log('TearDownTest &gt; setUp() invoked.')
+
+    def tearDown(self):
+        self.log('TearDownTest &gt; tearDown() invoked. [error]')
+        raise Exception('Error in setUp()')
+
+    def test_case_1(self):
+        self.log('TearDownTest &gt; conduct test #1.')
+
+    def test_case_2(self):
+        self.log('TearDownTest &gt; conduct test #2.')
+
+if __name__ == '__main__':
+    unittest.main()</code></pre>
+</div></div>
+<div class="paragraph"><p>執行結果：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ python fixture_error.py
+&lt;0x23b5990&gt;: SetUpTest &gt; setUp() invoked. [error] -- test_case_1 <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+&lt;0x23b5a10&gt;: SetUpTest &gt; setUp() invoked. [error] -- test_case_2
+&lt;0x23b5c10&gt;: TearDownTest &gt; setUp() invoked. -- test_case_1
+&lt;0x23b5c10&gt;: TearDownTest &gt; conduct test #1. -- test_case_1
+&lt;0x23b5c10&gt;: TearDownTest &gt; tearDown() invoked. [error] -- test_case_1
+&lt;0x23b5c90&gt;: TearDownTest &gt; setUp() invoked. -- test_case_2      <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+&lt;0x23b5c90&gt;: TearDownTest &gt; conduct test #2. -- test_case_2
+&lt;0x23b5c90&gt;: TearDownTest &gt; tearDown() invoked. [error] -- test_case_2
+EEEE
+======================================================================
+ERROR: test_case_1 (__main__.SetUpTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "fixture_error.py", line 13, in setUp
+    raise Exception('Error in setUp()')
+Exception: Error in setUp()
+
+======================================================================
+ERROR: test_case_2 (__main__.SetUpTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "fixture_error.py", line 13, in setUp
+    raise Exception('Error in setUp()')
+Exception: Error in setUp()
+
+======================================================================
+ERROR: test_case_1 (__main__.TearDownTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "fixture_error.py", line 31, in tearDown
+    raise Exception('Error in setUp()')
+Exception: Error in setUp()
+
+======================================================================
+ERROR: test_case_2 (__main__.TearDownTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "fixture_error.py", line 31, in tearDown
+    raise Exception('Error in setUp()')
+Exception: Error in setUp()
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.001s
+
+FAILED (errors=4)</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+<code>setUp()</code> 發生錯誤時，test case 不會被執行，連帶的 <code>tearDown()</code> 也不會被呼叫。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+<code>tearDown()</code> 發生錯誤時，不影響下一個 test case 的 <code>setUp()</code>。
+</td></tr>
+</table></div>
+</div>
+<div class="sect2">
+<h3 id="_將測試碼與受測碼獨立開來">將測試碼與受測碼獨立開來</h3>
+<div class="paragraph"><p>上面把測試碼跟受測碼擺在同一個 module 的做法並不妥當，因為這會迫使測試碼一定要隨著受測碼散佈出去，而且執行期也要一併載入哪些只有在測試時才會用到的 module。事實上，複雜的測試還會用到其他 mock/testing framework，這個問題會更為明顯&#8230;</p></div>
+<div class="paragraph"><p>下面將測試碼獨立出來：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>PROJECT_DIR
+|-- mycalc/      <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+|   |-- calc.py
+|   `-- __init__.py
+|-- mycalc.egg-info/
+|-- PKG-INFO
+|-- LICENSE
+|-- README
+|-- setup.cfg
+|-- setup.py
+`-- tests/       <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+    |-- __init__.py
+    |-- functional/
+    `-- unit/
+        |-- __init__.py
+        `-- test_calc.py <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+假設產品名稱是 <code>mycalc</code>，慣例上會把主要的程式碼都放在這底下。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+慣例上會把所有關於測試的程式碼都放在 <code>tests/</code> 底下，之後再細分出 unit/functional 等專用的子目錄。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+通常一支 <code>&lt;product_name&gt;/xxx.py</code>，都會對應一支 <code>tests/unit/test_xxx.py</code>。習慣在檔名前面慣上 <code>test_</code>，使能直接搭配 <code>unittest</code> 或 nose 的 test discovery。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>例如：</p></div>
+<div class="listingblock">
+<div class="title"><code>mycalc/calc.py</code></div>
+<div class="content">
+<pre><code>class Calculator:
+
+    def mod(self, dividend, divisor):
+        remainder = dividend % divisor
+        quotient = (dividend - remainder) / divisor
+        return quotient, remainder</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="title"><code>tests/unit/test_calc.py</code></div>
+<div class="content">
+<pre><code>import unittest
+from mycalc.calc import Calculator
+
+class CalculatorTest(unittest.TestCase):
+
+    def setUp(self):    <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+        self.cal = Calculator()
+
+    def tearDown(self): <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+        self.cal = None
+
+    def test_mod_with_remainder(self):
+        self.assertEqual(self.cal.mod(5, 3), (1, 2)) <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+
+    def test_mod_without_remainder(self):
+        self.assertEqual(self.cal.mod(8, 4), (2, 0))
+
+    def test_mod_divide_by_zero(self):
+        with self.assertRaises(ZeroDivisionError) as cm:
+            self.cal.mod(7, 0)
+
+if __name__ == '__main__':
+    unittest.main()</code></pre>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">下面的說明，都假設 <code>PYTHONPATH</code> 裡包含有 <em>PROJECT_DIR</em>。最簡單的方式就是把目錄切換到 <em>PROJECT_DIR</em>，再進行其他測試。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>到目前為止，我們執行測試的方式都是直接執行 <code>.py</code> 檔。可以這麼做是因為加了 <code>unittest.main()</code> 這一行的關係。</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>$ python tests/unit/test_calc.py</code></pre>
+</div></div>
+<div class="paragraph"><p>事實上 <code>unittest.main()</code> 這一行也可以不加，但要執行測試時就得透過 <code>-m unittest</code> 了。</p></div>
+<div class="paragraph"><p>透過 <code>-m unittest</code> 來執行測試的好處是，透過給定 fully-qualified module/class/method name，可以控制到只執行某個 class 底下所有的 test method，或是單一個 test method。例如：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ python -m unittest tests.unit.test_calc                <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.001s
+
+OK
+
+$ python -m unittest tests.unit.test_calc.CalculatorTest <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.001s
+
+OK
+
+$ python -m unittest tests.unit.test_calc.CalculatorTest.test_mod_with_remainder <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+執行某個 module 底下所有的 test case。注意這裡 <code>tests.unit.test_calc</code> 給的是 fully-qualified module name，不要誤寫成 <code>tests.unit.test_calc.py</code>。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+執行某個 class 底下所有的 test case。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+執行特定一個 test case。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>Python 2.7 另外支援 test discovery，可以自動找出某個資料夾底下所有的測試（預設會找 <code>test*.py</code>），例如：</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>$ python -m unittest discover tests/unit</code></pre>
+</div></div>
+<div class="paragraph"><p>透過 nose 執行測試更簡單：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ nosetests
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.023s
+
+OK</code></pre>
+</div></div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://docs.python.org/library/unittest.html">The Python Standard Library &gt; unittest — Unit testing framework</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://pypi.python.org/pypi/unittest2">unittest2: A backport of new unittest features for Python 2.4-2.6</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://pyunit.sourceforge.net/">PyUnit - the standard unit testing framework for Python</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://code.google.com/p/python-nose/">python-nose - A unittest-based testing framework for python that makes writing and running tests easier</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2012-12-25 23:23:52 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script>
+</body>
+</html>

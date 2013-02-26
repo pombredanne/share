@@ -1,0 +1,40 @@
+= link:nio.html[Java / NIO] / Buffers =
+:title: [Java][NIO] Buffers
+
+ * `channel.read(buffer)` 將資料從 channel 讀入 buffer。`channel.write(buffer)` 將 buffer 寫入 channel。兩者不會有直接的連結 - 對 buffer 寫入，並不會直接反應在 channel。
+ * memory block (finite, fixed size), linear, container(sequence of elements), a specific primitive type (non-boolean) -> 跟 primitive array 很有關係？
+   ** `ByteBuffer`, `CharBuffer`, `ShortBuffer`, `IntBuffer`, `LongBuffer`, `FloatBuffer`, `DoubleBuffer`
+   ** `ByteBuffer` 甚至可以處理 heterogeneous binary data，這是其他 buffers 沒有的。`getInt()`, `putInt()`, ...
+   ** `MappedByteBuffer`?
+ * capacity - number of elements, fixed, `capacity()`
+ * limit - first element that should not be read or written, `limit()`/`limit(newLimit)`
+ * (current) position - index of the next element to be read or written, `position()`/`position(new Position)`
+ * get/put operations, single/bulk, not thread-safe, 超出 limit 時 "no data is transferred" 指的是什麼事都不會發生？
+ * relative (current position, 之後 position 會往下移動), absolute (explicit index, position not affected)
+   ** 寫入 buffer 的資料要讀出來時，要呼叫 `flip()` 進入 reading mode，會將 limit 設成當時的 position，然後將 position 歸零。
+   ** 讀取 "一部份" 資料後，可以呼叫 `compact()` 進入 writing mode，會將前面已讀取的部份抽掉，position 設在 unread data 之後方便繼續寫入，limit 移到最後面 (= capacity)
+   ** 清掉 buffer 重頭寫入（不管有沒有 unread 的部份），可以呼叫 `clear()` 進入 writing mode，比 `compact()` 更單純，就是將 position 歸零，limit 移到最後面（= capacity）。
+ * mark - 呼叫 `reset()` 時，position 要回到哪個 index, 一開始是 undefined
+   ** `mark()` 將 current position 標記起來。
+   ** mark 一定在 position 之前。當 position/limit 跑到 mark 前面時，該 mark 會自動失效。
+ * 0 <= mark <= position <= limit <= capacity
+ * read-only buffers, `isReadOnly()`, `asReadOnlyBuffer()`, optional operations -> `ReadOnlyBufferException`
+ * invocation chaning, fluent API. 為什麼不是 `setPosition(index)` 而是 `position(index)`？
+ * `rewind()` - position = 0, re-reading data
+ * `remaining()` = 接下來可 read/write 的 element 數量（包括 current position） = limit - position。如果單純要判斷還有沒有，可以用 `hasRemaining()`。
+ * direct buffers - `isDirect()` for explicit buffer management? avoid intermediate buffer, try to perform native I/O operations on it, higher allocation/deallocation cost -> only when they yield a measureable gain in program performance.
+ * view buffers - `asXXXBuffer()`, 以另一種 primitive type 來存取同一個 byte buffer，但 position/limit/mark 是分開的。（跟 wrapping 有什麼不同？）
+ * creation - allocation (`allocate()`, element initial value = zero), wrapping (existing primitive array, `wrap(xxx[])`)
+ * read/write "sequence of elements" 時，會採用 buffer's byte order, `order()`/`order(newByteOrder)`
+ * compacting, duplicating, slicing
+
+== 延伸閱讀 ==
+
+ * link:channels.html[Channels]
+
+== 參考資料 ==
+
+ * http://docs.oracle.com/javase/7/docs/api/java/nio/Buffer.html[Buffer] ^http://diigo.com/0w00s[閱讀]^
+   ** http://docs.oracle.com/javase/7/docs/api/java/nio/ByteBuffer.html[ByteBuffer] ^http://diigo.com/0w0mw[閱讀]^
+ * http://tutorials.jenkov.com/java-nio/buffers.html[Java NIO: Buffers] ^http://diigo.com/0w0nz[閱讀]^
+

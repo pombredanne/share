@@ -1,0 +1,89 @@
+= link:programming.html[Python / Programming] / Calls =
+:title: [Python] 呼叫 Callables 時參數的傳送與接收
+
+[TIP]
+.Parameters 跟 Arguments 的差異
+================================================================================
+parameters 是 link:callables.html[callable] 用來接收 argument values 的 names，以 function 為例：
+
+[source,pycon]
+--------------------------------------------------------------------------------
+>>> def func(foo, bar=None, *args, **kwargs):
+...     print foo, bar, args, kwargs
+... 
+>>> func('fooval', 'arg1', 'arg2', kwarg1='kwval1', kwarg2='kwval2')
+fooval arg1 ('arg2',) {'kwarg1': 'kwval1', 'kwarg2': 'kwval2'}
+--------------------------------------------------------------------------------
+
+其中 'foo'、'bar'、'args' 跟 'kwargs' 都是 `func()` 的 parameters，至於 `fooval`、`arg1`、`arg2`、`kwval1` 跟 `kwval2` 這些 values 就是 arguments，會分別被 assign 到不同的 parameters。注意 `arg1` 對應到 'bar' 這個 parameter，而非 'args'。
+================================================================================
+
+== keyword argument ==
+
+--------------------------------------------------------------------------------
+>>> def add(name, **atts):
+...     print 'name:', name, '(type = %s, len = %i)' % (type(atts), len(atts))
+...     for key in atts:
+...         print 'atts:', key, atts[key]
+... 
+>>> add('Jeremy', weight=68, height=178)
+name: Jeremy (type = <type 'dict'>, len = 2)
+atts: weight 68
+atts: height 178
+>>> add('Joanne')
+name: Joanne (type = <type 'dict'>, len = 0) <1>
+>>>
+--------------------------------------------------------------------------------
+<1> 沒有帶 keyword argument 時，會得到一個 empty dictionary。
+
+== 參考資料 ==
+
+.文件
+--
+ * http://docs.python.org/2/reference/expressions.html[Expressions > Calls — The Python Language Reference] ^http://diigo.com/0w8da[閱讀]^
+ * http://docs.python.org/2/tutorial/controlflow.html[More Control Flow Tools > More on Defining Functions — The Python Tutorial]
+ * http://docs.python.org/2/glossary.html[Glossary > argument/parameter] ^http://diigo.com/0w8c3[閱讀]^
+ * http://docs.python.org/2/faq/programming.html[Programming FAQ > What is the difference between arguments and parameters?] ^http://diigo.com/0w8a4[閱讀]^
+ * http://www.python.org/dev/peps/pep-3102/[PEP 3102 -- Keyword-Only Arguments] (2009-01-19)
+--
+
+.其他文件
+--
+ * http://stackoverflow.com/questions/1419046/python-normal-arguments-vs-keyword-arguments[Python normal arguments vs. keyword arguments - Stack Overflow] ^http://diigo.com/0w8ce[閱讀]^ (2009-09-13)
+--
+
+////////////////////////////////////////////////////////////////////////////////
+
+ * calls
+   ** A call calls a callable object (e.g., a function) with a possibly empty series of arguments.
+   ** always returns some value (or None, or raises an exception)
+      *** functions
+      *** class object - new instance
+      *** class instance method - the instance become the first argument (that's why `self`)
+      *** class or static methods?
+ * arguments, calling side
+   ** be passed either positionally or as a keyword argument.
+   ** argument expressions are evaluated before the call is attempted.
+   ** argument list = positional arguments + keyword arguments （keyword arguments must follow positional arguments）
+   ** keywords arguemnts = `name=` or `**mapping` (unpacking)
+   ** positional arguments = not a keyword argument or `*iterable` (unpacking)
+ * parameters, definition side
+   ** named local variables
+   ** 4 types
+      *** positional-or-keyword (default), argument assignment rule
+      *** position-only (no syntax)
+      *** var-positional, `*args`, a tuple containing excess positional arguments (or an empty tuple)
+      *** var-keyword, `**kwargs`, a dictionary containing excess keyword arguments (or an empty dictionary)
+   ** mandatory/optional arguments (or parameters?)
+   ** default value
+      *** evaluated once (at the point of function definition) in the 'defining scope'?
+      *** interesting, if it is mutable -> accumulated
+ * arguments assignment rule (for example, visualization)
+   ** formal parameters -> unfilled formal parameters slots (not including *args and **kwargs)
+   ** filling position arguments -> filling keyword arguments (identifier/corresponding slots)
+   ** default values
+   ** excess position arguments -> excess keyword arguments
+   ** No argument may receive a value more than once
+
+////////////////////////////////////////////////////////////////////////////////
+

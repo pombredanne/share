@@ -1,0 +1,83 @@
+= link:docs.html[Python / Documentation] / Docstring =
+:title: [Python] Docstring
+
+Docstring 的寫法規範在 http://www.python.org/dev/peps/pep-0257/[PEP-257] 裡。雖然這是個沒有強制性的慣例，但某些工具（像 link:../../docutils/docutils.html[Docutils]）會針對符合規範的 docstring 做最佳化的處理，所以儘可能還是跟著慣例走...
+
+所謂 docstring 指的是緊接在 module、function、class 或 method definition 後面的 string literal，至於 package 的 docstring 則用 `__init__.py` 的 module docstring 來表現。
+
+IMPORTANT: 通常可供外界存取的 package、module、function、class 或 method（包括 constructor `__init__`），都必須要寫上 docstring，讓使用者不用看 code 就知道怎麼使用它。但在實務上，如果不需要額外做說明（self-explanatory）就不需要勉強，小心掉入 "為了寫文件而寫文件" 的陷阱。
+
+首先來看 one-line docstring 的寫法：
+
+--------------------------------------------------------------------------------
+>>> def greet(who):
+...     """Compose a greeting message.""" <1>
+...     return 'Hello, %s.' % who
+... 
+>>> hello.__doc__ <2>
+'Say hello to the world.'
+--------------------------------------------------------------------------------
+<1> 不論 docstring 的內容是否超過一行，習慣上都用三個引號（`"""`）將整個 docstring 框起來，而且 docstring 跟下一個 statement 間不會有空白行；當然也可以視需要在前面冠上 `r` (raw string) 和 `u` (unicode)。
++
+--
+One-line docstring 或 multi-line docstring 的第一行（也就是 summary line），習慣以 "命令式" 的口氣來撰寫，並以句號做結尾，例如 "Do X and return Y."。
+--
++
+<2> Docstring 的內容可以從 `__doc__` 取得，link:pydoc.html[pydoc] 就是利用這個 attribute 取得文字說明的。
+
+接著是 multi-line docstring 的寫法：
+
+[TIP]
+================================================================================
+PEP-257 的規範就如同它一開始所宣稱的 "without touching on any markup syntax within docstrings"，非常的 high-level。例如 function/method docstring 的寫法，只提到裡頭應該寫些什麼：
+
+________________________________________________________________________________
+The docstring for a function or method should summarize its behavior and document its arguments, return value(s), side effects, exceptions raised, and restrictions on when it can be called (all if applicable). Optional arguments should be indicated. It should be documented whether keyword arguments are part of the interface.
+________________________________________________________________________________
+
+至於怎麼寫則隻字未題。下面的寫法主要是參考 http://google-styleguide.googlecode.com/svn/trunk/pyguide.html?showone=Comments#Comments[Google Python Style Guide]，跟 link:../../sphinx/docstring.html[Sphinx] 的寫法其實也滿接近的。
+================================================================================
+
+--------------------------------------------------------------------------------
+def function(arg1, arg2):
+    """Do something and return something. <1>
+
+    Free-style description, description, description, description, description, <3>
+    description, description, description.
+
+    Args: <4>
+        arg1: Description, description, description, and descriptoin of arg1.
+        arg2: Description, description, description, descriptoin, description,
+            description, description, description of arg2.
+
+    Returns:
+        A string, dictionary ...
+
+    Raises:
+        IOError: ...
+
+    """ <2>
+    pass
+--------------------------------------------------------------------------------
+<1> 第一行稱做 summary line，寫法同 one-line docstring，習慣直接接在開頭引號後面，並在後面補上一行空白，然後才是其他細部的說明。
+<2> 將結束的引號獨立成一行，並在前面補上一行空白。
+<3> 一般的說明不需要內縮，過長的部份直接斷行即可，不需要額外內縮。
+<4> 常見的參數、回傳值、可能丟出哪些例外等，則會另外提出 sections。每個 section 由 heading line 開頭，內容要內縮一層（4 個字元），如果是條列式的表示法（例如不同的參數或可能丟出的錯誤），過長折行的部份則還要再內縮一層。
+
+== 延伸閱讀 ==
+
+ * link:../../sphinx/docstring.html[用 Sphinx 來寫 Docstring]
+
+== 參考資料 ==
+
+.文件
+--
+ * http://www.python.org/dev/peps/pep-0257/[PEP 257 -- Docstring Conventions]。
+ * http://google-styleguide.googlecode.com/svn/trunk/pyguide.html?showone=Comments#Comments[Google Python Style Guide]
+--
+
+.其他文件
+--
+ * http://stackoverflow.com/questions/3898572/what-is-the-best-python-docstring-format[What is the best Python docstring format - Stack Overflow] (2010-10-10) - 提到 Google Python Style Guide 可供參考。
+--
+

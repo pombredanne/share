@@ -1,0 +1,48 @@
+= link:exceptions.html[Python / Exceptions] / Customization =
+:title: [Python][Exceptions] Customization
+
+要自訂 exception，必須要直接或間接繼承自 `Exception`。
+
+--------------------------------------------------------------------------------
+class MyError(Exception):
+
+    def __init__(self, errno, errmsg):
+        self.errno = errno
+        self.errmsg = errmsg
+        super(MyError, self).__init__(*(errno, errmsg))
+--------------------------------------------------------------------------------
+
+簡單做個測試：
+
+--------------------------------------------------------------------------------
+>>> try:
+...     raise MyError(-1, 'error message here...')
+... except MyError as e:
+...     print '(e.errno, e.errmsg) = (%i, %s)' % (e.errno, e.errmsg)
+...     print 'e.args =', e.args
+...     raise
+... 
+(e.errno, e.errmsg) = (-1, error message here...)
+e.args = (-1, 'error message here...')
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+__main__.MyError: (-1, 'error message here...')
+--------------------------------------------------------------------------------
+
+除了 `BaseException` 跟 `Exception` 之外，都習慣用 `Error` 做為結尾。
+
+== 參考資料 ==
+
+.文件
+--
+ * http://docs.python.org/tutorial/errors.html#user-defined-exceptions[Errors and Exceptions > User-defined Exceptions]
+ * http://docs.python.org/library/exceptions.html[Built-in Exceptions] - 自訂的 exception 儘可能循 built-in 的慣例。
+ * http://www.doughellmann.com/PyMOTW/exceptions/[exceptions – Built-in error classes - Python Module of the Week] (2011-07-08) - 用實例說明 built-in exception 出現的時機。
+ * http://www.doughellmann.com/articles/how-tos/python-exception-handling/index.html[Python Exception Handling Techniques - Doug Hellmann] (2009-06-19)
+--
+
+.其他文件
+--
+ * http://stackoverflow.com/questions/6180185/custom-python-exceptions-with-error-codes-and-error-messages[Custom Python Exceptions with Error Codes and Error Messages - Stack Overflow] (2011-05-30) - 兼顧 `args` 跟 `__str__()`。
+--
+

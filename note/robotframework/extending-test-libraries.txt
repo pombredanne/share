@@ -1,0 +1,124 @@
+= link:robotframework.html[Robot Framework] / Extending Test Libraries =
+:title: [Robot Framework] 擴充現有的 Test Libraries
+:icons:
+:blogpost-categories: robotframework
+
+官方 http://robotframework.googlecode.com/hg/doc/userguide/RobotFrameworkUserGuide.html[User Guide] 的 Extending existing test libraries 一節提到，'active library instance' 是擴充現有 test libraries 最被推薦的方式。
+
+[quote,'http://robotframework.googlecode.com/hg/doc/libraries/BuiltIn.html?r=2.7.6[BuiltIn]']
+________________________________________________________________________________
+Returns the currently active instance of the specified test library. This keyword makes it easy for test libraries to interact with other test libraries that have state... If a library is imported with a custom name, the name used to get the instance must be that name and not the original library name.
+________________________________________________________________________________
+
+下面以擴充 https://code.google.com/p/robotframework/wiki/ScreenshotLibrary[Screenshot Library] 為例：
+
+.link:extending-test-libraries/test.txt[`test.txt`]
+--------------------------------------------------------------------------------
+| *Setting* | *Value*
+| Library | Screenshot
+| Library | MyScreenshotLibrary
+
+| *Test Case* | *Action* | *Argument*
+| Test | Take Snapshot | desktop
+--------------------------------------------------------------------------------
+
+CAUTION: 雖然沒有直接用到 Screenshot Library，但如果沒有明確引進來的話，執行期會出現 "No library with name \'Screenshot' found." 的錯誤，建議在 test library 的文件上額外做說明。
+
+[source,python]
+.link:extending-test-libraries/MyScreenshotLibrary.py[`MyScreenshotLibrary.py`]
+--------------------------------------------------------------------------------
+from robot.libraries.BuiltIn import BuiltIn
+
+class MyScreenshotLibrary:
+
+  _builtin = BuiltIn()
+
+  @property
+  def _screenshot_lib(self):
+    return self._builtin.get_library_instance('Screenshot') # <1>
+
+  def take_snapshot(self, name, width='800px'):
+      img = self._screenshot_lib.take_screenshot(name, width) # <2>
+      print '*WARN* snapshot:', img
+--------------------------------------------------------------------------------
+<1> 透過 `BuiltIn` instance 取得其他 library 的 active instance，跟 test library 的 scope 無關。
++
+[WARNING]
+================================================================================
+`get_library_instance()` 不能在 `__init()` 裡呼叫，否則在 link:../ride/ride.html[RIDE] 裡和真正跑測試時，會分別出現下面的錯誤：（事實上任何初始化的工作都不應該在 `__init__()` 裡做）
+
+--------------------------------------------------------------------------------
+AttributeError: 'NoneType' object has no attribute 'get_library_instance'
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+[ ERROR ] Invalid syntax in file 'xxx.txt' in table 'Settings': Creating an instance of the test library 'MyScreenshotLibrary' with no arguments failed: No library with name 'Screenshot' found.
+--------------------------------------------------------------------------------
+
+顯然我們不能假設 Robot Framework 載入 test libraries 的順序...
+================================================================================
++
+<2> 等同在 test data 裡 `Screenshot.Take Screenshot` 的用法。
+
+執行結果：
+
+--------------------------------------------------------------------------------
+$ pybot -d /tmp test.txt 
+==============================================================================
+Test                                                                          
+==============================================================================
+[ WARN ] snapshot: /tmp/desktop_1.jpg                                         
+Test                                                                  | PASS |
+--------------------------------------------------------------------------------
+
+[TIP]
+================================================================================
+BuiltIn Library 是 global scope，我們手動生成的那個 `BuiltIn` instance 當然跟 runtime 系統唯一的那個 BuiltIn Library instance 不同，但我們卻可以透過它去取得其他 library instance？
+
+那是因為 test library instance 並不是記錄在 BuiltIn Library instance 裡：
+
+[source,python]
+.`libraries/BuiltIn.py`
+--------------------------------------------------------------------------------
+from robot.running import Keyword, NAMESPACES, RUN_KW_REGISTER
+
+class _Misc:
+
+    def get_library_instance(self, name):
+        try:
+            return self._namespace.get_library_instance(name)
+        except DataError, err:
+            raise RuntimeError(unicode(err))
+
+class BuiltIn(_Verify, _Converter, _Variables, _RunKeyword, _Misc):
+    ROBOT_LIBRARY_SCOPE = 'GLOBAL'
+
+    @property
+    def _namespace(self):
+        return NAMESPACES.current
+--------------------------------------------------------------------------------
+
+[source,python]
+.`running/__init__.py`
+--------------------------------------------------------------------------------
+class _Namespaces:
+
+# Hook to namespaces
+NAMESPACES = _Namespaces() # <1>
+--------------------------------------------------------------------------------
+<1> 原來 `NAMESPACES` 是個 singleton。
+
+或許 `BuiltIn.get_library_instance()` 一開始就被設計成 static/class method 就不會有使用上的疑慮了。
+
+如果這是改變不了的事實，建議將 `BuiltIn` instance 快取起來，這樣取用 active library instance 時，就不用一直生成全新的 `BuiltIn` instance。
+================================================================================
+
+== 延伸閱讀 ==
+
+ * link:../seleniumlibrary/interoperability.html[[SeleniumLibrary&#93; 與其他 Test Libraries 交互操作]
+
+== 參考資料 ==
+
+ * http://robotframework.googlecode.com/hg/doc/userguide/RobotFrameworkUserGuide.html?r=2.7.6[Robot Framework User Guide > Extending existing test libraries] ^https://diigo.com/0x0t0[閱讀]^
+ * http://robotframework.googlecode.com/hg/doc/libraries/BuiltIn.html?r=2.7.6[BuiltIn > Get Library Instance] ^https://diigo.com/0x0sd[閱讀]^
+

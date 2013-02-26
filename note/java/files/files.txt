@@ -1,0 +1,68 @@
+= [Java] File I/O =
+
+`java.io.File` 是路徑名稱（system-dependent 'pathname string'）的抽象表示法（system-independent 'abstract pathname'），使能夠以跨平台的方式來處理檔案或目錄。內部會把 pathname 拆成下面幾個元素：
+
+ * 開頭的 'prefix'（如果有的話）。例如 Windows 的磁碟機代號、Unix-like 的根目錄 `/`，或 UNC 路徑的 `\\\\`。
+ * 接著用 underlying system 認定的 'name-separator character'（也就是 Windows 下的 `\`，或 Unix-like 下的 `/`） 將 pathname string 剩下的部份拆成零或多個 'name'，形成一個 'name sequence'。
++
+第一個 name 可能是目錄名稱或 hostname（對 UNC 路徑 而言），最後一個 name 則可能是目錄或檔案名稱，至於中間其他的 name 就肯定表示目錄名稱。
+
+--------------------------------------------------------------------------------
+$ pwd
+/tmp
+$ jython
+>>> from java.lang import System
+>>> from java.io import File
+>>> System.getProperty('os.name')
+u'Linux'
+>>> File.separator                    
+u'/'
+>>> 
+>>> lnxRelFile = File('dir/file.txt')
+>>> lnxAbsFile = File('/tmp/dir/file.txt')
+>>> winRelFile = File(r'dir\file.txt')
+>>> winAbsFile = File(r'C:\tmp\dir\file')
+>>>
+>>> lnxRelFile.isAbsolute(), lnxAbsFile.isAbsolute() <1>
+(False, True)
+>>> winRelFile.isAbsolute(), winAbsFile.isAbsolute()
+(False, False)
+>>> 
+>>> lnxRelFile.getName(), lnxAbsFile.getName() <2>
+(u'file.txt', u'file.txt')
+>>> winRelFile.getName(), winAbsFile.getName()
+(u'dir\\file.txt', u'C:\\tmp\\dir\\file')
+>>> 
+>>> file = File('file.txt')
+>>> file.getAbsolutePath() <1>
+u'/tmp/file.txt'
+>>> file.getPath()
+u'file.txt'
+>>> 
+--------------------------------------------------------------------------------
+<1> `isAbsolute()` 判斷 abstract pathname 是否為絕對路徑的表示法。由於跟當時的系統有關，所以在 Unix-like 下對 Windows 的路徑進行判斷時，會發生誤判的狀況。
+<2> 
+<1> `getPath()` 會將內部的 abstract pathname 轉回 pathname string。
+
+== 參考資料 ==
+
+.文件
+--
+ * http://docs.oracle.com/javase/tutorial/essential/io/legacy.html[Legacy File I/O Code (The Java™ Tutorials > Essential Classes > Basic I/O)] - Java 1.7 NIO 引入的 `java.nio.file.Path`，用來取代 old-style 的 `java.io.File`。還好 Java 1.7 在 `File` 加了 `toPath()`，可以用來做幾近於 drop-in replacement 的 migration。
+ * http://docs.oracle.com/javase/7/docs/api/java/io/File.html[File (Java Platform SE 7 )]
+--
+
+////////////////////////////////////////////////////////////////////////////////
+
+ * stream, java.io, java.nio.file
+ * System.out
+ * stream (of bytes) - data source/destination 的抽象概念，方便以相同的方式來操作性質各異的 input/output device，例如 keyboard、display screen、file、disk、network connection 等。 
+ * input/output stream。至於 printer 在概念上當然也是個 output stream，但在 Java 裡 printer 被視為 graphical device，操作上不走 output stream 這條路，而是採用跟在螢幕上繪圖一樣的方式。
+ * input/output stream -> character/byte (inefficient) -> buffered stream (flush)
+ * binary/byte stream, character stream
+   ** binary stream 讀寫時不經過轉換，int (4 bytes)，long (8 bytes) 等。
+   ** Java 用 Unicode 來表示 string，寫到 binary stream 就是直接寫出 2 bytes。寫到 character stream 時，會先做 "character -> sets of bytes" 的轉換，也就是 charset (`Charset`)，預設會轉成 local representation of the characters 再寫出。
+ * `java.io.InputStream`, `java.io.OutputStream`
+
+////////////////////////////////////////////////////////////////////////////////
+

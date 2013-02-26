@@ -43,13 +43,134 @@ asciidoc.install();
 <h1><a href="../ios.html">iOS</a> / UI Automation</h1>
 </div>
 <div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="quoteblock">
+<div class="content">
+<div class="paragraph"><p>For your protection, the Automation instrument enables you to process only apps that have been code signed with your provisioning profile. These apps include any copy that has been downloaded from the iTunes App Store.</p></div>
+</div>
+<div class="attribution">
+<em><a href="http://developer.apple.com/library/mac/#documentation/DeveloperTools/Conceptual/InstrumentsUserGuide/UsingtheAutomationInstrument/UsingtheAutomationInstrument.html">Automating UI Testing</a></em><br />
+&#8212; Instruments User Guide
+</div></div>
+<div class="quoteblock">
+<div class="content">
+<div class="paragraph"><p>UI Automation will only work for native applications built by you with Xcode. From your question it sounds like you want to launch Mobile Safari or Chrome for iOS and manipulate that with UI Automation. That won&#8217;t work. Instruments can let you connect to applications you didn&#8217;t compile running on the simulator or device, but only some of the instruments work and UI Automation isn&#8217;t one of them.</p></div>
+</div>
+<div class="attribution">
+<em><a href="http://diigo.com/0vstt">How to test iOS web application using Instruments UIAutomation - Stack Overflow</a></em><br />
+&#8212; Jonathan Penn
+</div></div>
+<div class="ulist"><ul>
+<li>
+<p>
+iOS 4.0 之後才有，可以同時跑在 real devices 跟 simulator。
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+iPhone 3GS, iPad 具 iOS 4.0+ 都支援，但 iPhone 3G 完全不支援，不論 iOS 是幾版。
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+用 JavaScript 撰寫 test script（透過 instrument 執行在 host 上），可以測 UIKit-based applications。
+</p>
+</li>
+<li>
+<p>
+<code>#import "&lt;path-to-library-folder&gt;/TestUtilities.js"</code> 可以引入其他共用的 JavaScript。
+</p>
+</li>
+<li>
+<p>
+利用 accessibility labels/values 來操控畫面或驗證結果
+</p>
+</li>
+<li>
+<p>
+accessible elements 除了可以用它在 element hierarchy 裡的 position 定位之外，也可以給定 label來識別要操作的對象。
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+UI Automation uses the accessibility label (if it’s set) to derive a name property for each element 這是什麼意思？
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+支援 touch gestures - tap, pinch, drag, flick, alert, orientation&#8230;
+</p>
+</li>
+<li>
+<p>
+透過 UI automation 持續對畫面進行操作並不會因此讓 auto-locking 失效，因此測試前要手動將 Auto-Lock 調成 Never。
+</p>
+</li>
+<li>
+<p>
+automation instrument = instruments + automation trace template
+</p>
+</li>
+<li>
+<p>
+Product &gt; Profile &gt; Automation 開出來就是 Instruments 的視窗，感覺可以搭配 scripts 做一些動作，然後將 loading 錄下來做比較，而 scripts 也可以應用在 test automation 而已。
+</p>
+</li>
+<li>
+<p>
+可以確定的是，跑測試的過程中切到其他 app 再回來，並不會造成測試中斷，只是還沒回到 app 前對 target 的操作都會卡在那裡。但似乎真的存取不到其他 app&#8230;
+</p>
+</li>
+<li>
+<p>
+automation instrument 只能用在以 provisioning profile 做 code-sign 的 app，所以想要操作 Safari 等 built-in apps 是不可能的。
+</p>
+</li>
+<li>
+<p>
+automation instrument 可以搭配其他 instruments 測試 performance、memory leak 等。如果有 cross app 的需求，同時開兩個 automation instruments 會怎樣？
+</p>
+</li>
+<li>
+<p>
+當 instrumented app 送到 background 時，test script 會 block 住，一旦變成 frontmost 後才會繼續往下執行。
+</p>
+</li>
+<li>
+<p>
+multitasking？
+</p>
+</li>
+</ul></div>
+</div>
+</div>
 <div class="sect1">
 <h2 id="_延伸閱讀">延伸閱讀</h2>
 <div class="sectionbody">
 <div class="ulist"><ul>
 <li>
 <p>
-<a href="page-object.html">套用 Page Object Pattern</a>
+<a href="command-line.html">Command Line</a>
+</p>
+</li>
+<li>
+<p>
+<a href="page-object.html">Page Object Pattern</a>
+</p>
+</li>
+<li>
+<p>
+<a href="host-communication.html">Host Communication</a>
+</p>
+</li>
+<li>
+<p>
+<a href="accessibility.html">Accessibility</a>
 </p>
 </li>
 </ul></div>
@@ -86,12 +207,131 @@ asciidoc.install();
 </ul></div>
 </div></div>
 <div class="openblock">
+<div class="title">工具</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="https://github.com/alexvollmer/tuneup_js">alexvollmer/tuneup_js · GitHub</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
 <div class="title">文件</div>
 <div class="content">
 <div class="ulist"><ul>
 <li>
 <p>
-<a href="http://blog.manbolo.com/2012/04/08/ios-automated-tests-with-uiautomation">iOS Automated Tests with UIAutomation</a> (2012-04-08)
+<a href="http://developer.apple.com/library/mac/#documentation/DeveloperTools/Conceptual/InstrumentsUserGuide/UsingtheAutomationInstrument/UsingtheAutomationInstrument.html">Instruments User Guide: Automating UI Testing</a> <sup><a href="https://dl.dropbox.com/u/42335152/read/developer.apple.com/library/mac/documentation/DeveloperTools/Conceptual/InstrumentsUserGuide/InstrumentsUserGuide.pdf">閱讀</a></sup> (<a href="http://developer.apple.com/library/mac/documentation/DeveloperTools/Conceptual/InstrumentsUserGuide/InstrumentsUserGuide.pdf">PDF</a>) - 非常值得一看，講得非常詳盡。
+</p>
+</li>
+<li>
+<p>
+<a href="http://developer.apple.com/devcenter/download.action?path=/wwdc_2010/wwdc_2010_video_assets<em>pdfs/306</em>automating_user_interface_testing_with_instruments.pdf">Automating User Interface Testing with Instruments</a>
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+UIKit based applications, touch based
+</p>
+</li>
+<li>
+<p>
+integrated in instruments, accessibility based
+</p>
+</li>
+<li>
+<p>
+UIAElement - name, value, elements, parent
+</p>
+</li>
+<li>
+<p>
+control hierarchy; target application &#8594; main window &#8594; view &#8594; element &#8594; child element = <code>UIATarget.localTarget().frontMostApp().mainWindows().tableViews()[0].cells()[0].elements()["Chocolate Cake"];</code>
+</p>
+</li>
+<li>
+<p>
+tapping buttons, text input, switching tabs, scrolling
+</p>
+</li>
+<li>
+<p>
+verification, logging, capture screenshots
+</p>
+</li>
+<li>
+<p>
+handling expected/unexpected alters
+</p>
+</li>
+<li>
+<p>
+multitasking (deactivate, reactivate applications?)
+</p>
+</li>
+<li>
+<p>
+orientations, touch (tap, pinch, drag, flick)
+</p>
+</li>
+<li>
+<p>
+timeout, wait for elements to appear (default 5 seconds)
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+<a href="http://blog.manbolo.com/2012/04/08/ios-automated-tests-with-uiautomation">iOS Automated Tests with UIAutomation</a> <sup><a href="http://diigo.com/0vk8i">閱讀</a></sup> (2012-04-08)
+</p>
+</li>
+<li>
+<p>
+<a href="http://alexvollmer.com/posts/2010/07/03/working-with-uiautomation/">Alex Vollmer — Working with UIAutomation</a> (2010-07-03)
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">其他文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/13246556/how-to-test-ios-web-application-using-instruments-uiautomation">How to test iOS web application using Instruments UIAutomation - Stack Overflow</a> <sup><a href="http://diigo.com/0vstt">閱讀</a></sup> (2012-11-06) - instruments 的對象不一定是要由你 compile 出來的 app，但 UI Automation 是個例外。
+</p>
+</li>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/12045621/using-instruments-to-test-an-ios-app-without-having-source-code-to-the-applicati">ipad - Using Instruments to test an iOS app without having source code to the application - Stack Overflow</a> <sup><a href="http://diigo.com/0vs70">閱讀</a></sup> (2012-08-20) - 這裡 "open the automator and bind your test with an application installed on the device" 要怎麼做？
+</p>
+</li>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/10325548/when-using-uiautomation-instruments-for-ios-is-there-a-way-to-keep-my-app-open-b">javascript - When using UIAutomation Instruments for iOS is there a way to keep my app open between tests? - Stack Overflow</a> <sup><a href="http://diigo.com/0vmhy">閱讀</a></sup> (2012-04-26) - 描述過程中需要離開 device 取得 passcode 的動作，提到 <code>target.delay()</code> 可以等待某條件成立，但要怎麼把 passcode 傳進去？
+</p>
+</li>
+<li>
+<p>
+<a href="http://cocoamanifest.net/articles/2011/11/changes-to-ui-automation-in-ios-5.html">Changes to UI Automation in iOS 5 - Cocoa Manifest</a> (2011-11-30)
+</p>
+</li>
+<li>
+<p>
+<a href="http://cocoamanifest.net/articles/2011/07/ui-automation-part-2-assertions-and-imports.html">UI Automation Part 2: Assertions and Imports - Cocoa Manifest</a> (2011-07-14)
+</p>
+</li>
+<li>
+<p>
+<a href="http://cocoamanifest.net/articles/2011/05/uiautomation-an-introduction.html">UI Automation: An Introduction - Cocoa Manifest</a> (2011-05-27)
+</p>
+</li>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/6191814/issuing-a-synchronous-http-get-request-or-invoking-shell-script-in-javascript-fr">iphone - Issuing a synchronous HTTP GET request or invoking shell script in JavaScript from iOS UIAutomation - Stack Overflow</a> （2011-05-31)
 </p>
 </li>
 </ul></div>
@@ -113,7 +353,7 @@ dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
 <div id="footnotes"><hr /></div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2012-12-25 23:25:45 CST
+Last updated 2013-02-21 12:12:52 CST
 </div>
 </div>
 </div>

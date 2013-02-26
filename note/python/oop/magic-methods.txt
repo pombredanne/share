@@ -1,0 +1,44 @@
+= link:oop.html[Python / OOP] / Magic Methods =
+:title: [Python] Magic Methods
+
+`__getattr__(self, name)` 只有當 attribute 不存在時才會被呼叫，可以用來實作 Delegation Pattern。
+
+.`foobar.py`
+--------------------------------------------------------------------------------
+class Foo:
+
+    def foo(self): return 'foo!'
+
+class Bar:
+
+    def bar(self): return 'bar!'
+
+class FooBar(Bar):
+    def __init__(self, foo):
+        self._foo = foo
+
+    def __getattr__(self, name):
+        return getattr(self._foo, name)
+
+    def foobar(self): return self.foo() + self.bar()
+
+if __name__ == '__main__':
+    foo = Foo()
+    foobar = FooBar(foo)
+    print foobar.foo(), foobar.bar(), foobar.foobar()
+--------------------------------------------------------------------------------
+
+測試結果如下：
+
+--------------------------------------------------------------------------------
+$ python foobar.py
+foo! bar! foo!bar!
+--------------------------------------------------------------------------------
+
+上面的例子可以用在 `Foo` 的 instance 不是由自己產生，但仍然想要把它強化成 `FooBar` 的狀況... 用一個 static method 來包裝會更好...
+
+== 參考資料 ==
+
+ * http://www.rafekettler.com/magicmethods.html[A Guide to Python's Magic Methods]
+ * http://en.wikipedia.org/wiki/Delegation_pattern[Delegation pattern - Wikipedia, the free encyclopedia]
+

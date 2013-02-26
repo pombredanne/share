@@ -1,0 +1,66 @@
+= link:programming.html[Python / Programming] / Constants =
+:title: [Python] Constants
+
+關於常數，http://www.python.org/dev/peps/pep-0008/#constants[PEP 8] 只有簡單的一句話：
+
+________________________________________________________________________________
+Constants are usually defined on a module level and written in all capital letters with underscores separating words. Examples include `MAX_OVERFLOW` and `TOTAL`.
+________________________________________________________________________________
+
+被http://stackoverflow.com/questions/5027400/constants-in-python-at-the-root-of-the-module-or-in-a-namespace-inside-the-modu[這篇討論]的兩句話給說服了：
+
+ * The Java version would propably use a static class, but the Python equivalent is a module.
+ * Every module provides its own namespace, so there's no need to create another one.
+
+[quote,Dive Into Python,'http://www.diveintopython.net/object_oriented_framework/class_attributes.html[5.8. Introducing Class Attributes]']
+________________________________________________________________________________
+There are no constants in Python. Everything can be changed if you try hard enough. This fits with one of the core principles of Python: bad behavior should be discouraged but not banned. If you really want to change the value of None, you can do it, but don't come running to me when your code is impossible to debug. 
+________________________________________________________________________________
+
+雖然 Python 並不支援真正的常數，但 API 仍應適度地提供常數讓 caller 引用，尤其是某個參數只接受固定的幾種值時或旗標時。例如：
+
+--------------------------------------------------------------------------------
+SEX_UNKNOWN = 0
+SEX_MALE    = 1
+SEX_FEMAIL  = 2
+
+def create_user(name, sex=SEX_UNKNOWN): pass
+
+if __name__ == '__main__':
+  # create_user('somebody', 1)
+  create_user('somebody', SEX_MALE)
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+OPTION_AUTO_INDENT          = 0b0001
+OPTION_TRIM_TRAILING_SPACES = 0b0010
+OPTION_TABS_TO_SPACES       = 0b0100
+
+def launch_editor(filename, options=0): pass
+
+if __name__ == '__main__':
+    launch_editor('/tmp/test.txt', OPTION_TABS_TO_SPACES | OPTION_TRIM_TRAILING_SPACES)
+--------------------------------------------------------------------------------
+
+TIP: 在命名上要以 xxx 為開頭，搭配 IDE 的 auto complete 時，打完前面，就會列出所有可能的選項。
+
+觀察 Standard Library 是怎麼實現這個概念的?
+
+用 `find /usr/lib/python<version> -name '*.py' -exec grep -HEn '\s+[A-Z_0-9]{2,}\s*=\s*' {} \;` 找出 class-level constants 的宣告
+
+雖然用到 Class-Level Constants 的地方也不少, 但建議還是將 Caller 會用到的常數宣告在 Module-Level, 基於兩點考量:
+
+ * from module.ClassName import CONSTANT 這種方式不被支援, 執行期會出現 ImportError: No module named ClassName 的錯誤
+ * 未來哪天要提出 Shortcut Methods 都不知道 (Python 鼓勵使用 Shortcut Methods), 使用時如果還要透過類別名稱才能調用到某個常數, 就太不直覺了. 例如 module.shortcut(module.ClassName.CONSTANT), 應該要能寫成 module.shortcut(module.CONSTANT) 才會直覺.
+
+    There are no constants in Python. Everything can be changed if you try hard enough.
+        This fits with one of the core principles of Python: bad behavior should be discouraged but not banned.
+        If you really want to change the value of None, you can do it, but don't come running to me when your code is impossible to debug.
+    Class attributes can be used as class-level constants, but they are not really constants. You can also change them.
+
+== 參考資料 ==
+
+ * http://www.python.org/dev/peps/pep-0008/#constants[PEP 8 -- Style Guide for Python Code > Constants]
+ * http://code.activestate.com/recipes/65207-constants-in-python/?in=user-97991[Constants in Python « Python recipes « ActiveState Code] (2001-06-14)
+ * http://stackoverflow.com/questions/5027400/constants-in-python-at-the-root-of-the-module-or-in-a-namespace-inside-the-modu[good design - constants in Python: at the root of the module or in a namespace inside the module? - Stack Overflow] (2011-02-17) - 被兩句話說服了 - The Java version would propably use a static class, but the Python equivalent is a module. 跟 Every module provides its own namespace, so there's no need to create another one.
+

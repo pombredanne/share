@@ -101,18 +101,7 @@
 </node>
 </node>
 <node CREATED="1268056460401" ID="ID_21711613" MODIFIED="1269920699265" POSITION="right" TEXT="Python Shell">
-<node CREATED="1269497012591" ID="ID_429387928" MODIFIED="1269920751461" TEXT="Interactive Interpreter">
-<node CREATED="1268056467966" ID="ID_368534761" MODIFIED="1272415650492" TEXT="Windows / Linux &#x5206;&#x5225;&#x8981;&#x7528; Ctrl-Z &#x8207; Ctrl-D &#x96e2;&#x958b; (&#x540c;&#x6a23;&#x9069;&#x7528;&#x65bc; IDLE), &#x6309; Ctrl-C &#x53ea;&#x6703;&#x51fa;&#x73fe; KeyboardInterrupt &#x800c;&#x5df2;"/>
-<node CREATED="1269496658303" ID="ID_1129851291" MODIFIED="1269920751460" TEXT="&#x63d0;&#x793a;&#x5b57;&#x5143; &gt;&gt;&gt;"/>
-<node CREATED="1269504343542" FOLDED="true" ID="ID_1966878004" MODIFIED="1272415704232" TEXT="&#x81ea;&#x52d5;&#x5c07; Expression &#x7684;&#x7d50;&#x679c; (Value)">
-<node CREATED="1272415705359" ID="ID_1920060552" MODIFIED="1282888491868" TEXT="&#x4ee5; Python Expression &#x7684;&#x578b;&#x5f0f;&#x5370;&#x51fa;. As it might be written in Python code"/>
-<node CREATED="1282888492362" FOLDED="true" ID="ID_733407627" MODIFIED="1282888505111" TEXT="&#x7b49;&#x540c;&#x65bc; print repr(...) &#x7684;&#x6548;&#x679c;, &#x4f46; None &#x662f;&#x500b;&#x4f8b;&#x5916;">
-<node CREATED="1282888563429" ID="ID_1345633101" MODIFIED="1282888618404" TEXT="&gt;&gt;&gt; None # &#x7dca;&#x8ddf;&#x8457;&#x4e0b;&#x4e00;&#x500b;&#x63d0;&#x793a;&#x5b57;&#x5143;, &#x5b8c;&#x5168;&#x6c92;&#x6709;&#x8f38;&#x51fa;&#xa;&gt;&gt;&gt; print repr(None)&#xa;None&#xa;&gt;&gt;&gt; print None&#xa;None&#xa;&gt;&gt;&gt; &apos;None&apos;&#xa;&apos;None&apos;&#xa;&gt;&gt;&gt; print repr(&apos;None&apos;)&#xa;&apos;None&apos;&#xa;"/>
-</node>
-<node CREATED="1272415743286" ID="ID_661542992" MODIFIED="1272415743935" TEXT="&#x4f8b;&#x5982; &gt;&gt;&gt; &quot;Hello World&quot; &#x6703;&#x5370;&#x51fa; &apos;Hello World&apos; (Quoted), &#x4e5f;&#x53ef;&#x4ee5;&#x62ff;&#x4f86;&#x7576;&#x505a;&#x8a08;&#x7b97;&#x6a5f;&#x7528;, &#x4f8b;&#x5982; &gt;&gt;&gt; 2 + 2 &#x6703;&#x5370;&#x51fa; 4."/>
-</node>
-</node>
-<node CREATED="1269496990371" FOLDED="true" ID="ID_540937511" MODIFIED="1269920751454" TEXT="GUI">
+<node CREATED="1269496990371" ID="ID_540937511" MODIFIED="1359499628851" TEXT="GUI">
 <node CREATED="1269496812728" ID="ID_1008853547" MODIFIED="1269920751453" TEXT="Python Integrated Development Environment (IDLE)"/>
 <node CREATED="1269487027632" ID="ID_182221873" MODIFIED="1269920751448" TEXT="sudo apt-get install idle-pythonxx (&#x5176;&#x4e2d; xx &#x5fc5;&#x9808;&#x8981;&#x8ddf; python &#x4e00;&#x6a23;&#x7684;&#x7248;&#x6b21;), &#x5b89;&#x88dd;&#x5b8c;&#x6210;&#x5f8c;&#x6703;&#x51fa;&#x73fe;&#x5728; Applications &gt; Programming &#x5e95;&#x4e0b;, &#x4e5f;&#x53ef;&#x4ee5;&#x900f;&#x904e; idle-python2.6 &#x57f7;&#x884c;."/>
 <node CREATED="1269497037079" ID="ID_805210697" MODIFIED="1269920751447" TEXT="&#x6309; F1 &#x6703;&#x958b;&#x7a97;&#x700f;&#x89bd; http://docs.python.org/"/>
@@ -134,7 +123,7 @@
 </node>
 </node>
 </node>
-<node CREATED="1278037039665" FOLDED="true" ID="ID_790882618" MODIFIED="1280622856910" POSITION="right" TEXT="Documentation">
+<node CREATED="1278037039665" FOLDED="true" ID="ID_790882618" MODIFIED="1359499615140" POSITION="right" TEXT="Documentation">
 <node CREATED="1280623162947" ID="ID_1922962189" MODIFIED="1284692616799" TEXT="Docstring (API Documentation)">
 <font BOLD="true" NAME="Monospaced" SIZE="12"/>
 <node CREATED="1283909447015" ID="ID_1747569226" MODIFIED="1283909452077" TEXT="Resources">
@@ -159,7 +148,7 @@
 <node CREATED="1284024658699" ID="ID_1498040996" LINK="http://wiki.python.org.tw/DocTools" MODIFIED="1284024686416" TEXT="DocTools - Python &#x53f0;&#x7063;&#x4f7f;&#x7528;&#x8005;&#x7fa4;&#x7d44;"/>
 </node>
 </node>
-<node CREATED="1283909426772" FOLDED="true" ID="ID_360613041" MODIFIED="1283909428322" TEXT="Overview">
+<node CREATED="1283909426772" FOLDED="true" ID="ID_360613041" MODIFIED="1359499611098" TEXT="Overview">
 <node CREATED="1283909432699" ID="ID_1938856540" MODIFIED="1283909438791" TEXT="Docstrings = Documentation Strings"/>
 <node CREATED="1283910045448" ID="ID_1029252822" MODIFIED="1283910049862" TEXT="PEP 257 &#x63d0;&#x5230; &#x201c;A docstring is a string literal that occurs as the first statement in a module, function, class, or method definition. Such a docstring becomes the __doc__ special attribute of that object.&#x201d;"/>
 <node CREATED="1283910016502" ID="ID_126065609" MODIFIED="1290497915185" TEXT="Docstrings are accessible via a Python object&#x2019;s __doc__ attribute. This is very helpful if you are testing out a new module in Python&#x2019;s interactive shell and really need to know what sort of parameters a certain function needs."/>
@@ -214,7 +203,7 @@
 </node>
 </node>
 </node>
-<node CREATED="1284089453551" FOLDED="true" ID="ID_1352297742" MODIFIED="1284089461863" TEXT="Practices">
+<node CREATED="1284089453551" FOLDED="true" ID="ID_1352297742" MODIFIED="1359499612358" TEXT="Practices">
 <font BOLD="true" NAME="Monospaced" SIZE="12"/>
 <node CREATED="1284025433329" ID="ID_523218519" MODIFIED="1284089462373" TEXT="&#x96d6;&#x7136; Python &#x6c92;&#x6709;&#x5ba3;&#x544a; Interface &#x5c08;&#x7528;&#x7684;&#x8a9e;&#x6cd5;, &#x4f46; Docstrings &#x4ee5; First Statement (String Literal) &#x8868;&#x793a;, &#x4e0d;&#x5c31;&#x662f;&#x5728;&#x5ba3;&#x544a; Interface &#x4e86;&#x55ce;? &#x9023; pass &#x90fd;&#x4e0d;&#x7528;&#x52a0;!! (2010-09-09)">
 <font NAME="Monospaced" SIZE="12"/>
@@ -222,12 +211,12 @@
 <node CREATED="1284110932275" ID="ID_1688787110" MODIFIED="1284520519888" TEXT="&#x5beb; Code &#x4e4b;&#x524d;&#x5148;&#x628a;&#x6587;&#x4ef6;&#x5beb;&#x597d;, &#x4e8b;&#x5f8c;&#x5c31;&#x4e0d;&#x6703;&#x89ba;&#x5f97;&#x88dc;&#x6587;&#x4ef6;&#x662f;&#x4e00;&#x4ef6;&#x75db;&#x82e6;&#x7684;&#x4e8b;; &#x8a18;&#x4f4f; Divide and Conquer, &#x6a19;&#x51fa; TODO:"/>
 </node>
 <node CREATED="1284011772931" ID="ID_221043129" MODIFIED="1284011773963" TEXT="Tools">
-<node CREATED="1284006136462" FOLDED="true" ID="ID_29316923" MODIFIED="1284018599902" TEXT="PyDoc">
+<node CREATED="1284006136462" FOLDED="true" ID="ID_29316923" MODIFIED="1359499615132" TEXT="PyDoc">
 <node CREATED="1284011688021" FOLDED="true" ID="ID_1496677008" MODIFIED="1284011689568" TEXT="Resources">
 <node CREATED="1284011689976" ID="ID_1180637649" LINK="http://docs.python.org/library/pydoc.html" MODIFIED="1284011743043" TEXT="Documentation - Standard Library (pydoc)"/>
 <node CREATED="1284024973272" ID="ID_101147672" LINK="http://mangolife.blogspot.com/2005/02/pydoc.html" MODIFIED="1284024990598" TEXT="Pydoc - Everything but me (2005-02-22)"/>
 </node>
-<node CREATED="1284011879288" FOLDED="true" ID="ID_1846705044" MODIFIED="1284011880729" TEXT="Overview">
+<node CREATED="1284011879288" FOLDED="true" ID="ID_1846705044" MODIFIED="1359499615129" TEXT="Overview">
 <node CREATED="1284010505130" ID="ID_1317352007" MODIFIED="1284011939622" TEXT="The standard PyDoc tool is Python code that knows how to extract docstrings and associated structural information that PyDoc gleans automatically by inspecting objects&#x2019; internals, when available, and then format them into nicely arranged reports of various types. (&#x5b83;&#x7684;&#x50f9;&#x503c;&#x5c31;&#x5728;&#x65bc;&#x7522;&#x751f;&#x6709;&#x7528;&#x7684; Structural Information)"/>
 <node CREATED="1284011874665" ID="ID_1531233076" MODIFIED="1284011878402" TEXT="It&#x2019;s a module, and a stand-alone application, that has been included in the Python standard library since version 2.1. "/>
 <node CREATED="1284011966258" ID="ID_413797986" MODIFIED="1284011966769" TEXT="&#x4e0d;&#x50c5;&#x53ef;&#x4ee5;&#x67e5;&#x770b; Standard Library &#x7684;&#x6587;&#x4ef6;, &#x4e5f;&#x53ef;&#x4ee5;&#x770b;&#x5230;&#x6240;&#x6709;&#x5df2;&#x5b89;&#x88dd; Third-Party Library &#x7684;&#x6587;&#x4ef6;"/>
@@ -2360,12 +2349,12 @@
 </node>
 </node>
 </node>
-<node CREATED="1284205903785" FOLDED="true" ID="ID_1074377018" LINK="http://docs.python.org/library/os.html" MODIFIED="1288333720554" TEXT="os (STD)">
+<node CREATED="1284205903785" FOLDED="true" ID="ID_1074377018" LINK="http://docs.python.org/library/os.html" MODIFIED="1359499613811" TEXT="os (STD)">
 <node CREATED="1280804331673" FOLDED="true" ID="ID_1742202270" MODIFIED="1300154412302" TEXT="sep (string)">
 <node CREATED="1280804402753" ID="ID_314845905" MODIFIED="1288316912306" TEXT="The character used by the operating system to separate pathname components. This is `&apos;/&apos;` for POSIX and `&apos;\\&apos;` for Windows."/>
 <node CREATED="1288316953606" ID="ID_1246104524" MODIFIED="1288316957749" TEXT="Note that knowing this is not sufficient to be able to parse or concatenate pathnames &#x2014; use `os.path.split()` and `os.path.join()`."/>
 </node>
-<node CREATED="1293173250135" FOLDED="true" ID="ID_1782304352" MODIFIED="1300154465240" TEXT="getcwd() [Unix, Windows]">
+<node CREATED="1293173250135" FOLDED="true" ID="ID_1782304352" MODIFIED="1359499613791" TEXT="getcwd() [Unix, Windows]">
 <font BOLD="true" NAME="Monospaced" SIZE="12"/>
 <node CREATED="1300154432440" ID="ID_593860795" MODIFIED="1300154433854" TEXT="Overview">
 <node CREATED="1293173254076" ID="ID_754074423" MODIFIED="1293173274729" TEXT="Return a string representing the current working directory."/>
@@ -3036,7 +3025,7 @@
 <node CREATED="1273041089491" ID="ID_1407730257" MODIFIED="1273545875149" TEXT="&#x96d6;&#x7136; Python &#x5167;&#x5efa; datetime.tzinfo &#x7684;&#x652f;&#x63f4;, &#x4f46; tzinfo &#x672c;&#x8eab;&#x662f;&#x500b; abstract base class, &#x800c;&#x4e14; datetime &#x5b8c;&#x5168;&#x6c92;&#x6709;&#x63d0;&#x4f9b; concrete subclasses; &#x6642;&#x5340; timezone &#x7684;&#x554f;&#x984c;&#x53ef;&#x4ee5;&#x900f;&#x904e; PyTz &#x4f86;&#x89e3;&#x6c7a;"/>
 </node>
 </node>
-<node CREATED="1278052203888" FOLDED="true" ID="ID_1976349100" MODIFIED="1278052207723" POSITION="right" TEXT="Standard Library">
+<node CREATED="1278052203888" FOLDED="true" ID="ID_1976349100" MODIFIED="1359499617250" POSITION="right" TEXT="Standard Library">
 <node CREATED="1278052320988" FOLDED="true" ID="ID_735151821" LINK="http://docs.python.org/library/array.html" MODIFIED="1279865564473" TEXT="array">
 <node CREATED="1280098991824" ID="ID_1665643915" MODIFIED="1280100418754" TEXT="&#x7528;&#x4f86;&#x8868;&#x73fe;&#x5176;&#x4ed6;&#x8a9e;&#x8a00;&#x5e38;&#x898b;&#x7684; Array &#x7d50;&#x69cb; (&#x5c31; array.array &#x9019;&#x9ebc;&#x4e00;&#x500b; Class)"/>
 <node CREATED="1280099548561" ID="ID_1862324224" MODIFIED="1280100115088" TEXT="&#x5167;&#x90e8;&#x6bcf;&#x4e00; Item (&#x4e0d;&#x7fd2;&#x6163;&#x7a31;&#x505a; Element) &#x7684;&#x578b;&#x614b;&#x5fc5;&#x9808;&#x4e00;&#x81f4;, &#x800c;&#x4e14;&#x5728;&#x7269;&#x4ef6;&#x5efa;&#x7acb;&#x4e4b;&#x521d;&#x5373;&#x7531;&#x55ae;&#x4e00;&#x5b57;&#x5143;&#x8868;&#x793a;&#x7684; Type Code &#x6c7a;&#x5b9a;."/>
@@ -3134,7 +3123,7 @@
 </node>
 <node CREATED="1285813586790" ID="ID_1147859508" MODIFIED="1285813608716" TEXT="architecture([executable, bits, linkage])">
 <node CREATED="1285813888616" ID="ID_1194049764" MODIFIED="1285813889980" TEXT="Overview">
-<node CREATED="1299121422112" FOLDED="true" ID="ID_893017214" MODIFIED="1299121913558" TEXT="Queries the given executable (defaults to the Python interpreter binary) for various architecture information. (&#x70ba;&#x4ec0;&#x9ebc;&#x8981;&#x900f;&#x904e; executable &#x9593;&#x63a5;&#x4f86;&#x53d6;&#x5f97;&#x9019;&#x4e9b;&#x8cc7;&#x8a0a;&#xff1f;&#x6709;&#x6642;&#x5019;&#x4e0d;&#x6e96;&#xff0c;&#x6709;&#x6642;&#x9084;&#x53d6;&#x4e0d;&#x5230;&#xff1f;)">
+<node CREATED="1299121422112" FOLDED="true" ID="ID_893017214" MODIFIED="1359499617228" TEXT="Queries the given executable (defaults to the Python interpreter binary) for various architecture information. (&#x70ba;&#x4ec0;&#x9ebc;&#x8981;&#x900f;&#x904e; executable &#x9593;&#x63a5;&#x4f86;&#x53d6;&#x5f97;&#x9019;&#x4e9b;&#x8cc7;&#x8a0a;&#xff1f;&#x6709;&#x6642;&#x5019;&#x4e0d;&#x6e96;&#xff0c;&#x6709;&#x6642;&#x9084;&#x53d6;&#x4e0d;&#x5230;&#xff1f;)">
 <font BOLD="true" NAME="Monospaced" SIZE="12"/>
 <icon BUILTIN="messagebox_warning"/>
 <node CREATED="1299121718685" ID="ID_1392147431" MODIFIED="1299121814782" TEXT="The function relies on the system&#x2019;s file command to do the actual work. This is available on most if not all Unix platforms and some non-Unix platforms and then only if the executable points to the Python interpreter. Reasonable defaults are used when the above needs are not met.">

@@ -1,0 +1,58 @@
+= link:modularization.html[Python / Modularization] / Big Modules =
+:title: [Python] 當 `.py` 檔越來越肥...
+
+當 `.py` 檔越來越肥，維護起來會很費力（尤其檔案上方會有一堆不知道用在哪裡的 import），結果就是沒人敢去改它...
+
+假設一開始 `foobar.py` 還很單純，寫在同一支 `.py` 檔裡還容易維護。
+
+.`before/foobar.py`
+--------------------------------------------------------------------------------
+def foo(): print 'foo'
+def bar(): print 'bar'
+--------------------------------------------------------------------------------
+
+用起來像是這個樣子：
+
+.`before/client.py`
+--------------------------------------------------------------------------------
+from foobar impor *
+foo(); bar()
+--------------------------------------------------------------------------------
+
+之後 module 越來越大時，可以考慮拆出 package (multi-file module)，但不影響原有的用法...
+
+.`after/foobar/__init__.py`
+--------------------------------------------------------------------------------
+from foo import *
+from bar import *
+--------------------------------------------------------------------------------
+
+.`after/foobar/foo.py`
+--------------------------------------------------------------------------------
+def foo(): print 'foo'
+--------------------------------------------------------------------------------
+
+.`after/foobar/bar.py`
+--------------------------------------------------------------------------------
+def bar(): print 'bar'
+--------------------------------------------------------------------------------
+
+至於這些外部看不到的 modules，要怎麼避免被直接引用呢？有人提出 'private module' 的概念，在檔名名稱前加上底線（`_foo.py`）似乎很直覺，而且不少 packages 會這麼做。
+
+ $ find /usr/lib/python2.7 -name '_*.py' | grep --invert-match __init__
+
+== 參考資料 ==
+
+.文件
+--
+ * http://getpython3.com/diveintopython3/case-study-porting-chardet-to-python-3.html[Case study: porting chardet to Python 3 > A Short Digression Into Multi-File Modules - Dive Into Python 3] ^http://diigo.com/0w5cj[閱讀]^ - 以 `chardet` 這個 multi-file module 為例（跟 package 有什麼不同？），對外只公開 main entry points；關鍵在於 relative import
+--
+
+.其他文件
+--
+ * http://programmers.stackexchange.com/questions/139869/how-large-should-a-python-module-be[code quality - How large should a Python module be? - Programmers] ^http://diigo.com/0w5d7[閱讀]^ (2012-03-15) - "上限是多少行" 並沒有一定的答案，重點是要容易維護。
+ * http://stackoverflow.com/questions/5799387/python-module-getting-too-big[Python module getting too big - Stack Overflow] ^http://diigo.com/0w59e[閱讀]^ (2011-04-27) - 建議提昇成 package 再拆出 modules
+ * http://stackoverflow.com/questions/3602110/python-private-module-in-a-package[Python: 'Private' module in a package - Stack Overflow] ^http://diigo.com/0w5ei[閱讀]^ (2010-08-30) - private module 在檔名前加上底線？
+ * http://stackoverflow.com/questions/2392704/do-python-packages-multi-file-modules-behave-exactly-as-one-big-module[Do python packages (multi-file modules) behave exactly as one big module? - Stack Overflow] ^http://diigo.com/0w5d1[閱讀]^ (2010-03-06) - single user-visible module
+--
+

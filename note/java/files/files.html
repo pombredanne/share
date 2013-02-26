@@ -1,0 +1,153 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Java] File I/O</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" />
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div>
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>[Java] File I/O</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p><code>java.io.File</code> 是路徑名稱（system-dependent <em>pathname string</em>）的抽象表示法（system-independent <em>abstract pathname</em>），使能夠以跨平台的方式來處理檔案或目錄。內部會把 pathname 拆成下面幾個元素：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+開頭的 <em>prefix</em>（如果有的話）。例如 Windows 的磁碟機代號、Unix-like 的根目錄 <code>/</code>，或 UNC 路徑的 <code>\\\\</code>。
+</p>
+</li>
+<li>
+<p>
+接著用 underlying system 認定的 <em>name-separator character</em>（也就是 Windows 下的 <code>\</code>，或 Unix-like 下的 <code>/</code>） 將 pathname string 剩下的部份拆成零或多個 <em>name</em>，形成一個 <em>name sequence</em>。
+</p>
+<div class="paragraph"><p>第一個 name 可能是目錄名稱或 hostname（對 UNC 路徑 而言），最後一個 name 則可能是目錄或檔案名稱，至於中間其他的 name 就肯定表示目錄名稱。</p></div>
+</li>
+</ul></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ pwd
+/tmp
+$ jython
+&gt;&gt;&gt; from java.lang import System
+&gt;&gt;&gt; from java.io import File
+&gt;&gt;&gt; System.getProperty('os.name')
+u'Linux'
+&gt;&gt;&gt; File.separator
+u'/'
+&gt;&gt;&gt;
+&gt;&gt;&gt; lnxRelFile = File('dir/file.txt')
+&gt;&gt;&gt; lnxAbsFile = File('/tmp/dir/file.txt')
+&gt;&gt;&gt; winRelFile = File(r'dir\file.txt')
+&gt;&gt;&gt; winAbsFile = File(r'C:\tmp\dir\file')
+&gt;&gt;&gt;
+&gt;&gt;&gt; lnxRelFile.isAbsolute(), lnxAbsFile.isAbsolute() <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+(False, True)
+&gt;&gt;&gt; winRelFile.isAbsolute(), winAbsFile.isAbsolute()
+(False, False)
+&gt;&gt;&gt;
+&gt;&gt;&gt; lnxRelFile.getName(), lnxAbsFile.getName() <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+(u'file.txt', u'file.txt')
+&gt;&gt;&gt; winRelFile.getName(), winAbsFile.getName()
+(u'dir\\file.txt', u'C:\\tmp\\dir\\file')
+&gt;&gt;&gt;
+&gt;&gt;&gt; file = File('file.txt')
+&gt;&gt;&gt; file.getAbsolutePath() <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+u'/tmp/file.txt'
+&gt;&gt;&gt; file.getPath()
+u'file.txt'
+&gt;&gt;&gt;</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+<code>isAbsolute()</code> 判斷 abstract pathname 是否為絕對路徑的表示法。由於跟當時的系統有關，所以在 Unix-like 下對 Windows 的路徑進行判斷時，會發生誤判的狀況。
+&lt;2&gt;
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+<code>getPath()</code> 會將內部的 abstract pathname 轉回 pathname string。
+</td></tr>
+</table></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://docs.oracle.com/javase/tutorial/essential/io/legacy.html">Legacy File I/O Code (The Java™ Tutorials &gt; Essential Classes &gt; Basic I/O)</a> - Java 1.7 NIO 引入的 <code>java.nio.file.Path</code>，用來取代 old-style 的 <code>java.io.File</code>。還好 Java 1.7 在 <code>File</code> 加了 <code>toPath()</code>，可以用來做幾近於 drop-in replacement 的 migration。
+</p>
+</li>
+<li>
+<p>
+<a href="http://docs.oracle.com/javase/7/docs/api/java/io/File.html">File (Java Platform SE 7 )</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2013-01-28 17:51:45 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script>
+</body>
+</html>

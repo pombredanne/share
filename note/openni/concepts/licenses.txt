@@ -1,0 +1,60 @@
+= link:concepts.html[OpenNI / Concepts] / Licenses =
+:title: [OpenNI] 授權
+
+ * context object holds a list of currently loaded licenses: private/global licenses
+   ** for modules AND applications （可能從 configuration 讀進來？）
+   ** `Context.enumerateLicenses()`
+ * license (vendor name -> license key) 
+   ** `org.OpenNI.License`, `getVendor()`, `getKey()` (proprietary format)
+ * private license to a module (preventing other applications from using it)
+   ** added at run-time, `Context.addLicense()`
+ * global license registry
+   ** global registry for license keys, loaded whenever a context is initialized. 這種做法比較對，否則要將 license 給 hard code 在程式裡實在很怪。
+   ** niLicense, commonly used by modules installations.
+ * enumeration request? if the requested license isn't present, the module may hide itself, by returning zero results.
+
+.`Licenses.java`
+--------------------------------------------------------------------------------
+package com.example.openni;
+
+import org.OpenNI.Context;
+import org.OpenNI.License;
+
+public class Licenses {
+
+    public static void main(String[] args) throws Exception {
+        Context ctx = new Context();
+        ctx.addLicense(new License("MyApp", "SECRET"));
+        ctx.addLicense(new License("PrimeSense", "0KOIk2JeIBYClPWVnMoRKn5cdY4="));
+        for (License lic : ctx.enumerateLicenses()) {
+            System.out.println(lic.getVendor() + " ==> " + lic.getKey());
+        }
+
+    }
+
+}
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+PrimeSense ==> 0KOIk2JeIBYClPWVnMoRKn5cdY4=
+MyApp ==> SECRET
+PrimeSense ==> 0KOIk2JeIBYClPWVnMoRKn5cdY4= <-- 加入前要先做檢查，否則會重複。
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+$ niLicense -l
+      162 INFO       New log started on 2013-02-23 09:06:47
+      212 INFO       OpenNI version is 1.5.4 (Build 0)-Linux-x86 (May 16 2012 10:24:55)
+      245 INFO       --- Filter Info --- Minimum Severity: NONE
+VENDOR              KEY                 
+======              ===                 
+PrimeSense          0KOIk2JeIBYClPWVnMoRKn5cdY4=
+--------------------------------------------------------------------------------
+
+== 參考資料 ==
+
+.文件
+--
+ * OpenNI Overview > Concepts > Licenses (`Documentation/html/conc_licenses.html`)
+ * OpenNI Overview > Command-Line Utilities > niLicense (`Documentation/html/nilicense.html`)
+--

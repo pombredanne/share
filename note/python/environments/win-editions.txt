@@ -1,0 +1,53 @@
+= link:environments.html[Python / Environments] / Windows Editions =
+:title: [Python][Environments] Windows Editions
+
+要判斷 link:../../windows/versions.html[Windows 不同的版本]，一直都不是件簡單的事：
+
+[quote,'MSDN','http://msdn.microsoft.com/en-us/library/windows/desktop/ms724832[Operating System Version]']
+________________________________________________________________________________
+Identifying the current operating system is usually not the best way to determine whether a particular operating system feature is present. This is because the operating system may have had new features added in a redistributable DLL. Rather than using GetVersionEx to determine the operating system platform or version number, test for the presence of the feature itself.
+________________________________________________________________________________
+
+下面這些方法似乎可以幫上一些忙：
+
+ * http://docs.python.org/library/platform.html#platform.uname[`platform.uname()`]
+ * http://docs.python.org/library/platform.html#platform.system_alias[`platform.system_alias()`]
+ * http://docs.python.org/library/sys.html#sys.getwindowsversion[`sys.getwindowsversion()`]
+
+--------------------------------------------------------------------------------
+>>> import platform
+>>> uname = platform.uname(); uname
+('Windows', 'alan-2003x86', '2003Server', '5.2.3790', 'x86', 'x86 Family 6 Model 42 Stepping 7, GenuineIntel')
+>>> system, release, version = uname[0], uname[2], uname[3]
+>>> platform.system_alias(system, release, version)
+('Windows', '2003Server', '5.2.3790') <1>
+>>> import sys
+>>> sys.getwindowsversion() <2>
+sys.getwindowsversion(major=5, minor=2, build=3790, platform=2, service_pack='Service Pack 2')
+--------------------------------------------------------------------------------
+<1> 查看 `platform.system_alias()` 的原始碼就會知道，其實它內部幾乎沒做什麼轉換。
+<2> `sys.getwindowsversion()` 內部其實是呼叫 Win32 `GetVersionEx` 來取得這些資訊。其中 `platform=2` 代表 Windows NT/2000/XP/x64，顯然資訊還不夠細。
+
+CAUTION: "寫程式來測試另一段程式" 有時存在很大的風險...
+
+== 參考資料 ==
+
+ * http://docs.python.org/library/sys.html[sys — System-specific parameters and functions]
+ * http://docs.python.org/library/os.html[os — Miscellaneous operating system interfaces]
+ * http://docs.python.org/library/platform.html[platform — Access to underlying platform’s identifying data]
+
+////////////////////////////////////////////////////////////////////////////////
+
+ * `platform.uname()`
+ * `platform.machine()`
+ * `platform.processor()`
+ * `platform.platform(aliased=0, terse=0)`
+ * `platform.system()`
+ * `platform.release()`
+ * `platform.version()`
+ * `platform.system_alias(system, release, version)`
+ * `platform.uname()`
+ * `platform.architecture()`
+
+////////////////////////////////////////////////////////////////////////////////
+
