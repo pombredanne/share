@@ -1,0 +1,109 @@
+= MySQL-Python (MySQLdb) =
+
+== 參考資料 ==
+
+.手冊
+--
+ * http://mysql-python.sourceforge.net/MySQLdb-1.2.2/[MySQL-Python (MySQLdb)]
+   ** http://mysql-python.sourceforge.net/MySQLdb-1.2.2/private/_mysql.connection-class.html[`_mysql.connection`]
+   ** http://mysql-python.sourceforge.net/MySQLdb-1.2.2/public/MySQLdb.connections.Connection-class.html[`MySQLdb.connections.Connection`] ^https://diigo.com/0xwh1[閱讀]^
+   ** http://mysql-python.sourceforge.net/MySQLdb-1.2.2/public/MySQLdb.cursors.BaseCursor-class.html[`MySQLdb.cursors.BaseCursor`] ^https://diigo.com/0xwee[閱讀]^
+   ** http://mysql-python.sourceforge.net/MySQLdb-1.2.2/public/MySQLdb.cursors.CursorUseResultMixIn-class.html[`MySQLdb.cursors.CursorUseResultMixIn`] ^https://diigo.com/0xwgm[閱讀]^
+   ** http://mysql-python.sourceforge.net/MySQLdb-1.2.2/public/MySQLdb.cursors.CursorStoreResultMixIn-class.html[`MySQLdb.cursors.CursorStoreResultMixIn`] ^https://diigo.com/0xwgl[閱讀]^
+   ** http://mysql-python.sourceforge.net/MySQLdb-1.2.2/public/MySQLdb.cursors.CursorDictRowsMixIn-class.html[`MySQLdb.cursors.CursorDictRowsMixIn`] ^https://diigo.com/0xwgo[閱讀]^
+--
+
+.網站
+--
+ * http://mysql-python.sourceforge.net/[MySQL-Python]
+ * http://mysql-python.blogspot.tw/[MySQL-Python Blog]
+ * http://sourceforge.net/projects/mysql-python/[MySQL for Python | SourceForge.net]
+--
+
+.社群
+--
+ * http://stackoverflow.com/questions/tagged/mysql-python[Newest 'mysql-python' Questions - Stack Overflow]
+--
+
+.文件
+--
+ * http://mysql-python.sourceforge.net/MySQLdb.html[MySQLdb User's Guide]
+--
+
+.其他文件
+--
+ * http://zetcode.com/db/mysqlpython/[MySQL Python tutorial] ^https://diigo.com/0xwcf[閱讀]^
+--
+
+////////////////////////////////////////////////////////////////////////////////
+
+ * MySQLdb 是 Python module 的名稱，而 MySQL-Python 則比較偏向是 project 的名稱。
+ * MySQLdb is a thin Python wrapper around _mysql. It is compatible with the Python DB API, which makes the code more portable. 
+ * `BaseCursor`
+   ** `description` - A tuple of DB API 7-tuples describing the columns in the last executed query; see PEP-249 for details. The column names are considered to be the 'meta data'. It is obtained from the cursor object.
+   ** `callproc(self, procname, args=())`
+   ** `execute(self, query, args=None)` - execute a query. query -- string, query to execute on server args -- optional sequence or mapping, parameters to use with query. If args is a sequence, then %s must be used as the parameter placeholder in the query. If a mapping is used, %(key)s must be used as the placeholder. Returns long integer rows affected, if any. 只能用 `%s` 或 `%(key)s`，沒有 `%d` 這種東西。
+      *** prepared statements? 在 PEP 249 也沒有看到這個名詞，不過 A reference to the operation will be retained by the cursor. If the same operation object is passed in again, then the cursor can optimize its behavior. This is most effective for algorithms where the same operation is used, but different parameters are bound to it (many times).
+      *** When we write prepared statements, we use placeholders instead of directly writing the values into the statements. (字串兩側不用加單引號) Prepared statements increase security and performance. The Python DB API specification suggests 5 different ways how to build prepared statements. MySQLdb module supports one of them, the ANSI printf format codes. 雖然都是用 `%s` 來表示字串，但跟自己用 `%` 來置換字串的效果是不同的。
+   ** `executemany(self, query, args)` - This method improves performance on multiple-row INSERT and REPLACE. Otherwise it is equivalent to looping over args with execute().
+   ** `nextset(self)` - Advance to the next result set. Returns None if there are no more result sets. MySQL doesn't support multiple result sets until 4.1
+   ** `close(self)`
+ * `BaseCursor` 底下衍生出不同 cursor types - 簡單的規則，`Cursor{Use|Store}ResultMixIn` 決定 result set 是一次取回 client 還是放在 server 逐筆取回；而 `Cursor{Tuple|Dict}RowsMixIn` 決定取回的 record 是 list of tuples 或 list of dictionaries (refer to the data by their column names) - column name 可以用 `BaseCursor.description` 取得。
+   ** `Cursor(CursorTupleRowsMixIn, CursorStoreResultMixIn)` - This is the standard Cursor class that returns rows as tuples and stores the result set in the client.
+   ** `DictCursor(CursorDictRowsMixIn, CursorStoreResultMixIn)` - This is a Cursor class that returns rows as dictionaries and stores the result set in the client.
+   ** `SSCursor(CursorTupleRowsMixIn, CursorUseResultMixIn)` - This is a Cursor class that returns rows as tuples and stores the result set in the server. (開頭 SS 可以想成 server side?)
+   ** `SSDictCursor(CursorDictRowsMixIn, CursorUseResultMixIn)` - This is a Cursor class that returns rows as dictionaries and stores the result set in the server.
+ * `CursorUseResultMixIn` - This is a MixIn class which causes the result set to be stored in the server and sent row-by-row to client side, i.e. it uses mysql_use_result(). You MUST retrieve the entire result set and close() the cursor before additional queries can be peformed on the connection.
+   ** `fetchall(self)`
+   ** `fetchmany(self, size=None)`
+   ** `fetchone(self)`
+   ** 跟 `CursorStoreResultMixIn` 的差別在於沒有 `scroll()` 來回移動 cursor。
+ * `CursorStoreResultMixIn` - This is a MixIn class which causes the entire result set to be stored on the client side, i.e. it uses mysql_store_result(). If the result set can be very large, consider adding a LIMIT clause to your query, or using CursorUseResultMixIn instead. 顯然一次取回效率較差，而且會佔用大量的記憶體
+    ** `fetchall(self)` - Fetchs all available rows from the cursor.
+    ** `fetchmany(self, size=None)` - fetch up to size rows from the cursor. Result set may be smaller than size. If size is not defined, cursor.arraysize is used.
+    ** `fetchone(self)` - fetches a single row from the cursor. `None` indicates that no more rows are available. 如果只有單一個 column，就不會是 tuple。
+    ** `scroll(self, value, mode='relative')` - Scroll the cursor in the result set to a new position according to mode. If mode is 'relative' (default), value is taken as offset to the current position in the result set, if set to 'absolute', value states an absolute target position. 因為 result set 存放在 client side，所以可以來回捲動。
+ * `CursorTupleRowsMixIn` - 不意外地，它沒有額外定義方法。因為傳回 tuples 的 `fetchXXX()` 已經定義在 `Cursor{Use|Store}ResultMixIn` 了。
+ * `CursorDictRowsMixIn` - This is a MixIn class that causes all rows to be returned as dictionaries. This is a non-standard feature.
+   ** `fetchallDict(self)` - 只是傳回 list of dictionaries 而已。
+   ** `fetchmanyDict(self, size=None)`
+   ** `fetchoneDict(self)`
+   ** 這些方法都被標為 DEPRECATED 了，v1.3 後要改用 `fetchall()`, `fetchmany()` 跟 `fetchone()`。
+ * `Connection`
+   ** `__init__(self, *args, **kwargs)` - Exclusive use of keyword parameters strongly recommended.
+   ** `close(self)` - 
+   ** `cursor(self, cursorclass=None)` - Create a cursor on which queries may be performed. The optional cursorclass parameter is used to create the Cursor. By default, self.cursorclass=`cursors.Cursor` is used.
+   ** `commit(self)` - Commits the current transaction
+   ** `rollback(self)` - Rolls backs the current transaction
+   ** `autocommit(self, enabled) - Set the autocommit mode. True values enable; False value disable.
+
+--------------------------------------------------------------------------------
+import MySQLdb as mdb
+
+con = None
+
+try:
+    con = mdb.connect(host='hostname', user='username', passwd='password', db='dbname') # <1>
+    cur = con.cursor() # <2>
+    cur.execute("SELECT VERSION()")
+    version = cur.fetchone() # <3>
+    print 'MySQL version: %s" % version
+except mdb.Error, e:
+    print "Error %d: %s" % (e.args[0], e.args[1]) # <4>
+    sys.exit(1)
+finally:
+    if con: con.close() # <5>
+--------------------------------------------------------------------------------
+<1> 好一個 `connect(*args, **kwargs)`，完全沒說明！ Returns a MYSQL connection object. 
+<2> The cursor is used to traverse the records from the result set. We call the execute() method of the cursor and execute the SQL statement. 執行 SQL statements 都是透過 cursor 的 `execute()`，傳回值是影響到的 record 數，真正的 result set 則要從 cursor 取得。
+<3> We fetch the data. Since we retrieve only one record, we call the fetchone() method. The fetchall() method gets all records. It returns a result set. Technically, it is a "tuple of tuples" (list of tuples?). Each of the inner tuples represent a row in the table.
+<4> 很顯然 `args[0]` 跟 `args[1]` 分別為 error code 跟 error message。
+<5> In case we could not create a connection to the database (for example the disk is full), we would not have a connection variable defined. This would lead to an error in the finally clause.
+
+Transaction Suppport
+
+ * For databases that support transactions, the Python interface "silently starts a transaction" (autocommit??) when the cursor is created. The `Connection.commit()` method commits the updates made using that cursor, and the `Connection.rollback()` method discards them. Each method starts a new transaction.
+ * The MySQL database has different types of storage engines. The most common are the MyISAM and the InnoDB engines. The MyISAM is the default one. There is a trade-off between data security and database speed. The MyISAM tables are faster to process and they do not support transactions. The commit() and rollback() methods are not implemented. They do nothing. On the other hand, the InnoDB tables are more safe against the data loss. They support transactions. They are slower to process.
+
+////////////////////////////////////////////////////////////////////////////////
+

@@ -1,0 +1,31 @@
+= link:python.html[Regex / Python] / Replace =
+:title: [Regex][Python] Replace
+
+當我們在字串裡找到符合 pattern 的地方，有時是想要取出部份的資訊，有時則是想要改寫部份的資訊，而 `re.sub()` 就是在處理後者。
+
+ re.sub(pattern, repl, string, count=0, flags=0)
+
+將 'string' 裡符合 'pattern' 的部份取代成 'repl'。
+
+--------------------------------------------------------------------------------
+>>> import re
+>>> pattern = re.compile(r'(?P<head>(portal|intl)/)(?P<lang>[a-z]{2})(?P<tail>/view/)')
+>>> url1 = 'https://www.example.com/portal/en/view/dashboard'
+>>> match = re.search(pattern, url1)
+>>> match.group('lang')
+'en'
+>>> re.sub(pattern, r'\g<head>%s\g<tail>' % 'zh-tw', url1) # <1>
+'https://www.example.com/portal/zh-tw/view/dashboard'
+>>> re.sub(pattern, r'\1%s\4' % 'zh-tw', url1)
+'https://www.example.com/portal/zh-tw/view/dashboard'
+>>>
+>>> re.sub(pattern, r'\g<head>%s\g<tail>' % 'zh-tw', url2)
+'https://www.example.com/intl/zh-tw/view/dashboard'
+--------------------------------------------------------------------------------
+<1> 同一個 pattern 也可以用來取代內容。
+
+== 參考資料 ==
+
+ * http://docs.python.org/2/library/re.html[re — Regular expression operations] ^https://diigo.com/0yl7i[閱讀]^
+ * http://stackoverflow.com/questions/3997525/python-replace-with-regex[Python: Replace with regex - Stack Overflow] ^https://diigo.com/0yl7g[閱讀]^ (2010-10-22)
+

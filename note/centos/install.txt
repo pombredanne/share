@@ -1,0 +1,89 @@
+= [CentOS] 安裝 =
+
+[TIP]
+.忘了當初 CentOS 是裝哪一個版本？
+================================================================================
+時間久了之後，如果想要查詢當初是安裝哪一個版本的 CentOS，查看 `/etc/redhat-release` 的內容即可。
+
+--------------------------------------------------------------------------------
+# cat /etc/redhat-release
+CentOS release 5.3 (Final)
+--------------------------------------------------------------------------------
+
+若要進一步查看系統是 32-bit 還是 64-bit 的話，則要另外透過 `uname -a` 的輸出來辨別。下面的例子是在 64-bit 的輸出：
+
+--------------------------------------------------------------------------------
+# uname -a
+Linux localhost 2.6.18-128.el5 #1 SMP Wed Jan 21 10:41:14 EST 2009 x86_64 x86_64 x86_64 GNU/Linux
+--------------------------------------------------------------------------------
+================================================================================
+
+TIP: 用 VMware 或 VirtualBox 安裝 VM 時，作業系統的類型建議選取 Red Hat 對應的版本。
+
+ 1. 用 CentOS 的光碟片開機後，輸入 `linux text` 開始文字模式的安裝。
+ 2. 磁碟分割
++
+.Partitioning
+--------------------------------------------------------------------------------
+Device         Size    Type        Mount Point
+VG VolGroup00  8064M   VolGroup
+LV LogVol00    7040M   ext3        /
+LV LogVol01    1024M   swap
+/dev/sda
+  sda1          101M   ext3        /boot
+  sda2         8087M   physical v  
+--------------------------------------------------------------------------------
++
+ 3. 開機程式
++
+--------------------------------------------------------------------------------
+The boot manager CentOS uses can boot other operating systems
+as well. You need to tell me what partitions you would like to
+be able to boot and what label you want to use for each of them.
+
+Default  Boot label    Device
+   *     CentOS        /dev/VolGroup00/LogVol00
+--------------------------------------------------------------------------------
++
+--------------------------------------------------------------------------------
+Where do you want to install the boot loader?
+
+/dev/sda         Master Boot Record (MBR)
+/dev/sda1        First sector of boot partition
+--------------------------------------------------------------------------------
++
+ 4. IPv4 Configuration for eth0 （事後可以用 `system-config-network` 修改）
+    * Activate on boot
+    * Enable IPv4 support
+    * Dynamic IP configuration (DHCP)
+    * Manual address configuration。其中 prefix 可以用 255.255.255.0 或 24 兩種方式填寫。
+ 5. Hostname Configuration (manually)
+ 6. Timezone Selection
+    * System clock uses UTC
+    * UTC 可以選取 Etc/UTC
+ 7. Package Selection （取消 Desktop - Gnome）
+ 8. 安裝過程會被記錄到 `/root/install.log`。
+ 9. Setup Agent 不要組態任何東西，維持預設值。（SELinux 會引發很多問題，如果不熟的話，建議先停用；`/etc/selinux/config` -> `disabled`）
+
+
+
+ * 今天（2011-06-10）安裝 CentOS 5.6，除了自己做磁碟分割比較麻煩之外（預設是用 LVM），過程還滿順利的。
+ * 從 Firefox 安裝 Flash Plugin 時，其實是安裝 adobe-release 套件，它會組態 yum repositories。之後再手動安裝 `yum install flash-plugin` 即可。
+ * 如果要下載 CentOS 5.5 之前的舊版，可以到 http://vault.centos.org/。
+ * 最後 Agent 的畫面不要做任何調整。如果這個時候將 firewall 停用的話，事後 `/etc/sysconfig/iptables` 這支檔案就會找不到。要開通某個 port，可以直接複製 SSH 的設定。
+ * 為什麼 CentOS 6.0 預設不會裝 `man`，要另外裝 `yum install man` 才行。
+
+== 參考資料 ==
+
+.網站
+--
+ * http://www.centos.org/[CentOS - The Community ENTerprise Operating System]
+   ** http://vault.centos.org/[舊版的 ISOs 可以從這裡取得]
+--
+
+.其他文件
+--
+ * http://www.rackaid.com/resources/how-to-determine-centos-or-red-hat-version/[How To Determine CentOS or Red Hat Version - rackAID] (2009-03-10)
+ * http://www.servercommand.org/how-to-check-if-centos-install-is-32-bit-or-64-bit/[How To Check If Centos Install is 32-bit or 64-bit?] (2011-03-06)
+--
+

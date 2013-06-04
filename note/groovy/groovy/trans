@@ -1,0 +1,165 @@
+#!/usr/bin/env groovy
+import groovy.sql.Sql
+import org.apache.poi.ss.usermodel.Cell
+
+def nextTransferringFormNo // 單號原則複雜, 直接由參數給定
+if (this.args.length == 0) {
+  println "Usage: trans <next_transferring_form_no>"
+  System.exit(-1)
+} else {
+  nextTransferringFormNo = this.args[0]
+}
+
+def mapping = loadMapping()
+def sql = initSql()
+
+/*******************************************************************************
+建構出類似下面的結構:
+
+products
+  |- code
+  |- name
+  |- spec
+  |- unit
+  |- cost
+  +- stockrooms
+     |- code
+     |- quantity
+     +- lots
+        |- code
+        +- quantity
+*******************************************************************************/
+
+// 取得有效的單位成本年月 (排除單位成本為零者之後, 庫存年月最新者)
+// INVLB 品號每月統計單頭; LB001 品號, LB002 庫存年月, LB010 單位成本
+sql.execute("CREATE TABLE #unitcost(productcode char(20) COLLATE Chinese_Taiwan_Stroke_BIN, yearmonth char(6) COLLATE Chinese_Taiwan_Stroke_BIN)")
+sql.execute("INSERT INTO #unitcost SELECT LB001, MAX(LB002) FROM INVLB WHERE LB010 > 0 GROUP BY LB001")
+
+// 取得各庫/批號下有效的庫存數, 準備透過 Join 一次取得產品在不同庫別/批號的數量
+// INVMF 品號批號單身; MF001 品號, MF002 批號, MF007 庫別, MF008 出入庫別 (1 or -1), MF010 數量
+sql.execute("CREATE TABLE #lots(productcode char(20) COLLATE Chinese_Taiwan_Stroke_BIN, stockroomcode char(10) COLLATE Chinese_Taiwan_Stroke_BIN, lotnumber char(20) COLLATE Chinese_Taiwan_Stroke_BIN, quantity numeric(9))")
+sql.execute("INSERT INTO #lots SELECT MF001, MF007, MF002, SUM(MF010 * MF008) FROM INVMF GROUP BY MF001, MF007, MF002 HAVING SUM(MF010 * MF008) > 0")
+
+// 找出舊庫別裡有庫存的產品, 透過 6 層 JOIN 一併找出單位成本、批號、各批數量等
+// INVMC 品號庫別檔; MC001 品號, MC002 庫別, MC007 庫存數量
+def products = [:] // 品號 -> Product
+sql.eachRow("SELECT MB001, MB002, MB003, MB004, MC002, MC007, LB010, lotnumber, quantity FROM INVMB JOIN INVMC ON MC001 = MB001 JOIN INVLB ON LB001 = MB001 JOIN #unitcost ON #unitcost.productcode = MB001 AND #unitcost.yearmonth = LB002 JOIN #lots ON #lots.productcode = MB001 AND #lots.stockroomcode = MC002 WHERE MC007 > 0 AND MC002 IN ('" + mapping.keySet().join("', '") + "')") { row ->
+  def product
+  def productCode = row.MB001.trim();
+  if (!products.containsKey(productCode)) {
+    product = [:]
+    products[productCode] = product;
+
+    product.code = productCode
+    product.name = row.MB002.trim()
+    product.spec = row.MB003.trim()
+    product.unit = row.MB004.trim()
+    product.cost = row.LB010
+    product.quantity = 0
+    product.stockrooms = [:]
+  } else {
+    product = products[productCode]
+  }
+
+  def stockroom
+  def stockroomCode = row.MC002.trim()
+  if (!product.stockrooms.containsKey(stockroomCode)) {
+    stockroom = [:]
+    product.stockrooms[stockroomCode] = stockroom
+
+    stockroom.code = stockroomCode;
+    stockroom.quantity = row.MC007
+    product.quantity += stockroom.quantity
+    stockroom.lots = []
+  } else {
+    stockroom = product.stockrooms[stockroomCode]
+  }
+
+  def lot = [:]
+  stockroom.lots << lot
+  lot.number = row.lotnumber.trim()
+  lot.quantity = row.quantity
+}
+
+// 檢查各倉庫存數與各批號數量的總合一致, 過程中一併統計一些數據...
+def count = 0 // 單身筆數
+def totalQuantity = 0 // 總數量
+def totalAmount = 0 // 總金額
+products.each { productCode, product ->
+  product.stockrooms.each { stockroomCode, stockroom ->
+    count += stockroom.lots.size()
+
+    def sum = 0;
+    stockroom.lots.each { lot ->
+      sum += lot.quantity
+      totalQuantity += lot.quantity
+      totalAmount += product.cost * lot.quantity
+    }
+
+    if (sum != stockroom.quantity)
+      throw new RuntimeException("品號 ${product.code} 在庫別 ${stockroom.code} 底下的庫存量 ${stockroom.quqntity} 與各批號的數量總合 ${total} 不一致")
+  }
+}
+println "預計移轉 ${products.size()} 項產品, 產生 ${count} 筆轉撥單單身; 總數量 ${totalQuantity}, 總金額 ${totalAmount}"
+
+def today = '20100308'
+sql.execute("INSERT INTO INVTA (COMPANY, CREATOR, USR_GROUP, CREATE_DATE, MODIFIER, MODI_DATE, FLAG, CREATE_TIME, MODI_TIME, TRANS_TYPE, TRANS_NAME, TA001, TA002, TA003, TA004, TA005, TA006, TA007, TA008, TA009, TA010, TA011, TA012, TA013, TA014, TA015, TA016, TA017, TA018, TA019, TA020, TA021, TA022, TA023, TA200, TA201) VALUES ('HTL_tw', '9511001', '03000', $today, '9511001', $today, 1, '12:00:00', '12:00:00', 'P001', 'INVMI08', '1215', $nextTransferringFormNo, $today, '', '99.3.1 庫別轉換專案', 'N', 0, '01', '12', 0, ${totalQuantity}, ${totalAmount}, 'N', $today, '', 0, 'N', '', 0, '6', '', '', 'N', 'A', $today)")
+
+def itemNo = 1
+products.each { productCode, product ->
+  product.stockrooms.each { stockroomCode, stockroom ->
+    stockroom.lots.each { lot ->
+      sql.execute("INSERT INTO INVTB (COMPANY, CREATOR, USR_GROUP, CREATE_DATE, MODIFIER, MODI_DATE, FLAG, CREATE_TIME, MODI_TIME, TRANS_TYPE, TRANS_NAME, TB001, TB002, TB003, TB004, TB005, TB006, TB007, TB008, TB009, TB010, TB011, TB012, TB013, TB014, TB015, TB016, TB017, TB018, TB019, TB020, TB021, TB022, TB023, TB024, TB025, TB026, TB027, TB200) VALUES ('HTL_tw', '9511001', '03000', $today, '9511001', $today, 1, '12:00:00', '12:00:00', 'P001', 'INVMI08', '1215', $nextTransferringFormNo, ${prefixZero(itemNo++)}, ${product.code}, ${product.name}, ${product.spec}, ${lot.quantity}, ${product.unit}, 0, ${product.cost}, ${lot.quantity * product.cost}, ${stockroom.code}, ${mapping[stockroom.code]}, ${lot.number}, '20360502', '20360502', '', 'N', $today, '', '', 0, '', 'N', 0, 0, '', 1)")
+    }
+  }
+}
+
+/* 產生轉換庫存的語法
+caze = "CASE TB013"
+mapping.each { from, to -> caze += " WHEN '$from' THEN '$to'" }
+caze += " END"
+println "UPDATE INVTB SET TB013 = ${caze} WHERE TB018 = 'N' AND TB013 IN (${ "'" + mapping.keySet().join("', '") + "'" })"
+*/
+
+def initSql() {
+  def url = "jdbc:jtds:sqlserver://10.40.1.1/htltw"
+  def user = "sa"
+  def password = "sardolmr"
+
+  return Sql.newInstance(url, user, password, "net.sourceforge.jtds.jdbc.Driver")
+}
+
+def loadMapping() {
+  def workbook = org.apache.poi.ss.usermodel.WorkbookFactory.create(new File("mapping.xls").newInputStream())
+  def sheet = workbook.getSheetAt(0)
+
+  formatter = new org.apache.poi.ss.usermodel.DataFormatter();
+  def mapping = [:]
+  for (row in sheet) {
+    def oldcell = row.getCell(5)
+    def newcell = row.getCell(8)
+    if (oldcell == null || newcell == null) continue
+
+    def oldcode = formatter.formatCellValue(oldcell)
+    def newcode = formatter.formatCellValue(newcell)
+    if (!(oldcode.startsWith("7") && newcode.startsWith("7"))) continue
+
+    mapping[oldcode.substring(0, 7)] = newcode.substring(0,7)
+  }
+
+  println "載入 ${mapping.size()} 筆新舊庫別對照資料: ${mapping}"
+  return mapping
+}
+
+def prefixZero(int counter) {
+  if (counter < 10) {
+    return "000" + counter
+  } else if (counter < 100) {
+    return "00" + counter
+  } else if (counter < 1000) {
+    return "0" + counter
+  } else {
+    return "" + counter
+  }
+}
+

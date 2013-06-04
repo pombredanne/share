@@ -1,0 +1,163 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>Robot Framework: 一個 Test Library 被 Import 多次會怎樣？</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<!--link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" /-->
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <!--div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div-->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <!--a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a--></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>Robot Framework: 一個 Test Library 被 Import 多次會怎樣？</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>關於這一點，官方文件只提到：</p></div>
+<div class="quoteblock">
+<div class="content">
+<div class="paragraph"><p>There is a need to import the same library several times with different arguments. This is not possible otherwise.</p></div>
+</div>
+<div class="attribution">
+<em><a href="http://robotframework.googlecode.com/hg/doc/userguide/RobotFrameworkUserGuide.html#setting-custom-name-to-test-library">Setting custom name to test library</a></em><br />
+&#8212; <a href="http://robotframework.googlecode.com/hg/doc/userguide/RobotFrameworkUserGuide.html">Robot Framework User Guide</a>
+</div></div>
+<div class="paragraph"><p>理論上一個 test library 會需要被 import 多次，應該都是為了套用不同的參數做初始化。但沒有明確提到如果多次 import 又不重新命名會怎樣？簡單做個測試：</p></div>
+<div class="listingblock">
+<div class="title"><code>MyLib.py</code></div>
+<div class="content">
+<pre><code>class MyLib:
+
+  def __init__(self, state):
+    self._state = state
+    print "*WARN* MyLib inited with state = %s" % self._state
+
+  def foo(self):
+    print "*WARN* MyLib.foo() invoked, state = %s" % self._state</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="title"><code>Test.txt</code></div>
+<div class="content">
+<pre><code>| *Setting* | *Value*
+| Library | MyLib | one
+| Library | MyLib | two
+
+| *Test Case* | *Action* | *Argument*
+| Test | Foo</code></pre>
+</div></div>
+<div class="paragraph"><p>測試結果：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ pybot Test.txt
+[ WARN ] MyLib inited with state = one <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+[ WARN ] MyLib inited with state = two
+==============================================================================
+Test
+==============================================================================
+[ WARN ] MyLib inited with state = one <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+[ WARN ] MyLib.foo() invoked, state = one
+Test                                                                  | PASS |</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+一開始 <code>MyLib('one')</code> 跟 <code>MyLib('two')</code> 各會被呼叫一次。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+不知道為什機這裡 <code>MyLib('one')</code> 又被呼叫一次？結果是先 import 的 <code>MyLib('one')</code> 勝出。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>調整一下 import 的順序，就會得到不同的結果：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ pybot Test.txt
+[ WARN ] MyLib inited with state = two
+[ WARN ] MyLib inited with state = one
+==============================================================================
+Test
+==============================================================================
+[ WARN ] MyLib inited with state = two
+[ WARN ] MyLib.foo() invoked, state = two
+Test                                                                  | PASS |</code></pre>
+</div></div>
+<div class="paragraph"><p>雖然官方文件沒有明講，但其實答案已經很清楚。就像同一個變數同時出現在多個 resource 時一樣，也是先被 import 進來的 resource 決定變數的內容。</p></div>
+<div class="quoteblock">
+<div class="content">
+<div class="paragraph"><p>If several resource and/or variable file have same variables, the ones in the file imported first are taken into use.</p></div>
+</div>
+<div class="attribution">
+<em><a href="http://robotframework.googlecode.com/hg/doc/userguide/RobotFrameworkUserGuide.html?r=2.7.3#variable-priorities-and-scopes">Variable priorities and scopes</a></em><br />
+&#8212; <a href="http://robotframework.googlecode.com/hg/doc/userguide/RobotFrameworkUserGuide.html">Robot Framework User Guide</a>
+</div></div>
+<div class="paragraph"><p>所以下次如果遇到 test library 初始化的結果不如預期，極有可能是在這之前已經在其他地方已經用不同的參數 import 過了。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://robotframework.googlecode.com/hg/doc/userguide/RobotFrameworkUserGuide.html#setting-custom-name-to-test-library">Robot Framework User Guide &gt; Setting custom name to test library</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2013-06-04 22:38:38 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<!--script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script-->
+</body>
+</html>

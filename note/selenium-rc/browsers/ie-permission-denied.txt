@@ -1,0 +1,27 @@
+= link:ie.html[Selenium RC / IE] / ERROR: Command execution failure: Permission denied =
+:title: [Selenium RC][IE] ERROR: Command execution failure: Permission denied
+
+--------------------------------------------------------------------------------
+ERROR: Command execution failure. Please search the user group at https://groups.google.com/forum/#!forum/selenium-users for error details from the log window.  The error message is: Permission denied.
+--------------------------------------------------------------------------------
+
+這個錯誤只會出現在 IE，而且時好時壞... 長期觀察下來，這個錯誤應該只會發生在頁面還在轉換的過程中（即便是單純地檢查某個 element 是否存在），因為上一個會造成 page load 的操作沒有明確等待載入完成所致，例如：
+
+--------------------------------------------------------------------------------
+sel.click('login')
+sel.is_element_present('welcome') <1>
+--------------------------------------------------------------------------------
+<1> 這個動作可能會丟出 "Permission denied" 的錯誤，只要將上一行改成 `click_and_wait()` 即可。
+
+== 參考資料 ==
+
+ * http://stackoverflow.com/questions/1873508/seleniumexception-error-command-execution-failure-permission-denied[selenium - SeleniumException: ERROR: Command execution failure. Permission denied - Stack Overflow] (2009-12-09) - permission denied 是因為存取的對象不存在所造成，建議先用 `waitForCondition` 做檢查。
+ * http://stackoverflow.com/questions/1649144/selenium-seleniumexception-error-command-execution-failure[Selenium.SeleniumException: ERROR: Command execution failure - Stack Overflow] (2009-10-30) - 光是做 `isElementPresent()` 的檢查就會出錯，原來是因為 click 之後沒有 `waitForPageToLoad()` 的關係。
+ * http://wiki.openqa.org/display/SEL/Selenium+Core+FAQ#SeleniumCoreFAQ-WhydoIgeta%22PermissionDenied%22errorwhenaccessingmywebsiteviaHTTPS%3F[Selenium Core FAQ - Selenium - OpenQA Wiki]
+ * http://stackoverflow.com/questions/6724787/ie9-permission-denied-on-an-xml-document-which-was-created-by-a-frame-which-no[javascript - IE9 "permission denied" on an xml document which was created by a frame which no longer exist - Stack Overflow] (2011-07-17)
+ * http://groups.google.com/group/selenium-users/browse_thread/thread/15c249e32ecb30c8?pli=1['Unspecified error' and 'Permission denied' on IE - Selenium Users | Google Groups]
+ * http://code.google.com/p/selenium/issues/detail?id=574[Issue 574 - selenium - Clicking on Popup in IE - Permission denied - Browser automation framework - Google Project Hosting]
+////////////////////////////////////////////////////////////////////////////////
+** I also got the same error. clean ie cache can resolve it. or using IE8
+////////////////////////////////////////////////////////////////////////////////
+

@@ -1,0 +1,34 @@
+= link:datastore.html[GAE / Python / Datastore] / Query API =
+:title: [GAE][Python] Datastore Query API
+
+== 參考資料 ==
+
+.手冊
+--
+ * https://developers.google.com/appengine/docs/python/datastore/queryclass[The Query Class - Google App Engine — Google Developers]
+--
+
+ * https://developers.google.com/appengine/docs/python/datastore/overview[Datastore Overview - Google App Engine — Google Developers]
+   ** https://developers.google.com/appengine/docs/python/datastore/queries[Queries]
+   ** https://developers.google.com/appengine/docs/python/datastore/gqlreference[GQL Reference]
+
+////////////////////////////////////////////////////////////////////////////////
+
+ * two ways - object-oriented interface, or GQL
+ * `google.appengine.ext.db.Query`
++
+--------------------------------------------------------------------------------
+q = db.Query(YourModel) # all entities, of the kind `YourModel`
+q = YourModel.all() # just a question to be asked
+q.filter('level >', 5) # filters (logical-AND), property name + space + comparison operators (=, <, <=, >, >=, !=, IN)
+q.filter('level >', 5).filter('level <', 20) # chain calls
+q.order('level').order('-score') # sort orders, 前面有加 - 表示 descending，否則是 ascending.
+q.fetch(limit, [offset])
+--------------------------------------------------------------------------------
++
+ * filters, sort oders
+
+BadArgumentError: First ordering property must be the same as inequality filter property, if specified for this query; received date, expected message -> 這個問題可以用另一個 property 轉成 equality filter，例如 `message != ''`，可以用另一個 `has_message` 來記錄。使用 GAE datastore，感覺時時刻刻都被迫要考量 response quickly 這件事...
+
+////////////////////////////////////////////////////////////////////////////////
+

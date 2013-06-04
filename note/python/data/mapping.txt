@@ -1,11 +1,85 @@
 = link:structure.html[Python / Data Structure] / Mapping =
 :title: [Python][Data Structure] Mapping
 
+所謂 mapping type 就是 key-value pairs，其中 key 必須是 'hashable'，但 value 則可以是任意值。
+
+目前 bulit-in types 裡只有一個 mapping type - dictionary (`dict`)，可以用下面的字面表示法建立：
+
+ { key1: value1, key2: value2, ... }
+
+--------------------------------------------------------------------------------
+>>> {'one': 1, 'two': 2, 'three': 3}
+{'three': 3, 'two': 2, 'one': 1}
+>>> {} # <1>
+{}
+--------------------------------------------------------------------------------
+<1> empty dictionary。
+
+除了字面表示之外，`dict` 有幾個 constructor methods：
+
+ * `dict(**kwarg)`
+ * `dict(mapping, **kwarg)`
+ * `dict(iterable, **kwarg)`
+
+--------------------------------------------------------------------------------
+>>> dict() == {} # <1>
+True
+>>>
+>>> dict({'one': 1, 'two': 2}, three=3) # <2>
+{'three': 3, 'two': 2, 'one': 1}
+>>> dict({'one': 1, 'two': 2, 'three': -1}, three=3, four=4)
+{'four': 4, 'one': 1, 'three': 3, 'two': 2}
+>>> dict([['one', 1], ('two', 2)], three=3) <3>
+{'three': 3, 'two': 2, 'one': 1}
+--------------------------------------------------------------------------------
+<1> `dict()` 沒有傳入任何參數時表示 empty dictionary。
+<2> 以 'mapping' 的 key-value pairs 初始化，再用 'kwarg' 添加或覆寫。
++
+其中 'kwarg' 的用法固然直覺，但 key 必須是合法的 identifier 才行。
++
+<3> 跟 `dict(mapping, **kwarg)` 的用法類似，但 'iterable' 的組成必須是 2-item iterables。
+
+[TIP]
+.雙向／有序對照
+================================================================================
+既然是 mapping，很多時候除了 key -> value 之外，也需要 value -> key 來反查。
+
+雖然 `dict` 並未內建這樣的操作，但搭配 link:../programming/list-comprehension.html[list comprehension] 跟 `dict(iterable)` 可以很快地造出一個反向的 mapping。
+
+--------------------------------------------------------------------------------
+>>> mapping = {'one': 1, 'two': 2, 'three': 3}
+>>> print dict([(v, k) for k, v in mapping.iteritems()])
+{1: 'one', 2: 'two', 3: 'three'}
+--------------------------------------------------------------------------------
+
+如果將原來的 mapping 用 list of tuples 存放，應用上會更有彈性，例如 "按順序" 處理 mapping 裡的 key-value pairs：
+
+--------------------------------------------------------------------------------
+>>> numbers = [(1, 'one'), (2, 'two'), (3, 'three'), (4, 'four'), (5, 'five')]
+>>> num2word = dict([(k, v) for k, v in numbers]); num2word
+{1: 'one', 2: 'two', 3: 'three', 4: 'four', 5: 'five'}
+>>> word2num = dict([(v, k) for k, v in numbers]); word2num
+{'four': 4, 'three': 3, 'five': 5, 'two': 2, 'one': 1}
+>>> 
+>>> odds = []
+>>> for num in [k for k, _ in numbers]:
+...     if num % 2 != 0: odds.append(num2word[num])
+... 
+>>> odds
+['one', 'three', 'five']
+--------------------------------------------------------------------------------
+================================================================================
+
 == 參考資料 ==
 
 .文件
 --
- * http://docs.python.org/2/tutorial/datastructures.html#dictionaries[Data Structures > Dictionaries — The Python Tutorial]
- * http://docs.python.org/2/library/stdtypes.html#typesmapping[Built-in Types > Mapping Types — dict — The Python Standard Library]
+ * http://docs.python.org/2/tutorial/datastructures.html[Data Structures > Dictionaries — The Python Tutorial]
+ * http://docs.python.org/2/library/stdtypes.html[Built-in Types > Mapping Types — dict — The Python Standard Library] ^https://diigo.com/0xrhk[閱讀]^
+--
+
+.其他文件
+--
+ * http://stackoverflow.com/questions/483666/python-reverse-inverse-a-mapping[dictionary - Python reverse / inverse a mapping - Stack Overflow] ^https://diigo.com/0xxyx[閱讀]^ (2009-01-27)
 --
 

@@ -1,0 +1,594 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>Using Apache HTTP Server</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<!--link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" /-->
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <!--div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div-->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <!--a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a--></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>Using Apache HTTP Server</h1>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_安裝">安裝</h2>
+<div class="sectionbody">
+<div class="literalblock">
+<div class="content">
+<pre><code># yum install httpd</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_ssl">SSL</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>以 CentOS 5.3 為例，只要額外安裝 <code>mod_ssl</code> 就好。</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code># yum install mod_ssl
+# service httpd restart</code></pre>
+</div></div>
+<div class="paragraph"><p><code>ssl.conf</code> 的內容是：</p></div>
+<div class="listingblock">
+<div class="title"><code>/etc/httpd/conf.d/ssl.conf</code></div>
+<div class="content">
+<pre><code>...
+#   Server Certificate:
+# Point SSLCertificateFile at a PEM encoded certificate.  If
+# the certificate is encrypted, then you will be prompted for a
+# pass phrase.  Note that a kill -HUP will prompt again.  A new
+# certificate can be generated using the genkey(1) command.
+SSLCertificateFile /etc/pki/tls/certs/localhost.crt
+
+#   Server Private Key:
+#   If the key is not combined with the certificate, use this
+#   directive to point at the key file.  Keep in mind that if
+#   you've both a RSA and a DSA private key you can configure
+#   both in parallel (to also allow the use of DSA ciphers, etc.)
+SSLCertificateKeyFile /etc/pki/tls/private/localhost.key
+...</code></pre>
+</div></div>
+<div class="paragraph"><p>用 Firefox 瀏覽時會看到：</p></div>
+<div class="imageblock">
+<div class="content">
+<img src="Using_Apache_HTTP_Server.files/localhost_crt.png" alt="Using_Apache_HTTP_Server.files/localhost_crt.png" />
+</div>
+</div>
+<div class="paragraph"><p>到這裡，SSL 已經生效了&#8230;</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://httpd.apache.org/docs/current/mod/mod_ssl.html">mod_ssl - Apache HTTP Server</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://wiki.centos.org/HowTos/Https">HowTos/Https - CentOS Wiki</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://en.wikipedia.org/wiki/Certificate_signing_request">Certificate signing request - Wikipedia, the free encyclopedia</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+<div class="sect2">
+<h3 id="_產生_self_signed_certificate_供測試用">產生 self-signed certificate 供測試用</h3>
+<div class="listingblock">
+<div class="content">
+<pre><code># openssl genrsa -out ca.key 1024                                    <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+Generating RSA private key, 1024 bit long modulus
+.........++++++
+.........................++++++
+e is 65537 (0x10001)
+
+# openssl req -new -key ca.key -out ca.csr                           <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+You are about to be asked to enter information that will be incorporated
+into your certificate request.
+What you are about to enter is what is called a Distinguished Name or a DN.
+There are quite a few fields but you can leave some blank
+For some fields there will be a default value,
+If you enter '.', the field will be left blank.
+\-\-\-\-\-
+Country Name (2 letter code) [GB]:
+State or Province Name (full name) [Berkshire]:
+Locality Name (eg, city) [Newbury]:
+Organization Name (eg, company) [My Company Ltd]:
+Organizational Unit Name (eg, section) []:
+Common Name (eg, your name or your server's hostname) []:
+Email Address []:
+
+Please enter the following 'extra' attributes
+to be sent with your certificate request
+A challenge password []:
+An optional company name []:
+
+# openssl x509 -req -days 365 -in ca.csr -signkey ca.key -out ca.crt <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+Signature ok
+subject=/C=GB/ST=Berkshire/L=Newbury/O=My Company Ltd
+Getting Private key
+
+# cp ca.crt /etc/pki/tls/certs
+# cp ca.key /etc/pki/tls/private/ca.key
+# cp ca.csr /etc/pki/tls/private/ca.csr</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+產生 private key。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+產生 CSR (Certificate Signing Request)。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+產生 self-signed certificate。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>修改 <code>ssl.conf</code>：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>SSLCertificateFile /etc/pki/tls/certs/ca.crt
+SSLCertificateKeyFile /etc/pki/tls/private/ca.key</code></pre>
+</div></div>
+<div class="paragraph"><p>重新啟動 httpd，用 Firefox 瀏覽時會看到：</p></div>
+<div class="imageblock">
+<div class="content">
+<img src="Using_Apache_HTTP_Server.files/ca_crt.png" alt="Using_Apache_HTTP_Server.files/ca_crt.png" />
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_logging">Logging</h2>
+<div class="sectionbody">
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://httpd.apache.org/docs/trunk/logs.html">Apache HTTP Server Documentation &gt; Log Files</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_configuration">Configuration</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+有 context 的概念：(main) server configuration、virtual host、directory、.htaccess
+</p>
+</li>
+<li>
+<p>
+main server vs. virtual hosts
+</p>
+</li>
+<li>
+<p>
+comment 要怎麼寫？
+</p>
+</li>
+<li>
+<p>
+看似 XML 的語法，但其實不是。
+</p>
+</li>
+<li>
+<p>
+應該仿效 Debian 的做法，將
+</p>
+</li>
+<li>
+<p>
+main configuration files
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+異動後必須重新啟動 Server 才會生效
+</p>
+</li>
+<li>
+<p>
+通常是指 <code>httpd.conf</code>, 為了方便維護冗長的組態檔, 可以將部份的設定拆出去, 再用 <code>Include</code> 引進來 (支援 wildcards); as if they were inside the including file&#8230; 因此後續提到 main configuration file 時, 也包含那些拆出去再引進來的部份.
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+相對路徑是相對於 <code>ServerRoot</code> 的設定，預設是 <code>/etc/httpd</code>
+</p>
+<div class="listingblock">
+<div class="title"><code>/etc/httpd</code> (<code>ServerRoot</code>)</div>
+<div class="content">
+<pre><code>[jeremy@Sunsance01 httpd]$ ls -l
+total 8
+drwxr-xr-x. 3 root root 4096 Sep 22 04:50 conf
+drwxr-xr-x. 2 root root 4096 Sep 18 16:40 conf.d
+lrwxrwxrwx. 1 root root   19 Sep  9 14:45 logs -&gt; ../../var/log/httpd <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+lrwxrwxrwx. 1 root root   27 Sep  9 14:45 modules -&gt; ../../usr/lib/httpd/modules
+lrwxrwxrwx. 1 root root   19 Sep  9 14:45 run -&gt; ../../var/run/httpd</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+也之所以組態檔裡可以寫成 CustomLog logs/access_log combined，最後會寫到 <code>/var/log/httpd/access_log</code>。
+</td></tr>
+</table></div>
+</li>
+<li>
+<p>
+網站剛放上去時，最重要的是設定 log 輸出的位置；<code>ErrorLog</code> 跟 <code>CustomLog</code>（即 access log）
+ *
+</p>
+</li>
+</ul></div>
+<div class="listingblock">
+<div class="content">
+<pre><code># The configuration directives are grouped into three basic sections:
+#  1. Directives that control the operation of the Apache server process as a
+#     whole (the 'global environment').
+#  2. Directives that define the parameters of the 'main' or 'default' server,
+#     which responds to requests that aren't handled by a virtual host.
+#     These directives also provide default values for the settings
+#     of all virtual hosts.
+#  3. Settings for virtual hosts, which allow Web requests to be sent to
+#     different IP addresses or hostnames and have them handled by the
+#     same Apache server process.
+#
+# Configuration and logfile names: If the filenames you specify for many
+# of the server's control files begin with "/" (or "drive:/" for Win32), the
+# server will use that explicit path.  If the filenames do *not* begin
+# with "/", the value of ServerRoot is prepended -- so "logs/foo.log"
+# with ServerRoot set to "/etc/httpd" will be interpreted by the
+# server as "/etc/httpd/logs/foo.log".
+#
+
+### Section 1: Global Environment
+#
+# The directives in this section affect the overall operation of Apache,
+# such as the number of concurrent requests it can handle or where it
+# can find its configuration files.
+#
+
+### Section 2: 'Main' server configuration
+#
+# The directives in this section set up the values used by the 'main'
+# server, which responds to any requests that aren't handled by a
+# &lt;VirtualHost&gt; definition.  These values also provide defaults for
+# any &lt;VirtualHost&gt; containers you may define later in the file.
+#
+# All of these directives may appear inside &lt;VirtualHost&gt; containers,
+# in which case these default settings will be overridden for the
+# virtual host being defined.
+#
+
+### Section 3: Virtual Hosts
+#
+# VirtualHost: If you want to maintain multiple domains/hostnames on your
+# machine you can setup VirtualHost containers for them. Most configurations
+# use only name-based virtual hosts so the server doesn't need to worry about
+# IP addresses. This is indicated by the asterisks in the directives below.
+#
+# Please see the documentation at
+# &lt;URL:http://httpd.apache.org/docs/2.2/vhosts/&gt;
+# for further details before you try to setup virtual hosts.
+#
+# You may use the command line option '-S' to verify your virtual host
+# configuration.</code></pre>
+</div></div>
+<div class="paragraph"><p>首先用一或多個 <code>Listen</code> 來設定 Apache httpd 要監聽哪些 IP/port 的組合（只能用在 server config）。</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>Listen [IP-address:]portnumber</code></pre>
+</div></div>
+<div class="paragraph"><p>其中 <em>IP-address</em> 省略時，表示要監聽本機所有 network interface 綁定的 IP。例如：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>Listen 80
+Listen 192.168.1.100:80</code></pre>
+</div></div>
+<div class="paragraph"><p>要監聽多個 IP/port 的組合時，可以利用多個 <code>Listen</code> 來達成。要注意 IP/port 的組合不能重複，否則會遇到 Address already in use 的錯誤。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://httpd.apache.org/docs/trunk/mod/mpm_common.html#listen">Apache HTTP Server Documentation &gt; Listen Directive</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>Listen [IP-address:]portnumber [protocol]</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://httpd.apache.org/docs/trunk/mod/directive-dict.html#Context">Apache HTTP Server Documentation &gt; Terms Used to Describe Directives</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_virtual_hosting">Virtual Hosting</h2>
+<div class="sectionbody">
+<div class="paragraph"><p><em>Virtual Hosts (vhosts)</em> 是指用單一台伺服器服務一個以上的網站而言（例如 www.foo.com 與 www.bar.com）。</p></div>
+<div class="paragraph"><p>做法上可以區分為 <em>IP-based</em> 跟 <em>name-based</em>。前者 IP-based 用不同 IP/port 的組合來識別同一伺服器上的不同網站，而後者 name-based 則是共用一個 IP/port 的組合，但進一步用 hostname 來識別不同的網站。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">由於 IP 非常的珍貴，應儘可能優先考量 name-based 的做法。除非是 SSL 的應用被迫要採用 IP-based（因為 SSL 協定的限制）。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>首先從 IP-based 的做法看起，因為 name-based 是架構在 IP-based 之上。</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;VirtualHost addr[:port] [addr[:port]] ...&gt; ... &lt;/VirtualHost&gt;</code></pre>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">用 <code>httpd -S</code> 來查看 virtual host 的組態。</td>
+</tr></table>
+</div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://httpd.apache.org/docs/trunk/vhosts/">Apache HTTP Server Documentation &gt; Virtual Host</a>
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://httpd.apache.org/docs/trunk/vhosts/ip-based.html">IP-based Virtual Hosts</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://httpd.apache.org/docs/trunk/vhosts/name-based.html">Name-based Virtual Hosts</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://httpd.apache.org/docs/trunk/vhosts/details.html">In-Depth Discussion of Virtual Host Matching</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://httpd.apache.org/docs/trunk/vhosts/examples.html">Virtual Host examples for common setups</a>
+</p>
+</li>
+</ul></div>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_mod_alias">mod_alias</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>當 URL 存取的內容不在 <code>DocumentRoot</code> 底下時，可以用 <code>Alias</code> 將 URL path 對應到檔案系統的其他位置。也就是說，網站的內容不一定要實際存放在 <code>DocumentRoot</code> 底下，<code>Alias</code> 就像是 symblic links 一般，可以指向其他位置的檔案或目錄。</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>Alias url-path file-path|directory-path</code></pre>
+</div></div>
+<div class="paragraph"><p>其中 <em>url-path</em> 是 case-sensitive 的，而 <em>file-path</em> 跟 <em>directory-path</em> 則要用絕對路徑來表示 。</p></div>
+<div class="paragraph"><p>當 URL 以 <em>url-path</em> 開頭時，內容其實是來自 <em>file-path</em> 或 <em>directory-path</em> 底下的檔案。例如：</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>Alias /img /ftp/pub/images</code></pre>
+</div></div>
+<div class="paragraph"><p>存取 <a href="http://server/img/logo/small.png">http://server/img/logo/small.png</a> 時，檔案內容其實是來自 /ftp/pub/images/logo/small.png。但這樣的轉換只發生在 complete path segments，所以 <a href="http://server/imglogo.png">http://server/imglogo.png</a> 並不會被轉向 /ftp/pub/imageslogo.png。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content"><code>Alias</code> 只處理 URL path 的轉換，如果要進一步操作 query string 的話，可以考慮 <code>mod_rewrite</code>。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>可以把 <code>Alias</code> 想成是把 <em>url-path</em> 去掉之後，再把剩下的部份接到 <em>file-path</em> 或 <em>directory-path</em> 之後。也因此 <em>url-path</em> 以 <em>/</em> 結尾時，<em>file-path</em> 或 <em>directory-path</em> 也要以 <em>/</em> 結尾才行。例如：</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>Alias /img/logo/ /ftp/pub/images/logo/</code></pre>
+</div></div>
+<div class="paragraph"><p>但寫成下面這個樣子就不能正常運作了：</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>Alias /img/logo/ /ftp/pub/images/logo
+Alias /img/logo /ftp/pub/images/logo/</code></pre>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://httpd.apache.org/docs/current/mod/mod_alias.html">mod_alias - Apache HTTP Server</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_mod_status">mod_status</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre><code>&lt;Location /server-status&gt;
+  SetHandler server-status
+  Order Deny,Allow
+  Deny from all
+  Allow from .example.com
+&lt;/Location&gt;</code></pre>
+</div></div>
+<div class="paragraph"><p>之後就可以透過 <a href="http://your.server.name/server-status">http://your.server.name/server-status</a> 來查看。<code>?refresh=&lt;sec&gt;</code> 可以用來控制幾秒自動更新一次。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://httpd.apache.org/docs/current/mod/mod_status.html">mod_status - Apache HTTP Server</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://httpd.apache.org/">The Apache HTTP Server Project</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://wiki.apache.org/httpd/">Httpd Wiki</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://httpd.apache.org/docs/">Apache HTTP Server Documentation</a> (<a href="http://httpd.apache.org/docs/trunk/">latest</a>)
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://httpd.apache.org/docs/trunk/mod/">Module Index</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://httpd.apache.org/docs/trunk/mod/directives.html">Directive Index</a>
+</p>
+</li>
+</ul></div>
+</li>
+</ul></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2013-06-04 22:50:17 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<!--script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script-->
+</body>
+</html>

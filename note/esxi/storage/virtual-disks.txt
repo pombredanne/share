@@ -1,0 +1,23 @@
+= link:storage.html[ESXi / Storage] / Virtual Disks =
+:title: [ESXi] Virtual Disks
+
+== Provision ==
+
+建立 disk 時，size 下方有 3 個關於 provision 的選項：
+
+ * Thick Provision Lazy Zeroed
+ * Thick Provision Eager Zeroed
+ * Thin Provision
+
+== 參考資料 ==
+
+ * http://kb.vmware.com/selfservice/microsites/search.do?language=en_US&cmd=displayKC&externalId=1005418[VMware KB: Using thin provisioned disks with virtual machines] ^https://diigo.com/0zh4p[閱讀]^
+////////////////////////////////////////////////////////////////////////////////
+** When creating a virtual disk file, by default VMware ESXi/ESX uses a thick type of virtual disk. The thick disk pre-allocates all of the space specified during the creation of the disk. 可能是因為 for production 的關係，才會預選 pre-allocate
+** In contrast, a thin virtual disk does not pre-allocate all of the space. Blocks in the VMDK file are not allocated and backed by physical storage until they are written during the normal course of operation. A read to an unallocated block returns zeroes, but the block is not backed with physical storage until it is written. 單純的讀不會長大，但如果有寫入的動作（例如完整的 format），就有機會成長到 full size。
+** Thin provisioned disks can grow to the full size specified at the time of virtual disk creation, but do not shrink. Once the blocks have been allocated, they cannot be un-allocated.
+** If a guest operating system needs to make use of a virtual disk, the guest operating system must first partition and format the disk to a file system it can recognize. Depending on the type of format selected within the guest operating system, the format may cause the thin provisioned disk to grow to full size.
+** For example, if you present a thin provisioned disk to a Microsoft Windows operating system and format the disk, unless you explicitly select the Quick Format option, the Microsoft Windows format tool writes information to all of the sectors on the disk, which in turn inflates the thin provisioned disk to full size.
+////////////////////////////////////////////////////////////////////////////////
+ * http://www.vmware.com/files/pdf/VMware-vStorage-Thin-Provisioning-DS-EN.pdf[VMware vStorage Thin Provisioning]
+

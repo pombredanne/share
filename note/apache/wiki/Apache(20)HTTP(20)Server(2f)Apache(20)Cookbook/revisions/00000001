@@ -1,0 +1,141 @@
+= Apache Http Server / Apache Cookbook =
+<<TableOfContents>>
+
+[[|:]]
+
+== Chapter 7. SSL ==
+
+Secure Socket Layer (SSL) is the standard way to implement secure Web sites. By encrypting the traffic between the server and the client, which is what SSL does, that content is protected from a third party listening to the traffic going past.
+
+__'''All of the traffic exchanged is encrypted once the SSL session has been set up. This means that even the URLs being requested are encrypted.'''__
+
+The exact mechanism by which this encryption is accomplished is discussed extensively in the SSL specification, which you can read at http://wp.netscape.com/eng/ssl3. For a more user-friendly discussion of SSL, we recommend looking through the `mod_ssl` manual, which you can find at http://httpd.apache.org/docs/2.2/ssl. This document not only discusses the specific details of setting up `mod_ssl` but also covers the general theory behind SSL and contains pictures illustrating the concepts.
+
+You also may wish to see the TLS 1.0 (RFC 2246) specification, which provides what might be thought of as the next generation of SSL. You can read the full specification at http://www.ietf.org/rfc/rfc2246.txt, or you can find a more friendly explanation at http://en.wikipedia.org/wiki/Transport_Layer_Security.
+
+In this chapter, we talk about some of the common things that you might want to do with your secure server, including installing it.
+
+=== 7.1. Recipe: Installing SSL ===
+
+==== 7.1.1. Problem ====
+
+You want to install SSL on your Apache server.
+
+==== 7.1.2. Solution ====
+
+The solutions to this problem fall into several categories, depending on how you installed Apache in the first place (or whether you are willing to rebuild Apache to get SSL).
+
+If you installed a binary distribution of Apache, your best bet is to return to the place from which you acquired that binary distribution and try to find the necessary files for adding SSL to it.
+
+If you built Apache yourself from source, the solution will depend on whether you are running Apache 1.3 or Apache 2.x.
+
+In Apache 1.3, SSL is an add-on module that you must acquire and install from a location different than that from which you obtained Apache. There are two main choices available: mod_ssl (http://www.modssl.org) and Apache-SSL (http://www.apache-ssl.org); the installation procedure will vary somewhat depending on which one of these you choose.
+
+__If you are building Apache 2.x from source, the situation is somewhat simpler; just add `--enable-ssl` to the `./configure` arguments when you build Apache to include SSL as one of the built-in modules. (當然 2.x 也可以採用外掛的方式; 在 Ubuntu 下提供有 `mods-available/ssl.load` 與 `mods-available/ssl.conf`)__
+
+Consult Chapters Chapter 1 and Chapter 2 for more information on installing third-party modules, particularly if you have installed a binary distribution of Apache rather than building it yourself from the source code.
+
+If you are attempting to install SSL on Apache for Windows, there is a discussion of this in the Compiling on Windows document, which you can find at http://httpd.apache.org/docs/2.0/platform/win_compiling.html for Apache 2.0. Or if you are using Apache 1.3 on Windows and wish to install SSL, you should consult the file `INSTALL.Win32`, which comes with the SSL distribution, or look at the HowTo at http://tud.at/programm/apache-ssl-win32-howto.php3.
+
+__Finally, note that the Apache SSL modules are an ''interface'' between Apache and the OpenSSL libraries, which you must install before any of this can work.__ You can obtain the OpenSSL libraries from http://www.openssl.org. Although you may already have these libraries installed on your server, it is recommended that you obtain the latest version of the libraries to have the most recent security patches and to protect yourself from exploits(利用).
+
+==== 7.1.3. Discussion ====
+
+So, why is this so complicated? Well, there are a variety of reasons, most of which revolve around the legality(合法性) of encryption. __'''For a long time, encryption has been a restricted technology in the United States. Because Apache is primarily based out of the United States, there is a great deal of caution regarding distributing encryption technology with the package.''' Even though major changes have been made in the laws, permitting SSL to be shipped with Apache 2.0, there are still some gray areas that make it problematic to ship compiled binary distributions of Apache with SSL enabled.__
+
+This makes the situation particularly unpleasant(不愉快的) on Microsoft Windows, where most people do not have a compiler readily available to them, and so must attempt to acquire binary builds from third parties to enable SSL on their Apache server on Windows. The URL given previously for compiling Apache 2.0 with SSL on Windows assumes that you do have a compiler, and __the document telling you how to build Apache 1.3 with SSL takes great pains to encourage you not to use Apache 1.3 on Windows, where it does not have comparable(比得上的) performance to Apache on Unixish operating systems.__
+
+==== 7.1.4. See Also ====
+
+ * http://httpd.apache.org/docs-2.0/platform/win_compiling.html
+ * http://tud.at/programm/apache-ssl-win32-howto.php3
+ * http://www.openssl.org
+ * http://www.modssl.org
+ * http://www.apache-ssl.org
+
+=== 7.2. Installing SSL on Windows ===
+
+==== 7.2.1. Problem ====
+
+You want to install Apache with SSL on Microsoft Windows.
+
+==== 7.2.2. Solution ====
+
+Obtain XAMPP from http://apachefriends.org and install that.
+
+==== 7.2.3. Discussion ====
+
+As was mentioned in the previous recipe, it is certainly possible to build Apache with SSL from source on Microsoft Windows. However, to be honest, this is beyond the expertise of most of us.
+
+Fortunately, the kind folks at ApacheFriends have made available a binary distribution called http://www.apachefriends.org/en/xampp.html[XAMPP], which includes, among other things, Apache with `mod_ssl`. The package also includes MySQL, PHP, and Perl, some of the commonly used tools in Web site development.
+
+So, save yourself some pain, take advantage of the great work that has been done by the ApacheFriends guys, and install the XAMPP package.
+
+=== 7.3. Recipe: Generating Self-Signed SSL Certificates ===
+
+==== 7.3.1. Problem ====
+
+You want to generate a ''self-signed certificate'' to use on your SSL server.
+
+==== 7.3.2. Solution ====
+
+Use the `openssl` command-line program that comes with OpenSSL:
+
+Code View:
+
+ {{{
+% openssl genrsa -out server.key 1024
+% openssl req -new -key server.key -out server.csr
+% cp server.key server.key.org
+% openssl rsa -in server.key.org -out server.key
+% openssl x509 -req -days 365 -in server.csr -signkey server.key -out server.crt
+ }}}
+
+Then move these files to your Apache server's configuration directory, such as `/www/conf/`, and then add the following lines in your `httpd.conf` configuration file:
+
+ {{{
+SSLCertificateFile "/www/conf/server.crt"
+SSLCertificateKeyFile "/www/conf/server.key"
+ }}}
+
+==== 7.3.3. Discussion ====
+
+The SSL certificate is a central part of the SSL conversation and is required before you can run a secure server. Thus, generating the certificate is a necessary first step to configuring your secure server.
+
+Generating the key is a multistep process, but it is fairly simple.
+
+===== 7.3.3.1. Generating the private key =====
+
+__In the first step, we generate the private key. '''SSL is a private/public key encryption system, with the private key residing on the server and the public key going out with each connection to the server and encrypting data sent back to the server.'''__
+
+The first argument passed to the `openssl` program tells `openssl` that we want to generate an RSA key (`genrsa`), which is an encryption algorithm that all major browsers support.
+
+You may, if you wish, specify an argument telling `openssl` what to use as the source of randomness(隨機性). The `-rand` flag will accept one or more filenames, which will be used as a key for the random number generator. If no `-rand` argument is provided, OpenSSL will attempt to use `/dev/urandom` by default if that exists, and it will try `/dev/random` if `/dev/urandom` does not exist. It is important to have a good source of randomness in order for the encryption to be secure. If your system has neither `/dev/urandom` nor `/dev/random`, you should consider installing a random number generator, such as `egd`. You can find out more information about this on the OpenSSL Web site at http://www.openssl.org/docs/crypto/RAND_egd.html.
+
+The `-out` argument specifies the name of the key file that we will generate. This file will be created in the directory in which you are running the command, unless you provide a full path for this argument. __Naming the key file after the hostname on which it will be used will help you keep track of the file,__ although the name of the file is not actually important.
+
+And, finally, an argument of `1024` is specified, which tells `openssl` how many bytes of randomness to use in generating the key.
+
+Your output should look something like:
+
+ {{{
+Generating RSA private key, 1024 bit long modulus
+.........................................................++++++
+........++++++
+e is 65537 (0x10001)
+ }}}
+
+== Resource ==
+
+=== Reference ===
+
+=== Attachments ===
+
+|| Filename || Description ||
+||  ||  ||
+
+=== Links ===
+
+=== Search ===
+
+== Scratch ==

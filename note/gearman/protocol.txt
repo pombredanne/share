@@ -1,0 +1,30 @@
+= link:gearman.html[Gearman] / Protocol =
+:title: [Gearman] Protocol
+
+Gearman 的 job server 在 port 4730 服務（由 http://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.txt[IANA] 配發），client/worker 就是走這個 port 並以 binary 二進位的形式在跟 job server 溝通。
+
+除此之外，這個 port 也同時支援文字形式的 'Administrative Protocol'（第一個字元如果是 `NULL` 就走 binary protocol，否則視為 line-based text protocol），透過 `telnet` 這類工具就可以執行一些管理工作。支援的 text command 有：
+
+ * `workers`
+ * `status` - 列出所有已註冊的 function names，後面跟了 3 個數字，分別表示 "jobs in the queue"、"running jobs" 跟 "capable workers"。
+ * `maxqueue`
+ * `shutdown`
+ * `version`
+
+--------------------------------------------------------------------------------
+$ telnet localhost 4730
+status
+hjob-Thumb      0       0       2
+hjob-Stream     0       0       2
+hjob-Scan       0       0       1
+hjob-Meta       0       0       1
+hjob-FlushResolvedPolicyPlan    0       0       1
+hjob-Email      0       0       1
+hjob-Cipher     0       0       4
+.
+--------------------------------------------------------------------------------
+
+== 參考資料 ==
+
+ * http://gearman.org/protocol[Gearman Protocol]
+

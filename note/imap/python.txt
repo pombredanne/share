@@ -1,0 +1,174 @@
+= link:imap.html[IMAP] / Python =
+:title: [IMAP] 用 Python + IMAP 讀取信件
+
+`imaplib` 實作了 http://tools.ietf.org/html/rfc2060.html[RFC 2060]（而非最新的 RFC 3501），可以用來跟 IMAP4 server 溝通，主要的兩個 class 是 `IMAP4` 跟 `IMAP4_SSL`。
+
+`IMAP4_SSL` 繼承自 `IMAP4`，差別在於 `IMAP4_SSL` 走 IMAP-over-SSL (TCP 993)，而 `IMAP4` 則走一般的 TCP 143。
+
+[source,pycon]
+--------------------------------------------------------------------------------
+>>> import imaplib, inspect
+>>> inspect.getmro(imaplib.IMAP4_SSL)
+(imaplib.IMAP4_SSL, imaplib.IMAP4)
+--------------------------------------------------------------------------------
+
+首先跟 IMAP4 server 建立連線，並完成登入：
+
+[source,pycon]
+--------------------------------------------------------------------------------
+>>> imap = imaplib.IMAP4_SSL('imap.gmail.com') # <1>
+>>> imap.login('username@gmail.com', 'password')
+('OK', ['username@gmail.com ... authenticated (Success)'])
+--------------------------------------------------------------------------------
+<1> constructor 內部會呼叫 `open()` 跟 server 建立連線。如果無法跟 server 建立連線，這一步就會出錯。
+
+TIP: 所有的 method 都跟 IMAP command 對應，例如 `login()` 之於 `LOGIN` command。另外，所有 method 的回傳值都是一個 tuple - `(result, [data, ...])`，其中 'result' 可能是 `OK` 或 `NO`，而每一個 'data' 則可能是單純的 string 或另一個 tuple。
+
+選取要操作的 mailbox：
+
+[source,pycon]
+--------------------------------------------------------------------------------
+>>> imap.select() # <1>
+('OK', ['5'])
+>>> imap.list()   # <2>
+('OK',
+ ['(\\HasNoChildren) "/" "INBOX"',
+  '(\\Noselect \\HasChildren) "/" "[Gmail]"',
+  '(\\HasChildren \\HasNoChildren \\All) "/" "[Gmail]/&UWiQ6JD1TvY-"',
+  '(\\HasChildren \\HasNoChildren \\Trash) "/" "[Gmail]/&V4NXPmh2-"',
+...
+--------------------------------------------------------------------------------
+<1> `select(mailbox='INBOX')` 用來選取接下來要操作的 mailbox（預設是 `INBOX`）。傳回值是該 mailbox 下的 message 數量。
++
+如果沒做這個動作，接下來的操作可能會遇到 "command xxx illegal in state AUTH, only allowed in states SELECTED" 的錯誤。
++
+<2> 可以用 `list()` 取得所有 mailbox 的清單。
+
+CAUTION:
+================================================================================
+某些 method 的執行結果是 `NO` 時，並不會丟出例外：
+
+ >>> imap.select('FOOBAR')
+ >>> ('NO', ['[NONEXISTENT] Unknown Mailbox: FOOBAR (Failure)'])
+
+所以在執行下一個步驟之前，最好先檢查 `(result, [data, ...])` 中的 'result' 是不是 `OK`。
+================================================================================
+
+取得該 mailbox 下的 message 清單：
+
+[source,pycon]
+--------------------------------------------------------------------------------
+>>> imap.search(None, "UNSEEN") # <1>
+('OK', ['9'])
+>>> imap.search(None, "ALL")
+('OK', ['1 2 3 4 5 6 7 8 9'])
+>>> result, data = _
+>>> last_msgnum = data[0].split()[-1]
+--------------------------------------------------------------------------------
+<1> `search(charset, criterion[, ...])` 在目前選定的 mailbox 下符合某些條件的 message。傳回值是符合條件的 message sequence numbers。（按收件時間排序，最後一個號碼最新？）
++
+其中 'charset' 可以傳入 `None`，後面接的則是一或多個 search keys；`UNSEEN` 表示只取回未閱讀的部份，`ALL` 則表示不做過濾並取回 mailbox 裡全部的 messages。
+
+NOTE: 為了避免信件被誤判為垃圾信件，建議把寄件者加到聯絡人裡。
+
+讀取信件的內容：
+
+[source,pycon]
+--------------------------------------------------------------------------------
+>>> imap.fetch(last_msgnum, '(RFC822)') # <1>
+('OK',
+ [('9 (RFC822 {55037}',
+   'Delivered-To: username@gmail.com\r\n...Date: Sun, 28 Apr 2013 08:53:03 +0800\r\nMessage-ID:  <CAJr-f47iq2Shz8KwFRCGS9O8kUAfGcOVu4t6Sh0e0E74jGGRFQ@mail.gmail.com>\r\nSubject: =?Big5?B?s2+sT6RAq8q0+rjVq0g=?=\r\nFrom: Jeremy Kao <xxx@gmail.com>\r\nTo: username@gmail.com\r\nContent-Type: multipart/mixed; boundary=089e0158a888c7b68404db61309c\r\n\r\n--089e0158a888c7b68404db61309c\r\nContent-Type: multipart/related; boundary=089e0158a888c7b68304db61309b\r\n\r\n--089e0158a888c7b68304db61309b\r\nContent-Type: multipart/alternative; boundary=089e0158a888c7b68104db61309a\r\n\r\n--089e0158a888c7b68104db61309a\r\nContent-Type: text/plain; charset=Big5\r\nContent-Transfer-Encoding: base64\r\n\r\nsXqmbiwgp/OmaLjqsFS90KfkIEdvb2dsZSCkaq+rIDxodHRwOi8vd3d3Lmdvb2dsZS5jb20+Lg0K\r\nDQpbaW1hZ2U6IElubGluZSBpbWFnZSAxXQ0K\r\n--089e0158a888c7b68104db61309a\r\nContent-Type: text/html; charset=Big5\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n<div dir=3D"ltr">=B1z=A6n, =A7=F3=A6h=B8=EA=B0T=BD=D0=A7=E4 <a href=3D"http=\r\n://www.google.com">Google =A4j=AF=AB</a>.<br><div><br></div><div><img src=\r\n=3D"cid:ii_13e4e1d8544657bd" alt=3D"Inline image 1" width=3D"490" height=3D=\r\n"169"><br></div></div>\r\n\r\n--089e0158a888c7b68104db61309a--\r\n--089e0158a888c7b68304db61309b\r\nContent-Type: image/png; name="logo4w.png"\r\nContent-Transfer-Encoding: base64\r\nContent-ID: <ii_13e4e1d8544657bd>\r\nX-Attachment-Id: ii_13e4e1d8544657bd\r\n\r\niVBORw0KGgoAAAA...KJTcNiwAAAABJRU5ErkJggg==\r\n--089e0158a888c7b68304db61309b--\r\n--089e0158a888c7b68404db61309c\r\nContent-Type: image/png; name="logo4w.png"\r\nContent-Disposition: attachment; filename="logo4w.png"\r\nContent-Transfer-Encoding: base64\r\nX-Attachment-Id: f_hg1i3o0i1\r\n\r\niVBORw0K...KJTcNiwAAAABJRU5ErkJggg==\r\n--089e0158a888c7b68404db61309c--\r\n'),
+  ' FLAGS (\\Seen))']) # <2>
+>>>
+>>> result, data = _
+>>> raw = data[0][1]
+>>> with open('/tmp/message.eml', 'wb') as f: # <3>
+...     f.write(raw)
+...
+>>>
+>>> imap.search(None, 'UNSEEN') # <2>
+('OK', [''])
+>>> imap.store(last_msgnum, '+FLAGS', '\\Seen')
+('OK', ['9 (FLAGS (\\Seen))'])
+--------------------------------------------------------------------------------
+<1> `fetch(message_set, message_parts)` 可以取回 message 的內容，其中 'message_parts' 表示要取回 message 的哪些部份，傳入 `(RFC822)` 可以取得符合 RFC 822 格式的信件內容。
+<2> 透過 `fetch()` 讀取之後，信件就會被標上 `\Seen`。（所有的 flag 前面都有個反斜線 `\`）
++
+`store(message_set, command, flag_list)` 可以調整 message 的 flags。其中 'command' 可以是 `+FLAGS`、`-FLAGS` 等，用來增加或拿掉某些 flags。這裡 `'-FLAGS', '\\Seen'` 的用法就是 "標示為未讀取"。
++
+<3> RFC 822 其實就是 `.eml`，可以用 Thuderbird 或 Outlook (Express) 等郵件程式直接開啟，當然也可以link:../email/python.html[用 Python 程式處理]。
+
+基本上，透過 `imaplib` 操作 IMAP 還是有點鎖碎，而且要對 IMAP 協定有些瞭解才行。從 IMAP 信箱收取信件的動作還滿常見的，值得包裝起來。
+
+[source,python]
+.link:python/imaputil.py[`imaputil.py`]
+--------------------------------------------------------------------------------
+import time
+from imaplib import IMAP4, IMAP4_SSL
+
+__all__ = ['IMAPClient']
+
+class IMAPClient(object):
+
+    def __init__(self, username, password, imap_server, ssl=True):
+        self._imap = imap = (IMAP4_SSL if ssl else IMAP4)(imap_server)
+        imap.login(username, password)
+        imap.select() # INBOX
+
+    def mark_all_as_read(self):
+        imap = self._imap
+        imap.recent()
+        result, data = imap.search(None, 'UNSEEN')
+        msgnums = data[0].split()
+        for msgnum in msgnums:
+            imap.store(msgnum, '+FLAGS', '\\Seen')
+
+    def wait_for_an_email(self, timeout=120):
+        imap = self._imap
+        timeout = time.time() + timeout
+        while time.time() < timeout:
+            imap.recent()
+            result, data = imap.search(None, 'UNSEEN')
+            msgnums = data[0].split()
+            if len(msgnums) != 0:
+               if len(msgnums) > 1: raise AssertionError('There are more than one messages received.')
+               result, data = imap.fetch(msgnums[0], '(RFC822)')
+               return data[0][1]
+            time.sleep(10)
+
+        raise RuntimeError('Timeout!')
+
+    def close(self):
+        imap = self._imap
+        imap.close()
+        imap.logout()
+--------------------------------------------------------------------------------
+
+用起來像是：
+
+[source,pycon]
+--------------------------------------------------------------------------------
+>>> from imaputil import IMAPClient
+>>> imap = IMAPClient('username@gmail.com', 'password', 'imap.gmail.com')
+>>> imap.mark_all_as_read()
+>>> rfc822 = imap.wait_for_an_email()
+>>>
+>>> from email import message_from_string
+>>> message = message_from_string(rfc822)
+>>> message.get_content_type()
+'multipart/mixed'
+--------------------------------------------------------------------------------
+
+== 延伸閱讀 ==
+
+ * link:../email/python.html[用 Python 解開信件的內容]
+
+== 參考資料 ==
+
+.文件
+--
+ * http://docs.python.org/2/library/imaplib.html[imaplib — IMAP4 protocol client] ^https://diigo.com/0y9vu[閱讀]^
+ * http://yuji.wordpress.com/2011/06/22/python-imaplib-imap-example-with-gmail/[Python — imaplib IMAP example with Gmail | Useful Stuff.] ^https://diigo.com/0y9wa[閱讀]^ (2011-06-22)
+--
+

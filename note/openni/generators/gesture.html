@@ -1,0 +1,275 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[OpenNI] Gesture Generator</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<!--link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" /-->
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <!--div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div-->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <!--a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a--></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="generators.html">OpenNI / Data Generation</a> / Gesture Generator</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+recognizes certain hand gestures and raise corresponding events accordingly.
+</p>
+</li>
+<li>
+<p>
+gestures
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+a gesture is a specific hand movement. The gesture generator node scans the FOV to detect gestures and generates the gesture data.
+</p>
+</li>
+<li>
+<p>
+gestures are identified by their names, e.g., "Wave" and "Click".
+</p>
+</li>
+<li>
+<p>
+active gestures = gestures trying to recognize in FOV, 一開始是空的
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+focus gesture
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+感覺 gesture generator 的定位跟 NITE gesture detectors 很不一樣，確實在還決定要追蹤哪一隻手之前，如何判斷更為細微的動作呢？
+</p>
+</li>
+<li>
+<p>
+an application might want to know who is the person they should interact with. For example, if currently there are three people in the room, which hand should be tracked?
+</p>
+</li>
+<li>
+<p>
+The application can use a specific gesture (such as waving to the camera) as a "focus gesture", meaning the person who performs this gesture will be the one interacting with the application.
+</p>
+</li>
+<li>
+<p>
+The application typically will then not want to recognize further gestures and so it must remove the gesture from the list; further gestures in the FOV may cause confusion. 如果沒有拿掉，表示隨時有人可以加進來?
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+recognized gestures
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+an identification point (the position where the gesture was identified) + an end point (the position in which the hand currently is, when "gesture recognized" event is triggered)
+</p>
+</li>
+<li>
+<p>
+in most cases, both points will be the same. The application can then pass the end position to the hand generator for tracking that hand.
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+<code>org.OpenNI.GestureGenerator</code>
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>void addGesture(String gesture)</code> - add to active gestures
+</p>
+</li>
+<li>
+<p>
+<code>void addGesture(String gesture, BoundingBox3D area)</code> - the gesture will only be recognized if it is detected in that area.
+</p>
+</li>
+<li>
+<p>
+<code>void removeGesture(String gesture)</code> - remove from active gestures
+</p>
+</li>
+<li>
+<p>
+<code>int getNumberOfAvailableGestures()</code>
+</p>
+</li>
+<li>
+<p>
+<code>boolean isGestureAvailable(String gesture)</code>
+</p>
+</li>
+<li>
+<p>
+<code>boolean isGestureProgressSupported(String gesture)</code>
+</p>
+</li>
+<li>
+<p>
+<code>String[] enumerateAllGestures()</code> - available/supported gestures，為什麼只有 Wave, Click, RaiseHand, MovingHand 4 種？
+</p>
+</li>
+<li>
+<p>
+<code>String[] getAllActiveGestures()</code>
+</p>
+</li>
+<li>
+<p>
+events
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>IObservable&lt;GestureRecognizedEventArgs&gt; getGestureRecognizedEvent()</code>
+</p>
+</li>
+<li>
+<p>
+<code>IObservable&lt;GestureProgressEventArgs&gt; getGestureProgressEvent()</code>
+</p>
+</li>
+<li>
+<p>
+<code>IObservable&lt;GesturePositionEventArgs&gt; getGestureIntermediateStageCompletedEvent()</code>
+</p>
+</li>
+<li>
+<p>
+<code>IObservable&lt;GesturePositionEventArgs&gt; getGestureReadyForNextIntermediateStageEvent()</code>
+</p>
+</li>
+<li>
+<p>
+<code>IStateChangedObservable getGestureChangedEvent()</code>
+</p>
+</li>
+</ul></div>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+<code>org.OpenNI.GestureRecognizedEventArgs</code> - <code>getIdPosition()</code>, <code>getEndPosition()</code>, <code>getGesture()</code>
+</p>
+</li>
+<li>
+<p>
+好像沒地方可以調整 gesture 的設定？一定得靠 session manager？
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_延伸閱讀">延伸閱讀</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="hands.html">Hands Generator</a>
+</p>
+</li>
+<li>
+<p>
+<a href="../../nite/detectors/detectors.html">[NiTE&#93; Gesture Detectors</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<code>xn::GestureGenerator</code> Class Reference (<code>Documentation/html/classxn_1_1_gesture_generator.html</code>)
+</p>
+</li>
+<li>
+<p>
+<a href="https://github.com/OpenNI/OpenNI/blob/Unstable-1.5.4.0/Wrappers/OpenNI.java/src/org/OpenNI/GestureRecognizedEventArgs.java"><code>org/OpenNI/GestureRecognizedEventArgs.java</code></a>
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2013-06-04 22:52:44 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<!--script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script-->
+</body>
+</html>

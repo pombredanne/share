@@ -1,0 +1,145 @@
+= link:packages.html[Debian / Packages] / DEB Files =
+:title: [Debian][Pkg] DEB Files
+
+--------------------------------------------------------------------------------
+$ apt-get download vim-tiny # apt-get download 可以取得套件的 .deb 檔。
+Get:1 Downloading vim-tiny 2:7.3.429-2ubuntu2.1 [411 kB]
+Fetched 411 kB in 1s (357 kB/s)
+$ dpkg --info vim-tiny_7.3.429-2ubuntu2.1_amd64.deb
+ new debian package, version 2.0.
+ size 410888 bytes: control archive= 2134 bytes.
+      20 bytes,     1 lines      conffiles            
+    1065 bytes,    25 lines      control              
+     453 bytes,     7 lines      md5sums              
+    2399 bytes,    77 lines   *  postinst             #!/bin/sh
+    1222 bytes,    57 lines   *  prerm                #!/bin/sh
+ Package: vim-tiny
+ Source: vim
+ Version: 2:7.3.429-2ubuntu2.1
+ Architecture: amd64
+ Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+ Installed-Size: 826
+ Depends: vim-common (= 2:7.3.429-2ubuntu2.1), libc6 (>= 2.15), libselinux1 (>= 1.32), libtinfo5
+ Suggests: indent
+ Provides: editor
+ Section: editors
+ Priority: important
+ Homepage: http://www.vim.org/
+ Description: Vi IMproved - enhanced vi editor - compact version
+  Vim is an almost compatible version of the UNIX editor Vi.
+  .
+  Many new features have been added: multi level undo, syntax
+...
+$ dpkg --contents vim-tiny_7.3.429-2ubuntu2.1_amd64.deb
+drwxr-xr-x root/root         0 2012-05-04 12:26 ./
+drwxr-xr-x root/root         0 2012-05-04 12:25 ./usr/
+drwxr-xr-x root/root         0 2012-05-04 12:25 ./usr/share/
+drwxr-xr-x root/root         0 2012-05-04 12:25 ./usr/share/vim/
+drwxr-xr-x root/root         0 2012-05-04 12:25 ./usr/share/vim/vim73/
+drwxr-xr-x root/root         0 2012-02-05 06:55 ./usr/share/vim/vim73/doc/
+-rw-r--r-- root/root      1287 2012-02-05 06:55 ./usr/share/vim/vim73/doc/help.txt
+-rw-r--r-- root/root        30 2012-02-05 06:55 ./usr/share/vim/vim73/doc/tags
+..
+$
+$ ar -t vim-tiny_7.3.429-2ubuntu2.1_amd64.deb # ar 可以處理 .deb 檔，-t 可以列出內容，-x 可以解開
+debian-binary
+control.tar.gz
+data.tar.gz
+$
+$ ar -x vim-tiny_7.3.429-2ubuntu2.1_amd64.deb 
+$ ls -1
+control.tar.gz
+data.tar.gz
+debian-binary
+vim-tiny_7.3.429-2ubuntu2.1_amd64.deb
+$ cat debian-binary # .deb 格式的版號
+2.0
+$ tar -tzf control.tar.gz # 內含 meta-information
+./
+./postinst
+./prerm
+./conffiles
+./md5sums
+./control
+$ tar -tzf data.tar.gz # 真正要安裝資料
+...
+./usr/bin/
+./usr/bin/vim.tiny
+./etc/
+./etc/vim/
+./etc/vim/vimrc.tiny
+./usr/share/vim/vimrc.tiny
+./usr/share/doc/vim-tiny
+$ dpkg -S `which vim.tiny`
+vim-tiny: /usr/bin/vim.tiny
+$
+$ tar -xzf control.tar.gz 
+$ ls -1
+conffiles
+control
+control.tar.gz
+data.tar.gz
+debian-binary
+md5sums
+postinst
+prerm
+vim-tiny_7.3.429-2ubuntu2.1_amd64.deb
+$ cat control # 內容很像 email headers (RFC 2822)
+Package: vim-tiny
+Source: vim
+Version: 2:7.3.429-2ubuntu2.1
+Architecture: amd64
+Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+Installed-Size: 826
+Depends: vim-common (= 2:7.3.429-2ubuntu2.1), libc6 (>= 2.15), libselinux1 (>= 1.32), libtinfo5
+Suggests: indent
+Provides: editor
+Section: editors
+Priority: important
+Homepage: http://www.vim.org/
+Description: Vi IMproved - enhanced vi editor - compact version
+ Vim is an almost compatible version of the UNIX editor Vi.
+ .
+ Many new features have been added: multi level undo, syntax
+ highlighting, command line history, on-line help, filename
+ completion, block operations, folding, Unicode support, etc.
+ .
+ This package contains a minimal version of vim compiled with no
+ GUI and a small subset of features in order to keep small the
+ package size. This package does not depend on the vim-runtime # 沒有列入 Recommends
+ package, but installing it you will get its additional benefits
+ (online documentation, plugins, ...).
+Original-Maintainer: Debian Vim Maintainers <pkg-vim-maintainers@lists.alioth.debian.org>
+$ apt-cache show vim-tiny # 看似 apt-cache show 的資訊都來自 control.tar.gz 裡的 control
+Package: vim-tiny
+Priority: important
+Section: editors
+Installed-Size: 826
+Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+Original-Maintainer: Debian Vim Maintainers <pkg-vim-maintainers@lists.alioth.debian.org>
+Architecture: amd64
+Source: vim
+Version: 2:7.3.429-2ubuntu2.1
+Provides: editor
+Depends: vim-common (= 2:7.3.429-2ubuntu2.1), libc6 (>= 2.15), libselinux1 (>= 1.32), libtinfo5
+Suggests: indent
+...
+--------------------------------------------------------------------------------
+
+== 延伸閱讀 ==
+
+ * link:../../apt/apt.html[APT (Advanced Packaging Tool)]
+
+== 參考資料 ==
+
+.網站
+--
+ * http://www.debian.org/distrib/packages[Debian -- Packages]
+--
+
+.文件
+--
+ * http://en.wikipedia.org/wiki/Deb_(file_format)[deb (file format) - Wikipedia, the free encyclopedia]
+--
+
+

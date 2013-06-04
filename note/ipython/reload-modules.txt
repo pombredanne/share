@@ -1,0 +1,73 @@
+= link:ipython.html[IPython] / Reload Modules =
+:title: [IPython] 重新載入修改過後的 Modules
+
+在 IPython 裡進行開發，如果外部 `.py` 有修改需要重新載入時，除了 built-in `reload()` 之外，還有更好的選擇－autoreload extension。
+
+先來看看 `reload()` 有什麼不方便的地方：
+
+.`module.py`
+--------------------------------------------------------------------------------
+__version__ = '1'
+
+class Foo:
+    def bar(self):
+        return 'bar'
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+>>> import module
+>>> module.__version__
+'1'
+>>> from module import Foo
+>>> foo = Foo()
+>>> foo.bar()
+'bar'
+>>>
+>>> reload(module) # <1>
+<module 'module' from 'module.py'>
+>>> module.__version__
+'2'
+>>> foo.bar() # <2>
+'bar'
+>>> foo = Foo()
+>>> foo.bar()
+'bar'
+>>> from module import Foo
+>>> foo = Foo()
+>>> foo.bar()
+'bar x 2'
+--------------------------------------------------------------------------------
+<1> 將 `module.py` 的 `__version__` 跟 `bar()` 分別修改成 `'2'` 跟 `return 'bar x 2'`。
+<2> 顯然 instance 跟 class definition 都還是舊的。
+
+--------------------------------------------------------------------------------
+In [1]: %load_ext autoreload # <1>
+
+In [2]: import module
+
+In [3]: module.__version__
+Out[3]: '1'
+
+In [4]: from module import Foo
+
+In [5]: foo = Foo()
+
+In [6]: foo.bar()
+Out[6]: 'bar'
+
+In [7]: %autoreload # 
+
+In [8]: module.__version__
+Out[8]: '2'
+
+In [9]: foo.bar()
+Out[9]: 'bar x 2'
+--------------------------------------------------------------------------------
+<1> 載入 autoreload extension。
+
+== 參考資料 ==
+
+.文件
+--
+ * http://ipython.org/ipython-doc/stable/config/extensions/autoreload.html[autoreload — IPython 0.13.1 documentation] ^https://diigo.com/0xqjn[閱讀]^
+--

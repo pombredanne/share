@@ -1,0 +1,73 @@
+= link:client.html[HTTP / Client] / Python =
+:title: [Python] HTTP Client
+
+Python Standard Library 裡跟 HTTP client 相關的 module 有：
+
+ * `httplib`
+ * `urllib`
+ * `urllib2`
+
+其中 `httplib` 通常是透過 `urllib` 或 `urllib2` 間接使用。至於 `urllib` 跟 `urllib2` 兩者的關係則很微妙：
+
+ * 兩者有重疊的部份 (例如 `urlopen()`), 但有些是 `urllib` 才有的 (例如 link:../url/encoding-python.html[`urlencode()`])。
+ * `urllib` 在 Python 3 被拆成 `urllib.request`、`urllib.parse` 跟 `urllib.error`，而 `urllib2` 則被拆成 `urllib.request` 跟 `urllib.error`。顯然 `urllib` 跟 `urllib2` 在 Python 3 合併了。
+
+TIP: 基本上，`urllib2` 可以視為 `urllib` 的進階版，由於 `urllib` 的功能相對受限（不支援自訂 header 跟 link:cookies/python.html[cookie] 等），建議直接採用 `urllib2`。
+
+先從 `urllib2.urlopen()` 開始談起：
+
+ urllib2.urlopen(url[, data][, timeout])
+
+其中 'url' 可以是字面表示的 URL 或是 `urllib2.Request`（通常是為了自訂 header）。
+
+NOTE: `urllib.urlopen()` 也可以處理 HTTPS，但它不會檢查 server certificate 的有效性，也就是不會像真的 browser 遇到 certificate error 的問題。
+
+而 'data' 是具 `application/x-www-form-urlencoded` 格式的資料（可以用 link:../url/encoding-python.html[`urllib.urlencode()` 編碼]），做為 message body 一起送出去。預設 HTTP request 是採 GET method，但如果有提供 'data' 的話，則改採 POST method。
+
+如果 HTTP request 順利完成，會傳回一個 link:../python/files/files.html[file-like]，只是多了 `geturl()` 跟 `info()` 兩個方法而已。但如果過程中有發生錯誤，則會丟出 `urllib2.URLError`。
+
+--------------------------------------------------------------------------------
+>>> import urllib2
+>>> resp = urllib2.urlopen('http://www.google.com')
+>>> resp.geturl() <1>
+'http://www.google.com.tw/'
+>>> resp.read()[:100] <2>
+'<!doctype html><html itemscope="itemscope" itemtype="http://schema.org/WebPage"><head><meta itemprop'
+>>>
+>>> resp = urllib2.urlopen('http://xxx.google.com')
+Traceback (most recent call last):
+  ...
+  File "/usr/lib/python2.6/urllib2.py", line 1145, in do_open
+    raise URLError(err)
+urllib2.URLError: <urlopen error [Errno -2] Name or service not known> <3>
+>>>
+>>> try:
+...     resp = urllib2.urlopen('http://www.google.com/xxx')
+... except urllib2.URLError as e:
+...     print 'HTTP status code = %s (%s)' % (e.code, type(e))
+... 
+HTTP status code = 404 (<class 'urllib2.HTTPError'>) <4>
+>>>
+--------------------------------------------------------------------------------
+<1> 如果過程中有發生 redirection 的話，可以用 `geturl()` 來取得最終的 URL。
+<2> 跟 file-like object 一樣用 `read()` 讀取全部的內容。
+<3> 還沒跟 HTTP service 接上之前的錯誤都是 `urllib2.URLError`。
+<4> 如果跟 HTTP service 已經接上才發生的錯誤，則會丟出 `urllib2.HTTPError`（也是 `URLError` 的子類別）。從 `code` 屬性可以取得 HTTP status code。
+
+如果需要自訂 header 的話，就必須藉助 `urllib.Request`：
+
+ class urllib2.Request(url[, data][, headers][, origin_req_host][, unverifiable])
+
+...
+
+== 延伸閱讀 ==
+
+ * link:cookies/python.html[交換 Cookies]
+ * link:../url/parsing-python.html[拆解 URL]
+
+== 參考資料 ==
+
+ * http://docs.python.org/library/urllib.html[urllib — Open arbitrary resources by URL]
+ * http://docs.python.org/library/urllib2.html[urllib2 — extensible library for opening URLs]
+ * http://docs.python.org/library/httplib.html[httplib — HTTP protocol client]
+

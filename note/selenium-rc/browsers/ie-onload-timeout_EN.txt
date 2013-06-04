@@ -1,0 +1,114 @@
+= link:ie.html[Selenium RC / IE] / IE 9+ intermittently throws a timeout error even the page is fully loaded =
+Dec. 13rd, 2012
+:title: [Selenium RC] IE 9+ intermittently throws a timeout error even the page is fully loaded
+
+-> link:ie-onload-timeout.html[中文版]
+
+While testing on IE 9+ with Selenium RC, it INTERMITTENTLY throws a timeout error like "Time out after 30000ms" even the page is fully loaded.
+
+This issue was raised for the first time in http://code.google.com/p/selenium/issues/detail?id=1639[Issue #1639]. However, as mentioned by a project member, the developement focus had been moved to the next generation, link:../../selenium2/selenium2.html[Selenium 2/WebDriver], and therefore the issue is not fixed yet and it's priority was adjusted to LOW eventually.
+
+[quote,'http://code.google.com/p/selenium/issues/detail?id=1639[Issue 1639 - selenium - Internet Explorer 9 intermittently fails to recognize page loads with waitForPageToLoad call]']
+________________________________________________________________________________
+Comment 13 by project member jmle...@gmail.com, Jan 3, 2012
+All active development is focused on Selenium 2.0 (the WebDriver APIs).  Updating issue priority accordingly.
+
+Labels: Priority-Low 
+________________________________________________________________________________
+
+IMPORTANT: The resulting status of this issue reminds us that we should link:../../selenium2/migration.html[migrate to Selenium 2/WebDriver] ASAP, or we might encounter some issues like this in the near future.
+
+Mostly, this error is raised from the invocation of `wait_for_page_to_load()` in IE 9 and 10. It is even worse that in IE 9, the initial operation `open()` may also result in the same error. The famous link:../../seleniumlibrary/seleniumlibrary.html[SeleniumLibrary] also suffers from this issue, and consequently, this issue should be addressed from the lowest level - `selenium.py`.
+
+[source,python]
+.`selenium.py`
+--------------------------------------------------------------------------------
+def open(self,url,ignoreResponseCode=True):
+    """
+    Opens an URL in the test frame. This accepts both relative and absolute
+    URLs.
+    
+    The "open" command waits for the page to load before proceeding,
+    ie. the "AndWait" suffix is implicit.
+    ...
+    """
+    self.do_command("open", [url,ignoreResponseCode])
+
+def wait_for_page_to_load(self,timeout):
+    """
+    Waits for a new page to load.
+    
+    You can use this command instead of the "AndWait" suffixes, "clickAndWait", "selectAndWait", "typeAndWait" etc.
+    (which are only available in the JS API).
+    
+    Selenium constantly keeps track of new pages loading, and sets a "newPageLoaded"
+    flag when it first notices a page load.  Running any other Selenium command after
+    turns the flag to false.  Hence, if you want to wait for a page to load, you must
+    wait immediately after a Selenium command that caused a page-load.
+    ...
+    """
+    self.do_command("waitForPageToLoad", [timeout,])
+--------------------------------------------------------------------------------
+
+Carry out some experiments:
+
+ * It is proved that setting timeout to 0 prior to invoking `open()` works.
++
+[source,javascript]
+.http://code.google.com/p/selenium/source/browse/trunk/common/src/js/core/scripts/selenium-api.js?r=8162#923[`selenium-api.js#923`]
+--------------------------------------------------------------------------------
+Selenium.prototype.makePageLoadCondition = function(timeout) {
+    if (timeout == null) {
+        timeout = this.defaultTimeout;
+    }
+    // if the timeout is zero, we won't wait for the page to load before returning
+    if (timeout == 0) { // <1>
+	  // abort XHR request  
+          this._abortXhrRequest(); 	   
+    	  return;
+    }
+    return Selenium.decorateFunctionWithTimeout(fnBind(this._isNewPageLoaded, this), timeout, fnBind(this._abortXhrRequest, this));
+};
+--------------------------------------------------------------------------------
+<1> The situation of timeout == 0 is specially treated.
++
+ * It is stable to determine if the page is fully loaded by checking the value of http://www.w3schools.com/jsref/prop_doc_readystate.asp[`document.readyState`], even the onload event never happens.
+
+Here we go!!
+
+[source,python]
+--------------------------------------------------------------------------------
+def open(self):
+    timeout = self.get_eval('this.defaultTimeout')
+    self.set_timeout(0)
+    self.do_command("open", [url,ignoreResponseCode]) # <1>
+    self.set_timeout(timeout)
+    self.wait_for_page_to_load(timeout)
+
+def wait_for_page_to_load(self,timeout):
+    # self.do_command("waitForPageToLoad", [timeout,]) <1>
+    import time
+    end = time.time() + int(float(timeout) / 1000)
+    while time.time() < end:
+        if self.get_eval('window.document.readyState') == 'complete': return
+        time.sleep(2)
+    raise Exception('Time out after %sms' % timeout) # <2>
+--------------------------------------------------------------------------------
+<1> These commands may cause timeout in IE 9+.
+<2> To mimic the behavior of the original implementation, throw the same error message.
+
+== See Also ==
+
+ * link:../api/javascript.html[Execute JavaScript]
+ * link:../recipes/default-timeout.html[Get default timeout]
+
+== References ==
+
+ * http://grokbase.com/t/gg/selenium-users/127rscmeax/html-script-timeouts-using-iexplore-with-ie9[[selenium-users&#93; html script timeouts using iexplore with IE9 - Grokbase] (2012-07-24)
+ * http://code.google.com/p/selenium/issues/detail?id=2451[Issue 2451 - selenium - waitForPageToLoad() in Internet Explorer 9 ( ie 9 ) - Browser automation framework - Google Project Hosting] (2011-09-13)
+ * http://webthaumaturge.blogspot.tw/2011/08/selenium-ie9-waitforpagetoload-fix.html[webthaumaturge's blog: Selenium IE9 WaitForPageToLoad Fix] (2011-08-26)
+ * http://code.google.com/p/selenium/issues/detail?id=1639[Issue 1639 - selenium - Internet Explorer 9 intermittently fails to recognize page loads with waitForPageToLoad call - Browser automation framework - Google Project Hosting] (2011-05-09)
+ * http://automation-tipsandtricks.blogspot.tw/2010/12/seleniumopen-times-out-even-after-page.html[Automation - Tips and Tricks: selenium.open times out even after the page has loaded in IE] (2010-12-12)
+ * http://stackoverflow.com/questions/3372507/selenium-test-in-internet-explorer-always-times-out[Selenium test in Internet Explorer always times out? - Stack Overflow] (2010-07-30)
+ * http://jira.openqa.org/browse/SRC-552[[#SRC-552&#93; waitForPageToLoad does not return on *iexplore browser in Windows XP - OpenQA Bug Tracker] (2008-11-02)
+

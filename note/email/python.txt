@@ -1,0 +1,193 @@
+= link:email.html[Email] / Python =
+:title: [Email] 用 Python 解開信件的內容
+
+link:email/message.eml[`message.eml`] 的內容如下：
+
+image::email/message.png[]
+
+--------------------------------------------------------------------------------
+Delivered-To: username@gmail.com
+...
+MIME-Version: 1.0
+X-Received: by 10.52.175.71 with SMTP id by7mr20694367vdc.85.1367133137101;
+ Sun, 28 Apr 2013 00:12:17 -0700 (PDT)
+Received: by 10.220.245.201 with HTTP; Sun, 28 Apr 2013 00:12:16 -0700 (PDT)
+Date: Sun, 28 Apr 2013 15:12:16 +0800
+Message-ID: <CAJr-f47avopH_rgD_sdH7WpVDPpUTE15YE_zZ-T-P+Sgc-87Dw@mail.gmail.com>
+Subject: =?ISO-2022-JP?B?SGVsbG8vGyRCJDMkcyRLJEEkTxsoQiAtIBskQkdnQCcwbEl1Qiw7bj8uGyhC?=
+From: Jeremy Kao <xxx@gmail.com>
+To: username@gmail.com
+Content-Type: multipart/mixed; boundary=bcaec5171f9dff6a7904db667c84
+
+--bcaec5171f9dff6a7904db667c84
+Content-Type: multipart/related; boundary=bcaec5171f9dff6a7704db667c83
+
+--bcaec5171f9dff6a7704db667c83
+Content-Type: multipart/alternative; boundary=bcaec5171f9dff6a7504db667c82
+
+--bcaec5171f9dff6a7504db667c82
+Content-Type: text/plain; charset=Big5
+Content-Transfer-Encoding: base64
+
+sXqmbiyn86ZouOqwVL3Qp+QgR29vZ2xlIKRqr6sgPGh0dHA6Ly93d3cuZ29vZ2xlLmNvbT4uDQpb
+aW1hZ2U6IElubGluZSBpbWFnZSAxXQ0K
+--bcaec5171f9dff6a7504db667c82
+Content-Type: text/html; charset=Big5
+Content-Transfer-Encoding: quoted-printable
+
+<div dir=3D"ltr">=B1z=A6n,=A7=F3=A6h=B8=EA=B0T=BD=D0=A7=E4 <a href=3D"http:=
+//www.google.com">Google =A4j=AF=AB</a>.<br><div><img src=3D"cid:ii_13e4f7b=
+b0de6344a" alt=3D"Inline image 1" width=3D"490" height=3D"169"><br></div></=
+div>
+
+--bcaec5171f9dff6a7504db667c82--
+--bcaec5171f9dff6a7704db667c83
+Content-Type: image/png; name="logo4w.png"
+Content-Transfer-Encoding: base64
+Content-ID: <ii_13e4f7bb0de6344a>
+X-Attachment-Id: ii_13e4f7bb0de6344a
+
+iVBORw0KGgoAAAANSUhEUgAAAiYAAAC+CAMAAAA2ujRzAAADAFBMVEWZmpnqJTOxCST+uBX6cmjZ
+...
+irGX3TS5F6MU1skEQpliID4EJEOKiYkAKswKHIwwyxThk5EixjAiBhODCoVp4Vc+bGKEYef2Y2Ji
+8hedwgOKJTcNiwAAAABJRU5ErkJggg==
+--bcaec5171f9dff6a7704db667c83--
+--bcaec5171f9dff6a7904db667c84
+Content-Type: application/zip; name="logo4w.png.zip"
+Content-Disposition: attachment; filename="logo4w.png.zip"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_hg1vrg8w1
+
+UEsDBAoAAAAAAOdFnEIHiEvfAkoAAAJKAAAKABwAbG9nbzR3LnBuZ1VUCQADknF8UZVxfFF1eAsA
+...
+SwUGAAAAAAEAAQBQAAAARkoAAAAA
+--bcaec5171f9dff6a7904db667c84
+----------------------------------------------------------------------------------
+
+解開信件的主旨：
+
+[source,pycon]
+--------------------------------------------------------------------------------
+>>> import email
+>>> from email.header import decode_header
+>>>
+>>> rfc822 = open('message.eml', 'rb').read()
+>>> message = email.message_from_string(rfc822) # <1>
+>>> message.__class__
+email.message.Message
+>>>
+>>> message['SUBJECT'] # <2>
+'=?ISO-2022-JP?B?SGVsbG8vGyRCJDMkcyRLJEEkTxsoQiAtIBskQkdnQCcwbEl1Qiw7bj8uGyhC?='
+>>> decode_header(message['SUBJECT']) # <3>
+[("Hello/\x1b$B$3$s$K$A$O\x1b(B - \x1b$BGg@'0lIuB,;n?.\x1b(B", 'iso-2022-jp')]
+>>> subject, charset = _[0]
+>>> if charset: subject = subject.decode(charset)
+...
+>>> print subject
+Hello/こんにちは - 這是一封測試信
+--------------------------------------------------------------------------------
+<1> `email.message_from_string()` 可以將 RFC 822 (`.eml`) 轉化成 `email.message.Message` 物件。
+<2> 透過 mapping 介面，可以取得不同 headers 的值（通常是編碼過的）。
+<3> 編碼過的 header 可以用 `email.header.decode_header()` 解開，傳回 list of `(decoded_string, charset)` pairs。有了這些資訊，就可以 decode 成 Unicode （'charset' 可能是 `None`，表示沒有編碼過）。
+
+這封信件的結構相當複雜：
+
+--------------------------------------------------------------------------------
+- multipart/mixed             <1>
+  |- multipart/related        <2>
+  |  |- multipart/alternative <3>
+  |  |  |- text/plain
+  |  |  `- text/html
+  |  `- image/png             <4>
+  \- application/zip          <4>
+--------------------------------------------------------------------------------
+<1> 由於有附件的關係，所以最外層用 `multipart/mixed` 包裝起來。
+<2> 由於有內嵌圖片的關係，所以再用一層 `multipart/related` 包裝起來。
+<3> `multipart/alternative` 表示兩種可替換的格式，這裡是 `text/plain` 跟 `text/html`。
+<4> `image/png` 是內嵌的那張圖，而 `application/zip` 則是附件。
+
+看到這裡，會發覺利用 `email.message.Message` 來讀取 email 還不是很方便，值得再包裝一層。
+
+[source,python]
+.link:python/emailutil.py[`emailutil.py`]
+--------------------------------------------------------------------------------
+import email
+from email.header import decode_header
+
+class Email(object):
+
+    def __init__(self, rfc822):
+        self._rfc822 = rfc822
+        self._message = email.message_from_string(rfc822)
+
+    def get_rfc822(self):
+        return self._rfc822
+
+    def get_subject(self):
+        subject, charset = decode_header(self._message['SUBJECT'])[0]
+        if charset: subject = subject.decode(charset)
+        return subject
+
+    def _get_text(self, message):
+        for part in message.walk(): # in depth-first traversal order <1>
+            if part.get_content_maintype() == 'text':
+                text = part.get_payload(decode=True).decode(part.get_content_charset()) # <2>
+                return part.get_content_type(), text
+            if part.get_content_type() == 'multipart/alternative':
+                for altpart in reversed(part.get_payload()): # in an order of increasing faithfulness <3>
+                   text = self._get_text(altpart)
+                   if text is not None: return text
+            continue
+        return None
+
+    def get_text(self):
+        return self._get_text(self._message)
+--------------------------------------------------------------------------------
+<1> `Message.walk()` 在處理 multipart message 時很方便，會遶行過所有的 parts （深度優先）。
+<2> 前者 `decode=True` 是在解 `Content-Transfer-Encoding`，後者 `decode()` 則是將內容轉換成 Unicode。
+<3> 根據 http://tools.ietf.org/html/rfc2046[RFC 2046 > Alternative Subtype] 的說法，後者最能忠實地表現原始的訊息內容。
++
+________________________________________________________________________________
+In this case, the alternatives appear in an order of increasing faithfulness to the original content. In general, the best choice is the LAST part of a type supported by the recipient system's local environment.
+________________________________________________________________________________
+
+用起來像是：
+
+[source,pycon]
+--------------------------------------------------------------------------------
+>>> from emailutil import Email
+>>> rfc822 = open('message.eml', 'rb').read()
+>>> email = Email(rfc822)
+>>> print email.get_subject()
+Hello/こんにちは - 這是一封測試信
+>>> email.get_text()
+('text/html', # <1>
+ u'<div dir="ltr">\u60a8\u597d,\u66f4\u591a\u8cc7\u8a0a\u8acb\u627e <a href="http://www.google.com">Google \u5927\u795e</a>.<br><div><img src="cid:ii_13e4f7bb0de6344a" alt="Inline image 1" width="490" height="169"><br></div></div>\r\n')
+>>> print email.get_text()[1]
+<div dir="ltr">您好,更多資訊請找 <a href="http://www.google.com">Google 大神</a>.<br><div><img src="cid:ii_13e4f7bb0de6344a" alt="Inline image 1" width="490" height="169"><br></div></div>
+--------------------------------------------------------------------------------
+<1> 由於 `text/html` 在 `text/plain` 之後，所以優先採用 HTML。
+
+== 延伸閱讀 ==
+
+ * link:../imap/python.html[用 Python + IMAP 讀取信件]
+
+== 參考資料 ==
+
+.文件
+--
+ * http://en.wikipedia.org/wiki/MIME[MIME - Wikipedia, the free encyclopedia] ^https://diigo.com/0yp5w[閱讀]^
+ * http://tools.ietf.org/html/rfc2046[RFC 2046 - Multipurpose Internet Mail Extensions (MIME) Part Two: Media Types] ^https://diigo.com/0yp6i[閱讀]^
+ * http://docs.python.org/2/library/email.html[email — An email and MIME handling package]
+ * http://docs.python.org/2/library/email.header.html[email.header: Internationalized headers] ^https://diigo.com/0y9zp[閱讀]^
+ * http://docs.python.org/2/library/email.message.html[email.message: Representing an email message] ^https://diigo.com/0yam4[閱讀]^
+ * http://yuji.wordpress.com/2011/06/22/python-imaplib-imap-example-with-gmail/[Python — imaplib IMAP example with Gmail | Useful Stuff.] ^https://diigo.com/0y9wa[閱讀]^ (2011-06-22)
+--
+
+.其他文件
+--
+ * http://stackoverflow.com/questions/6255202/parsing-multipart-emails-in-python-and-saving-attachments[Parsing Multipart emails in python and saving attachments - Stack Overflow] (2011-06-06)
+ * http://stackoverflow.com/questions/2230037/how-to-fetch-an-email-body-using-imaplib-in-python[How to fetch an email body using imaplib in python? - Stack Overflow] (2010-02-09)
+ * http://stackoverflow.com/questions/1463074/how-can-i-get-an-email-messages-text-content-using-python[How can I get an email message's text content using python? - Stack Overflow] (2009-09-22)
+--
+

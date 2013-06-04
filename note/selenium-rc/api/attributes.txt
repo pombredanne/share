@@ -1,0 +1,31 @@
+= link:api.html[Selenium RC / API] / 取得某個 Element 的屬性值 =
+:title: [Selenium][RC] 取得某個 Element 的屬性值
+
+RC API 提供有 `get_attribute()` 可以用來取得某個 element 的 attribute value：
+
+ get_attribute(attribute_locator)
+
+這裡 'attribute locator' 指的是在 element locator 後面串上 `@attribute_name` 的表示法。例如 `css=*.tabs_nav *.selected@rel` 就是用來取得 `css=*.tabs_nav *.selected` 這個 element 的 `rel` 屬性值。
+
+當 attribute 不存在時，會丟出類似下面的例外：
+
+ Exception: ERROR: Could not find element attribute: css=*.tabs_nav *.selected@rel
+
+這跟 element 不存在的例外是不同的：
+
+ Exception: ERROR: Element css=*.tabs_nav *.selected not found
+
+由於某些 attribute 會動態產生，如果要檢查某 attribute 是否存在，攔截上述例外的做法（trial and error）雖然可行，但利用 `get_css_count(css)` 會更好。
+
+--------------------------------------------------------------------------------
+cssloc = 'css=*.tabs_nav *.selected'
+if sel.get_css_count(cssloc + '[rel]') != 0: <1>
+    print sel.get_attribute(cssloc + '@rel)  <2>
+--------------------------------------------------------------------------------
+<1> 先用 link:../../css/selectors/attribute.html[attribute selectors] 確認 attribute 是否存在，不管它的 value 是什麼。
+<2> 再用 attribute locator 取出 attribute value。
+
+== 參考資料 ==
+
+ * http://selenium.googlecode.com/svn/trunk/docs/api/py/selenium/selenium.selenium.html[selenium.selenium — Selenium 2.0 documentation]
+

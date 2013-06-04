@@ -1,0 +1,35 @@
+= link:generators.html[OpenNI / Generators] / User Generator =
+:title: [OpenNI] User Generator
+
+== 參考資料 ==
+
+ * `xn::UserGenerator` Class Reference (`Documentation/html/classxn_1_1_user_generator.html`)
+ * https://github.com/OpenNI/OpenNI/blob/Unstable-1.5.4.0/Wrappers/OpenNI.java/src/org/OpenNI/UserGenerator.java[`org/OpenNI/UserGenerator.java`]
+ * https://github.com/OpenNI/OpenNI/blob/Unstable-1.5.4.0/Wrappers/OpenNI.java/src/org/OpenNI/UserEventArgs.java[`org/OpenNI/UserEventArgs.java`]
+ * link:../samples.html[範例程式 > UserTracker.java]
+
+////////////////////////////////////////////////////////////////////////////////
+
+ * generates data describing users that it recognizes in the scene, identifying each user individually and thus allowing actions to be done on specific users (through user IDs).
+ * `UserGenerator`
+   ** `create(Context context): UserGenerator` (static)
+   ** `getNumberOfUsers(): int` - 包含那些已經觸發 "user exit" 的 user，感覺有個 lost user time 在背後，要怎麼調整??
+   ** `getUsers(): int[]`
+   ** `getUserCoM(int id): Point3D` - the center of mass of a specific user.
+   ** `getUserPixels(int user, SceneMetaData smd): void`
+   ** `getUserPixels(int user): SceneMetaData` - different form of depth map。value 不再是 depth，而是 user ID（0 表示 background 沒有 user 擋住的部份）
+   ** `getPoseDetectionCapability(): PoseDetectionCapability`
+   ** `getSkeletonCapability(): SkeletonCapability`
+   ** `getNewUserEvent(): IObservable<UserEventArgs>` - 發現要距離 75 公分左右（而且要稍微動一下）才識別得出來是個人。
+   ** `getLostUserEvent(): IObservable<UserEventArgs>` - raised only after some delay (a certain timeout) after the user actually exited the scene.
+   ** `getUserExitEvent(): IObservable<UserEventArgs>`
+   ** `getUserReenterEvent(): IObservable<UserEventArgs>`
+ * `UserEventArgs`
+   ** `getId(): int` - user ID
+ * typical event sequence: new user -> user exit -> user reenter -> user exit -> lost user
+   ** if no timeout is used at all, the 'User Exit' and 'User Reenter' events are redundant.
+ * skeleton can be calibrated (calibration pose) and tracked??
+ * 
+ 
+////////////////////////////////////////////////////////////////////////////////
+

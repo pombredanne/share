@@ -1,0 +1,121 @@
+= Playing leJOS =
+
+== 安裝 ==
+
+安裝 lejOS NXJ 之前，先確認 JDK 1.5+ 已經安裝。
+
+leJOS NXJ 0.7 版開始提供 Windows installer，安裝步驟如下：
+
+ 1. 從http://sourceforge.net/projects/lejos/files/lejos-NXJ-win32/[這裡]下載並執行 `leJOS_NXJ_<version>-Setup.exe`。
+ 2. 主程式會被安裝到 `C:\Program Files\leJOS NXJ`（子目錄 `bin\` 會自動被加到 `PATH` 環境變數裡），另外有一些範例專案會被安裝到 `%USERPROFILE%\leJOSNXJProjects`。
+ 3. 結束時會自動跑安裝 NXJ firmware 的程式（`nxjflashg.bat`），將 leJOS NXJ 安裝到 NXT 上。（過程中不需要用到迴紋針）
+
+== Hello World ==
+
+.`HelloWorld.java`
+--------------------------------------------------------------------------------
+import lejos.nxt.Button;
+
+public class HelloWorld {
+
+  public static void main(String[] args) {
+    System.out.println("Hello World"); <1>
+    Button.waitForPress(); <2>
+  }
+
+}
+--------------------------------------------------------------------------------
+<1> leJOS NXJ 支援 `System.out.println()` 輸出到 NXT LCD 螢幕。
+<2> 這一行一定要加，否則螢幕一閃程式就結束了。`Button.waitForPress()` 會等待任何一個按鈕被按下後，才繼續往下執行。
+
+接下來用 ｀nxjc｀ 將 `HelloWorld.java` 編譯成 `HelloWorld.class`：
+
+ C:\tmp>nxjc HelloWorld.java
+
+TIP: 雖然 `nxjc` 最後也是呼叫 JDK 標準的 `javac`，但沒有直接用 `javac` 是因為 leJOS 有自己的 `java.lang.*` 類別（包在 `classes.jar` 裡），`nxjc` 內部轉呼叫 `javac` 時，會多加了一個 `-bootclasspath` 將 leJOS 的 `classes.jar` 帶進去。
+
+跟一般的 Java 程式不同，leJOS NXJ 程式不支援 dynamic class loading，因此所有執行期會用到的 class 都必須事先收錄成單一個二進位的 `.nxj` 檔（這個過程稱做 'linking'），然後上傳到 NXT 執行。
+
+NXJ 提供兩個工具－`nxjlink` 跟 `nxjupload`，分別負責 linking 跟 upload 的工作。但在實務上，則比較常用 `nxj` 一次完成 linking 跟 upload 的動作。
+
+接下來就用 `nxj` 完成 linking 跟 upload 的動作（會先試過 USB，再嘗試 Bluetooth），然後直接在 NXT 上執行 HelloWorld：
+
+ C:\tmp>nxj -r HelloWorld
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://lejos.sourceforge.net/nxt/nxj/tutorial/Preliminaries/FirstProgram.htm[Tutorial > Writing your first leJOS NXJ Program]
+================================================================================
+
+== NXJ API 的概觀 ==
+
+== 控制馬達 ==
+
+透過 `lejos.nxt.Motor` 提供的三個 class variable － `Motor.A`、`Motor.B` 及 `Motor.C`（型態都是 `lejos.nxt.NXTRegulatedMotor`），可以存取連接到不同 port 的馬達。
+
+
+
+NXJ 的馬達是用 `lejos.nxt.NXTRegulatedMotor` 來表現，可以透過 `lejos.nxt.Motor` 的
+
+`lejos.nxt.Motor` 提供
+
+[NOTE]
+.參考資料
+================================================================================
+http://lejos.sourceforge.net/nxt/nxj/tutorial/MotorTutorial/ControllingMotors.htm[Tutorial > Controlling the Motors]
+================================================================================
+
+== 瞭解 leJOS NXJ 選單系統 ==
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://lejos.sourceforge.net/nxt/nxj/tutorial/MenuSystem/MenuSystem.htm[Tutorial > The leJOS NXJ Menu System]
+================================================================================
+
+== Command Line Tools ==
+
+    * nxjc
+    * nxjlink
+    * nxjupload
+    * nxj
+
+However, it needs to replace the standard Java library with leJOS's own version of this - classes.jar. For this reason we provide a command called nxjc that sets the boot class path to classes.jar.
+
+leJOS NXJ programs are different from normal Java programs in that they do not support dynamic class loading. Instead all the classes used in the program are collected together and packaged in a binary file with a .nxj extension. This process is referred to as linking. The linked binary is then uploaded to the NXT.
+
+The tools for compiling, linking and uploading leJOS NXJ programs are:
+
+
+Note that you normally only need to use the nxjc and nxj commands, as nxj does the equivalent of nxjlink followed by nxjupload.
+
+
+nxjc calls javac with parameters:
+
+    * -bootclasspath <path to classes.jar>
+    * <java-files>
+
+-bootclasspath is set because leJOS does not use the standard java.lang classes but has its own versions in classes.jar.
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://lejos.sourceforge.net/nxt/nxj/tutorial/Preliminaries/CompileAndRun.htm#1[Tutorial > Using the leJOS NXJ command line tools]
+================================================================================
+
+== Using leJOS with Android ==
+
+除了程式跑在 NXT 上之外，還有其他選擇：
+
+ * leJOS NXJ also supports programs that run on the PC and control a NXT robot remotely. Such PC programs can control a NXT robot running the leJOS NXJ menu. They can also remotely control a robot running the standard LEGO firmware.
+ * An even more interesting option that leJOS NXJ supports is to write a program that runs partly on the NXT and partly on a PC with the two parts communicating with each other over Bluetooth or USB. The part of your program that runs on the PC has more memory and processing power available to it and can do more complex processing. It can also display interesting user interfaces such as maps of where your robot is exploring. The part of the program that runs on the NXT can respond quickly to sensors and can accurately control motors.
+ * leJOS NXJ programs can be distributed across multiple NXT bricks which can communicate with each other over Bluetooth or via RS485 communication using NXT cables linking port 4 of two or more NXT bricks.
+ * leJOS NXJ programs can also run on mobile phones or other devices that support the Java MicroEdition Environment (JME). Such programs can communicate with the NXT over Bluetooth. We plan to add a section to the tutorial soon that will describe how to develop programs that use the leJOS NXJ JME API.
+ * You can also communicate with leJOS NXJ programs from Android phones
+ * NXT programs can also communicate with external devices such as Bluetooth GPS Receivers.
+
+
+ * 官網 2011-05-16 leJOS NXJ 0.9 提到 preliminary Android OS support
+ * http://lejos.sourceforge.net/nxt/nxj/tutorial/Android/Android.htm[Using leJOS with Android]
+

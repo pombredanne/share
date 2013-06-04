@@ -1,0 +1,77 @@
+= Learning PHP =
+
+== /etc/php.ini ==
+
+
+--------------------------------------------------------------------------------
+; This directive determines whether or not PHP will recognize code between
+; <? and ?> tags as PHP source which should be processed as such. It's been
+; recommended for several years that you not use the short tag "short cut" and
+; instead to use the full <?php and ?> tag combination. With the wide spread use
+; of XML and use of these tags by other languages, the server can become easily
+; confused and end up parsing the wrong code in the wrong context. But because
+; this short cut has been a feature for such a long time, it's currently still
+; supported for backwards compatibility, but we recommend you don't use them.
+; Default Value: On
+; Development Value: Off
+; Production Value: Off
+; http://www.php.net/manual/en/ini.core.php#ini.short-open-tag
+short_open_tag = On
+--------------------------------------------------------------------------------
+
+
+== 安裝 ==
+
+ # yum install php
+
+`/etc/httpd/` 會多出 `php.conf`。
+
+== Hello World ==
+
+ * 字串很特別地用 `.` 串接起來，例如 `"Version: ".$version`。
+ * `echo` 可以用來印出訊息，例如 `echo "Hello World!";`。`echo` 不會自動換行，在 CLI 可以額外輸出換行字元，例如 `echo $log_message."\n"`。
+
+== 讀寫檔案 ==
+
+檔案基本的操作是 open -> read / write -> close。下面的範例會將 `/etc/lsb-release` 的內容印出來：
+
+.`linux-dist.php`
+--------------------------------------------------------------------------------
+<?php
+$fn = "/etc/lsb-release";
+$fh = fopen($fn, "r"); <1>
+$content = fread($fh, filesize($fn)); <2>
+fclose($fh);
+echo $content;
+?>
+--------------------------------------------------------------------------------
+<1> `fopen(filename, "r")` 以唯讀的方式開啟 'filename'。
+<2> `fread(file_handler, length_in_bytes)` 從 'file_handler' 讀入 'length_in_bytes' 的資料。可以用 `filesize(file_handler)` 來取得檔案的長度，就可以一次將檔案的內容讀入。
+
+執行結果如下：
+
+--------------------------------------------------------------------------------
+$ php linux-dist.php
+DISTRIB_ID=Ubuntu
+DISTRIB_RELEASE=10.10
+DISTRIB_CODENAME=maverick
+DISTRIB_DESCRIPTION="Ubuntu 10.10"
+--------------------------------------------------------------------------------
+
+ * 
+
+== Testing ==
+
+remote code coverage
+
+ - http://phpcoverage.sourceforge.net/[PHPCoverage - a code coverage measurement tool for PHP]
+
+== 檔案格式處理 ==
+
+=== Excel ===
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://phpexcel.codeplex.com/[PHPExcel - Home]
+================================================================================

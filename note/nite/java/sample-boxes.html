@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
 <link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
 <link rel="stylesheet" href="../../../_asciidoc/stylesheets/pygments.css" type="text/css" />
-<link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" />
+<!--link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" /-->
 <script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
 <script type="text/javascript">
 /*<![CDATA[*/
@@ -25,18 +25,18 @@ asciidoc.install();
     <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
   </div>
   <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
-  <div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <!--div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
   <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
   <a class="addthis_button_tweet" tw:count="vertical"></a>
   <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
   <a class="addthis_counter"></a>
-  </div>
+  </div-->
 </div>
 </div>
 <div id="layout-content-box">
 <div id="layout-banner">
   <div id="layout-title">在電梯裡遇見雙胞胎</div>
-  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a></div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <!--a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a--></div>
 </div>
 <div id="layout-content">
 <div id="header">
@@ -45,6 +45,284 @@ asciidoc.install();
 <div id="content">
 <div id="preamble">
 <div class="sectionbody">
+<div class="imageblock">
+<div class="content">
+<img src="sample-boxes/boxes.png" alt="sample-boxes/boxes.png" />
+</div>
+</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>BoxesApplication.java</code> - 主程式，生出視窗外框（<code>JFrame</code>）後就轉呼叫 <code>Boxes.run()</code>。
+</p>
+</li>
+<li>
+<p>
+<code>Boxes.java</code>
+</p>
+</li>
+<li>
+<p>
+<code>MyBox.java</code>
+</p>
+</li>
+</ul></div>
+<div class="listingblock">
+<div class="title"><code>Boxes.java</code></div>
+<div class="content">
+<pre><code>scriptNode = new OutArg&lt;ScriptNode&gt;();
+this.context = Context.createFromXmlFile(SAMPLE_XML_FILE, scriptNode);
+this.sessionManager = new SessionManager(this.context, new String("Click"));
+this.flowRouter = new FlowRouter();
+this.selectableSlider = new SelectableSlider1D(3, Axis.X); // <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+this.boxes = new MyBox[3];
+this.boxes[0] = new MyBox("Box1", panel1);
+this.boxes[1] = new MyBox("Box2", panel2);
+this.boxes[2] = new MyBox("Box3", panel3);
+
+boxesObserver = new Observer()
+{
+    public void update(Observable o, Object arg)
+    {
+        try {
+            flowRouter.setActive(selectableSlider);
+        } catch (StatusException e) {
+            e.printStackTrace();
+        }
+    }
+};
+
+this.boxes[0].getLeaveEvent().addObserver(boxesObserver); // <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+this.boxes[1].getLeaveEvent().addObserver(boxesObserver);
+this.boxes[2].getLeaveEvent().addObserver(boxesObserver);
+
+this.selectableSlider.getItemHoverEvent().addObserver(new IObserver&lt;IndexEventArgs&gt;()
+{
+    @Override
+    public void update(IObservable&lt;IndexEventArgs&gt; observable,
+            IndexEventArgs args)
+    {
+        boxes[0].ChangeColor(Color.CYAN);
+        boxes[1].ChangeColor(Color.CYAN);
+        boxes[2].ChangeColor(Color.CYAN);
+        boxes[args.getIndex()].ChangeColor(Color.YELLOW);
+    }
+});
+
+this.selectableSlider.getItemSelectEvent().addObserver(new IObserver&lt;IndexDirectionEventArgs&gt;()
+{
+    @Override
+    public void update(IObservable&lt;IndexDirectionEventArgs&gt; observable,
+            IndexDirectionEventArgs args)
+    {
+        if (args.getDirection() == Direction.UP) // <img src="../../../_asciidoc/images/icons/callouts/5.png" alt="5" />
+        {
+            try {
+                flowRouter.setActive(boxes[args.getIndex()]);
+            } catch (StatusException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+});
+
+this.selectableSlider.getValueChangeEvent().addObserver(new IObserver&lt;ValueEventArgs&gt;()
+{
+    @Override
+    public void update(IObservable&lt;ValueEventArgs&gt; observable,
+            ValueEventArgs args) {
+        sliderCursor.setBounds((int)(args.getValue()*600), 85, 6, 20); // <img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+    }
+});
+
+this.selectableSlider.getPrimaryPointCreateEvent().addObserver(new IObserver&lt;HandPointEventArgs&gt;()
+{
+    @Override
+    public void update(IObservable&lt;HandPointEventArgs&gt; observable,
+            HandPointEventArgs args)
+    {
+        sliderPanel.setBackground(Color.RED); // <img src="../../../_asciidoc/images/icons/callouts/4.png" alt="4" />
+    }
+});
+
+this.selectableSlider.getPrimaryPointDestroyEvent().addObserver(new IObserver&lt;IdEventArgs&gt;()
+{
+    @Override
+    public void update(IObservable&lt;IdEventArgs&gt; observable, IdEventArgs args)
+    {
+        sliderPanel.setBackground(Color.WHITE); // <img src="../../../_asciidoc/images/icons/callouts/4.png" alt="4" />
+    }
+});
+this.sessionManager.getSessionStartEvent().addObserver(new IObserver&lt;PointEventArgs&gt;()
+{
+    @Override
+    public void update(IObservable&lt;PointEventArgs&gt; observable,
+            PointEventArgs args)
+    {
+        System.out.println("Session Start");
+        try {
+            flowRouter.setActive(selectableSlider);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+});
+
+this.sessionManager.addListener(this.flowRouter);
+this.shouldRun = true;</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+延著 X 軸水平移動，並劃分成 3 段。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+從特定 box 離開後（往前壓），回到水平選擇 box 的操作。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+<code>args.getValue()</code> 會傳回介於 0 ~ 1 的值，用來改變下方 slider cursor 的位置。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/4.png" alt="4" /></td><td>
+下方 slider panel 分別用紅／白底表示有沒有抓到 primary hand。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/5.png" alt="5" /></td><td>
+往上移動表示選定某個 item？接下來由特定 box 接收 hand points 的處理。但為什麼是 "往上移"??
+</td></tr>
+</table></div>
+<div class="listingblock">
+<div class="title"><code>MyBox.java</code></div>
+<div class="content">
+<pre><code>class LeaveEvent extends java.util.Observable // <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+{
+    void raise()
+    {
+        setChanged();
+        notifyObservers();
+    }
+}
+
+public class MyBox extends PointControl // <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+{
+    public MyBox(String name, Component panel) throws GeneralException
+    {
+        super();
+        this._name = name;
+        this._panel = panel;
+
+        pushDetector = new PushDetector();
+        swipeDetector = new SwipeDetector();
+        steadyDetector = new SteadyDetector();
+        flowRouter = new FlowRouter();
+        broadcaster = new Broadcaster();
+
+        broadcaster.addListener(pushDetector); // <img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+        broadcaster.addListener(flowRouter);
+
+        pushDetector.getPushEvent().addObserver(new IObserver&lt;VelocityAngleEventArgs&gt;() // <img src="../../../_asciidoc/images/icons/callouts/4.png" alt="4" />
+        {
+            @Override
+            public void update(IObservable&lt;VelocityAngleEventArgs&gt; observable,
+                    VelocityAngleEventArgs args)
+            {
+                leaveEvent.raise(); // <img src="../../../_asciidoc/images/icons/callouts/4.png" alt="4" />
+            }
+        });
+
+        steadyDetector.getSteadyEvent().addObserver(new IObserver&lt;IdValueEventArgs&gt;()
+        {
+            @Override
+            public void update(IObservable&lt;IdValueEventArgs&gt; observable,
+                    IdValueEventArgs args)
+            {
+                System.out.println("Box " + _name + ": Steady");
+                try {
+                    if (args.getId() == getPrimaryID())
+                    {
+                        try {
+                            flowRouter.setActive(swipeDetector);
+                        } catch (StatusException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
+                        ChangeColor(Color.WHITE);
+                    }
+                } catch (StatusException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        swipeDetector.getGeneralSwipeEvent().addObserver(new IObserver&lt;DirectionVelocityAngleEventArgs&gt;()
+        {
+            @Override
+            public void update(IObservable&lt;DirectionVelocityAngleEventArgs&gt; observable,
+                    DirectionVelocityAngleEventArgs args)
+            {
+                System.out.println("Box " + _name + ": Swipe " + args.getDirection());
+                try {
+                    flowRouter.setActive(steadyDetector);
+                } catch (StatusException e) {
+                    e.printStackTrace();
+                }
+                ChangeColor(Color.RED);
+            }
+        });
+
+        getPrimaryPointCreateEvent().addObserver(new IObserver&lt;HandPointEventArgs&gt;()
+        {
+            @Override
+            public void update(IObservable&lt;HandPointEventArgs&gt; observable,
+                    HandPointEventArgs args)
+            {
+                try {
+                    flowRouter.setActive(steadyDetector);
+                } catch (StatusException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                // TODO Auto-generated method stub
+
+            }
+        });
+
+        getPrimaryPointDestroyEvent().addObserver(new IObserver&lt;IdEventArgs&gt;()
+        {
+            @Override
+            public void update(IObservable&lt;IdEventArgs&gt; observable, IdEventArgs args)
+            {
+                ChangeColor(Color.CYAN);
+            }
+        });
+
+        getMessageUpdateEvent().addObserver(new IObserver&lt;PointerEventArgs&gt;()
+        {
+            @Override
+            public void update(IObservable&lt;PointerEventArgs&gt; observable,
+                    PointerEventArgs args)
+            {
+                try {
+                    broadcaster.updateMessage(args.getPointer()); // <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+                } catch (StatusException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        leaveEvent = new LeaveEvent(); // <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+    }
+
+    // Events
+    public java.util.Observable getLeaveEvent() // <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+    {
+        return leaveEvent;
+    }
+}</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+利用 <code>java.util.Observable</code> 跟 <code>java.util.Observer</code> 自訂 event，讓外界可以透過 <code>getLeaveEvent().addObserver()</code> 來進行註冊。
+&lt;2&gt;
+</td></tr>
+</table></div>
 </div>
 </div>
 <div id="disqus_thread"></div>
@@ -62,7 +340,7 @@ dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
 <div id="footnotes"><hr /></div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2013-02-26 13:43:12 CST
+Last updated 2013-06-04 22:47:23 CST
 </div>
 </div>
 </div>
@@ -70,6 +348,6 @@ Last updated 2013-02-26 13:43:12 CST
 <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
 <script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
 <script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
-<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script>
+<!--script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script-->
 </body>
 </html>

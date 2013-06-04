@@ -1,0 +1,75 @@
+= link:../windows.html[Windows] / Registry =
+:title: [Windows] Windows Registry
+
+要操作 registry 前，要先搞清楚 key、value、name、data 之間的關係才行。
+
+基本上 registry 就是由 registry key/subkey 組成的樹狀結構，每一個 registry key 下都有一或多個 registry value，也就是 name/data pair（注意跟傳統 key/value pair 的說法不同）。
+
+更正確地來說，每一個 registry key 下都有一個 default/unnamed value 與零或多個 named value；所謂 unnamed value 指的就是 name 為空字串的 registry value，每個 registry key 底下都有一個 default/unnamed value，而且型態固定是 `REG_SZ`。
+
+image::registry/firefox_reg.png[]
+
+== 延伸閱讀 ==
+
+ * link:python.html[用 Python 讀寫 Windows Registry]
+
+== 參考資料 ==
+
+ * http://en.wikipedia.org/wiki/Windows_Registry[Windows Registry - Wikipedia, the free encyclopedia]
+ * http://msdn.microsoft.com/en-us/library/ms724884%28v=VS.85%29.aspx[Registry Value Types (Windows)]
+ * http://msdn.microsoft.com/en-us/library/ms724878%28v=VS.85%29.aspx[Registry Key Security and Access Rights (Windows)]
+ * http://msdn.microsoft.com/en-us/library/aa384129[Accessing an Alternate Registry View (Windows)]
+ * http://en.wikipedia.org/wiki/WoW64[WoW64 - Wikipedia, the free encyclopedia]
+
+== 學習筆記 ==
+
+ * The Windows Registry is a ''hierarchical database'' that stores configuration settings and options on Microsoft Windows operating systems.
+   ** It contains settings for low-level operating system components as well as the applications running on the platform: the kernel, device drivers, services, SAM, user interface and third party applications all make use of the Registry.
+   ** When first introduced with Windows 3.1, the Windows registry's primary purpose was to store configuration information for COM-based components. With the introduction of Windows 95 and Windows NT, its use was extended to tidy up the profusion of ''per-program INI files'' that had previously been used to store configuration settings for Windows programs (現在還是很常這樣用).
+ * The registry contains two basic elements: keys and values.
+ * Registry keys are similar to folders
+   ** In addition to values, each key can contain subkeys, which may contain further subkeys, and so on. (把 key 想成是 folder, 而 value 想成是檔案, registry 的結構就會變得很直觀)
+      *** Keys are referenced with a syntax similar to Windows' path names, using backslashes to indicate levels of hierarchy. (一樣不分大小寫, 注意分隔字元是 '\' 而非 '/')
+      *** E.g. `HKEY_LOCAL_MACHINE\Software\Microsoft\Windows` refers to the subkey "Windows" of the subkey "Microsoft" of the subkey "Software" of the `HKEY_LOCAL_MACHINE` root key.
+   ** Each subkey has a mandatory name which is a non-empty string that cannot contain any backslash or null character, and whose letter case is insignificant.
+   ** Like other files and services in Windows, all registry keys may be restricted by access control lists (ACLs). Different users, programs, services or remote systems may only see only some parts of the hierarchy or distinct hierarchies from the same root keys。（取得最小的權限即可，否則系統會擋掉某些操作；Vista 之後的 UAC 情況更是嚴重）
+ * The hierarchy of registry keys can only be accessed from a known ''root key handle''. There are seven predefined root keys, traditionally named according to their constant handles defined in the Win32 API, or by synonymous abbreviations (depending on applications)
+   ** HKEY_LOCAL_MACHINE (HKLM) - 這是最常用的
+      *** Registry entries subordinate to this key define the physical state of the computer, including data about the bus type, system memory, and installed hardware and software.
+   ** HKEY_CURRENT_CONFIG (HKCC)
+      *** only in Windows 9x/ME and NT-based versions of Windows
+      *** Contains information about the current hardware profile of the local computer system.
+   ** HKEY_CLASSES_ROOT (HKCR)
+      *** Registry entries subordinate to this key define types (or classes) of documents and the properties associated with those types.
+      *** Shell and COM applications use the information stored under this key.
+   ** HKEY_CURRENT_USER (HKCU)
+      *** Registry entries subordinate to this key define the preferences of the current user.
+      *** These preferences include the settings of environment variables, data about program groups, colors, printers, network connections, and application preferences.
+   ** HKEY_USERS (HKU)
+      *** Registry entries subordinate to this key define the default user configuration for new users on the local computer and the user configuration for the current user.
+   ** HKEY_PERFORMANCE_DATA
+      *** only in NT-based versions of Windows, but invisible in the Windows Registry Editor
+      *** Registry entries subordinate to this key allow you to access performance data. The data is not actually stored in the registry; the registry functions cause the system to collect the data from its source.
+   ** HKEY_DYN_DATA
+      *** only in Windows 9x/ME, and visible in the Windows Registry Editor
+ * Registry values are name/data pairs stored within keys
+   ** 注意這裡 "name/data" 的說法與一般常見的 "name/value" 不同（因為 value 已經被拿去表示其他東西了）, 雖然我們常將 registry values 稱做 named values.
+   ** All registry values stored in a registry key have a unique name whose letter case is not significant.
+   ** Registry values are referenced separately from registry keys.
+      *** The Windows API functions that query and manipulate registry values take value names separately from the key path and/or handle that identifies the parent key.
+      *** Registry values may contain backslashes in their name but doing so makes them difficult to distinguish from their key paths when using some legacy Windows Registry API functions (whose usage is deprecated in Win32).
+   ** Each value can store arbitrary data with variable length and ''encoding'', but which is associated with a ''symbolic type'' (defined as a numeric constant) defining how to parse this data. 常用的有:
+      *** REG_SZ (1) - A string value, normally stored and exposed in UTF-16LE (when using the Unicode version of Win32 API functions), usually terminated by a null character
+      *** REG_EXPAND_SZ (2) - An "expandable" string value that can contain environment variables, normally stored and exposed in UTF-16LE, usually terminated by a null character
+      *** REG_BINARY (3) - Binary data (any arbitrary data)
+      *** REG_DWORD (4) - A `DWORD` value, a 32-bit unsigned integer (numbers between 0 and 4,294,967,295 [232 – 1]) (little-endian)
+ * The terminology is somewhat misleading, as each registry key is similar to an ''associative array''(也就是常見的 map 或 dictionary 等), where standard terminology would refer to the name part of each registry value as a "key".
+   ** The terms are a holdout from the 16-bit registry in Windows 3, in which registry keys could not contain arbitrary name/data pairs, but rather contained only one ''unnamed value'' (which had to be a string).
+   ** In this sense, the entire registry was like a single associative array where the registry keys (in both the registry sense and dictionary sense) formed a hierarchy, and the ''registry values'' were all strings.
+   ** When the 32-bit registry was created, so was the additional capability of creating multiple named values per key, and the meanings of the names were somewhat distorted.
+   ** For compatibility with the previous behavior, each registry key may have a "default" value, whose name is the ''empty string''. 例如 Python 2.7 裝設完成之後, HKLM\SOFTWARE\Python\PythonCore\2.7\PythonPath 底下就只有一個名為 "(Default)" 的 Unnamed/Default Value, 型態是 REG_SZ
+
+
+
+
+

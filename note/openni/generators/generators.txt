@@ -1,0 +1,73 @@
+= link:../openni.html[OpenNI] / Data Generation =
+:title: [OpenNI] Data Generation
+
+== 參考資料 ==
+
+.文件
+--
+ * OpenNI Overview > Concepts
+   ** Data Generation (`Documentation/html/conc_generation.html`)
+   ** Making Data Available using the `WaitXUpdateAll()` Methods (`Documentation/html/conc_updating_data.html`)
+   ** The Production Graph > Understanding the Create() method (`Documentation/html/prod_graph.html#create_method`)
+ * `xn::Generator` Class Reference (`Documentation/html/classxn_1_1_generator.html`)
+ * `xn::Context` Class Reference (`Documentation/html/classxn_1_1_context.html`)
+ * https://github.com/OpenNI/OpenNI/blob/Unstable-1.5.4.0/Wrappers/OpenNI.java/src/org/OpenNI/Generator.java[`org/OpenNI/Generator.java`]
+--
+
+////////////////////////////////////////////////////////////////////////////////
+
+ * A generator node produces some type of data. 像 device node 就沒有產出
+   ** `org.OpenNI.Generator` extends `ProductionNode`
+ * state - generating, or non-generating (initial)
+   ** `isGenerating()`, `startGenerating()`, `stopGenerating()`
+   ** two functions that control all generators in the context - `Context.startGeneratingAll()`, `Context.stopGeneratingAll()`
+ * created -> non-generating, with default configuration -> change configuration -> start generating
+   ** non-generating state = configuration stage
+   ** 也可以在 generating state 時調整 configuration，只是要花一點時間（幾秒鐘？）才會生效。
+ * audio, gesture, hands, user, map (image, depth, IR, scense)
+ * "update data" methods
+   ** `Generator.waitAndUpdateData()` or `Context.waitXXXUpdateAll` methods (recommended)
+   ** all throws `StatusException` - no new data available within 2 seconds.
+   ** update generator's 'application buffer', making the latest data available for getting. at this stage the generator nodes have "generated" new data. 更新了 application buffer 才算 "generated"
+   ** all subsequent calls to "get data" will return exactly the same data until you call 'update data' again.
+   ** generator nodes will not output data to make it available for getting, until the application calls the node's `waitAndUpdateData()` method or one of the context's `waitXUpdateAll` methods.
+   ** data -> frame data, `Generator.getFrameID()`, `Generator.getTimestamp()`, `Generator.getDataSize()`
+   ** "get data" methods in subclasses, `ImageGenerator.getImageMap()`, `DepthGenerator.getDepthMap()`, ...
+   ** if nodes are dependent on each other, it promises that the needed node will be updated before the needing node.
+   ** typically, a call to one of these methods will be placed in the "main program loop".
+ * "update all" methods (`Context`)
+   ** `waitAndUpdateAll()`, `waitOneUpdateAll(waitFor)`, `waitAnyUpdateAll()`, `waitNoneUpdateAll()`
+   ** update the nodes all at once, performs a different type of 'wait' prior to performing the 'update' 
+   ** ensures that the accessible data from each and every node is the node's most recently generated data.
+   ** `waitOneUpdateAll(waitFor)` - especially useful when having several nodes producing data, but only one determines the progress of the application.
+ * generating state - generating new data all the time
+   ** sensor -> generating state -> hold internally -> update -> application buffer (accessible)
+   ** holds its new data internally only, until the application explicitly asks the generator to update its data to the new data.
+   ** "get data" method only get "consistent data set" - frame, all received at any one time, until it has completed processing the frame.
+   ** updated = copy "internal data" to the node's application buffer.
+ * `org.OpenNI.Generator`
+   ** `startGenerating(): void`
+   ** `stopGenerating(): void` - generator 這一層沒有 release/dispose 的動作。
+   ** `isGenerating(): boolean`
+   ** `waitAndUpdateData(): void` - cause the node to update its application buffers with new data, if it has new data available. (available -> accessible)
+   ** `isNewDataAvailable(): boolean` - the new data is available for updating, but can not yet be accessed by the application.
+   ** `getAvailableTimestamp(): long`
+   ** `isDataNew(): boolean` - whether this node's frame data was updated by the most recent call to any 'update data' methods.
+   ** `getDataSize(): int`
+   ** `createDataByteBuffer(): ByteBuffer`
+   ** `getTimestamp(): long`
+   ** `getFrameID(): int` - gets the frame ID of the current frame data from the generator node.
+   ** `getMirrorCapability(): MirrorCapability`
+   ** `getAlternativeViewpointCapability(): AlternativeViewpointCapability`
+   ** `getFrameSyncCapability(): FrameSyncCapability`
+   ** `getGenerationRunningChangedEvent(): IStateChangedObservable`
+   ** `getNewDataAvailableEvent(): IStateChangedObservable`
+ * 每一個 generator 都有一個 static `create(Context)`
+   ** by default, if an existing node matches the filter, the `create()` method will return a reference to the existing node, and so it will not create a new node.
+   ** the production node that is returned is always a complete production graph. That is to say, the returned node will bring with it all other dependant nodes it requires for generating its output data.
+ * 看似 production graph 裡同一種 production node 不能產生兩個（除非有 multiple sensors）
+   ** 這會造成 start/stop generating 控制上的困難，因為 stop generating 時，其他應用可能還會用到... 這中間要怎麼協調?? 
+   ** 況且一個程式有多個 wait/update loop 也很奇怪，似乎就是要統一處理了... 用不同的 flag 做為開關，再分別控制哪些 generator 要 start/stop generating。
+
+////////////////////////////////////////////////////////////////////////////////
+

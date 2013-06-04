@@ -1,0 +1,178 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[JavaFX] 硬體加速</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<!--link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" /-->
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <!--div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div-->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <!--a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a--></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="performance.html">JavaFX / Performance</a> / Hardware Acceleration</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>要查看 hardware acceleration 有沒有生效，可以透過 <code>-Dprism.verbose=true</code> 來觀察，例如：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>Prism pipeline init order: es2 j2d
+Using t2k for text rasterization
+Using dirty region optimizations
+Prism pipeline name = com.sun.prism.es2.ES2Pipeline
+Loading ES2 native library ... prism-es2
+        succeeded.
+GLFactory using com.sun.prism.es2.gl.x11.X11GLFactory
+(X) Got class = class com.sun.prism.es2.ES2Pipeline
+Failed Graphics Hardware Qualifier check.
+System GPU doesn't meet the es2 pipe requirement
+GraphicsPipeline.createPipeline: error initializing pipeline com.sun.prism.es2.ES2Pipeline
+*** Fallback to Prism SW pipeline <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+Prism pipeline name = com.sun.prism.j2d.J2DPipeline
+(X) Got class = class com.sun.prism.j2d.J2DPipeline
+Initialized prism pipeline: com.sun.prism.j2d.J2DPipeline
+Glass native format: 1
+QuantumRenderer: shutdown</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+不符合 hardware acceleration 的要求，退一步採用 software pipeline。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>透過 <code>-Dprism.forceGPU=true</code> 略過檢查時會發生錯誤：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>Prism pipeline init order: es2 j2d
+Using t2k for text rasterization
+Using dirty region optimizations
+Prism pipeline name = com.sun.prism.es2.ES2Pipeline
+Loading ES2 native library ... prism-es2
+        succeeded.
+GLFactory using com.sun.prism.es2.gl.x11.X11GLFactory
+(X) Got class = class com.sun.prism.es2.ES2Pipeline
+Initialized prism pipeline: com.sun.prism.es2.ES2Pipeline
+#
+# A fatal error has been detected by the Java Runtime Environment:
+#
+...</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_延伸閱讀">延伸閱讀</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="../architecture.html">JavaFX 架構</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.oracle.com/technetwork/java/javafx/downloads/supportedconfigurations-1506746.html">JavaFX Supported Configurations</a> <sup><a href="https://diigo.com/0xm9f">閱讀</a></sup> - System Requirements 支援 hardware acceleration 的顯卡。
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.adamish.com/blog/archives/320">JavaFX hidden VM args | Blog</a> (2011-12-22)
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.infoq.com/news/2011/03/jfx2ea">JavaFX 2.0 Will Bring Hardware Accelerated Graphics and Better Licensing Terms to the Platform</a> <sup><a href="https://diigo.com/0xm75">閱讀</a></sup> (2011-03-16)
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">其他文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/14966427/is-it-possible-to-enable-hardware-acceleration-with-java-fx-on-windows-2008-serv">graphics - Is it possible to enable hardware acceleration with Java FX on Windows 2008 server? - Stack Overflow</a> <sup><a href="https://diigo.com/0xm8n">閱讀</a></sup> (2013-02-19) - <code>-Dprism.forceGPU=true</code> 略過檢查
+</p>
+</li>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/14566379/is-there-a-way-to-detect-if-java-fx-is-using-hardware-acceleration">javafx 2 - Is there a way to detect if Java FX is using hardware acceleration? - Stack Overflow</a> <sup><a href="https://diigo.com/0xm7m">閱讀</a></sup> (2013-01-28) - <code>-Dprism.verbose=true</code>, "sw"/"j2d" for software, "d3d"/"es2" for hardware accelerated
+</p>
+</li>
+<li>
+<p>
+<a href="https://forums.oracle.com/forums/thread.jspa?threadID=2316849">OTN Discussion Forums : How to verify, JavaFX 2.0 uses directx &#8230;</a> <sup><a href="https://diigo.com/0xm7g">閱讀</a></sup> (2011-12-06) - in Java2D the hardware pipeline is disabled by default for specific chipsets, notably Intel ones, because of unreliable drivers
+ ＊ <a href="http://stackoverflow.com/questions/8344168/how-to-verify-javafx-2-0-uses-directx-9-on-a-xp-box">java - How to verify, JavaFX 2.0 uses directx 9 on a XP box? - Stack Overflow</a> <sup><a href="https://diigo.com/0xm97">閱讀</a></sup> （2011-12-01) - Intel 945 Chipset 再次被提到，不在支援之列。<code>set NWT_TRACE_LEVEL=4</code> 可以看到更多細節?
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2013-06-04 22:42:26 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<!--script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script-->
+</body>
+</html>

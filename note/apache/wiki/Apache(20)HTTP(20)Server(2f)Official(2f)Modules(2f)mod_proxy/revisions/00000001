@@ -1,0 +1,206 @@
+= Apache HTTP Server / Official / Modules / mod_proxy =
+<<TableOfContents>>
+
+== mod_proxy ==
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html @2010/04/07
+
+:::
+
+=== ProxyPass Directive ===
+
+ * Description: Maps remote servers into the local server ''URL-space''
+ * Syntax: `ProxyPass [path] !|url [key=value key=value ...]] [nocanon] [interpolate]`
+ * Context: server config, virtual host, directory
+ * Status: Extension
+ * Module: `mod_proxy`
+
+__This directive allows remote servers to be mapped into the space of the local server (而 `<Proxy>` 則是在做 "local server URL-space" 的存取控制); the local server does not act as a proxy in the conventional sense, but appears to be a ''mirror'' of the remote server. The local server is often called a ''reverse proxy'' or gateway. '''The `path` is the name of a ''local virtual path''; `url` is a ''partial URL'' for the remote server and cannot include a query string. (但可以包含 Port 的部份)'''__
+
+The `ProxyRequests` directive should usually be set off when using `ProxyPass`.
+
+Suppose the local server has address `http://example.com/`; then
+
+ {{{
+ProxyPass /mirror/foo/ http://backend.example.com/
+ }}}
+
+will cause a local request for `http://example.com/mirror/foo/bar` to be internally converted into a proxy request to `http://backend.example.com/bar`.
+
+__If the first argument ends with a trailing `/`, the second argument should also end with a trailing `/` and vice versa. Otherwise the resulting requests to the backend may miss some needed slashes and do not deliver the expected results.__
+
+__`path` 與 `url` 尾部 "`/`" 字元是否要添加, 並無特別之處, 只是單純的字串比對與串接而已: (這裡的規則, 也同樣適用在 `ProxyPassReverse`)__
+
+ {{{
+# 要求 http://host/foo/ 時, 會轉向 http://backend.example.com:81//
+ProxyPass /foo http://backend.example.com:81/
+
+# 要求 http://host/bar 時, 會找不到網頁 (大小寫不符)
+# 要求 http://host/Bar 時, 會找不到網頁 (缺最後面的 "/" 字元)
+# 要求 http://host/Bar/ 時, 會轉向 http://backend.example.com:81/
+ProxyPass /Bar/ http://backend.example.com:81/
+ }}}
+
+__The `!` directive is useful in situations where you don't want to reverse-proxy a subdirectory, e.g.__
+
+ {{{
+ProxyPass /mirror/foo/i !
+ProxyPass /mirror/foo http://backend.example.com
+ }}}
+
+will proxy all requests to `/mirror/foo` to `backend.example.com` except requests made to `/mirror/foo/i`.
+
+Note: __'''Order is important: exclusions must come before the general `ProxyPass` directive.'''__
+
+__As of Apache 2.1, the ability to use ''pooled connections'' to a backend server is available. Using the `key=value` parameters it is possible to tune this connection pooling. (做為 `XMLHttpRequest` 的跳板, 就不用太擔心效能耗損的問題...)__ The default for a Hard Maximum for the number of connections is the number of threads per process in the active MPM. In the Prefork MPM, this is always 1, while with the Worker MPM it is controlled by the `ThreadsPerChild`.
+
+Setting `min` will determine how many connections will always be open to the backend server. Upto the Soft Maximum or `smax` number of connections will be created on demand. Any connections above `smax` are subject to a time to live or `ttl`. Apache will never create more than the Hard Maximum or `max` connections to the backend server.
+
+ {{{
+ProxyPass /example http://backend.example.com smax=5 max=20 ttl=120 retry=300 
+ }}}
+
+:::
+
+=== ProxyPreserveHost Directive ===
+
+ * Description: Use incoming Host HTTP request header for proxy request
+ * Syntax: `ProxyPreserveHost On|Off`
+ * Default: `ProxyPreserveHost Off`
+ * Context: server config, virtual host
+ * Status: Extension
+ * Module: `mod_proxy`
+ * Compatibility: Available in Apache 2.0.31 and later.
+
+__When enabled, this option will pass the `Host:` line from the incoming request to the proxied host, instead of the hostname specified in the `ProxyPass` line.__
+
+This option should normally be turned `Off`. It is mostly useful in special configurations like proxied mass ''name-based virtual hosting'', where the original Host header needs to be evaluated by the backend server.
+
+:::
+
+=== mod_proxy (OLD) ===
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html
+
+ '''Warning''' Do not enable proxying with `ProxyRequests` until you have secured your server. Open proxy servers are dangerous both to your network and to the Internet at large. (雖然不知道 `ProxyRequests` 預設是開啟還是關閉, 最安全的做法就是明確宣告 `ProxyRequests Off`)
+
+This module implements a proxy/gateway for Apache. It implements proxying capability for `AJP13` (Apache JServe Protocol version 1.3), `FTP`, `CONNECT` (for SSL), `HTTP/0.9`, `HTTP/1.0`, and `HTTP/1.1`. __The module can be configured to connect to other proxy modules for these and other protocols. (這裡 "the module" 指的是 `mod_proxy`, 而 "other proxy modules" 指的是 `mod_proxy_balancer`, `mod_proxy_http` 等...)__
+
+Apache's proxy features are divided into several modules in addition to `mod_proxy`: `mod_proxy_http`, `mod_proxy_ftp`, `mod_proxy_ajp`, `mod_proxy_balancer`, and `mod_proxy_connect`. Thus, if you want to use one or more of the particular proxy functions, load `mod_proxy` and the appropriate module(s) into the server (either statically at compile-time or dynamically via the `LoadModule` directive).
+
+In addition, extended features are provided by other modules. Caching is provided by `mod_cache` and related modules. __The ability to contact remote servers using the SSL/TLS protocol is provided by the `SSLProxy*` directives of `mod_ssl`.__ These additional modules will need to be loaded and configured to take advantage of these features.
+
+==== Forward Proxies and Reverse Proxies/Gateways ====
+
+Apache can be configured in both a forward and reverse proxy (also known as ''gateway'') mode.
+
+__An ordinary ''forward proxy'' is an intermediate(中介的) server that sits between the client and the ''origin server''. In order to get content from the origin server, the client sends a request to the proxy ''naming the origin server as the target'' and the proxy then requests the content from the origin server and returns it to the client. '''The client must be specially configured to use the forward proxy to access other sites.'''__
+
+__A typical usage of a forward proxy is to provide Internet access to internal clients that are otherwise restricted by a firewall. The forward proxy can also use caching (as provided by `mod_cache`) to reduce network usage. (沒想到 Apache 也可以當做 proxy server 使用)__
+
+__The forward proxy is activated using the `ProxyRequests` directive. Because forward proxies allow clients to access arbitrary sites through your server and to ''hide their true origin'', it is essential that you secure your server so that only authorized clients can access the proxy before activating a forward proxy. (把自己當做 proxy server 供別人存取網路的跳板時, 要做好存取的控制...)__
+
+__'''A ''reverse proxy'' (or gateway), by contrast, appears to the client just like an ordinary web server. No special configuration on the client is necessary.''' The client makes ordinary requests for content in the ''name-space of the reverse proxy''. The reverse proxy then ''decides'' where to send those requests, and returns the content as if it was itself the origin.__
+
+__A typical usage of a reverse proxy is to provide Internet users access to a server that is behind a firewall. '''Reverse proxies can also be used to balance load among several back-end servers, or to provide caching for a slower back-end server. In addition, reverse proxies can be used simply to bring several servers into the same ''URL space'' (上述的 "same URL space" 應用在多個後端系統的整合時, 可以避開許多安全性上的限制; 例如 `XMLHttpRequest` 甚至被限定只能用在同一個 web server 下).'''__
+
+A reverse proxy is activated using the `ProxyPass` directive or the `[P]` flag to the `RewriteRule` directive. (其中 rewrite 與 proxy 有什麼關係[?]) __It is not necessary to turn `ProxyRequests` on in order to configure a reverse proxy.__
+
+==== Basic Examples ====
+
+The examples below are only a very basic idea to help you get started. Please read the documentation on the individual directives.
+
+In addition, if you wish to have caching enabled, consult the documentation from `mod_cache`.
+
+Forward Proxy
+
+ {{{
+ProxyRequests On
+ProxyVia On
+
+<Proxy *>
+Order deny,allow
+Deny from all
+Allow from internal.example.com
+</Proxy>
+ }}}
+
+Reverse Proxy
+
+ {{{
+ProxyRequests Off
+
+<Proxy *>
+Order deny,allow
+Allow from all <-- 不加這一行, 在 Log 裡就會出現 client denied by server configuration 的錯誤
+</Proxy>
+
+ProxyPass /foo http://foo.example.com/bar
+ProxyPassReverse /foo http://foo.example.com/bar
+ }}}
+
+==== Controlling access to your proxy ====
+:::
+
+==== <Proxy> Directive ====
+
+ * Description: Container for directives applied to ''proxied resources''
+ * Syntax: `<Proxy wildcard-url> ...</Proxy>`
+ * Context: server config, virtual host
+ * Status: Extension
+ * Module: `mod_proxy`
+
+Directives placed in `<Proxy>` sections apply only to matching proxied content. Shell-style wildcards are allowed.
+
+For example, the following will allow only hosts in `yournetwork.example.com` to access content via your proxy server:
+
+ {{{
+<Proxy *>
+Order Deny,Allow
+Deny from all
+Allow from yournetwork.example.com
+</Proxy>
+ }}}
+
+The following example will process all files in the `foo` directory of `example.com` through the `INCLUDES` filter when they are sent through the proxy server:[?]
+
+ {{{
+<Proxy http://example.com/foo/*>
+SetOutputFilter INCLUDES
+</Proxy>
+ }}}
+
+==== ProxyBadHeader Directive ====
+:::
+
+:::
+
+==== ProxyPassReverse Directive ====
+
+ * Description: Adjusts the URL in HTTP response headers sent from a reverse proxied server
+ * Syntax: `ProxyPassReverse [path] url`
+ * Context: server config, virtual host, directory
+ * Status: Extension
+ * Module: `mod_proxy`
+
+__This directive lets Apache adjust the URL in the `Location`, `Content-Location` and `URI` headers on HTTP redirect responses. '''This is essential when Apache is used as a reverse proxy to avoid ''by-passing'' the reverse proxy because of HTTP redirects on the backend servers which stay behind the reverse proxy. (否則要求轉向之後, 可能就回不來了... 例如登入畫面還好好的, 登入完成後就變成 local url 了, 因為 redirect-after-post 的關係[...])'''__
+
+__Only the HTTP response headers specifically mentioned above will be rewritten. Apache will not rewrite other response headers, nor will it rewrite URL references inside HTML pages. '''This means that if the proxied content contains ''absolute URL references'', they will by-pass the proxy. A third-party module that will look inside the HTML and rewrite URL references is Nick Kew's http://apache.webthing.com/mod_proxy_html/[mod_proxy_html]. (效能可能會變差?)'''__
+
+`path` is the name of a local virtual path. `url` is a partial URL for the remote server - the same way they are used for the `ProxyPass` directive.
+
+For example, suppose the local server has address http://example.com/; then
+
+ {{{
+ProxyPass /mirror/foo/ http://backend.example.com/
+ProxyPassReverse /mirror/foo/ http://backend.example.com/
+ProxyPassReverseCookieDomain backend.example.com public.example.com
+ProxyPassReverseCookiePath / /mirror/foo/
+ }}}
+
+will not only cause a local request for the http://example.com/mirror/foo/bar to be internally converted into a proxy request to http://backend.example.com/bar (the functionality `ProxyPass` provides here). It also takes care of redirects the server `backend.example.com` sends: when http://backend.example.com/bar is redirected by him to http://backend.example.com/quux Apache adjusts this to http://example.com/mirror/foo/quux before forwarding the HTTP redirect response to the client. __Note that the hostname used for constructing the URL is chosen in respect to the setting of the `UseCanonicalName` directive.[?]__
+
+Note that this `ProxyPassReverse` directive can also be used in conjunction with the proxy ''pass-through'' feature (`RewriteRule ... [P]`) from `mod_rewrite` because it doesn't depend on a corresponding `ProxyPass` directive.[?]
+
+__When used inside a `<Location>` section, the first argument is omitted and the local directory is obtained from the `<Location>`.__
+
+
+

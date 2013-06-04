@@ -1,0 +1,1009 @@
+   [1]Modules | [2]Directives | [3]FAQ | [4]Glossary | [5]Sitemap
+
+   Apache HTTP Server Version 2.2
+
+   [6]<-
+
+   [7]Apache > [8]HTTP Server > [9]Documentation > [10]Version 2.2 >
+   [11]Modules
+
+Apache Module mod_authnz_ldap
+
+   Available Languages: [12] en
+      [13]Description:    Allows an LDAP directory to be used to store the
+                          database for HTTP Basic authentication.
+        [14]Status:       Extension
+   [15]Module Identifier: authnz_ldap_module
+      [16]Source File:    mod_authnz_ldap.c
+     [17]Compatibility:   Available in version 2.1 and later
+
+Summary
+
+   This module provides authentication front-ends such as
+   [18]mod_auth_basic to authenticate users through an ldap directory.
+
+   [19]mod_authnz_ldap supports the following features:
+     * Known to support the [20]OpenLDAP SDK (both 1.x and 2.x),
+       [21]Novell LDAP SDK and the [22]iPlanet (Netscape) SDK.
+     * Complex authorization policies can be implemented by representing
+       the policy with LDAP filters.
+     * Uses extensive caching of LDAP operations via [23]mod_ldap.
+     * Support for LDAP over SSL (requires the Netscape SDK) or TLS
+       (requires the OpenLDAP 2.x SDK or Novell LDAP SDK).
+
+   When using [24]mod_auth_basic, this module is invoked via the
+   [25]AuthBasicProvider directive with the ldap value.
+
+Directives
+
+     * [26]AuthLDAPBindDN
+     * [27]AuthLDAPBindPassword
+     * [28]AuthLDAPCharsetConfig
+     * [29]AuthLDAPCompareDNOnServer
+     * [30]AuthLDAPDereferenceAliases
+     * [31]AuthLDAPGroupAttribute
+     * [32]AuthLDAPGroupAttributeIsDN
+     * [33]AuthLDAPRemoteUserAttribute
+     * [34]AuthLDAPRemoteUserIsDN
+     * [35]AuthLDAPUrl
+     * [36]AuthzLDAPAuthoritative
+
+Topics
+
+     * [37]Contents
+     * [38]Operation
+     * [39]The Require Directives
+     * [40]Examples
+     * [41]Using TLS
+     * [42]Using SSL
+     * [43]Exposing Login Information
+     * [44]Using Microsoft FrontPage with mod_authnz_ldap
+
+See also
+
+     * [45]mod_ldap
+     * [46]mod_auth_basic
+     * [47]mod_authz_user
+     * [48]mod_authz_groupfile
+
+   [49]top
+
+Contents
+
+     * [50]Operation
+          + [51]The Authentication Phase
+          + [52]The Authorization Phase
+     * [53]The Require Directives
+          + [54]Require valid-user
+          + [55]Require ldap-user
+          + [56]Require ldap-group
+          + [57]Require ldap-dn
+          + [58]Require ldap-attribute
+          + [59]Require ldap-filter
+     * [60]Examples
+     * [61]Using TLS
+     * [62]Using SSL
+     * [63]Exposing Login Information
+     * [64]Using Microsoft FrontPage with [65]mod_authnz_ldap
+          + [66]How It Works
+          + [67]Caveats
+
+   [68]top
+
+Operation
+
+   There are two phases in granting access to a user. The first phase is
+   authentication, in which the [69]mod_authnz_ldap authentication
+   provider verifies that the user's credentials are valid. This is also
+   called the search/bind phase. The second phase is authorization, in
+   which [70]mod_authnz_ldap determines if the authenticated user is
+   allowed access to the resource in question. This is also known as the
+   compare phase.
+
+   [71]mod_authnz_ldap registers both an authn_ldap authentication
+   provider and an authz_ldap authorization handler. The authn_ldap
+   authentication provider can be enabled through the
+   [72]AuthBasicProvider directive using the ldap value. The authz_ldap
+   handler extends the [73]Require directive's authorization types by
+   adding ldap-user, ldap-dn and ldap-group values.
+
+The Authentication Phase
+
+   During the authentication phase, [74]mod_authnz_ldap searches for an
+   entry in the directory that matches the username that the HTTP client
+   passes. If a single unique match is found, then [75]mod_authnz_ldap
+   attempts to bind to the directory server using the DN of the entry plus
+   the password provided by the HTTP client. Because it does a search,
+   then a bind, it is often referred to as the search/bind phase. Here are
+   the steps taken during the search/bind phase.
+    1. Generate a search filter by combining the attribute and filter
+       provided in the [76]AuthLDAPURL directive with the username passed
+       by the HTTP client.
+    2. Search the directory using the generated filter. If the search does
+       not return exactly one entry, deny or decline access.
+    3. Fetch the distinguished name of the entry retrieved from the search
+       and attempt to bind to the LDAP server using the DN and the
+       password passed by the HTTP client. If the bind is unsuccessful,
+       deny or decline access.
+
+   The following directives are used during the search/bind phase
+   [77]AuthLDAPURL Specifies the LDAP server, the base DN, the attribute
+   to use in the search, as well as the extra search filter to use.
+   [78]AuthLDAPBindDN An optional DN to bind with during the search phase.
+   [79]AuthLDAPBindPassword An optional password to bind with during the
+   search phase.
+
+The Authorization Phase
+
+   During the authorization phase, [80]mod_authnz_ldap attempts to
+   determine if the user is authorized to access the resource. Many of
+   these checks require [81]mod_authnz_ldap to do a compare operation on
+   the LDAP server. This is why this phase is often referred to as the
+   compare phase. [82]mod_authnz_ldap accepts the following [83]Require
+   directives to determine if the credentials are acceptable:
+     * Grant access if there is a [84]Require ldap-user directive, and the
+       username in the directive matches the username passed by the
+       client.
+     * Grant access if there is a [85]Require ldap-dn directive, and the
+       DN in the directive matches the DN fetched from the LDAP directory.
+     * Grant access if there is a [86]Require ldap-group directive, and
+       the DN fetched from the LDAP directory (or the username passed by
+       the client) occurs in the LDAP group.
+     * Grant access if there is a [87]Require ldap-attribute directive,
+       and the attribute fetched from the LDAP directory matches the given
+       value.
+     * Grant access if there is a [88]Require ldap-filter directive, and
+       the search filter successfully finds a single user object that
+       matches the dn of the authenticated user.
+     * otherwise, deny or decline access
+
+   Other [89]Require values may also be used which may require loading
+   additional authorization modules. Note that if you use a [90]Require
+   value from another authorization module, you will need to ensure that
+   [91]AuthzLDAPAuthoritative is set to off to allow the authorization
+   phase to fall back to the module providing the alternate [92]Require
+   value. When no LDAP-specific [93]Require directives are used,
+   authorization is allowed to fall back to other modules as if
+   [94]AuthzLDAPAuthoritative was set to off.
+     * Grant access if there is a [95]Require valid-user directive.
+       (requires [96]mod_authz_user)
+     * Grant access if there is a [97]Require group directive, and
+       [98]mod_authz_groupfile has been loaded with the [99]AuthGroupFile
+       directive set.
+     * others...
+
+   [100]mod_authnz_ldap uses the following directives during the compare
+   phase:
+   [101]AuthLDAPURL The attribute specified in the URL is used in compare
+   operations for the Require ldap-user operation.
+   [102]AuthLDAPCompareDNOnServer Determines the behavior of the Require
+   ldap-dn directive.
+   [103]AuthLDAPGroupAttribute Determines the attribute to use for
+   comparisons in the Require ldap-group directive.
+   [104]AuthLDAPGroupAttributeIsDN Specifies whether to use the user DN or
+   the username when doing comparisons for the Require ldap-group
+   directive.
+   [105]top
+
+The Require Directives
+
+   Apache's [106]Require directives are used during the authorization
+   phase to ensure that a user is allowed to access a resource.
+   mod_authnz_ldap extends the authorization types with ldap-user,
+   ldap-dn, ldap-group, ldap-attribute and ldap-filter. Other
+   authorization types may also be used but may require that additional
+   authorization modules be loaded.
+
+Require valid-user
+
+   If this directive exists, [107]mod_authnz_ldap grants access to any
+   user that has successfully authenticated during the search/bind phase.
+   Requires that [108]mod_authz_user be loaded.
+
+Require ldap-user
+
+   The Require ldap-user directive specifies what usernames can access the
+   resource. Once [109]mod_authnz_ldap has retrieved a unique DN from the
+   directory, it does an LDAP compare operation using the username
+   specified in the Require ldap-user to see if that username is part of
+   the just-fetched LDAP entry. Multiple users can be granted access by
+   putting multiple usernames on the line, separated with spaces. If a
+   username has a space in it, then it must be surrounded with double
+   quotes. Multiple users can also be granted access by using multiple
+   Require ldap-user directives, with one user per line. For example, with
+   a [110]AuthLDAPURL of ldap://ldap/o=Airius?cn (i.e., cn is used for
+   searches), the following Require directives could be used to restrict
+   access:
+
+   Require ldap-user "Barbara Jenson"
+   Require ldap-user "Fred User"
+   Require ldap-user "Joe Manager"
+
+   Because of the way that [111]mod_authnz_ldap handles this directive,
+   Barbara Jenson could sign on as Barbara Jenson, Babs Jenson or any
+   other cn that she has in her LDAP entry. Only the single Require
+   ldap-user line is needed to support all values of the attribute in the
+   user's entry.
+
+   If the uid attribute was used instead of the cn attribute in the URL
+   above, the above three lines could be condensed to
+
+   Require ldap-user bjenson fuser jmanager
+
+Require ldap-group
+
+   This directive specifies an LDAP group whose members are allowed
+   access. It takes the distinguished name of the LDAP group. Note: Do not
+   surround the group name with quotes. For example, assume that the
+   following entry existed in the LDAP directory:
+
+   dn: cn=Administrators, o=Airius
+   objectClass: groupOfUniqueNames
+   uniqueMember: cn=Barbara Jenson, o=Airius
+   uniqueMember: cn=Fred User, o=Airius
+
+   The following directive would grant access to both Fred and Barbara:
+
+   Require ldap-group cn=Administrators, o=Airius
+
+   Behavior of this directive is modified by the
+   [112]AuthLDAPGroupAttribute and [113]AuthLDAPGroupAttributeIsDN
+   directives.
+
+Require ldap-dn
+
+   The Require ldap-dn directive allows the administrator to grant access
+   based on distinguished names. It specifies a DN that must match for
+   access to be granted. If the distinguished name that was retrieved from
+   the directory server matches the distinguished name in the Require
+   ldap-dn, then authorization is granted. Note: do not surround the
+   distinguished name with quotes.
+
+   The following directive would grant access to a specific DN:
+
+   Require ldap-dn cn=Barbara Jenson, o=Airius
+
+   Behavior of this directive is modified by the
+   [114]AuthLDAPCompareDNOnServer directive.
+
+Require ldap-attribute
+
+   The Require ldap-attribute directive allows the administrator to grant
+   access based on attributes of the authenticated user in the LDAP
+   directory. If the attribute in the directory matches the value given in
+   the configuration, access is granted.
+
+   The following directive would grant access to anyone with the attribute
+   employeeType = active
+
+   Require ldap-attribute employeeType=active
+
+   Multiple attribute/value pairs can be specified on the same line
+   separated by spaces or they can be specified in multiple Require
+   ldap-attribute directives. The effect of listing multiple
+   attribute/values pairs is an OR operation. Access will be granted if
+   any of the listed attribute values match the value of the corresponding
+   attribute in the user object. If the value of the attribute contains a
+   space, only the value must be within double quotes.
+
+   The following directive would grant access to anyone with the city
+   attribute equal to "San Jose" or status equal to "Active"
+
+   Require ldap-attribute city="San Jose" status=active
+
+Require ldap-filter
+
+   The Require ldap-filter directive allows the administrator to grant
+   access based on a complex LDAP search filter. If the dn returned by the
+   filter search matches the authenticated user dn, access is granted.
+
+   The following directive would grant access to anyone having a cell
+   phone and is in the marketing department
+
+   Require ldap-filter &(cell=*)(department=marketing)
+
+   The difference between the Require ldap-filter directive and the
+   Require ldap-attribute directive is that ldap-filter performs a search
+   operation on the LDAP directory using the specified search filter
+   rather than a simple attribute comparison. If a simple attribute
+   comparison is all that is required, the comparison operation performed
+   by ldap-attribute will be faster than the search operation used by
+   ldap-filter especially within a large directory.
+   [115]top
+
+Examples
+
+     * Grant access to anyone who exists in the LDAP directory, using
+       their UID for searches.
+       AuthLDAPURL "ldap://ldap1.airius.com:389/ou=People,
+       o=Airius?uid?sub?(objectClass=*)"
+       Require valid-user
+     * The next example is the same as above; but with the fields that
+       have useful defaults omitted. Also, note the use of a redundant
+       LDAP server.
+       AuthLDAPURL "ldap://ldap1.airius.com ldap2.airius.com/ou=People,
+       o=Airius"
+       Require valid-user
+     * The next example is similar to the previous one, but it uses the
+       common name instead of the UID. Note that this could be
+       problematical if multiple people in the directory share the same
+       cn, because a search on cn must return exactly one entry. That's
+       why this approach is not recommended: it's a better idea to choose
+       an attribute that is guaranteed unique in your directory, such as
+       uid.
+       AuthLDAPURL "ldap://ldap.airius.com/ou=People, o=Airius?cn"
+       Require valid-user
+     * Grant access to anybody in the Administrators group. The users must
+       authenticate using their UID.
+       AuthLDAPURL ldap://ldap.airius.com/o=Airius?uid
+       Require ldap-group cn=Administrators, o=Airius
+     * The next example assumes that everyone at Airius who carries an
+       alphanumeric pager will have an LDAP attribute of qpagePagerID. The
+       example will grant access only to people (authenticated via their
+       UID) who have alphanumeric pagers:
+       AuthLDAPURL ldap://ldap.airius.com/o=Airius?uid??(qpagePagerID=*)
+       Require valid-user
+     * The next example demonstrates the power of using filters to
+       accomplish complicated administrative requirements. Without
+       filters, it would have been necessary to create a new LDAP group
+       and ensure that the group's members remain synchronized with the
+       pager users. This becomes trivial with filters. The goal is to
+       grant access to anyone who has a pager, plus grant access to Joe
+       Manager, who doesn't have a pager, but does need to access the same
+       resource:
+       AuthLDAPURL
+       ldap://ldap.airius.com/o=Airius?uid??(|(qpagePagerID=*)(uid=jmanage
+       r))
+       Require valid-user
+       This last may look confusing at first, so it helps to evaluate what
+       the search filter will look like based on who connects, as shown
+       below. If Fred User connects as fuser, the filter would look like
+       (&(|(qpagePagerID=*)(uid=jmanager))(uid=fuser))
+       The above search will only succeed if fuser has a pager. When Joe
+       Manager connects as jmanager, the filter looks like
+       (&(|(qpagePagerID=*)(uid=jmanager))(uid=jmanager))
+       The above search will succeed whether jmanager has a pager or not.
+
+   [116]top
+
+Using TLS
+
+   To use TLS, see the [117]mod_ldap directives
+   [118]LDAPTrustedClientCert, [119]LDAPTrustedGlobalCert and
+   [120]LDAPTrustedMode.
+
+   An optional second parameter can be added to the [121]AuthLDAPURL to
+   override the default connection type set by [122]LDAPTrustedMode. This
+   will allow the connection established by an ldap:// Url to be upgraded
+   to a secure connection on the same port.
+   [123]top
+
+Using SSL
+
+   To use SSL, see the [124]mod_ldap directives
+   [125]LDAPTrustedClientCert, [126]LDAPTrustedGlobalCert and
+   [127]LDAPTrustedMode.
+
+   To specify a secure LDAP server, use ldaps:// in the [128]AuthLDAPURL
+   directive, instead of ldap://.
+   [129]top
+
+Exposing Login Information
+
+   When this module performs authentication, LDAP attributes specified in
+   the [130]AuthLDAPUrl directive are placed in environment variables with
+   the prefix "AUTHENTICATE_".
+
+   If the attribute field contains the username, common name and telephone
+   number of a user, a CGI program will have access to this information
+   without the need to make a second independent LDAP query to gather this
+   additional information.
+
+   This has the potential to dramatically simplify the coding and
+   configuration required in some web applications.
+   [131]top
+
+Using Microsoft FrontPage with mod_authnz_ldap
+
+   Normally, FrontPage uses FrontPage-web-specific user/group files (i.e.,
+   the [132]mod_authn_file and [133]mod_authz_groupfile modules) to handle
+   all authentication. Unfortunately, it is not possible to just change to
+   LDAP authentication by adding the proper directives, because it will
+   break the Permissions forms in the FrontPage client, which attempt to
+   modify the standard text-based authorization files.
+
+   Once a FrontPage web has been created, adding LDAP authentication to it
+   is a matter of adding the following directives to every .htaccess file
+   that gets created in the web
+AuthLDAPURL            "the url"
+AuthGroupFile mygroupfile
+Require group mygroupfile
+
+How It Works
+
+   FrontPage restricts access to a web by adding the Require valid-user
+   directive to the .htaccess files. The Require valid-user directive will
+   succeed for any user who is valid as far as LDAP is concerned. This
+   means that anybody who has an entry in the LDAP directory is considered
+   a valid user, whereas FrontPage considers only those people in the
+   local user file to be valid. By substituting the ldap-group with group
+   file authorization, Apache is allowed to consult the local user file
+   (which is managed by FrontPage) - instead of LDAP - when handling
+   authorizing the user.
+
+   Once directives have been added as specified above, FrontPage users
+   will be able to perform all management operations from the FrontPage
+   client.
+
+Caveats
+
+     * When choosing the LDAP URL, the attribute to use for authentication
+       should be something that will also be valid for putting into a
+       [134]mod_authn_file user file. The user ID is ideal for this.
+     * When adding users via FrontPage, FrontPage administrators should
+       choose usernames that already exist in the LDAP directory (for
+       obvious reasons). Also, the password that the administrator enters
+       into the form is ignored, since Apache will actually be
+       authenticating against the password in the LDAP database, and not
+       against the password in the local user file. This could cause
+       confusion for web administrators.
+     * Apache must be compiled with [135]mod_auth_basic,
+       [136]mod_authn_file and [137]mod_authz_groupfile in order to use
+       FrontPage support. This is because Apache will still use the
+       [138]mod_authz_groupfile group file for determine the extent of a
+       user's access to the FrontPage web.
+     * The directives must be put in the .htaccess files. Attempting to
+       put them inside [139]<Location> or [140]<Directory> directives
+       won't work. This is because [141]mod_authnz_ldap has to be able to
+       grab the [142]AuthGroupFile directive that is found in FrontPage
+       .htaccess files so that it knows where to look for the valid user
+       list. If the [143]mod_authnz_ldap directives aren't in the same
+       .htaccess file as the FrontPage directives, then the hack won't
+       work, because [144]mod_authnz_ldap will never get a chance to
+       process the .htaccess file, and won't be able to find the
+       FrontPage-managed user file.
+
+   [145]top
+
+AuthLDAPBindDN Directive
+
+   [146]Description: Optional DN to use in binding to the LDAP server
+     [147]Syntax:    AuthLDAPBindDN distinguished-name
+     [148]Context:   directory, .htaccess
+    [149]Override:   AuthConfig
+     [150]Status:    Extension
+     [151]Module:    mod_authnz_ldap
+
+   An optional DN used to bind to the server when searching for entries.
+   If not provided, [152]mod_authnz_ldap will use an anonymous bind.
+   [153]top
+
+AuthLDAPBindPassword Directive
+
+   [154]Description: Password used in conjuction with the bind DN
+     [155]Syntax:    AuthLDAPBindPassword password
+     [156]Context:   directory, .htaccess
+    [157]Override:   AuthConfig
+     [158]Status:    Extension
+     [159]Module:    mod_authnz_ldap
+
+   A bind password to use in conjunction with the bind DN. Note that the
+   bind password is probably sensitive data, and should be properly
+   protected. You should only use the [160]AuthLDAPBindDN and
+   [161]AuthLDAPBindPassword if you absolutely need them to search the
+   directory.
+   [162]top
+
+AuthLDAPCharsetConfig Directive
+
+   [163]Description: Language to charset conversion configuration file
+     [164]Syntax:    AuthLDAPCharsetConfig file-path
+     [165]Context:   server config
+     [166]Status:    Extension
+     [167]Module:    mod_authnz_ldap
+
+   The AuthLDAPCharsetConfig directive sets the location of the language
+   to charset conversion configuration file. File-path is relative to the
+   [168]ServerRoot. This file specifies the list of language extensions to
+   character sets. Most administrators use the provided charset.conv file,
+   which associates common language extensions to character sets.
+
+   The file contains lines in the following format:
+
+   Language-Extension charset [Language-String] ...
+
+   The case of the extension does not matter. Blank lines, and lines
+   beginning with a hash character (#) are ignored.
+   [169]top
+
+AuthLDAPCompareDNOnServer Directive
+
+   [170]Description: Use the LDAP server to compare the DNs
+     [171]Syntax:    AuthLDAPCompareDNOnServer on|off
+     [172]Default:   AuthLDAPCompareDNOnServer on
+     [173]Context:   directory, .htaccess
+    [174]Override:   AuthConfig
+     [175]Status:    Extension
+     [176]Module:    mod_authnz_ldap
+
+   When set, [177]mod_authnz_ldap will use the LDAP server to compare the
+   DNs. This is the only foolproof way to compare DNs.
+   [178]mod_authnz_ldap will search the directory for the DN specified
+   with the [179]Require dn directive, then, retrieve the DN and compare
+   it with the DN retrieved from the user entry. If this directive is not
+   set, [180]mod_authnz_ldap simply does a string comparison. It is
+   possible to get false negatives with this approach, but it is much
+   faster. Note the [181]mod_ldap cache can speed up DN comparison in most
+   situations.
+   [182]top
+
+AuthLDAPDereferenceAliases Directive
+
+   [183]Description: When will the module de-reference aliases
+     [184]Syntax:    AuthLDAPDereferenceAliases never|searching|finding|always
+     [185]Default:   AuthLDAPDereferenceAliases Always
+     [186]Context:   directory, .htaccess
+    [187]Override:   AuthConfig
+     [188]Status:    Extension
+     [189]Module:    mod_authnz_ldap
+
+   This directive specifies when [190]mod_authnz_ldap will de-reference
+   aliases during LDAP operations. The default is always.
+   [191]top
+
+AuthLDAPGroupAttribute Directive
+
+   [192]Description: LDAP attributes used to check for group membership
+     [193]Syntax:    AuthLDAPGroupAttribute attribute
+     [194]Context:   directory, .htaccess
+    [195]Override:   AuthConfig
+     [196]Status:    Extension
+     [197]Module:    mod_authnz_ldap
+
+   This directive specifies which LDAP attributes are used to check for
+   group membership. Multiple attributes can be used by specifying this
+   directive multiple times. If not specified, then [198]mod_authnz_ldap
+   uses the member and uniquemember attributes.
+   [199]top
+
+AuthLDAPGroupAttributeIsDN Directive
+
+   [200]Description: Use the DN of the client username when checking for
+                     group membership
+     [201]Syntax:    AuthLDAPGroupAttributeIsDN on|off
+     [202]Default:   AuthLDAPGroupAttributeIsDN on
+     [203]Context:   directory, .htaccess
+    [204]Override:   AuthConfig
+     [205]Status:    Extension
+     [206]Module:    mod_authnz_ldap
+
+   When set on, this directive says to use the distinguished name of the
+   client username when checking for group membership. Otherwise, the
+   username will be used. For example, assume that the client sent the
+   username bjenson, which corresponds to the LDAP DN cn=Babs Jenson,
+   o=Airius. If this directive is set, [207]mod_authnz_ldap will check if
+   the group has cn=Babs Jenson, o=Airius as a member. If this directive
+   is not set, then [208]mod_authnz_ldap will check if the group has
+   bjenson as a member.
+   [209]top
+
+AuthLDAPRemoteUserAttribute Directive
+
+   [210]Description: Use the value of the attribute returned during the
+                     user query to set the REMOTE_USER environment variable
+     [211]Syntax:    AuthLDAPRemoteUserAttribute uid
+     [212]Default:   none
+     [213]Context:   directory, .htaccess
+    [214]Override:   AuthConfig
+     [215]Status:    Extension
+     [216]Module:    mod_authnz_ldap
+
+   If this directive is set, the value of the REMOTE_USER environment
+   variable will be set to the value of the attribute specified. Make sure
+   that this attribute is included in the list of attributes in the
+   AuthLDAPUrl definition, otherwise this directive will have no effect.
+   This directive, if present, takes precedence over
+   AuthLDAPRemoteUserIsDN. This directive is useful should you want people
+   to log into a website using an email address, but a backend application
+   expects the username as a userid.
+   [217]top
+
+AuthLDAPRemoteUserIsDN Directive
+
+   [218]Description: Use the DN of the client username to set the
+                     REMOTE_USER environment variable
+     [219]Syntax:    AuthLDAPRemoteUserIsDN on|off
+     [220]Default:   AuthLDAPRemoteUserIsDN off
+     [221]Context:   directory, .htaccess
+    [222]Override:   AuthConfig
+     [223]Status:    Extension
+     [224]Module:    mod_authnz_ldap
+
+   If this directive is set to on, the value of the REMOTE_USER
+   environment variable will be set to the full distinguished name of the
+   authenticated user, rather than just the username that was passed by
+   the client. It is turned off by default.
+   [225]top
+
+AuthLDAPUrl Directive
+
+   [226]Description: URL specifying the LDAP search parameters
+     [227]Syntax:    AuthLDAPUrl url [NONE|SSL|TLS|STARTTLS]
+     [228]Context:   directory, .htaccess
+    [229]Override:   AuthConfig
+     [230]Status:    Extension
+     [231]Module:    mod_authnz_ldap
+
+   An RFC 2255 URL which specifies the LDAP search parameters to use. The
+   syntax of the URL is
+
+   ldap://host:port/basedn?attribute?scope?filter
+
+   ldap
+          For regular ldap, use the string ldap. For secure LDAP, use
+          ldaps instead. Secure LDAP is only available if Apache was
+          linked to an LDAP library with SSL support.
+
+   host:port
+          The name/port of the ldap server (defaults to localhost:389 for
+          ldap, and localhost:636 for ldaps). To specify multiple,
+          redundant LDAP servers, just list all servers, separated by
+          spaces. [232]mod_authnz_ldap will try connecting to each server
+          in turn, until it makes a successful connection.
+
+          Once a connection has been made to a server, that connection
+          remains active for the life of the [233]httpd process, or until
+          the LDAP server goes down.
+
+          If the LDAP server goes down and breaks an existing connection,
+          [234]mod_authnz_ldap will attempt to re-connect, starting with
+          the primary server, and trying each redundant server in turn.
+          Note that this is different than a true round-robin search.
+
+   basedn
+          The DN of the branch of the directory where all searches should
+          start from. At the very least, this must be the top of your
+          directory tree, but could also specify a subtree in the
+          directory.
+
+   attribute
+          The attribute to search for. Although RFC 2255 allows a
+          comma-separated list of attributes, only the first attribute
+          will be used, no matter how many are provided. If no attributes
+          are provided, the default is to use uid. It's a good idea to
+          choose an attribute that will be unique across all entries in
+          the subtree you will be using.
+
+   scope
+          The scope of the search. Can be either one or sub. Note that a
+          scope of base is also supported by RFC 2255, but is not
+          supported by this module. If the scope is not provided, or if
+          base scope is specified, the default is to use a scope of sub.
+
+   filter
+          A valid LDAP search filter. If not provided, defaults to
+          (objectClass=*), which will search for all objects in the tree.
+          Filters are limited to approximately 8000 characters (the
+          definition of MAX_STRING_LEN in the Apache source code). This
+          should be more than sufficient for any application.
+
+   When doing searches, the attribute, filter and username passed by the
+   HTTP client are combined to create a search filter that looks like
+   (&(filter)(attribute=username)).
+
+   For example, consider an URL of
+   ldap://ldap.airius.com/o=Airius?cn?sub?(posixid=*). When a client
+   attempts to connect using a username of Babs Jenson, the resulting
+   search filter will be (&(posixid=*)(cn=Babs Jenson)).
+
+   An optional parameter can be added to allow the LDAP Url to override
+   the connection type. This parameter can be one of the following:
+
+   NONE
+          Establish an unsecure connection on the default LDAP port. This
+          is the same as ldap:// on port 389.
+
+   SSL
+          Establish a secure connection on the default secure LDAP port.
+          This is the same as ldaps://
+
+   TLS | STARTTLS
+          Establish an upgraded secure connection on the default LDAP
+          port. This connection will be initiated on port 389 by default
+          and then upgraded to a secure connection on the same port.
+
+   See above for examples of [235]AuthLDAPURL URLs.
+
+   When [236]AuthLDAPURL is enabled in a particular context, but some
+   other module has performed authentication for the request, the server
+   will try to map the username to a DN during authorization regardless of
+   whether or not LDAP-specific requirements are present. To ignore the
+   failures to map a username to a DN during authorization, set
+   [237]AuthzLDAPAutoritative to "off".
+   [238]top
+
+AuthzLDAPAuthoritative Directive
+
+   [239]Description: Prevent other authentication modules from
+                     authenticating the user if this one fails
+     [240]Syntax:    AuthzLDAPAuthoritative on|off
+     [241]Default:   AuthzLDAPAuthoritative on
+     [242]Context:   directory, .htaccess
+    [243]Override:   AuthConfig
+     [244]Status:    Extension
+     [245]Module:    mod_authnz_ldap
+
+   Set to off if this module should let other authorization modules
+   attempt to authorize the user, should authorization with this module
+   fail. Control is only passed on to lower modules if there is no DN or
+   rule that matches the supplied user name (as passed by the client).
+
+   When no LDAP-specific [246]Require directives are used, authorization
+   is allowed to fall back to other modules as if
+   [247]AuthzLDAPAuthoritative was set to off.
+
+   Available Languages: [248] en
+
+   Copyright 2009 The Apache Software Foundation.
+   Licensed under the [249]Apache License, Version 2.0.
+
+   [250]Modules | [251]Directives | [252]FAQ | [253]Glossary |
+   [254]Sitemap
+
+References
+
+   1. http://httpd.apache.org/docs/2.2/mod/
+   2. http://httpd.apache.org/docs/2.2/mod/directives.html
+   3. http://httpd.apache.org/docs/2.2/faq/
+   4. http://httpd.apache.org/docs/2.2/glossary.html
+   5. http://httpd.apache.org/docs/2.2/sitemap.html
+   6. http://httpd.apache.org/docs/2.2/mod/
+   7. http://www.apache.org/
+   8. http://httpd.apache.org/
+   9. http://httpd.apache.org/docs/
+  10. http://httpd.apache.org/docs/2.2/
+  11. http://httpd.apache.org/docs/2.2/mod/
+  12. http://httpd.apache.org/docs/2.2/en/mod/mod_authnz_ldap.html
+  13. http://httpd.apache.org/docs/2.2/mod/module-dict.html#Description
+  14. http://httpd.apache.org/docs/2.2/mod/module-dict.html#Status
+  15. http://httpd.apache.org/docs/2.2/mod/module-dict.html#ModuleIdentifier
+  16. http://httpd.apache.org/docs/2.2/mod/module-dict.html#SourceFile
+  17. http://httpd.apache.org/docs/2.2/mod/module-dict.html#Compatibility
+  18. http://httpd.apache.org/docs/2.2/mod/mod_auth_basic.html
+  19. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html
+  20. http://www.openldap.org/
+  21. http://developer.novell.com/ndk/cldap.htm
+  22. http://www.iplanet.com/downloads/developer/
+  23. http://httpd.apache.org/docs/2.2/mod/mod_ldap.html
+  24. http://httpd.apache.org/docs/2.2/mod/mod_auth_basic.html
+  25. http://httpd.apache.org/docs/2.2/mod/mod_auth_basic.html#authbasicprovider
+  26. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#authldapbinddn
+  27. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#authldapbindpassword
+  28. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#authldapcharsetconfig
+  29. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#authldapcomparednonserver
+  30. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#authldapdereferencealiases
+  31. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#authldapgroupattribute
+  32. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#authldapgroupattributeisdn
+  33. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#authldapremoteuserattribute
+  34. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#authldapremoteuserisdn
+  35. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#authldapurl
+  36. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#authzldapauthoritative
+  37. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#contents
+  38. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#operation
+  39. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#requiredirectives
+  40. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#examples
+  41. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#usingtls
+  42. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#usingssl
+  43. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#exposed
+  44. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#frontpage
+  45. http://httpd.apache.org/docs/2.2/mod/mod_ldap.html
+  46. http://httpd.apache.org/docs/2.2/mod/mod_auth_basic.html
+  47. http://httpd.apache.org/docs/2.2/mod/mod_authz_user.html
+  48. http://httpd.apache.org/docs/2.2/mod/mod_authz_groupfile.html
+  49. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#page-header
+  50. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#operation
+  51. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#authenphase
+  52. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#authorphase
+  53. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#requiredirectives
+  54. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#reqvaliduser
+  55. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#requser
+  56. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#reqgroup
+  57. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#reqdn
+  58. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#reqattribute
+  59. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#reqfilter
+  60. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#examples
+  61. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#usingtls
+  62. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#usingssl
+  63. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#exposed
+  64. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#frontpage
+  65. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html
+  66. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#howitworks
+  67. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#fpcaveats
+  68. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#page-header
+  69. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html
+  70. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html
+  71. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html
+  72. http://httpd.apache.org/docs/2.2/mod/mod_auth_basic.html#authbasicprovider
+  73. http://httpd.apache.org/docs/2.2/mod/core.html#require
+  74. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html
+  75. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html
+  76. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#authldapurl
+  77. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#authldapurl
+  78. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#authldapbinddn
+  79. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#authldapbindpassword
+  80. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html
+  81. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html
+  82. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html
+  83. http://httpd.apache.org/docs/2.2/mod/core.html#require
+  84. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#reqgroup
+  85. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#reqdn
+  86. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#reqgroup
+  87. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#reqattribute
+  88. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#reqfilter
+  89. http://httpd.apache.org/docs/2.2/mod/core.html#require
+  90. http://httpd.apache.org/docs/2.2/mod/core.html#require
+  91. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#authzldapauthoritative
+  92. http://httpd.apache.org/docs/2.2/mod/core.html#require
+  93. http://httpd.apache.org/docs/2.2/mod/core.html#require
+  94. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#authzldapauthoritative
+  95. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#requser
+  96. http://httpd.apache.org/docs/2.2/mod/mod_authz_user.html
+  97. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#reqgroup
+  98. http://httpd.apache.org/docs/2.2/mod/mod_authz_groupfile.html
+  99. http://httpd.apache.org/docs/2.2/mod/mod_authz_groupfile.html#authgroupfile
+ 100. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html
+ 101. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#authldapurl
+ 102. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#authldapcomparednonserver
+ 103. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#authldapgroupattribute
+ 104. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#authldapgroupattributeisdn
+ 105. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#page-header
+ 106. http://httpd.apache.org/docs/2.2/mod/core.html#require
+ 107. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html
+ 108. http://httpd.apache.org/docs/2.2/mod/mod_authz_user.html
+ 109. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html
+ 110. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#authldapurl
+ 111. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html
+ 112. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#authldapgroupattribute
+ 113. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#authldapgroupattributeisdn
+ 114. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#authldapcomparednonserver
+ 115. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#page-header
+ 116. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#page-header
+ 117. http://httpd.apache.org/docs/2.2/mod/mod_ldap.html
+ 118. http://httpd.apache.org/docs/2.2/mod/mod_ldap.html#ldaptrustedclientcert
+ 119. http://httpd.apache.org/docs/2.2/mod/mod_ldap.html#ldaptrustedglobalcert
+ 120. http://httpd.apache.org/docs/2.2/mod/mod_ldap.html#ldaptrustedmode
+ 121. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#authldapurl
+ 122. http://httpd.apache.org/docs/2.2/mod/mod_ldap.html#ldaptrustedmode
+ 123. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#page-header
+ 124. http://httpd.apache.org/docs/2.2/mod/mod_ldap.html
+ 125. http://httpd.apache.org/docs/2.2/mod/mod_ldap.html#ldaptrustedclientcert
+ 126. http://httpd.apache.org/docs/2.2/mod/mod_ldap.html#ldaptrustedglobalcert
+ 127. http://httpd.apache.org/docs/2.2/mod/mod_ldap.html#ldaptrustedmode
+ 128. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#authldapurl
+ 129. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#page-header
+ 130. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#authldapurl
+ 131. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#page-header
+ 132. http://httpd.apache.org/docs/2.2/mod/mod_authn_file.html
+ 133. http://httpd.apache.org/docs/2.2/mod/mod_authz_groupfile.html
+ 134. http://httpd.apache.org/docs/2.2/mod/mod_authn_file.html
+ 135. http://httpd.apache.org/docs/2.2/mod/mod_auth_basic.html
+ 136. http://httpd.apache.org/docs/2.2/mod/mod_authn_file.html
+ 137. http://httpd.apache.org/docs/2.2/mod/mod_authz_groupfile.html
+ 138. http://httpd.apache.org/docs/2.2/mod/mod_authz_groupfile.html
+ 139. http://httpd.apache.org/docs/2.2/mod/core.html#location
+ 140. http://httpd.apache.org/docs/2.2/mod/core.html#directory
+ 141. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html
+ 142. http://httpd.apache.org/docs/2.2/mod/mod_authn_file.html#authgroupfile
+ 143. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html
+ 144. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html
+ 145. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#page-header
+ 146. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+ 147. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+ 148. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+ 149. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Override
+ 150. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+ 151. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+ 152. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html
+ 153. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#page-header
+ 154. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+ 155. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+ 156. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+ 157. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Override
+ 158. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+ 159. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+ 160. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#authldapbinddn
+ 161. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#authldapbindpassword
+ 162. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#page-header
+ 163. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+ 164. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+ 165. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+ 166. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+ 167. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+ 168. http://httpd.apache.org/docs/2.2/mod/core.html#serverroot
+ 169. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#page-header
+ 170. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+ 171. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+ 172. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Default
+ 173. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+ 174. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Override
+ 175. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+ 176. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+ 177. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html
+ 178. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html
+ 179. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#reqdn
+ 180. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html
+ 181. http://httpd.apache.org/docs/2.2/mod/mod_ldap.html
+ 182. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#page-header
+ 183. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+ 184. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+ 185. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Default
+ 186. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+ 187. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Override
+ 188. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+ 189. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+ 190. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html
+ 191. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#page-header
+ 192. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+ 193. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+ 194. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+ 195. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Override
+ 196. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+ 197. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+ 198. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html
+ 199. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#page-header
+ 200. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+ 201. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+ 202. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Default
+ 203. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+ 204. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Override
+ 205. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+ 206. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+ 207. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html
+ 208. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html
+ 209. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#page-header
+ 210. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+ 211. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+ 212. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Default
+ 213. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+ 214. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Override
+ 215. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+ 216. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+ 217. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#page-header
+ 218. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+ 219. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+ 220. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Default
+ 221. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+ 222. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Override
+ 223. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+ 224. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+ 225. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#page-header
+ 226. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+ 227. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+ 228. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+ 229. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Override
+ 230. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+ 231. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+ 232. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html
+ 233. http://httpd.apache.org/docs/2.2/programs/httpd.html
+ 234. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html
+ 235. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#authldapurl
+ 236. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#authldapurl
+ 237. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#
+    authzldapautoritative
+ 238. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#page-header
+ 239. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+ 240. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+ 241. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Default
+ 242. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+ 243. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Override
+ 244. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+ 245. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+ 246. http://httpd.apache.org/docs/2.2/mod/core.html#require
+ 247. http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html#authzldapauthoritative
+ 248. http://httpd.apache.org/docs/2.2/en/mod/mod_authnz_ldap.html
+ 249. http://www.apache.org/licenses/LICENSE-2.0
+ 250. http://httpd.apache.org/docs/2.2/mod/
+ 251. http://httpd.apache.org/docs/2.2/mod/directives.html
+ 252. http://httpd.apache.org/docs/2.2/faq/
+ 253. http://httpd.apache.org/docs/2.2/glossary.html
+ 254. http://httpd.apache.org/docs/2.2/sitemap.html

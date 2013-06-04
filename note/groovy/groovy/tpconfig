@@ -1,0 +1,75 @@
+#!/usr/bin/env groovy
+import groovy.sql.Sql
+
+// 北,70801|MS日月光,7080101|MS日月光,7080103|MS日月光展售倉,7080106|MS日月光瑕疵倉,7080109|MS日月光AD
+if (this.args.length == 0) {
+  println "Usage: tpconfig <file>"
+  System.exit(-1)
+}
+
+def url = "jdbc:mysql://10.40.1.60/teampace"
+def user = "root"
+def password = "58501025"
+
+def sql = Sql.newInstance(url, user, password, "com.mysql.jdbc.Driver")
+def nextGroupId = sql.firstRow("SELECT MAX(schedule_group_id) + 1 FROM schedule_group").getAt(0)
+def nextScheduleId = sql.firstRow("SELECT MAX(schedule_id) + 1 FROM schedule").getAt(0)
+
+def showrooms = []
+def file = new File(this.args[0])
+file.eachLine { line ->
+  def showroom = [:]
+  showrooms << showroom
+  showroom.groupId = nextGroupId++
+  showroom.scheduleId = nextScheduleId++
+
+  def columns = Arrays.asList(line.split(","))
+  switch (columns[0]) {
+    case "北":
+      showroom.zoneId = 2
+      showroom.distId = 5
+      break
+    case "中":
+      showroom.zoneId = 3
+      showroom.distId = 6
+      break
+    case "南":
+      showroom.zoneId = 4
+      showroom.distId = 7
+      break
+  }  
+
+  def codename = columns[1].split("\\|")
+  showroom.code = codename[0]
+  showroom.name = codename[1]
+
+  showroom.stockrooms = []
+  columns = columns.subList(2, columns.size())
+  columns.each {
+    def stockroom = [:]
+    showroom.stockrooms << stockroom
+
+    codename = it.split("\\|")
+    stockroom.code = codename[0]
+    stockroom.name = codename[1]
+  }
+}
+
+for (def showroom in showrooms) {
+  println """\n\nINSERT INTO schedule_group (schedule_group_id, name, position, top_group) VALUES (${showroom.groupId}, '${showroom.name}', ${showroom.groupId}, 0);
+INSERT INTO schedule (schedule_id, name, position, mapping_schedule_group_id) VALUES (${showroom.scheduleId}, '${showroom.name}', ${showroom.scheduleId}, ${showroom.groupId});
+INSERT INTO schedule_group_mapping(schedule_group_id, schedule_id) VALUES (${showroom.groupId}, ${showroom.scheduleId});
+INSERT INTO schedule_group_mapping(schedule_group_id, schedule_id) VALUES (${showroom.groupId}, 1);
+INSERT INTO schedule_group_mapping(schedule_group_id, schedule_id) VALUES (${showroom.zoneId}, ${showroom.scheduleId});
+
+DEP-${showroom.code}@${showroom.name}
+DEP-${showroom.code}=${showroom.scheduleId}
+DEP-${showroom.code}-DIS=${showroom.distId}"""
+
+  for (def stockroom : showroom.stockrooms) {
+    println """WHS-${stockroom.code}@${stockroom.name}
+WHS-${stockroom.code}=${showroom.scheduleId}
+WHS-${stockroom.code}-DIS=${showroom.distId}"""
+  }
+}
+

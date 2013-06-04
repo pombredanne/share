@@ -1,0 +1,119 @@
+= link:start.html[GAE / Python / Getting Started] / Hello, world! =
+:title: [GAE][Python] Hello, world!
+
+ 1. 開一個新的資料夾 `hello-world`，然後在底下建立一支 link:../../yaml/yaml.html[YAML] 格式的組態檔 `app.yaml`：
++
+--------------------------------------------------------------------------------
+application: helloworld <1>
+version: 1              <2>
+runtime: python27       <3>
+api_version: 1
+threadsafe: true        <4>
+
+handlers:               <5>
+- url: /.*
+  script: helloworld.app
+--------------------------------------------------------------------------------
+<1> `appliation` 設定在 App Engine 上註冊的 'application ID`。
++
+application ID 讓 App Engine 識別不同的應用程式（所有人都共享一個命名空間），一旦註冊後就不能再改變，刪掉之後也沒有人能再使用同一個 ID，再加上它會成為 URL 的一部份（例如 `http://your_app_id.appspot.com`），所以要慎選。
++
+<2> `version` 設定應用程式上傳到 App Engine 的版號，不一定要是數字，例如 "dev"。
+<3> `runtime` 跟 `api_version` 設定應用程式的執行環境 － Python 2.7 version 1。
++
+目前 Python 2.7 只有一個版本，而且 App Engine 尚不支援 Python 3。
++
+<4> `threadsafe` 將應用程式標示為 thread-safe，也就是單一個 instance 可以同時間處理多個 requests。
+<5> `handlers` 設定一或多個 request handlers，將符合 URL pattern (`url`) 的 request 交給 handler script (`script`) 處理。
++
+這裡 `helloworld.app` 的寫法，表示 Python module (`helloworld.py`) 裡有個表示 WSGI application object 的 global variable (`app`)。
++
+ 2. 建立 handler script (`helloworld.py`)：
++
+--------------------------------------------------------------------------------
+import webapp2
+
+class MainPage(webapp2.RequestHandler):
+    def get(self):
+        self.response.headers['Content-Type'] = 'text/plain'
+        self.response.write('Hello, world!')
+
+app = webapp2.WSGIApplication([('/', MainPage)], debug=True)
+--------------------------------------------------------------------------------
++
+ 3. 用 link:devserver.html[development server] 測試。
++
+--
+--------------------------------------------------------------------------------
+$ dev_appserver.py helloworld/
+INFO     2013-04-06 02:32:07,767 sdk_update_checker.py:244] Checking for updates to the SDK.
+INFO     2013-04-06 02:32:08,920 sdk_update_checker.py:272] The SDK is up to date.
+WARNING  2013-04-06 02:32:09,453 simple_search_stub.py:976] Could not read search indexes from /tmp/appengine.helloworld.jeremy/search_indexes
+INFO     2013-04-06 02:32:09,455 api_server.py:152] Starting API server at: http://localhost:52247
+INFO     2013-04-06 02:32:09,490 dispatcher.py:98] Starting server "default" running at: http://localhost:8080
+INFO     2013-04-06 02:32:09,498 admin_server.py:117] Starting admin server at: http://localhost:8000
+--------------------------------------------------------------------------------
+
+瀏覽 http://localhost:8080 就可以看到 "Hello, world!"。
+--
++
+ 4. 到 link:admin-console.html[Admin Console] 上註冊一個 application ID（例如 `say-hello-to-gae`）。
+ 5. 將註冊成功的 application ID 更新到 `app.yaml`，然後透過 `appcfg.py update` 上傳到 App Engine。
++
+--
+--------------------------------------------------------------------------------
+$ appcfg.py update helloworld/
+11:31 AM Host: appengine.google.com
+11:31 AM Application: say-hello-to-gae; version: 1
+11:31 AM 
+Starting update of app: say-hello-to-gae, version: 1
+11:31 AM Getting current resource limits.
+Email: xxx@gmail.com
+Password for xxx@gmail.com:
+11:33 AM Scanning files on local disk.
+11:33 AM Cloning 2 application files.
+11:33 AM Compilation starting.
+11:33 AM Compilation completed.
+11:33 AM Starting deployment.
+11:33 AM Checking if deployment succeeded.
+11:33 AM Deployment successful.
+11:33 AM Checking if updated app version is serving.
+11:33 AM Completed update of app: say-hello-to-gae, version: 1
+--------------------------------------------------------------------------------
+
+如果 Google Account 採用 2-step verification 的話，密碼要輸入 application-specific password。
+--
++
+ 6. 此時瀏覽 http://say-hello-to-gae.appspot.com 就可以看到內容。
+
+== 參考資料 ==
+
+ * https://developers.google.com/appengine/docs/python/gettingstartedpython27/[Getting Started: Python 2.7 - Google App Engine — Google Developers]
+   ** https://developers.google.com/appengine/docs/python/gettingstartedpython27/devenvironment[The Development Environment] ^https://diigo.com/0xvwy[閱讀]^
+   ** https://developers.google.com/appengine/docs/python/gettingstartedpython27/helloworld[Hello, World!] ^https://diigo.com/0xw7c[閱讀]^
+   ** https://developers.google.com/appengine/docs/python/gettingstartedpython27/usingwebapp[Explaining the webapp2 Framework] ^https://diigo.com/0xw7r[閱讀]^
+   ** https://developers.google.com/appengine/docs/python/gettingstartedpython27/usingusers[Using the Users Service] ^https://diigo.com/0xw7v[閱讀]^
+   ** https://developers.google.com/appengine/docs/python/gettingstartedpython27/handlingforms[Handling Forms with webapp2] ^https://diigo.com/0xw87[閱讀]^
+   ** https://developers.google.com/appengine/docs/python/gettingstartedpython27/usingdatastore[Using the Datastore] ^https://diigo.com/0xw9o[閱讀]^
+
+////////////////////////////////////////////////////////////////////////////////
+
+ * `helloworld/helloworld.py`
++
+--------------------------------------------------------------------------------
+import webapp2
+
+class MainPage(webapp2.RequestHandler):
+
+  def get(self):
+      self.response.headers['Content-Type'] = 'text/plain'
+      self.response.write('Hello, webapp2 World!')
+
+app = webapp2.WSGIApplication([('/', MainPage)], <2>
+                              debug=True)
+--------------------------------------------------------------------------------
+<1> This code defines one request handler, MainPage, mapped to the root URL (/). When webapp2 receives an HTTP GET request to the URL /, it instantiates the MainPage class and calls the instance's get method. Inside the method, information about the request is available using self.request. Typically, the method sets properties on self.response to prepare the response, then exits. webapp2 sends a response based on the "final state" of the MainPage instance.
+<2> The application itself is represented by a webapp2.WSGIApplication instance. The parameter debug=true passed to its constructor tells webapp2 to print stack traces to the browser output if a handler encounters an error or raises an uncaught exception. You may wish to remove this option from the final version of your application. 變數名稱一定要取做 `app` 嗎??
+
+////////////////////////////////////////////////////////////////////////////////
+

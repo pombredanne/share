@@ -1,0 +1,63 @@
+= link:gpb.html[GPB] / Python =
+:title: [GPB] Python
+
+== 參考資料 ==
+
+.手冊
+--
+ * https://developers.google.com/protocol-buffers/docs/reference/python/index[Python API Reference]
+   ** https://developers.google.com/protocol-buffers/docs/reference/python/google.protobuf.message.Message-class[`google.protobuf.message.Message`]
+--
+
+.文件
+--
+ * https://developers.google.com/protocol-buffers/docs/pythontutorial[Protocol Buffer Basics: Python - Protocol Buffers — Google Developers] ^https://diigo.com/0xvj4[閱讀]^
+ * https://developers.google.com/protocol-buffers/docs/reference/python-generated[Python Generated Code - Protocol Buffers — Google Developers]
+--
+
+////////////////////////////////////////////////////////////////////////////////
+
+ * `pickling`, doesn't deal well with "schema evolution", also doesn't work very well if you need to share data with application written in C++ or Java.
+ * The generated class provides getters and setters for the fields (用起來感覺像是 properties) that make up a protocol buffer and takes care of the details of reading and writing the protocol buffer as a unit.
+ * compile (`*.proto` -> `*pb2.py`)
+   ** `protoc -I=$SRC_DIR --python_out=$DST_DIR $SRC_DIR/addressbook.proto`
+   ** specifying the source directory (where your application's source code lives – the current directory is used if you don't provide a value), the destination directory (where you want the generated code to go; often the same as $SRC_DIR), and the path to your .proto.
+   ** Unlike when you generate Java and C++ protocol buffer code, the Python protocol buffer compiler doesn't generate your data access code for you directly. Instead it generates special descriptors for all your messages, enums, and fields, and some mysteriously empty classes, one for each message type.
+   ** The important line in each class is `__metaclass__ = reflection.GeneratedProtocolMessageType`. You can think of them as like a template for creating classes. At load time, the `GeneratedProtocolMessageType` metaclass uses the specified descriptors to create all the Python methods you need to work with each message type and adds them to the relevant classes. You can then use the fully-populated classes in your code.
+   ** Enums are expanded by the metaclass into a set of symbolic constants with integer values.
+ * API
+   ** The end effect of all this is that you can use the Person class as if it defined each field of the `Message` base class as a regular field.
++
+--------------------------------------------------------------------------------
+import addressbook_pb2
+person = addressbook_pb2.Person()
+person.id = 1234
+person.name = "John Doe"
+person.email = "jdoe@example.com"
+phone = person.phone.add()
+phone.number = "555-4321"
+phone.type = addressbook_pb2.Person.HOME
+--------------------------------------------------------------------------------
++
+   ** Note that these assignments are not just adding arbitrary new fields to a generic Python object. If you were to try to assign a field that isn't defined in the .proto file, an AttributeError would be raised. If you assign a field to a value of the wrong type, a TypeError will be raised. Also, reading the value of a field before it has been set returns the default value.
+   ** Each message class also contains a number of other methods that let you check or manipulate the entire message. These methods implement the Message interface. (為什麼是大寫開頭?)
+      *** `IsInitialized()`: checks if all the required fields have been set. (initialized vs. uninitialized)
+      *** `__str__()`: returns a human-readable representation of the message, particularly useful for debugging. (Usually invoked as str(message) or print message.)
+      *** `CopyFrom(other_msg)`: overwrites the message with the given message's values.
+      *** `Clear()`: clears all the elements back to the "empty state". (default value)
+   ** each protocol buffer class has methods for writing and reading messages of your chosen type using the protocol buffer binary format.
+      *** `SerializeToString()`: serializes the message and returns it as a string. Note that the bytes are binary, not text; we only use the str type as a convenient container.
+      *** `ParseFromString(data)`: parses a message from the given string.
+
+--------------------------------------------------------------------------------
+address_book = addressbook_pb2.AddressBook() # empty state
+address_book.ParseFromString(f.read())
+
+new_person = address_book.person.add();
+new_person.id = '001'
+new_person.name = 'someone'
+f.write(address_book.SerializeToString())
+--------------------------------------------------------------------------------
+
+////////////////////////////////////////////////////////////////////////////////
+

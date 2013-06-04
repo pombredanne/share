@@ -1,0 +1,197 @@
+= link:ie.html[Selenium RC / IE] / 等不到 `onload()` =
+:title: [Selenium RC][IE] 等不到 onload()
+
+-> link:ie-onload-timeout_EN.html[English Version]
+
+Selenium 在 IE 9 下會 "不定期" 遇到 "Time out after 30000ms" 的錯誤（主要是卡在 `wait_for_page_to_load()`），這個問題大概在 2011 年中被提出來，不過由於 Selenium 團隊已漸漸把開發重心移往 link:../../selenium2/selenium2.html[Selenium 2/WebDriver]，所以一直沒有被修復，而這一連串的討論也終止於 2012-01-03 專案成員將 priority 調為 LOW...
+
+[quote,'http://code.google.com/p/selenium/issues/detail?id=1639[Issue 1639 - selenium - Internet Explorer 9 intermittently fails to recognize page loads with waitForPageToLoad call]']
+________________________________________________________________________________
+Comment 13 by project member jmle...@gmail.com, Jan 3, 2012
+All active development is focused on Selenium 2.0 (the WebDriver APIs).  Updating issue priority accordingly.
+
+Labels: Priority-Low 
+________________________________________________________________________________
+
+IMPORTANT: 這個事件提醒了我們要加快link:../../selenium2/migration.html[從 RC 遷移到 WebDriver] 的腳步。不過在這之前，還是得解決這個問題才行。
+
+這個問題在 IE 9 上相對嚴重，因為連 `open()` 都會卡住，至於 IE 10 則不曾遇到卡在 `open()` 的狀況。由於影響的層面很大（包括 link:../../seleniumlibrary/seleniumlibrary.html[SeleniumLibrary]），因此要從底層的 `selenium.py` 處理。
+
+[source,python]
+.`selenium.py`
+--------------------------------------------------------------------------------
+def open(self,url,ignoreResponseCode=True):
+    """
+    Opens an URL in the test frame. This accepts both relative and absolute
+    URLs.
+    
+    The "open" command waits for the page to load before proceeding,
+    ie. the "AndWait" suffix is implicit.
+    ...
+    """
+    self.do_command("open", [url,ignoreResponseCode])
+
+def wait_for_page_to_load(self,timeout):
+    """
+    Waits for a new page to load.
+    
+    You can use this command instead of the "AndWait" suffixes, "clickAndWait", "selectAndWait", "typeAndWait" etc.
+    (which are only available in the JS API).
+    
+    Selenium constantly keeps track of new pages loading, and sets a "newPageLoaded"
+    flag when it first notices a page load.  Running any other Selenium command after
+    turns the flag to false.  Hence, if you want to wait for a page to load, you must
+    wait immediately after a Selenium command that caused a page-load.
+    ...
+    """
+    self.do_command("waitForPageToLoad", [timeout,])
+--------------------------------------------------------------------------------
+
+做了一些簡單的實驗確認過：
+
+ * 呼叫 `open()` 前將 timeout 設成 0，可以解決 `open()` 可能卡住的問題。
++
+[source,javascript]
+.http://code.google.com/p/selenium/source/browse/trunk/common/src/js/core/scripts/selenium-api.js?r=8162#923[`selenium-api.js#923`]
+--------------------------------------------------------------------------------
+Selenium.prototype.makePageLoadCondition = function(timeout) {
+    if (timeout == null) {
+        timeout = this.defaultTimeout;
+    }
+    // if the timeout is zero, we won't wait for the page to load before returning
+    if (timeout == 0) { // 內部確實會對 timeout == 0 的狀況做不同的處理
+	  // abort XHR request  
+          this._abortXhrRequest(); 	   
+    	  return;
+    }
+    return Selenium.decorateFunctionWithTimeout(fnBind(this._isNewPageLoaded, this), timeout, fnBind(this._abortXhrRequest, this));
+};
+--------------------------------------------------------------------------------
++
+ * 檢查 http://www.w3schools.com/jsref/prop_doc_readystate.asp[`document.readyState`] 的值是不是 `complete` 來斷定頁面是不是載入完成，可信度還滿高的，而且不會有一定得發生 onload 才行。
+
+開始動手修改 `open()` 跟 `wait_for_page_to_load()`：
+
+[source,python]
+--------------------------------------------------------------------------------
+def open(self):
+    timeout = self.get_eval('this.defaultTimeout')
+    self.set_timeout(0) # the following 'open' may cause timeout in IE 9+
+    self.do_command("open", [url,ignoreResponseCode])
+    self.set_timeout(timeout)
+    self.wait_for_page_to_load(timeout)
+
+def wait_for_page_to_load(self,timeout):
+    # the following command may cause timeout in IE 9+
+    # self.do_command("waitForPageToLoad", [timeout,])
+    import time
+    end = time.time() + int(float(timeout) / 1000)
+    while time.time() < end:
+        if self.get_eval('window.document.readyState') == 'complete': return
+        time.sleep(2)
+    raise Exception('Time out after %sms' % timeout)
+--------------------------------------------------------------------------------
+
+== 延伸閱讀 ==
+
+ * link:../api/javascript.html[執行 JavaScript]
+ * link:../recipes/default-timeout.html[取得 Default Timeout]
+
+== 參考資料 ==
+
+ * http://grokbase.com/t/gg/selenium-users/127rscmeax/html-script-timeouts-using-iexplore-with-ie9[[selenium-users&#93; html script timeouts using iexplore with IE9 - Grokbase] (2012-07-24) - 停用 protected mode 跟 pop-up blocker 之後，還是會有 timeout 的問題。
+ * http://code.google.com/p/selenium/issues/detail?id=2451[Issue 2451 - selenium - waitForPageToLoad() in Internet Explorer 9 ( ie 9 ) - Browser automation framework - Google Project Hosting] (2011-09-13) - 不解為什麼已經有人提出 patch，但開發團隊就是不把它整進去？
+ * http://webthaumaturge.blogspot.tw/2011/08/selenium-ie9-waitforpagetoload-fix.html[webthaumaturge's blog: Selenium IE9 WaitForPageToLoad Fix] (2011-08-26) - `user-extensions.js` 的解法，看起來頗為複雜。
+ * http://code.google.com/p/selenium/issues/detail?id=1639[Issue 1639 - selenium - Internet Explorer 9 intermittently fails to recognize page loads with waitForPageToLoad call - Browser automation framework - Google Project Hosting] (2011-05-09) - IE9 "不定時" 會出現偵測不到頁面已經載完的問題，連最單純的 `open()` 也會出狀況。有人提出 `user-extensions.js` 的解法。最後 2012-01-03 開發成員回答說目前專攻 Selenium 2 的開發，把 priority 調低。
+ * http://automation-tipsandtricks.blogspot.tw/2010/12/seleniumopen-times-out-even-after-page.html[Automation - Tips and Tricks: selenium.open times out even after the page has loaded in IE] (2010-12-12) - 把 default timeout 設成 0，改用 `waitForPageToLoad("50000")` 可以解決 `open()` 也會卡住的問題。
+ * http://stackoverflow.com/questions/3372507/selenium-test-in-internet-explorer-always-times-out[Selenium test in Internet Explorer always times out? - Stack Overflow] (2010-07-30) - 在 IE9 上也會，建議換成 `waitForVisible()`。將 protected mode 關閉也可以？
+ * http://jira.openqa.org/browse/SRC-552[[#SRC-552&#93; waitForPageToLoad does not return on *iexplore browser in Windows XP - OpenQA Bug Tracker] (2008-11-02) - 第一次回報在 IE6 上有狀況（只有 `*iexplore` 會，但 `*iehta` 不會？），但有人提到 IE8 也有 "even though the page loads successfully" 的問題。
+
+////////////////////////////////////////////////////////////////////////////////
+
+如果請大家移除 selenium 跟 SeleniumLibrary，直接由 SVN 我們來提供，是不是就完全取用修改過的版本了？只在遇到 IE9 以後的版本加工：
+
+ * 改 SeleniumLibrary，將 Open Browser 改成偷偷將 timeout 設成 0，然後再調回來。-> 改 selenium 比較單純。
+ * 將 selenium.wait_for_page_to_load 直接改掉，我們自己的程式跟 SeleniumLibrary 都將直接受惠。
+
+IE 下輸入文字要先 focus 再 type，但 blur event 沒效果。
+
+http://code.google.com/p/selenium/source/browse/trunk/common/src/js/core/scripts/selenium-api.js?r=8162#2428
+--------------------------------------------------------------------------------
+Selenium.prototype.doWaitForPageToLoad = function(timeout) {
+    /**
+     * Waits for a new page to load.
+     *
+     * <p>You can use this command instead of the "AndWait" suffixes, "clickAndWait", "selectAndWait", "typeAndWait" etc.
+     * (which are only available in the JS API).</p>
+     *
+     * <p>Selenium constantly keeps track of new pages loading, and sets a "newPageLoaded"
+     * flag when it first notices a page load.  Running any other Selenium command after
+     * turns the flag to false.  Hence, if you want to wait for a page to load, you must
+     * wait immediately after a Selenium command that caused a page-load.</p>
+     * @param timeout a timeout in milliseconds, after which this command will return with an error
+     */
+    // in pi-mode, the test and the harness share the window; thus if we are executing this code, then we have loaded
+    if (window["proxyInjectionMode"] == null || !window["proxyInjectionMode"]) {
+        return this.makePageLoadCondition(timeout);
+    }
+};
+--------------------------------------------------------------------------------
+
+http://code.google.com/p/selenium/source/browse/trunk/common/src/js/core/scripts/selenium-browserbot.js?r=8162#102
+--------------------------------------------------------------------------------
+    this.isNewPageLoaded = function() {
+        if (this.pageLoadError) {
+            LOG.error("isNewPageLoaded found an old pageLoadError");
+            var e = this.pageLoadError;
+            this.pageLoadError = null;
+            throw e;
+        }
+
+        if (self.ignoreResponseCode) {
+            return self.newPageLoaded;
+        } else {
+            if (self.isXhrSent && self.isXhrDone) {
+                if (!((self.xhrResponseCode >= 200 && self.xhrResponseCode <= 399) || self.xhrResponseCode == 0)) {
+                     // TODO: for IE status like: 12002, 12007, ... provide corresponding statusText messages also.
+                     LOG.error("XHR failed with message " + self.xhrStatusText);
+                     var e = "XHR ERROR: URL = " + self.xhrOpenLocation + " Response_Code = " + self.xhrResponseCode + " Error_Message = " + self.xhrStatusText
+                     self.abortXhr = false;
+                     self.isXhrSent = false;
+                     self.isXhrDone = false;
+                     self.xhrResponseCode = null;
+                     self.xhrStatusText = null;
+                     throw new SeleniumError(e);
+                }
+           }
+          return self.newPageLoaded && (self.isXhrSent ? (self.abortXhr || self.isXhrDone) : true); 
+        }
+    };
+--------------------------------------------------------------------------------
+
+不知道 `isNewPageLoaded()` 哪一段檢查不過，因為硬是把 newPageLoaded 設成 true 也沒用。
+
+http://code.google.com/p/robotframework-seleniumlibrary/source/browse/src/SeleniumLibrary/browser.py?name=2.9#180
+--------------------------------------------------------------------------------
+    def wait_until_page_loaded(self, timeout=None):
+        """Waits for a page load to happen.
+
+        This keyword can be used after performing an action that causes a page
+        load to ensure that following keywords see the page fully loaded.
+
+        `timeout` is the time to wait for the page load to happen, after which
+        this keyword fails. If `timeout` is not provided, the value given in
+        `importing` or using keyword `Set Timeout` is used.
+
+        Many of the keywords that cause a page load take an optional argument
+        `dont_wait` that can be also used to wait/not wait page load. See
+        `introduction` for more details.
+
+        This keyword was added in SeleniumLibrary 2.5.
+        """
+        timeout = self._get_timeout(timeout)
+        self._selenium.wait_for_page_to_load(timeout * 1000) # 
+--------------------------------------------------------------------------------
+
+////////////////////////////////////////////////////////////////////////////////
+

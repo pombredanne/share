@@ -1,0 +1,55 @@
+= link:networking.html[Debian / Networking] / Routing =
+:title: [Debian] Network Routing
+
+Routing table 由多個 static route (path) 組成，每個 route 都在說明要將 packets 送往某個 destination network/host 時，要走哪個 interface，需要不要用到 gateway 等。區分為：
+
+ * Network Route - 設定某個 network 的 routing。
+ * Host Route - 可以針對個別 host 的 routing 做最佳化。
+ * Default Route - 當 destination 都不符合其他 network/host routes 的條件時，default route 才會作用。
+
+`netstat -r -n` 或 `route -n` 都可以顯示 kernel routing table 的內容，只是欄位有些差異。
+
+--------------------------------------------------------------------------------
+$ route -n
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+0.0.0.0         192.168.1.254   0.0.0.0         UG    0      0        0 wlan0
+169.254.0.0     0.0.0.0         255.255.0.0     U     1000   0        0 wlan0
+192.168.1.0     0.0.0.0         255.255.255.0   U     2      0        0 wlan0
+$
+$ netstat -r -n
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags   MSS Window  irtt Iface
+0.0.0.0         192.168.1.254   0.0.0.0         UG        0 0          0 wlan0
+169.254.0.0     0.0.0.0         255.255.0.0     U         0 0          0 wlan0
+192.168.1.0     0.0.0.0         255.255.255.0   U         0 0          0 wlan0
+--------------------------------------------------------------------------------
+
+簡單說明幾個不同欄位的意義：
+
+ * Destination - destination network/host。如果這是個 default route，顯示 0.0.0.0。
+ * Gateway - 如果這是個 default route，表示 gateway 的 IP，否則顯示 0.0.0.0。
+ * Genmask - destination network 的 netmask。如果是 host route，會顯示 255.255.255.255，如果是 default route 的話，則顯示 0.0.0.0。
+ * Flags - U 代表 Up，表示這個 route 在作用中；G 表示需要用到 gateway；H 則表示這是個 host route。
+ * Metric - 到 destination network/host 要經過幾個 hop。
+ * Iface (Interface) - 符合這個 route 的 packets 要走哪個 interface 出去。
+
+`route` 可以用來顯示／修改 kernel 的 IP routing table。
+
+Your routing table is created automatically, based on the current TCP/IP configuration of your Linux / UNIX computer. 要怎麼修改才會長久??
+
+== 參考資料 ==
+
+ * http://www.cyberciti.biz/faq/howto-debian-ubutnu-set-default-gateway-ipaddress/[Debian / Ubuntu Linux Setting a Default Gateway] (2008-10-18)
+ * http://www.cyberciti.biz/faq/what-is-a-routing-table/[Understanding Routing Table] ^https://diigo.com/0ynj0[閱讀]^ (2008-03-13)
+////////////////////////////////////////////////////////////////////////////////
+** Each Linux / UNIX / Windows or any computer that uses TCP/IP need to make routing decision. Routing table is used to control these decisions.
+** Almost all computers and network devices connected to Internet use routing tables to compute the next hop for a packet. It is electronic table that is stored in a router or a networked computer. The routing table stores the routes (and in some cases, metrics associated with those routes) to particular network destinations.
+** The construction of routing table is the "primary goal of routing protocols"?? and static routes.
+** This usually means that you have to set up a static route to the gateway beforehand. If you specify the address of one of your local interfaces, it will be used to decide about the interface to which the packets should be routed to. 給網卡 IP，就會自動調整 routing table??
+** Metric: The distance to the target (usually counted in hops). It is not used?? by recent kernels, but may be needed by routing daemons??.
+** Your routing table is created automatically, based on the current TCP/IP configuration of your Linux / UNIX computer.
+** Host routes are used to create custom routes to control or optimize "specific types of network traffic". 可以針對特定 protocol??
+** A route that is used when no other routes for the destination are found in the routing table.
+////////////////////////////////////////////////////////////////////////////////
+

@@ -1,4 +1,248 @@
 = link:java.html[NiTE / Java] / Boxes Sample =
 :title: [NiTE][Java] Boxes 範例程式
 
+image::sample-boxes/boxes.png[]
 
+ * `BoxesApplication.java` - 主程式，生出視窗外框（`JFrame`）後就轉呼叫 `Boxes.run()`。
+ * `Boxes.java`
+ * `MyBox.java`
+
+.`Boxes.java`
+--------------------------------------------------------------------------------
+scriptNode = new OutArg<ScriptNode>();
+this.context = Context.createFromXmlFile(SAMPLE_XML_FILE, scriptNode);
+this.sessionManager = new SessionManager(this.context, new String("Click"));
+this.flowRouter = new FlowRouter();
+this.selectableSlider = new SelectableSlider1D(3, Axis.X); // <1>
+this.boxes = new MyBox[3];
+this.boxes[0] = new MyBox("Box1", panel1);
+this.boxes[1] = new MyBox("Box2", panel2);
+this.boxes[2] = new MyBox("Box3", panel3);
+
+boxesObserver = new Observer()
+{
+    public void update(Observable o, Object arg)
+    {
+        try {
+            flowRouter.setActive(selectableSlider);
+        } catch (StatusException e) {
+            e.printStackTrace();
+        }
+    }
+};
+
+this.boxes[0].getLeaveEvent().addObserver(boxesObserver); // <2>
+this.boxes[1].getLeaveEvent().addObserver(boxesObserver);
+this.boxes[2].getLeaveEvent().addObserver(boxesObserver);
+
+this.selectableSlider.getItemHoverEvent().addObserver(new IObserver<IndexEventArgs>()
+{
+    @Override
+    public void update(IObservable<IndexEventArgs> observable,
+            IndexEventArgs args)
+    {
+        boxes[0].ChangeColor(Color.CYAN);
+        boxes[1].ChangeColor(Color.CYAN);
+        boxes[2].ChangeColor(Color.CYAN);
+        boxes[args.getIndex()].ChangeColor(Color.YELLOW);
+    }
+});
+
+this.selectableSlider.getItemSelectEvent().addObserver(new IObserver<IndexDirectionEventArgs>()
+{
+    @Override
+    public void update(IObservable<IndexDirectionEventArgs> observable,
+            IndexDirectionEventArgs args)
+    {
+        if (args.getDirection() == Direction.UP) // <5>
+        {
+            try {
+                flowRouter.setActive(boxes[args.getIndex()]);
+            } catch (StatusException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+});
+
+this.selectableSlider.getValueChangeEvent().addObserver(new IObserver<ValueEventArgs>()
+{
+    @Override
+    public void update(IObservable<ValueEventArgs> observable,
+            ValueEventArgs args) {
+        sliderCursor.setBounds((int)(args.getValue()*600), 85, 6, 20); // <3>
+    }
+});
+
+this.selectableSlider.getPrimaryPointCreateEvent().addObserver(new IObserver<HandPointEventArgs>()
+{
+    @Override
+    public void update(IObservable<HandPointEventArgs> observable,
+            HandPointEventArgs args)
+    {
+        sliderPanel.setBackground(Color.RED); // <4>
+    }
+});
+
+this.selectableSlider.getPrimaryPointDestroyEvent().addObserver(new IObserver<IdEventArgs>()
+{
+    @Override
+    public void update(IObservable<IdEventArgs> observable, IdEventArgs args)
+    {
+        sliderPanel.setBackground(Color.WHITE); // <4>
+    }
+});
+this.sessionManager.getSessionStartEvent().addObserver(new IObserver<PointEventArgs>()
+{
+    @Override
+    public void update(IObservable<PointEventArgs> observable,
+            PointEventArgs args)
+    {
+        System.out.println("Session Start");
+        try {
+            flowRouter.setActive(selectableSlider);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+});
+
+this.sessionManager.addListener(this.flowRouter);
+this.shouldRun = true;
+--------------------------------------------------------------------------------
+<1> 延著 X 軸水平移動，並劃分成 3 段。
+<2> 從特定 box 離開後（往前壓），回到水平選擇 box 的操作。
+<3> `args.getValue()` 會傳回介於 0 ~ 1 的值，用來改變下方 slider cursor 的位置。
+<4> 下方 slider panel 分別用紅／白底表示有沒有抓到 primary hand。
+<5> 往上移動表示選定某個 item？接下來由特定 box 接收 hand points 的處理。但為什麼是 "往上移"??
+
+.`MyBox.java`
+--------------------------------------------------------------------------------
+class LeaveEvent extends java.util.Observable // <1>
+{
+    void raise()
+    {
+        setChanged();
+        notifyObservers();
+    }
+}
+
+public class MyBox extends PointControl // <2>
+{
+    public MyBox(String name, Component panel) throws GeneralException
+    {
+        super();
+        this._name = name;
+        this._panel = panel;
+
+        pushDetector = new PushDetector();
+        swipeDetector = new SwipeDetector();
+        steadyDetector = new SteadyDetector();
+        flowRouter = new FlowRouter();
+        broadcaster = new Broadcaster();
+
+        broadcaster.addListener(pushDetector); // <3>
+        broadcaster.addListener(flowRouter);
+
+        pushDetector.getPushEvent().addObserver(new IObserver<VelocityAngleEventArgs>() // <4>
+        {
+            @Override
+            public void update(IObservable<VelocityAngleEventArgs> observable,
+                    VelocityAngleEventArgs args)
+            {
+                leaveEvent.raise(); // <4>
+            }
+        });
+
+        steadyDetector.getSteadyEvent().addObserver(new IObserver<IdValueEventArgs>()
+        {
+            @Override
+            public void update(IObservable<IdValueEventArgs> observable,
+                    IdValueEventArgs args)
+            {
+                System.out.println("Box " + _name + ": Steady");
+                try {
+                    if (args.getId() == getPrimaryID())
+                    {
+                        try {
+                            flowRouter.setActive(swipeDetector);
+                        } catch (StatusException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
+                        ChangeColor(Color.WHITE);
+                    }
+                } catch (StatusException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        swipeDetector.getGeneralSwipeEvent().addObserver(new IObserver<DirectionVelocityAngleEventArgs>()
+        {
+            @Override
+            public void update(IObservable<DirectionVelocityAngleEventArgs> observable,
+                    DirectionVelocityAngleEventArgs args)
+            {
+                System.out.println("Box " + _name + ": Swipe " + args.getDirection());
+                try {
+                    flowRouter.setActive(steadyDetector);
+                } catch (StatusException e) {
+                    e.printStackTrace();
+                }
+                ChangeColor(Color.RED);
+            }
+        });
+
+        getPrimaryPointCreateEvent().addObserver(new IObserver<HandPointEventArgs>()
+        {
+            @Override
+            public void update(IObservable<HandPointEventArgs> observable,
+                    HandPointEventArgs args)
+            {
+                try {
+                    flowRouter.setActive(steadyDetector);
+                } catch (StatusException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                // TODO Auto-generated method stub
+
+            }
+        });
+
+        getPrimaryPointDestroyEvent().addObserver(new IObserver<IdEventArgs>()
+        {
+            @Override
+            public void update(IObservable<IdEventArgs> observable, IdEventArgs args)
+            {
+                ChangeColor(Color.CYAN);
+            }
+        });
+
+        getMessageUpdateEvent().addObserver(new IObserver<PointerEventArgs>()
+        {
+            @Override
+            public void update(IObservable<PointerEventArgs> observable,
+                    PointerEventArgs args)
+            {
+                try {
+                    broadcaster.updateMessage(args.getPointer()); // <2>
+                } catch (StatusException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        leaveEvent = new LeaveEvent(); // <1>
+    }
+
+    // Events
+    public java.util.Observable getLeaveEvent() // <1>
+    {
+        return leaveEvent;
+    }
+}
+--------------------------------------------------------------------------------
+<1> 利用 `java.util.Observable` 跟 `java.util.Observer` 自訂 event，讓外界可以透過 `getLeaveEvent().addObserver()` 來進行註冊。
+<2> 

@@ -1,0 +1,73 @@
+= link:python.html[Windows / Registry / Python] / 處理 32/64-bit 的差異（WoW64） =
+:title: [Python][Windows] 處理 Registry 在 32/64-bit 下的差異（WoW64）
+
+WoW64 (Windows 32-bit on Windows 64-bit) 簡單的說，就是讓 32-bit 的應甪程式可以執行在 64-bit Windows 的一種技術。
+
+就 registry 而言，最明顯的差別就是在 64-bit Windows 下，`HKLM\SOFTWARE` 是保留給 64-bit 應用程式使用的，至於 32-bit 應用程式要存取的資料則被搬到 `HKLM\SOFTWARE\Wow6432Node` 底下。Wow64 預設會依應用程式是 32-bit 還是 64-bit，決定要不要將 `HKLM\SOFTWARE` 的存取轉到 `HKLM\SOFTWARE\Wow6432Node`，所以舊 32-bit 應用程式不用做修改，就可以繼續運作在 64-bit Windows 下。
+
+IMPORTANT: http://msdn.microsoft.com/en-us/library/aa384129[官方文件]特別提醒 `Wow6432Node` 這個 registry key 不該被直接使用。
+
+但 64-bit 的 Python Interpreter，若要存取某 32-bit 應用程式的 registry value 時要怎麼做呢？這時候就得透過 registry view 來控制讀寫的對象，也就是不受當下要存取 registry 的應用程式是 32-bit 或 64-bit 所影響。
+
+`_winreg` 提供了兩個常數，合併其他控制存取權限的 flag 一起傳入 `OpenKey()` 的 'sam' 參數，就可以控制應用程式的 registry view：
+
+ * `KEY_WOW64_64KEY` - 存取 64-bit key，不管應用程式本身是 32-bit 或 64-bit。
+ * `KEY_WOW64_32KEY` - 存取 32-bit key，不管應用程式本身是 32-bit 或 64-bit。
+
+在 64-bit Windows 下（採用 64-bit Python Interpreter），以 Mozilla Firefox 為例（到 Firefox 7，官方還是只提供 32-bit 的版本）：
+
+--------------------------------------------------------------------------------
+C:\>python
+Python 2.7.2 (default, Jun 12 2011, 14:24:46) [MSC v.1500 64 bit (AMD64)] on win 32
+Type "help", "copyright", "credits" or "license" for more information.
+>>> from _winreg import *
+>>> ff_key = OpenKey(HKEY_LOCAL_MACHINE, 'SOFTWARE\Wow6432Node\Mozilla\Mozilla Firefox') <1>
+>>> ff_key = OpenKey(HKEY_LOCAL_MACHINE, 'SOFTWARE\Mozilla\Mozilla Firefox')             <2>
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+WindowsError: [Error 2] The system cannot find the file specified
+>>>
+>>> ff_key = OpenKey(HKEY_LOCAL_MACHINE, 'SOFTWARE\Mozilla\Mozilla Firefox', 0, KEY_WOW64_32KEY)
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+WindowsError: [Error 5] Access is denied
+>>> ff_key = OpenKey(HKEY_LOCAL_MACHINE, 'SOFTWARE\Mozilla\Mozilla Firefox', 0, KEY_WOW64_32KEY | KEY_READ) <3>
+--------------------------------------------------------------------------------
+<1> `Mozilla Firefox` 這個 registry key 確實是在 `HKLM\SOFTWARE\Wow6432Node\Mozilla\Mozilla Firefox`，但直接使用 `Wow6432Node` 並不妥當。
+<2> 正確的寫法要把 `Wow6432Node` 拿掉（尤其是從 Registry Editor 用右鍵 Copy Key Name 取得時），但由於 Python Interpreter 是 64-bit，所以對 `HKLM\SOFTWARE` 的存取不會被轉到 `HKLM\SOFTWARE\Wow6432Node`。
+<3> 給了 registry view 的 flag，也別忘了 `KEY_READ`、`KEY_WRITE` 等控制權限的 flag。
+
+同樣的測試在 32-bit Windows 重做一次：
+
+--------------------------------------------------------------------------------
+C:\>python
+Python 2.7.2 (default, Jun 12 2011, 15:08:59) [MSC v.1500 32 bit (Intel)] on win 32
+Type "help", "copyright", "credits" or "license" for more information.
+>>> from _winreg import *
+>>> ff_key = OpenKey(HKEY_LOCAL_MACHINE, 'SOFTWARE\Wow6432Node\Mozilla\Mozilla Firefox') <1>
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+WindowsError: [Error 2] The system cannot find the file specified
+>>> ff_key = OpenKey(HKEY_LOCAL_MACHINE, 'SOFTWARE\Mozilla\Mozilla Firefox')
+>>> ff_key = OpenKey(HKEY_LOCAL_MACHINE, 'SOFTWARE\Mozilla\Mozilla Firefox', 0, KEY_WOW64_32KEY | KEY_READ) <2>
+>>> ff_key = OpenKey(HKEY_LOCAL_MACHINE, 'SOFTWARE\Mozilla\Mozilla Firefox', 0, KEY_WOW64_64KEY | KEY_READ) <3>
+--------------------------------------------------------------------------------
+<1> 同一支 Python 程式，如果直接採用 `Wow6432Node` 話，在 64-bit Windows 可以運作正常，但到了 32-bit Windows 就出包了。
+<2> 在 32-bit Windows 也可以用 `KEY_WOW64_32KEY`，程式不需要因為執行在 32/64-bit Windows 下做調整。
+<3> 雖然 `KEY_WOW64_64KEY` 用在 32-bit Windows 下也不會引發什麼錯誤，但這麼做實在沒什麼意義？
+
+[TIP]
+================================================================================
+什麼時候要用 `KEY_WOW64_64KEY` 或 `KEY_WOW64_32KEY` 來控制 registry view 呢？
+
+如果應用程式同時提供有 32-bit 與 64-bit 的版本，通常不需要調整 registry view （假設在 64-bit Windows 下，使用者會採用 64-bit Python Interpreter，該應用程式也會安裝 64-bit 的版本）。但如果應用程式只提供 32-bit 的版本，那麼固定採用 `KEY_WOW64_32KEY` 準沒錯，況且 `KEY_WOW64_32KEY` 在 32-bit Windows 下一樣可以運作。
+
+至於 `KEY_WOW64_64KEY`，大概只有在 64-bit Windows 下運行 32-bit Python Interpreter 時才會用到吧
+
+================================================================================
+
+== 參考資料 ==
+
+ * http://en.wikipedia.org/wiki/WoW64#Registry_and_file_system[WoW64 - Wikipedia, the free encyclopedia]
+ * http://msdn.microsoft.com/en-us/library/aa384129[Accessing an Alternate Registry View]
+

@@ -1,0 +1,53 @@
+= link:concepts.html[JavaFX / Concepts] / Properties =
+:title: [JavaFX] Properties
+
+== 參考資料 ==
+
+.手冊
+--
+ * http://docs.oracle.com/javafx/2/api/javafx/beans/property/Property.html[`Property`] ^https://diigo.com/0xn55[閱讀]^
+ * http://docs.oracle.com/javafx/2/api/javafx/beans/property/ReadOnlyProperty.html[`ReadOnlyProperty`] ^https://diigo.com/0xn5d[閱讀]^
+--
+
+ * https://wikis.oracle.com/display/OpenJDK/JavaFX+Property+Architecture[JavaFX Property Architecture - OpenJDK - Oracle Wiki]
+ * http://blog.netopyr.com/2012/02/02/creating-read-only-properties-in-javafx/[Creating read-only properties in JavaFX | Mike's Blog] (2012-01-02) - wrapper 只是為了防止其他人 casting，這沒什麼意義？
+
+////////////////////////////////////////////////////////////////////////////////
+
+ * a wrapped value
+ * `ReadOnlyProperty`
+   ** `getBean(): Object` - the Object that contains this property, or null.
+   ** `getName(): String` - name of this property, or an empty String.
+ * `Property<T>` (writable)
+   ** `bind(ObservableValue<? extends T> observable): void` - unidirection binding。
+   ** `unbind(): void` - ONLY for unidirection binding
+   ** `isBound(): boolean` - unidirection/bidirectional binding
+   ** `bindBidirectional(Property<T> other): void` - bidirectional binding
+   ** `unbindBidirectional(Property<T> other): void`
+ * 改 bind 另一個 observable 時內部會不會先做 unbind？雖然文件上並沒有得很清楚，但同時間只有一個 binding 會生效才合理，用簡單的實驗也可以證明。
++
+--------------------------------------------------------------------------------
+public void testRebind() {
+    IntegerProperty number = new SimpleIntegerProperty(0);
+    IntegerProperty odd = new SimpleIntegerProperty(1);
+    IntegerProperty even = new SimpleIntegerProperty(2);
+
+    number.bind(odd);
+    assertEquals(1, number.get());
+
+    number.bind(even);
+    odd.set(3);
+    assertEquals(2, number.get());
+
+    even.set(4);
+    assertEquals(4, number.get());
+
+    number.unbind();
+    even.set(6);
+    assertEquals(4, number.get());
+}
+--------------------------------------------------------------------------------
+
+
+////////////////////////////////////////////////////////////////////////////////
+

@@ -1,51 +1,22 @@
 = link:files.html[Python / Files] / Management =
 :title: [Python] File Management
 
-幾乎所有跟檔案目錄操作的工具都落在 `os` 跟 `os.path` 這兩個模組。
+幾乎所有跟檔案目錄操作相關的工具都落在 `os` 跟 `os.path` 這兩個 modules。
 
-有一些很基本的概代：
+有一些很基本的概念：
 
  * link:cwd.html[目前工作目錄（Current Working Directory）]
- * 檔案或目錄的路徑
- * 檔案的目錄節屬性
+ * link:pathname.html[檔案目錄的路徑名稱]
+ * link:attributes.html[檔案目錄的屬性]
 
-檔案管理常見的操作有：
-
- * 查看目錄的內容，並過濾出符合條件的檔案清單。
- * 移動。
- * 更名。
- * 複製。
- * 刪除。
-
-`os.listdir(path)` 可以列出某個路徑 'path' 底下的內容；沒有一定的順序，而且不包括 `.' 或 `..' 等特殊的項目。例如：
-
---------------------------------------------------------------------------------
-/etc/apt$ ls -al
-total 56
-drwxr-xr-x   6 root root  4096 2011-05-03 10:18 .
-drwxr-xr-x 152 root root 12288 2011-05-27 09:15 ..
-drwxr-xr-x   2 root root  4096 2011-05-03 10:18 apt.conf.d
-drwxr-xr-x   2 root root  4096 2010-10-05 22:15 preferences.d
--rw-------   1 root root     0 2010-10-07 23:58 secring.gpg
--rw-r--r--   1 root root  3248 2011-01-01 02:16 sources.list
-drwxr-xr-x   2 root root  4096 2010-10-05 22:15 sources.list.d
--rw-------   1 root root  1200 2010-10-07 23:58 trustdb.gpg
--rw-r--r--   1 root root  7304 2010-10-08 00:16 trusted.gpg
--rw-r--r--   1 root root  6713 2010-10-07 23:58 trusted.gpg~
-drwxr-xr-x   2 root root  4096 2010-10-05 22:15 trusted.gpg.d
-
-/etc/apt$ python
->>> import os
->>> os.listdir('.')
-['trusted.gpg', 'secring.gpg', 'sources.list.d', 'apt.conf.d', 'trusted.gpg~', 'sources.list', 'trusted.gpg.d', 'preferences.d', 'trustdb.gpg']
---------------------------------------------------------------------------------
+檔案管理常見的操作有－link:listing.html[查看目錄的內容（並過濾出符合條件的檔案清單）、移動、更名、複製、刪除等：
 
  * `os.path.exists(path)` - 檢查檔案目錄是否存在。
  * `os.mkdir(path)` - 建立目錄。目錄已存在或父目錄不存在時都會丟出 `OSError`。
  * `os.makedirs(path)` - 建立目錄。如果父目錄不存在會自動建立，但如果目錄已存在會丟出 `OSError`。
- * `os.remove(path)` - 刪除檔案。
- * `os.rmdir(path)` - 刪除目錄。
- * `os.rename(src, dst)` - 更名。
+ * `os.remove(path)` - 刪除檔案（目錄要改用 `rmdir()`）。
+ * `os.rmdir(path)` - 刪除目錄，但如果該目錄不是空的，會丟出 `OSError`。
+ * `os.rename(src, dst)` - 更改檔案或目錄的名稱。
 
 --------------------------------------------------------------------------------
 >>> os.path.exists('/tmp'), os.path.exists('/tmp/a')
@@ -66,24 +37,44 @@ Traceback (most recent call last):
     mkdir(name, mode)
 OSError: [Errno 17] File exists: '/tmp/a'
 >>> os.makedirs('/tmp/a/b/c')
+>>>
+>>> os.rmdir('/tmp/a/b')
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+OSError: [Errno 39] Directory not empty: '/tmp/a/b'
+>>> os.rmdir('/tmp/a/b/c')
+>>> os.path.exists('/tmp/a/b/c')
+False
+>>>
+>>>
 --------------------------------------------------------------------------------
 
 比較進階的操作可以用 `shutil`：
 
- * `shutil.copy(src, dst)` - 將來源檔案 'src' 複製成 'dst' （指定檔名）或其表示的目錄底下（檔名不變），如果檔案已存在會直接覆蓋。
+ * `shutil.copy(src, dst)` - 將來源檔案 'src' 複製成 'dst'，如果檔案已存在會直接覆蓋。其中 'dst' 可以指向一個檔案或目錄，如果是目錄的話，延用 'src' 的檔名，否則直接採用 'dst' 的檔名。
  * `shutil.copy2(src, dst)` - 跟 `copy()` 一樣，但複製完檔案後會呼叫 `copystat()` 抄寫 permission bits、atime、mtime 及其他檔案屬性。
+ * `shutil.copyfile(src, dst)` - 跟 `shutil.copy()` 一樣，但 'dst' 必須要是檔案名稱。
+ * `shutil.rmtree(path)` - 將整個目錄刪掉。
 
- * `shutil.copyfile(src, dst)`, `shutil.copy(src, dst)`, `shutil.copy2(src, dst)` 都可以用來複製檔案。其中 `copyfile()` 的 'dst' 必須要是完整的路徑跟檔案，至於 `copy()` 與 `copy2()` 的 'dst' 則接受路徑，檔案的部份會延用 __src__。
- * `shutil.rmtree(path)` - 將整個目錄刪掉
+--------------------------------------------------------------------------------
+>>> import shutil, os.path as path
+>>> path.exists('src.txt'), path.exists('dst.txt')
+(True, True)
+>>> shutil.copyfile('src.txt', '.')
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "/usr/lib/python2.7/shutil.py", line 83, in copyfile
+    with open(dst, 'wb') as fdst:
+IOError: [Errno 21] Is a directory: '.' <1>
+>>> shutil.copyfile('src.txt', 'dst.txt')
+--------------------------------------------------------------------------------
+<1> `shutil.copyfile()` 的 'dst' 只接受檔案名稱，不能是個目錄。
 
 == 參考資料 ==
 
-.文件
---
  * http://docs.python.org/library/filesys.html[File and Directory Access]
- * http://docs.python.org/library/os.html#os-file-dir[os — Miscellaneous operating system interfaces > Files and Directories]
+ * http://docs.python.org/library/os.html[os — Miscellaneous operating system interfaces > Files and Directories]
  * http://docs.python.org/library/shutil.html[shutil — High-level file operations]
  * http://docs.python.org/library/os.path.html[os.path — Common pathname manipulations]
  * http://www.diveintopython.net/file_handling/os_module.html[Dive Into Python > Working with Directories]
---
 

@@ -1,0 +1,158 @@
+= link:../ui.html[JavaFX / UI] / Layout =
+:title: [JavaFX] UI Layout
+
+ * link:stack.html[Stack Pane]
+ * link:border.html[Border Pane]
+ * link:hvbox.html[HBox 與 VBox]
+ * link:grid-pane.html[Grid Pane]
+ * Flow Pane
+ * link:tile.html[Tile Pane]
+ * link:anchor-pane.html[Anchor Pane]
+
+== 參考資料 ==
+
+.手冊
+--
+ * http://docs.oracle.com/javafx/2/api/javafx/scene/layout/package-summary.html[`javafx.scene.layout`]
+ * http://docs.oracle.com/javafx/2/api/javafx/scene/Parent.html[`Parent`]
+ * http://docs.oracle.com/javafx/2/api/javafx/scene/layout/Region.html[`Region`] ^https://diigo.com/0xrqh[閱讀]^
+ * http://docs.oracle.com/javafx/2/api/javafx/scene/control/Control.html[`Control`]
+ * http://docs.oracle.com/javafx/2/api/javafx/geometry/Insets.html[`Insets`]
+--
+
+.網站
+--
+ * http://zoranpavlovic.blogspot.tw/search/label/JavaFX%202.0%20Layouts[Zoran Pavlović blog: JavaFX 2.0 Layouts]
+--
+
+.文件
+--
+ * http://docs.oracle.com/javafx/2/layout/jfxpub-layout.htm[Working With Layouts in JavaFX]
+   ** http://docs.oracle.com/javafx/2/layout/builtin_layouts.htm[Using Built-in Layout Panes]
+   ** http://docs.oracle.com/javafx/2/layout/size_align.htm[Tips for Sizing and Aligning Nodes] ^https://diigo.com/0xiuw[閱讀]^
+ * http://sahits.ch/blog/?p=2269[Resizable Layout and resizable image « Andi's Blog] (2012-12-30)
+ * http://www.oracle.com/technetwork/articles/java/layoutfx-1536156.html[Laying Out a User Interface with JavaFX 2.0] (2012-03)
+ * http://www.e-zest.net/blog/javafx-20-resizing-of-ui-controls/[JavaFX 2.0 Resizing of UI Controls | e-Zest | India | USA | UK | Europe] (2012-02-15)
+ * http://parleys.com/d/2803[Parleys.com - Practical Experience Building JavaFX Rich Clients ...] - 有一段 `layoutChildren() { textBox.resize(getWidth()` 的用法...
+--
+
+.其他文件
+--
+ * http://tbeernot.wordpress.com/2012/10/18/writing-google-calendar-in-javafx/[Writing Google Calendar in JavaFX | @TBEE's] (2012-10-18)
+ * http://stackoverflow.com/questions/3391373/dynamic-instant-resize-in-javafx[binding - Dynamic/instant resize in JavaFX - Stack Overflow] (2010-08-02)
+--
+
+////////////////////////////////////////////////////////////////////////////////
+
+ * AbstractView.viewNode??
+   ** 翻遍了 JavaFX 2.0: Introduction by Example (Apress) 這本書，完全沒有 `extends Region` 的用法，
+   ** `XXX.getViewNode(): Parent` ... 背後也可以是從 FXML 載入的
++
+.Listing 8-11 Pro JavaFX 2，還有 Listing 3-10. JavaFXBeanViewExample.java ... 所謂 model 就是 JavaFX Bean
+--------------------------------------------------------------------------------
+public abstract class AbstractView { 
+  protected final SongModel songModel; 
+  protected final Node viewNode; 
+ 
+  public AbstractView(SongModel songModel) { 
+    this.songModel = songModel; 
+    this.viewNode = initView(); 
+  } 
+ 
+  public Node getViewNode() { 
+    return viewNode; 
+  } 
+ 
+  protected abstract Node initView(); 
+} 
+--------------------------------------------------------------------------------
++
+   ** http://docs.oracle.com/javafx/2/get_started/fxml_tutorial.htm[Using FXML to Create a User Interface] - `stage.setScene(new Scene(FXMLLoader.load(...), 800, 600)`，就算是 FXML 也不是直接繼承 Region。
+   ** http://www.zenjava.com/2011/12/11/javafx-and-mvp-a-smorgasbord-of-design-patterns/[JavaFX and MVP – a smörgåsbord of design patterns | Zen Java] - 這裡提到的兩個 View (ContactSearchView.java 跟 ContactDetailView.java)，分別繼承 VBox 跟 GridPane。 --> 發現所有的問題從繼承 Region 改成其他 layout panes 之後就解決了!!
+ * layout = sizing and aligning nodes in a pane.
+ * layout constraints = size range, alighment, margin, padding...
+ * size
+   ** 要瞭解一個 layout pane 時，要注意空間過大時會發生什麼事 (fill, align...)，以及空間不夠時會發生什麼事 (clip, fit...)
+   ** resizable?
+      *** resizable - UI controls, layout panes
+      *** NOT resizable (rigid) - shapes, Text, Group
+      *** parent will resize the tilepane within child's resizable range during layout.
+   ** preferred size range preferences; resizable range = minimum -> preferred -> maximum
+   ** Javadoc -> Resizable Range。例如 VBox
+      *** preferred	width = left/right insets plus the largest of the children's pref widths.
+      *** preferred height = top/bottom insets plus the sum of each child's pref height plus spacing between each child.
+   ** Layouts query the preferred size of their nodes - prefWidth(height), prefHeight(width)
+   ** preferred size - defaults (computed size, can be overrided) = just big enough to be fully visible.
+   ** minimum/maximum sizes - default = based on the typical usage of the control.
+      *** 例如 button 通常不希望它長得太大或任意變形，所以它的 maximum size == preferred size
+      *** 但 scroll pane 通常希望它有越多空間顯示內容越好，所以 maximum size 不設限（unbound = `Double.MAX_VALUE`）
+   ** Applications often need to directly set the minimum, preferred, and maximum size constraints on controls?? 
+      *** 但如果 size 是根據 container 動態做調整呢??
+      *** 這句話非常受用，因為很多時候 component 不能縮小或放大問題都不在 preferred size, 而是 min/max 沒有 range 可以伸縮。
+   ** Loc 1847 - binding against the parent's width works properly, because the bind update happens synchronously, whereas binding against your own width and height will happen after layout is complete and produce artifacts?? 但發現 `bind(Bindings.selectDouble(parentProperty(), "width"))` 縮放後就破功了，但 `bind(Bindings.selectDouble(sceneProperty(), "width"))` 則沒有問題。
+   ** Loc 1938 - The width and height of a Region are read-only properties that you can use to get the size after layout is complete. Be careful binding directly to the width and height, because any changes that affect the size of this node or its children will not be updated until the next layout cycle, causing artifacts.
+ * alignment
+   ** via alignment properties for the layout panes.
+ * `javafx.scene.layout`
+ * `Node.managed` - whether or not this node's layout will be managed by it's parent.
+ * layout panes - position, size
+ * Node，參數裡帶的是什麼??
+   ** `boundsInLocal: ReadOnlyObjectProperty<Bounds>`
+   ** `boundsInParent: ReadOnlyObjectProperty<Bounds>`
+   ** `layoutBounds: ReadOnlyObjectProperty<Bounds>`
+   ** `layoutX/layoutY: DoubleProperty`
+   ** `managed: BooleanProperty`
+   ** `autosize(): void`
+   ** `isResizable(): boolean`
+   ** `resize(double width, double height): void`
+   ** `resizeRelocate(double x, double y, double width, double height): void`
+   ** `maxHeight(double width): double`
+   ** `maxWidth(double height): double`
+   ** `minHeight(double width): double`
+   ** `minWidth(double height): double`
+   ** `prefHeight(double width): double`
+   ** `prefWidth(double height): double`
+ * Parent
+   ** Parent 只定義了幾個 `compute*`，剩下的 `min*/pref*/max*` properties 都是由 subclass (Control, Group, Region, WebView) 定義的，另外還有 `computeMax*`。
+   ** `needsLayout: ReadOnlyBooleanProperty`
+   ** `layout(): void` - Executes a top-down layout pass on the scene graph under this parent. 什麼時候會用到??
+   ** `layoutChildren(): void` (protected) - it is called automatically by the scene graph while executing a top-down layout pass??
+   ** `requestLayout(): void`
+   ** `getChildren(): ObservableList<Node>` (protected)
+   ** `getChildrenUnmodifiable(): ObservableList<Node>`
+   ** `computeMinHeight(double width): double` (protected)
+   ** `computeMinWidth(double height): double` (protected)
+   ** `computePrefHeight(double width): double` (protected)
+   ** `computePrefWidth(double height): double` (protected)
+ * Group
+   ** `autoSizeChildren: BooleanProperty`
+   ** `getChildren(): ObservableList<Node>` (public)
+ * Region
+   ** `USE_COMPUTED_SIZE: double`
+   ** `USE_PREF_SIZE: double`
+   ** `width/height: ReadOnlyDoubleProperty`
+   ** `minWidth/minHeight: DoubleProperty`
+   ** `maxWidth/maxHeight: DoubleProperty`
+   ** `prefWidth/prefHeight: DoubleProperty`
+   ** `padding: ObjectProperty<Insets>`
+   ** `layoutInArea(...): void` (protected)
+   ** `computeMaxWidth(double height): double` (protected)
+   ** `computeMaxHeight(double width): double` (protected)
+   ** `setMinSize(double minWidth, double minHeight): void`
+   ** `setMaxSize(double maxWidth, double maxHeight): void`
+   ** `setPrefSize(double prefWidth, double prefHeight): void`
+ * Control (no padding)
+   ** `USE_COMPUTED_SIZE: double`
+   ** `USE_PREF_SIZE: double`
+   ** `width/height: ReadOnlyDoubleProperty`
+   ** `minWidth/minHeight: DoubleProperty`
+   ** `maxWidth/maxHeight: DoubleProperty`
+   ** `prefWidth/prefHeight: DoubleProperty`
+   ** `computeMaxWidth(double height): double` (protected)
+   ** `computeMaxHeight(double width): double` (protected)
+   ** `setMinSize(double minWidth, double minHeight): void`
+   ** `setMaxSize(double maxWidth, double maxHeight): void`
+   ** `setPrefSize(double prefWidth, double prefHeight): void`
+
+////////////////////////////////////////////////////////////////////////////////
+

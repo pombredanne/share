@@ -1,0 +1,233 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>Robot Framework: 實作 Run Keyword If XXX</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<!--link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" /-->
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <!--div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div-->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <!--a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a--></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>Robot Framework: 實作 Run Keyword If XXX</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>首先用一個例子來說明為什麼會有自訂 <code>Run Keyword If XXX</code> 的需求。假設產品測試人員用下面的 test case 在英文環境下測試某些 wording：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>| *Test Case* | *Action* | *Argument* | *Argument*
+| Test        | Log | Open the main screen. | WARN
+|             | Log | Verify English wording | WARN
+|             | Log | Click Configure button to open Perferences window. | WARN
+|             | Log | Verify another English wording | WARN</code></pre>
+</div></div>
+<div class="paragraph"><p>之後 L10N team 會做一點加工：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>| *Test Case* | *Action* | *Argument* | *Argument*
+| Test        | Log | Open the main screen. | WARN
+|             | Log | Take screenshot for L10N verficiation. | WARN <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+|             | Log | Verify English wording | WARN
+|             | Log | Click Configure button to open Perferences window. | WARN
+|             | Log | Take screenshot for L10N verficiation. | WARN
+|             | Log | Verify another English wording | WARN</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+在適當的地方安插畫面截圖的動作，事後能以人工的方式快速校閱翻譯的結果。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>但這個加工後的 test case 無法在非英文的環境下通過測試，因為 "Verify another English wording" 的動作一定失敗。</p></div>
+<div class="paragraph"><p>為了讓 L10N team 可以直接延用產品測試人員所寫的 test case，必須設計一個機制使能夠在進行 L10N 測試時略過某些檢查，但又不影響原有的功能測試。</p></div>
+<div class="listingblock">
+<div class="title"><code>examples/runkw/test.txt</code></div>
+<div class="content">
+<pre><code>| *Setting* | *Value*
+| Library | L10NLibrary.py
+
+| *Test Case* | *Action* | *Argument* | *Argument*
+| Test        | Log | Open the main screen. | WARN
+|             | Log | Take screenshot for L10N verficiation. (1) | WARN
+|             | Run Keyword If Not L10N | Log | Verify English wording | WARN <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+|             | Log | Click Configure button to open Perferences window. | WARN
+|             | Log | Take screenshot for L10N verficiation. (2) | WARN
+|             | ${L10N}= | Get Variable Value | ${L10N} | not-defined
+|             | Run Keyword If | '${L10N}' == 'not-defined' | Log | Verify another English wording | WARN <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+<code>Run Keyword If Not L10N</code> 應運而生，這一行在做 L10N 測試時沒有作用。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+這裡示範了如果沒有 <code>Run Keyword If Not L10N</code>，自己用 <code>Run Keyword If</code> 判斷會有點小麻煩。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>當然我們也可以規劃另一個 <code>Run Keyword If L10N</code> 來控制某些步驟只有在做 L10N 測試時才會有作用；但就這個例子而言，用 <code>Take Screenshot If L10N</code> 會比較洽當。</p></div>
+<div class="listingblock">
+<div class="title"><code>examples/runkw/L10NLibrary.py</code></div>
+<div class="content">
+<pre><code>from robot.libraries.BuiltIn import BuiltIn
+
+_builtin = BuiltIn()
+
+class L10NLibrary:
+
+  def run_keyword_if_not_l10n(self, name, *args):
+    l10n = _builtin.get_variable_value('${L10N}') <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+    if l10n is None: _builtin.run_keyword(name, *args)</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+用 <code>L10N</code> 這個變數來控制 L10N 測試時所關注的語言。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>測試結果：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ pybot test.txt
+==============================================================================
+Test
+==============================================================================
+[ WARN ] Open the main screen.
+[ WARN ] Take screenshot for L10N verficiation. (1)
+[ WARN ] Verify English wording
+[ WARN ] Click Configure button to open Perferences window.
+[ WARN ] Take screenshot for L10N verficiation. (2)
+[ WARN ] Verify another English wording
+Test                                                                  | PASS |
+...
+
+$ pybot --variable L10N:zh-tw test.txt
+==============================================================================
+Test
+==============================================================================
+[ WARN ] Open the main screen.
+[ WARN ] Take screenshot for L10N verficiation. (1)
+[ WARN ] Click Configure button to open Perferences window.
+[ WARN ] Take screenshot for L10N verficiation. (2)
+Test                                                                  | PASS |</code></pre>
+</div></div>
+<div class="paragraph"><p>就算是將最後一個步驟硬再套上一層 <code>Run Keyword If Not L10N</code> 也沒問題。在 RIDE 下，highlight 也能正常地顯示：</p></div>
+<div class="paragraph"><p><span class="image">
+<img src="run-keywords/ride.png" alt="run-keywords/ride.png" />
+</span></p></div>
+<div class="paragraph"><p>最後，官方文件提到如果有用到 <code>BuiltIn.run_keyword()</code> 的話，必須要額外做註冊的動作。</p></div>
+<div class="quoteblock">
+<div class="content">
+<div class="paragraph"><p>The only catch with using methods from BuiltIn is that all run_keyword method variants must be handled specially. Methods that use run_keyword methods have to be registered as run keywords themselves using register_run_keyword method in BuiltIn module. This method&#8217;s documentation explains why this needs to be done and obviously also how to do it.</p></div>
+</div>
+<div class="attribution">
+<em><a href="http://robotframework.googlecode.com/hg/doc/userguide/RobotFrameworkUserGuide.html#using-builtin-library">Using BuiltIn library</a></em><br />
+&#8212; Robot Framework User Guide
+</div></div>
+<div class="paragraph"><p>而 <code>register_run_keyword()</code> 是這麼寫的：</p></div>
+<div class="listingblock">
+<div class="title"><code>BuiltIn.py</code></div>
+<div class="content">
+<pre><code>def register_run_keyword(library, keyword, args_to_process=None):
+    """Registers 'run keyword' so that its arguments can be handled correctly.
+
+    1) Why is this method needed
+
+    Keywords running other keywords internally (normally using `Run Keyword`
+    or some variants of it in BuiltIn) must have the arguments meant to the
+    internally executed keyword handled specially to prevent processing them
+    twice. This is done ONLY for keywords registered using this method.
+
+    If the register keyword has same name as any keyword from Robot Framework
+    standard libraries, it can be used without getting warnings. Normally
+    there is a warning in such cases unless the keyword is used in long
+    format (e.g. MyLib.Keyword).
+
+    Starting from Robot Framework 2.5.2, keywords executed by registered run
+    keywords can be tested with dryrun runmode with following limitations:
+    - Registered keyword must have 'name' argument which takes keyword's name or
+    Registered keyword must have '*names' argument which takes keywords' names
+    - Keyword name does not contain variables
+    ...
+
+for name in [attr for attr in dir(_RunKeyword) if not attr.startswith('_')]:
+    register_run_keyword('BuiltIn', getattr(_RunKeyword, name)) <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+包括 BuiltIn Library 也會將自己的 run keywords 做註冊的動作。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>就這個例子而言，沒有做註冊的動作也沒問題，不過還是照規定來好了：</p></div>
+<div class="listingblock">
+<div class="title"><code>examples/runkw/L10NLibrary.py</code></div>
+<div class="content">
+<pre><code>from robot.libraries.BuiltIn import BuiltIn, register_run_keyword
+
+_builtin = BuiltIn()
+
+class L10NLibrary:
+
+  def run_keyword_if_not_l10n(self, name, *args):
+    l10n = _builtin.get_variable_value('${L10N}')
+    if l10n is None: _builtin.run_keyword(name, *args)
+
+register_run_keyword('L10NLibrary', L10NLibrary.run_keyword_if_not_l10n)</code></pre>
+</div></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2013-06-04 22:40:20 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<!--script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script-->
+</body>
+</html>

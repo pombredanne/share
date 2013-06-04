@@ -1,0 +1,43 @@
+= link:cookies.html[Cookies] / Python =
+:title: [Python] 交換 Cookies
+
+要在 client/server 間交換 cookies，只要為 link:python.html[`urllib2`] opener 掛上 cookie processor 即可。
+
+--------------------------------------------------------------------------------
+>>> import cookielib, urllib2
+>>> cookie_jar = cookielib.CookieJar()
+>>> opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookie_jar)) <1>
+>>> opener.open('http://www.google.com') <2>
+<addinfourl at 142980844 whose fp = <socket._fileobject object at 0x883892c>>
+>>>
+>>> cookies = [cookie for cookie in cookie_jar] <3>
+>>> cookie = cookies[0]; cookie
+Cookie(version=0, name='PREF', value='ID=355d24f8b83c55e6:FF=0:TM=1322534559:LM=1322534559:S=cEQeul_fl-MLjwoZ', port=None, port_specified=False, domain='.google.com', domain_specified=True, domain_initial_dot=True, path='/', path_specified=True, secure=False, expires=1385606559, discard=False, comment=None, comment_url=None, rest={}, rfc2109=False)
+>>>
+>>> dir(cookie)                                 <4>
+['__doc__', '__init__', '__module__', '__repr__', '__str__', '_rest', 'comment', 'comment_url', 'discard', 'domain', 'domain_initial_dot', 'domain_specified', 'expires', 'get_nonstandard_attr', 'has_nonstandard_attr', 'is_expired', 'name', 'path', 'path_specified', 'port', 'port_specified', 'rfc2109', 'secure', 'set_nonstandard_attr', 'value', 'version']
+>>> cookie.name, cookie.value
+('PREF', 'ID=355d24f8b83c55e6:FF=0:TM=1322534559:LM=1322534559:S=cEQeul_fl-MLjwoZ')
+--------------------------------------------------------------------------------
+<1> 準備一個容器（`cookielib.CookieJar`）來存放 cookie。
+<2> 透過 `urllib2.HTTPCookieProcessor` 的幫忙，它會自動將收到的 cookie 寫到 cookie jar 裡頭，另外之後的 request 也會自動挾帶 cookies 回伺服端。
+<3> `CookieJar` 本身實作 iterator protocol，藉以取出所有的 cookie。當然這一行也可以簡單寫成 `cookies = list(cookie_jar)`。
+<4> `Cookie` 所有的資訊都透過 attribute 公開出來，其中最常用的就是 `name` 跟 `value`。
+
+NOTE: 注意 `CookieJar` 取出的 cookie，它的型態是 `cookielib.Cookie`，跟 http://docs.python.org/library/cookie.html[`Cookie.BaseCookie`] 沒有關係（常用在 server-side），不要搞混了。
+
+可惜 `CookieJar` 並不是個 dictionary-like object，否則用起來會更方便。不過只要簡單一行程式就可以轉換過來：
+
+--------------------------------------------------------------------------------
+>>> cookies = dict([(cookie.name, cookie.value) for cookie in cookie_jar])
+>>> cookies.keys()
+['PREF', 'NID']
+>>> cookies['PREF']
+'ID=c1dc8c58680de189:FF=0:TM=1322534559:LM=1322534559:S=SL2sEAprvMY3wrE-'
+--------------------------------------------------------------------------------
+
+== 參考資料 ==
+
+ * http://docs.python.org/library/urllib2.html[urllib2 — extensible library for opening URLs — The Python Standard Library]
+ * http://docs.python.org/library/cookielib.html[cookielib — Cookie handling for HTTP clients — The Python Standard Library]
+

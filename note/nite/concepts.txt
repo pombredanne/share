@@ -1,0 +1,38 @@
+= link:nite.html[NiTE] / Concepts =
+:title: [NiTE] 基本概念
+
+ * using OpenNI's gesture and hand generators with NITE's hand-gesture detectors.
+   ** 暗示 NITE 的 gesture detector 背後是搭配 OpenNI 的 gesture/hand generators?
+   ** 發現 `new SessionManger(ctx)` 時會要求 hands generator (No hand generator found. One is needed for session manager)，但並沒有要求 gesture generator... 但如果少了 gesture generator，卻又完全無法驅動 "session start" event。
+ * 跟 OpenNI 的 gesture generator 是什麼關係？
+   ** initialize the OpenNI parts of the gesture detector by creating HandsGenerator and GestureGenerator objects.
+   ** passes events arriving at OpenNI's context object to NITE's SessionManager. via `update()`?
+   ** create a SessionManager to "supply a stream of hand points" and "attaches" several NiTE detectors to it.
+   ** "gesture recognized" event 被觸發之後，gesture generator 的 active gestures 就會被清空。
+      *** GestureGenerator sends events to its listeners during focus detection. However, during a gesture-tracking session, "gesture processing is handled by NITE detectors" with their own callback methods?
+      *** OpenNI's GestureGenerator class is not that useful, since its gesture listener is called ONLY for focus event?
+   ** 看似 session manager 動態操作 gesture generator 的 active gesture。除了 focus-detection 跟 refocus state 之外，active gestures 都是空的，然後再利用 hands gestures 得到 stream of hand points，這是否意謂著 focus gesture 只有 gesture generator 支援的那 4 種 - Wave, Click, RaiseHand, MovingHand?
+   ** 在 "session focus progress" event 觀察 gesture generator 的 active gestures，發現 session manager 一開始傳入的 focus gesture 在裡頭，到了 "session start" event 裡 active gestures 就被清空了。
+   ** 顯然 NITE 藉由 gesture generator 找到手的位置後，除了觸發 session manager 的 "session start" event 之外，也呼叫了 `HandsGenerator.StartTracking()` 開始追蹤該 hand point，並透過 "hand update" events 不斷地得到 primary point 的位置，交給 gesture detectors 識別手的軌跡。
+   ** 而且之後會不斷觸發 hand generator 的 "hand update" event，顯然 "gesture recognized" 時，NITE 
+ * gestures
+   ** derived from a stream of "hand points" that record how a hand "moves through space over time".
+   ** hand point = real-world 3D coordinate of the center of the hand, measured in millimeters.
+   ** primary point = the hand that performed the focus or refocus gesture.
+ * session
+   ** focus-detection phase -> gesture-tracking session -> quick refocus state
+   ** focus-detection (with focus gesture) - identify the person's hand and start a gesture-tracking session.
+   ** quick refocus (with refocus gesture, typically raising a hand) - loses touch with a hand during gesture-tracking, tries to relocate the hand (= resume a stalled session) before a timeout terminates the session.
+ * `com.primesense.NITE.SessionManager`
+   ** `SessionManager(Context context, String focusGestures, String refocusGesture)`，例如 `new SessionManager(context, "Wave,Click", "RaiseHand")`
+   ** events
+      ** `IObservable<PointEventArgs> getSessionStartEvent()`
+      ** `IObservable<NullEventArgs> getSessionEndEvent()`
+      ** `IObservable<StringPointValueEventArgs> getSessionFocusProgressEvent()` - focus-detecting, refocus?
+ * `PointEventArgs` - `getPoint()`
+ * `StringPointValueEventArgs` - `getPoint()`, `getName()`, `getValue()`
+
+== 參考資料 ==
+
+ * `XnVSessionManager` Class Reference (`Documentation/html/classXnVSessionManager.html`)
+

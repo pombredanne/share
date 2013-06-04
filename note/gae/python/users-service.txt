@@ -1,0 +1,40 @@
+= link:python.html[GAE / Python] / Users Service =
+:title: [GAE][Python] Users Service
+
+== 參考資料 ==
+
+ * https://developers.google.com/appengine/docs/python/users/[The Users Python API - Google App Engine — Google Developers]
+ * https://developers.google.com/appengine/docs/python/gettingstartedpython27/usingusers[Using the Users Service - Google App Engine — Google Developers]
+
+////////////////////////////////////////////////////////////////////////////////
+
+ * Google App Engine provides several useful services based on Google infrastructure, accessible by applications using libraries included with the SDK.
+ * One such service is the Users service, which lets your application integrate with Google user accounts. With the Users service, your users can use the Google accounts they already have to sign in to your application.
+
+--------------------------------------------------------------------------------
+import webapp2
+
+from google.appengine.api import users
+
+class MainPage(webapp2.RequestHandler):
+    def get(self):
+        user = users.get_current_user() # <1>
+
+        if user:
+            self.response.headers['Content-Type'] = 'text/plain'
+            self.response.out.write('Hello, ' + user.nickname())
+        else:
+            self.redirect(users.create_login_url(self.request.uri)) # <2>
+
+app = webapp2.WSGIApplication([('/', MainPage)],
+                              debug=True)
+--------------------------------------------------------------------------------
+<1> If the user is already signed in to your application, get_current_user() returns the User object for the user. Otherwise, it returns None.
+<2> If the user has not signed in, tell webapp2 to redirect the user's browser to the Google account sign-in screen. The redirect includes the URL to this page (self.request.uri) so the Google account sign-in mechanism will send the user back here after the user has signed in or registered for a new account.
+
+Reload the page in your browser. Your application redirects you to the local version of the Google sign-in page suitable for testing your application. You can enter any username you'd like in this screen, and your application will see a fake User object based on that username.
+
+When your application is running on App Engine, users will be directed to the Google Accounts sign-in page, then redirected back to your application after successfully signing in or creating an account.
+
+////////////////////////////////////////////////////////////////////////////////
+

@@ -1,0 +1,38 @@
+= GCM: Firewall Settings =
+
+GCM 跟 C2DM 一樣，手機往外收取 notification 時是走特定的 port，因此 firewall 要額外做設定。
+
+[quote,'http://developer.android.com/guide/google/gcm/gcm.html[GCM Architectural Overview]']
+________________________________________________________________________________
+Note: If your organization has a firewall that restricts the traffic to or from the Internet, you'll need to configure it to allow connectivity with GCM. The ports to open are: 5228, 5229, and 5230. GCM typically only uses 5228, but it sometimes uses 5229 and 5230. GCM doesn't provide specific IPs. It changes IPs frequently. We recommend against using ACLs but if you must use them, take a broad approach such as the method suggested in http://support.google.com/code/bin/answer.py?hl=en&answer=62464[this support link].
+________________________________________________________________________________
+
+其中最關鍵的地方是 "GCM doesn't provide specific IPs. It changes IPs frequently."，而且網路上也遍尋不著 GCM servers 的 FQDN。
+
+如果真要限定 IP 的話，按照 http://support.google.com/code/bin/answer.py?hl=en&answer=62464[How do I allow my internal XMPP client or server to connect to the Talk service?]的說法，就是要將 Google ASN https://www.dan.me.uk/bgplookup?asn=15169[15169] 裡的 IP 全加進去才行... 難怪 Google 不建議做 ACL。
+
+== 參考資料 ==
+
+.官方文件
+--
+ * http://developer.android.com/guide/google/gcm/gcm.html[GCM Architectural Overview | Android Developers] (https://dl.dropbox.com/u/42335152/read/developer.android.com/guide/google/gcm/gcm.html.pdf[PDF]
+--
+
+.其他文件
+--
+ * https://groups.google.com/group/android-gcm/browse_thread/thread/eea3d4a74626dc09[What's the domains of GCM server? - android-gcm | Google Groups] (2012-07-19) - 有人在問 GCM server 的 FQDN，但最後還是得到官方說法。
+ * https://groups.google.com/group/android-gcm/browse_thread/thread/acb2275852ee6084[gcm and WiFi - android-gcm | Google Groups] (2012-07-17) - 為什麼有人會說 "you don't really need 5229-5230 for now"？
+ * https://groups.google.com/group/android-gcm/browse_thread/thread/0b3e2fa799f798ca[IP addresses for android.googleapis.com - android-gcm | Google Groups] (2012-07-13) - 有人在問 android.googleapis.com 的 IP range，但最後還是得到官方說法。
+--
+
+////////////////////////////////////////////////////////////////////////////////
+http://www.symantec.com/business/support/resources/sites/BUSINESS/content/live/DOCUMENTATION/5000/DOC5748/en_US/SMM_for_Configuration_Manager_7_2_1_GCM_Setup_Guide.pdf[Symantec™ Mobile Management for Configuration Manager - Google™ Cloud Messaging (GCM) for Android™ Setup Guide -7.2 MR1] 這麼寫著：
+
+ * Port 5228, 5229, and 5230- for connectivity with the Google Cloud Messaging (GCM) service using WIFI, VPN, etc. GCM typically uses port 5228, but may also use ports 5229 and 5230. GCM does not provide specific IPs, so it frequently changes IPs. Also, Google does not recommend using ACLs.
+ * To enable GCM, you must have a Google Mail (Gmail) account.
+   *Note: For Android 4.0.4 and higher versions, a Gmail account is not required.
+ * To use GCM, you must have the following:
+   ** Android 2.2 and higher versions- Google Play store installed.
+   ** Android 2.2 and lower versions- Gmail account available.
+////////////////////////////////////////////////////////////////////////////////
+

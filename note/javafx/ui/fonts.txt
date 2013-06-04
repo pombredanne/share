@@ -1,0 +1,55 @@
+= link:ui.html[JavaFX / UI] / Fonts =
+:title: [JavaFX] 字型
+
+== 參考資料 ==
+
+.手冊
+--
+ * http://docs.oracle.com/javafx/2/api/javafx/scene/text/package-summary.html[`javafx.scene.text`]
+   ** http://docs.oracle.com/javafx/2/api/javafx/scene/text/Font.html[`Font`] (http://docs.oracle.com/javafx/2/api/javafx/scene/text/FontBuilder.html[`FontBuilder`])
+   ** http://docs.oracle.com/javafx/2/api/javafx/scene/text/FontWeight.html[`FontWeight`] - `THIN` (100), `EXTRA_LIGHT` (200), `LIGHT` (300), `NORMAL` (400), `MEDIUM` (500), `SEMI_BOLD` (600), `BOLD` (700), `EXTRA_BOLD` (800), `BLACK` (900)
+   ** http://docs.oracle.com/javafx/2/api/javafx/scene/text/FontPosture.html[`FontPosture`] - `ITALIC`, `REGULAR`
+ * http://docs.oracle.com/javafx/2/api/javafx/scene/doc-files/cssref.html#typefont[JavaFX CSS Reference Guide > <font>] ^https://diigo.com/0xsrk[閱讀]^
+--
+
+.文件
+--
+ * https://forums.oracle.com/forums/thread.jspa?messageID=10303836[OTN Discussion Forums : Base font size for JavaFX CSS ...] ^https://diigo.com/0xsuo[閱讀]^ (2012-04-26) - base font size 是從哪裡來的？
+--
+
+////////////////////////////////////////////////////////////////////////////////
+
+ * CSS
+   ** 4 properties
+      *** `-fx-font-family` - actual font family name, or a generic one - serif, sans-serif, cursive, fantasy, monospace
+      *** `-fx-font-size` - <number>[ px | mm | cm | in | pt | pc | em | ex | %]?，其中 `%` 是相對於 base font size，跟 em 的味道很像??
+      *** `-fx-font-style` - normal | italic | oblique
+      *** `-fx-font-weight` - normal | bold | bolder | lighter | 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900
+   ** shorthand `-fx-font` - [[ <font-style> || <font-weight> ]? <font-size> <font-family> ]
+   ** in the production code, Oracle recommends that you set the styles using cascading style sheets (CSS).
+ * font size
+   ** pt - in "point", approximately 1/72 inch.
+   ** em - the 'font-size' of the relevant font??
+ * `javafx.scene.text.Font`
+   ** 不是一個 JavaFX Bean，因為沒有任何 property。
+   ** font size 固定是 point，不像 CSS 裡可以採用不同的單位。
+   ** `Font(double size)`
+   ** `Font(String name, double size)` - 傳入 full face name
+   ** `font(String family, ...): Font` (static) - SEARCHES for an appropriate font based on the font family name (can be null) and weight and posture style. This method is not guaranteed to return a specific font, but does its best to find one that fits the specified requirements. 用起來似乎比 `FontBuilder` 方便。
+   ** `getDefault(): Font` (static) - default system font, consistent with the user's desktop environment
+   ** `getFamilies(): List<String>` (static) - all fonts that are installed on the users system, including any application fonts and SDK fonts.
+   ** `getFontNames(): List<String>` (static) - full face names
+   ** `getFontNames(String family): List<String>` (static)
+   ** `loadFont(InputStream in, double size): Font` (static) - 載入 application font
+   ** `loadFont(String urlStr, double size): Font` (static)
+   ** `getName(): String` - full font name
+   ** `getFamily(): String` - family of this font
+   ** `getSize(): double` - font size in points.
+   ** `getStyle(): String` - the font specified string describing the style within the font family.
+ * custom fonts
+   ** TrueType font (.ttf) or an OpenType (.otf)
+ * JavaFX CSS does not support comma-separated series of font family names in the -fx-font-family property.
+   ** 只有一個 font family，結果跟 `Font.font(String family, ...)` 的方式很像
+ * `caspian.css` 裡有這麼一段 `-fx-font-size: 0.916667em; /* 11pt - 1 less than the default font */`，其中 "default font" 指的是什麼??
+
+////////////////////////////////////////////////////////////////////////////////

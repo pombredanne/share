@@ -1,0 +1,53 @@
+= link:parsing.html[URL / Parsing] / Python =
+:title: [URL] 用 Python 拆解 URL
+
+`urlparse` 可以用來拆解 URL 的組成。
+
+ `urlparse(urlstring)`
+
+例如：
+
+--------------------------------------------------------------------------------
+>>> from urlparse import urlparse
+>>> url = 'https://www.example.com/app?q=url+parsing&lang=en&fields=url&fields=title'
+>>> urlparse.urlparse(url) # <1>
+ParseResult(scheme='https', netloc='www.example.com', path='/app', params='', query='q=url+parsing&lang=en&fields=url&fields=title', fragment='')
+>>> parts = _; len(parts)
+6
+>>> parts[0], parts[1], parts[2], parts[3], parts[4], parts[5]
+('https', 'www.example.com', '/app', '', 'q=url+parsing&lang=en&fields=url&fields=title', '')
+>>>
+>>> parts.query # <2>
+'q=url+parsing&lang=en&fields=url&fields=title'
+--------------------------------------------------------------------------------
+<1> URL 會被拆解成 6-tuple （'scheme://netloc/path;parameters?query#fragment'），注意 `/apps` 前導的 `/` 不屬於 'netloc' 的一部份。
+<2> `ParseResult` 除了是個 tuple，也帶有 `scheme`(0)、`netloc`(1)、`path`(2)、`params`(3)、`query`(4) 以及 `fragment`(5) 這些屬性；顯然這種方式的可讀性比較高。
+
+除了 URL，`urlparse` 也能夠進一步將 query string 拆解成 name/value pairs：
+
+ * `parse_qs(qs)` - 拆解成 name/value-list 構成的 `dict`。
+ * `parse_qsl(qs)` - 跟 `parse_qs()` 一樣，但結果是 name/value pairs 組成的 `list`。
+
+--------------------------------------------------------------------------------
+>>> urlparse.parse_qs(parts.query) # <1>
+{'fields': ['url', 'title'], 'lang': ['en'], 'q': ['url parsing']}
+>>> urlparse.parse_qsl(parts.query)
+[('q', 'url parsing'), ('lang', 'en'), ('fields', 'url'), ('fields', 'title')]
+>>>
+--------------------------------------------------------------------------------
+<1> 很明顯地，`parse_qs` 會將多個 multiple-value 集合起來，而 `parse_qs1` 的重點則是會保留各 fields 在 query string 裡出現的順序。
+
+需要將 relative URL 轉成 absolute URL 時，就可以用 `urlparse()` 重新組成 base URL：
+
+--------------------------------------------------------------------------------
+>>> from urlparse import urlparse
+>>> url = urlparse('http://www.google.com/apps')
+>>> '%s://%s/' % (url.scheme, url.netloc)
+--------------------------------------------------------------------------------
+
+== 參考資料 ==
+
+ * http://docs.python.org/library/urlparse.html[urlparse — Parse URLs into components]
+////////////////////////////////////////////////////////////////////////////////
+** This module defines a standard interface to break Uniform Resource Locator (URL) strings up in components (addressing scheme, network location, path etc.), to combine the components back into a URL string, and to convert a “relative URL” to an absolute URL given a “base URL.” 原來它也有重組 URL 的力能。
+////////////////////////////////////////////////////////////////////////////////

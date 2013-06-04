@@ -1,0 +1,53 @@
+= link:time.html[Unix-like / Time] / Synchronization =
+:title: [Unix-like] Time Synchronization
+
+先用 `ntpdate -q` 確認 system time 跟標準時間的落差：
+
+--------------------------------------------------------------------------------
+# ntpdate -q pool.ntp.org <1>
+server 114.32.8.133, stratum 3, offset 240.063914, delay 0.06873
+server 210.68.16.24, stratum 3, offset 240.054648, delay 0.10890
+server 220.133.13.3, stratum 2, offset 240.050690, delay 0.08301
+21 Nov 05:57:41 ntpdate[841]: step time server 220.133.13.3 offset 240.050690 sec <2>
+--------------------------------------------------------------------------------
+<1> `ntpdate -q` 不會改動 system time。
+<2> "offset ... sec" 表示 system time 跟標準時間的差距，正值表示 system time 慢了，反之負值則表示 system time 快了。
+
+手動校時可以用 `date` + `hwclock`, 網路校時則可以用 `ntpdate` + `hwclock`。
+
+--------------------------------------------------------------------------------
+# yum install ntp
+# chkconfig --list ntpd       <1>
+ntpd              0:off   1:off   2:off   3:off   4:off   5:off   6:off
+# ntpdate pool.ntp.org        <2>
+21 Nov 06:09:37 ntpdate[986]: step time server 120.119.28.1 offset 240.054985 sec
+# hwclock --systohc           <3>
+#
+#
+# ntpdate pool.ntp.org
+21 Nov 05:33:34 ntpdate[32404]: the NTP socket is in use, exiting <4>
+# service ntpd stop
+Shutting down ntpd:                                        [  OK  ]
+# ntpdate pool.ntp.org
+21 Nov 05:26:12 ntpdate[32223]: step time server 59.124.196.83 offset 16.032887 sec
+# service ntpd start
+Starting ntpd:                                             [  OK  ]
+--------------------------------------------------------------------------------
+<1> 確認 `ntpd` 預設不會啟動，因為我們並不想拿這台機器做 time server。如果需要的話，可以用 `chkconfig ntpd on` 來啟動。
+<2> 透過 time server 校對 system time。"offset ... sec" 表示校正當下 system time 跟標準時間的差距。
+<3> 將校正過的 system time 寫回 hardware time。
+<4> 遇到 "the NTP socket is in use"，表示 `ntp` 服務正在運作，要將它停用後才能手動網路校時。
+
+安排每天半夜 4 點做網路校時：
+
+--------------------------------------------------------------------------------
+# crontab -e
+0 4 * * * /usr/sbin/ntpdate pool.ntp.org
+--------------------------------------------------------------------------------
+
+== 參考資料 ==
+
+ * http://itg.chem.indiana.edu/inc/wiki/os/unix/199.html[Configuring Time Synchronization in UNIX]
+ * http://www.go2linux.org/how-to-set-the-date-and-time-in-linux[Setting the time of your system 1] (2007-08-18)
+ * http://www.cyberciti.biz/faq/howto-install-ntp-to-synchronize-server-clock/[CentOS Linux install and configure NTP to synchronize the system clock] (2007-05-18)
+

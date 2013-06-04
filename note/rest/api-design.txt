@@ -1,0 +1,67 @@
+= link:api.html[REST / API] / Design =
+:title: [REST] API Design
+
+== 參考資料 ==
+
+ * http://apiux.com/2013/04/03/url-design-restful-web-services/[URL Design for RESTful Web Services | API UX] ^https://diigo.com/0y5u0[閱讀]^ (2013-04-03) - your API should feel like using a filesystem
+////////////////////////////////////////////////////////////////////////////////
+   ** URL design discussions for RESTful web services often degrade into debates over pluralization and parameter names.
+   ** Use a filename extension instead of the Accept header to express the response format. Not pure REST but it makes your API easier for devs to poke with curl and the browser. Easier to use means better adoption!
+      *** 雖然不夠 REST (pure REST 不是目的，simple 才是重點)，但方便用其他工具測試，這一點是真的滿重要的。但如果有 API authentication，就省不掉 headers 的處理了...
+      *** 如果階層很多，階層要加在哪？ http://api.example.com/dir1/dir2/file.json... 不過這違反了同一個 resouce 只有一個 URI 的原則。
+   ** Using your API should feel like using a filesystem
+      *** Endpoints used to create, list, and search for entities should look like directories, e.g. /users
+      *** Use a plural noun so it feels like a directory of users, not a user controller
+      *** Endpoints used to read, update, and delete individual entities should look like files, e.g. /users/charlie
+      *** Once you agree on a contract it’s easy to mock up with static files on a server. Clients can start working with your mockup before your code is finished. - 很特別的想法，雖然 response 都是固定的。
+      *** your API will be more intuitive to newcomers if you model it this way.
+      *** Directory endpoints are supposed to return lists (or nothing). So send back a pointer to the new user record, rather than the user data itself.
+   ** All calls to a given endpoint should return the same type
+      *** File-looking endpoints should return individual entities
+      *** Directory-looking endpoints should return lists of entities
+   ** version control
+      *** http://api.example.com/v1/... - 從 filesystem 的角度來看，少一點 query string 會比較好。而且 version 後面的結構可能會依版本不同。
+      *** http://api.example.com/...?v1
+   ** error handling
+      *** Some javascript/flash API consumers will pressure you to add a `suppress_response_codes` parameter and always send them a 200. You’ll need to define a standard error response envelope that they can switch on to check for errors and extract the reason. 為什麼直接丟出 error status 不方便處理??
+////////////////////////////////////////////////////////////////////////////////
+ * http://www.slideshare.net/stormpath/rest-jsonapis[Design Beautiful REST + JSON APIs] (2012-06-11)
+////////////////////////////////////////////////////////////////////////////////
+   ** coarse-grained, not fine-grained
+   ** Nouns, not Verbs (ex. getAccount, like RPC).
+   ** two types of resources: collection, instance
+   ** PUT and POST can both be used for Create and Update
+      *** PUT for Create, identifier is known by the client
+      *** PUT for Update, full replacement
+      *** POST as Create, on a parent resource. response a location.
+      *** POST as Update, on instance resource
+   ** `https://api.stormpath.com/v1/accounts/x7y8z9` - 版號做為 URI 的一部份。
+   ** Media Types
+      *** request: Accept header, Response: Content-Type header (`application/json`)
+      *** resource extension (`/applications/a1b2c3.json`), conventionally overrides Accept header. - 這種 override 的做法很務實，端看 client 習慣哪種用法了。
+   ** JSON: camel case 才符合 JavaScript 的 convention. stay consistent!
+   ** JSON 沒有 date/time standard? 用 ISO 8601
+   ** Instance reference
+      *** HREF - every accessible resource has a unique URL, replace IDs (IDs exist, but are opaque)
+      *** `{ "href": ..., "directory": { "href": ... } }`
+      *** `GET /accounts/x7y8z9?expand=directory` - reference expansion, 控制展開的深度。
+   ** partial representation - `GET /accounts/x7y8z9?fields=givenName,surname,directory(name)` - 其中 `directory(name)` 的表示法還滿有彈性的。
+   ** pagination - `GET /applications?offset=50&limit=25`
+   ** many-to-may, each mapping is a resource?? 不太能認同
+   ** POST's response? return the representation  in the response when feasible. add override (`?_body=false`) for control - 這跟只回 location 的一派很不同。但務實一點，如果不直接傳回，client 還不是要另外來要一次？
+   ** error - 還是用 status code 來表示，但 body 用 JSON 帶有錯誤的細節。
+   ** stateless, avoid sessions when possible, authenticate every request if necessary.
+////////////////////////////////////////////////////////////////////////////////
+ * http://www.slideshare.net/apigee/rest-design-webinar[Pragmatic RESTful API Design: Apigee Webinar] (2011-05-06) - 對照熱門 services 在 pagination、versioning 等不同面向的設計，會發現大家的做法這麼不一樣！
+////////////////////////////////////////////////////////////////////////////////
+   ** `Content-Type: application/soap+xml; charset=utf-8` - 看來 `application/json` 後面也可以做一些變化??
+   ** envelope, postcard
+   ** we only need two URLs - collection (`/dogs`), element (`/dogs/1234`)
+   ** 為什麼對 element 做 POST 會 error??
+   ** association - `GET /owners/9876/dogs`
+   ** `/dogs.json`, `dogs/bo.json` - extension 固定加在最後面
+   ** Twitter 提供 `?suppress_response_codes=true` 的用法，這個時候就算有錯誤也會傳回 status code 200，錯誤要從 response body (JSON) 裡查看。
+   ** 為什麼會有 client supports limited HTTP methods 而有 `/dogs/bo?method=delete` 的需求??
+   ** sweep complexity behind the ?, and borrow from leading APIs. 這正是這份 slids 比對各家不同用法的目的。
+////////////////////////////////////////////////////////////////////////////////
+

@@ -1,16 +1,39 @@
 = link:concepts.html[OpenNI / Concepts] / Coordinate Systems =
 :title: [OpenNI] 坐標系統
 
- * Projective Coordinates - a two-dimentional map of depth values （為什麼 convert method 接受／回傳 Point3D？）
- * Real World Coordinates - A collection of three-dimentional points, in millimeters
-   ** 從 sensor 的角度出發，右手邊是 +x，上面是 +y，往前是 +z。Loc 2350 Figure 7-2 有張圖很清楚
+ * 兩種 coordinate spaces
+   ** 都是從 sensor 的角度出發。z-axis 永遠跟 sensor's plane 正交，遠離 sensor 的方向是 +z，單位也固定是 millimeters。
+   ** 其實都是 3D 資訊 (Point3D)，只是 x-y 的單位是 pixels 或 millimeters 的差別而已。
+ * Projective Coordinates (投影世界座標系統) - a two-dimentional map of depth values，
+   ** 只適用於 depth map 嗎??
+   ** x-y 的 origin 在 FOV 的左上角，往右是 +x，往下是 +y （事實上並不會遇到 -x 或 -y）
+ * Real World Coordinates (真實世界座標系統) - A collection of three-dimentional points, in millimeters
+   ** x-y 的 origin 在 FOV 的中間，往右是 +x，往上才是 +y。
+   ** Loc 2350 Figure 7-2 有張圖很清楚
+ * A main difference between the two is that in projective coordinates, a real-world object (person, chair) gets bigger (in pixels) as it gets closer to the sensor, whereas its real-world size remains the same??
  * Some data in OpenNI is returned in projective coordinates (for example, depth maps), and some is returned in real-world coordinates (for example, skeleton joints). Pay attention when comparing the two.
- * translation can be made between the two systems. `DepthGenerator.convertProjectiveToRealWorld(point3D)`, `DepthGenerator.convertRealWorldToProjective(point3D)`
+   ** image map 好像都是用 projective coordinates，但 skeleton joints, hand points 等則用 real world coordinates。
+ * translation can be made between the two systems. `DepthGenerator.convertProjectiveToRealWorld(point3D)`, `DepthGenerator.convertRealWorldToProjective(point3D)` ... 為什麼坐標系統轉換的功能都做在 depth generator 上，大概是因為只有 depth generator 知道 Z-axis 的資訊吧。
  * `org.OpenNI.Point3D` - `getX()`, `getY()`, `getZ()` (`float`)
+ * 將 real world coordniates 轉到螢幕要 2 個步驟：
++
+--------------------------------------------------------------------------------
+Point3D point = event.getPosition();
+point = depthGenerator.convertRealWorldToProjective(point); // 先轉成 projective coordinates，以 pixels 為單位。
+int x = Math.round(point.getX() * scaleFactor); // 再對應操作區域的大小，當然 x/y 的 scale factor 可以分開來看。
+int y = Math.round(point.getY() * scaleFactor);
+--------------------------------------------------------------------------------
++
+ * Figure 9-6 提到 The mapping from the hand position to the paddle position isn't exact, because this would require players to move their hands large distances. Instead, a restricted x axis hand range around the middle of the screen is converted into a range spanning the entire display. 非線性的對應，可以避開小朋友手不夠長，或是大人站得太遠的問題。
 
 == 參考資料 ==
 
+.文件
+--
  * OpenNI Overview > Concepts > Coordinate Systems (`Documentation/html/conc_coord.html`)
+ * http://kheresy.wordpress.com/2012/04/05/coordinate-system-in-openni/[OpenNI 的座標系統 | Heresy's Space] ^https://diigo.com/0xfaw[閱讀]^ (2012-04-05)
+--
+
  * https://github.com/OpenNI/OpenNI/blob/Unstable-1.5.4.0/Wrappers/OpenNI.java/src/org/OpenNI/Point3D.java[`org/OpenNI/Point3D.java`]
  * https://github.com/OpenNI/OpenNI/blob/Unstable-1.5.4.0/Wrappers/OpenNI.java/src/org/OpenNI/BoundingBox3D.java[`org/OpenNI/BoundingBox3D.java`]
 

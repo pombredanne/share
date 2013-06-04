@@ -1,0 +1,894 @@
+= Apache HTTP Server 2.2 / Users' Guide =
+http://httpd.apache.org/docs/2.2/
+<<TableOfContents>>
+
+== Binding ==
+http://httpd.apache.org/docs/2.2/bind.html @2010/03/20
+
+Configuring Apache to listen on specific addresses and ports.
+
+=== Overview ===
+
+ * Related Modules
+   * `core`
+   * `mpm_common`
+ * Related Directives
+   * `<VirtualHost>`
+   * `Listen`
+
+__When Apache starts, it binds to some port and address on the local machine and waits for incoming requests. '''By default, it listens to all addresses on the machine. However, it needs to be told to listen on specific ports, or to listen on only selected addresses, or a ''combination'' (無論如何, Port 是不可以省略的).''' This is often combined with the Virtual Host feature which determines how Apache responds to different ''IP addresses, hostnames and ports''.__
+
+__The `Listen` directive tells the server to accept incoming requests only on the specified port or address-and-port combinations. If only a port number is specified in the `Listen` directive, the server listens to the given port on ''all interfaces'' (也可以用 "0.0.0.0" 來表示). If an IP address is given as well as a port, the server will listen on the given port and interface. '''Multiple `Listen` directives may be used to specify a number of addresses and ports to listen on. The server will respond to requests from any of the listed addresses and ports.'''__
+
+For example, to make the server accept connections on both port 80 and port 8000, use:
+
+ {{{
+Listen 80
+Listen 8000
+ }}}
+
+To make the server accept connections on two specified interfaces and port numbers, use
+
+ {{{
+Listen 192.170.2.1:80
+Listen 192.170.2.5:8000
+ }}}
+
+IPv6 addresses must be surrounded in square brackets, as in the following example:
+
+ {{{
+Listen [2001:db8::a00:20ff:fea7:ccea]:80
+ }}}
+
+=== Special IPv6 Considerations ===
+
+A growing number of platforms implement IPv6, and http://httpd.apache.org/docs/2.2/glossary.html#apr[APR] supports IPv6 on most of these platforms, allowing Apache to allocate IPv6 sockets and handle requests which were sent over IPv6.
+
+One complicating factor for Apache administrators is whether or not an IPv6 socket can handle both IPv4 connections and IPv6 connections. Handling IPv4 connections with an IPv6 socket uses ''IPv4-mapped IPv6 addresses'', which are allowed by default on most platforms but are disallowed by default on FreeBSD, NetBSD, and OpenBSD in order to match the system-wide policy on those platforms. But even on systems where it is disallowed by default, a special configure parameter can change this behavior for Apache.
+
+On the other hand, on some platforms such as Linux and Tru64 the only way to handle both IPv6 and IPv4 is to use ''mapped addresses''. If you want Apache to handle IPv4 and IPv6 connections with a minimum of sockets, which requires using IPv4-mapped IPv6 addresses, specify the `--enable-v4-mapped` configure option.
+
+`--enable-v4-mapped` is the default on all platforms but FreeBSD, NetBSD, and OpenBSD, so this is probably how your Apache was built.
+
+__If you want Apache to handle IPv4 connections only, regardless of what your platform and APR will support, specify an IPv4 address on all Listen directives,__ as in the following examples:
+
+ {{{
+Listen 0.0.0.0:80
+Listen 192.170.2.1:80
+ }}}
+
+If your platform supports it and you want Apache to handle IPv4 and IPv6 connections on ''separate sockets'' (i.e., to disable IPv4-mapped addresses), specify the `--disable-v4-mapped` configure option. `--disable-v4-mapped` is the default on FreeBSD, NetBSD, and OpenBSD.
+
+=== How This Works With Virtual Hosts ===
+
+__'''`Listen` does not implement Virtual Hosts. It only tells the ''main server''(相對於 Virtual Host 而言) what addresses and ports to listen to. If no `<VirtualHost>` directives are used, the server will behave the same for all accepted requests.''' However, `<VirtualHost>` can be used to specify a different behavior for one or more of the addresses and ports. To implement a Virtual Host, the server must first be told to listen to the address and port to be used. Then a `<VirtualHost>` section should be created for a specified address and port to set the behavior of this virtual host. '''Note that if the `<VirtualHost>` is set for an address and port that the server is not listening to, it cannot be accessed. (無論如何還是要由 Main Server 接下 Request 之後, 由 `NameVirtualHost` 標示可做為 Virtual Hosts 的要求, 最後才分派到其他 Virtual Hosts)'''__
+
+== Configuration Files ==
+http://httpd.apache.org/docs/2.2/configuring.html @2010/03/20
+
+This document describes the files used to configure the Apache HTTP server.
+
+=== Main Configuration Files ===
+
+ * Related Modules
+   * `mod_mime`
+ * Related Directives
+   * `<IfDefine>`
+   * `Include`
+   * `TypesConfig`
+
+__Apache is configured by placing ''directives'' in plain text configuration files. The ''main configuration file'' is usually called `httpd.conf`. The location of this file is set at compile-time, but may be overridden with the `-f` command line flag. In addition, other configuration files may be added using the `Include` directive, and wildcards can be used to include many configuration files. '''Any directive may be placed in any of these configuration files. Changes to the main configuration files are only recognized by Apache when it is started or restarted. (其中 "main configuration files" 最後的 "s", 暗示那些用 `Include` 引進來的組態檔, 仍屬於 main configuration file 的一部份, 這一點在下面的 "as if they were inside the including file..." 得到了證實; 事實上這裡的 "main" 是要強調與 `.htaccess` 的區隔)'''__
+
+__The server also reads a file containing mime document types; the filename is set by the `TypesConfig` directive, and is `mime.types` by default.__
+
+__'''Debian 充分運用上述組態的彈性, 它的 Main Configuration File 指向 `/etc/apache2/apache2.conf`, 然後才引入 `/etc/apache2/httpd.conf`. 進而規劃出了 `mods-enabled`/`mods-available` 與 `sites-enabled`/`sites-available` 的結構, 之後只要在 `mods-enabled`/`sites-enabled` 下建立指向 `mods-available`/`sites-available` 的 Symbolic Links 即可. (慣例上會以前面 3 碼的數字來做為宣告次序, 例如 `000-default`, `001-archiva`)'''__
+
+ {{{
+...
+
+# Include module configuration:
+Include /etc/apache2/mods-enabled/*.load
+Include /etc/apache2/mods-enabled/*.conf
+
+# Include all the user configurations:
+Include /etc/apache2/httpd.conf
+
+# Include ports listing
+Include /etc/apache2/ports.conf
+
+...
+
+# Include the virtual host configurations:
+Include /etc/apache2/sites-enabled/
+ }}}
+
+=== Syntax of the Configuration Files ===
+
+__'''Apache configuration files contain ''one directive per line''. The back-slash "`\`" may be used as the last character on a line to indicate that the directive continues onto the next line. (雖然有些語法看起來有點像 XML, 但切記它真的不是 XML!!)''' There must be no other characters or white space between the back-slash and the end of the line.__
+
+__'''Directives in the configuration files are case-insensitive, but arguments to directives are often case sensitive.''' Lines that begin with the hash character "`#`" are considered comments, and are ignored. '''Comments may ''not'' be included on a line after a configuration directive. (在實務上很容易犯這個錯)''' Blank lines and white space occurring before a directive are ignored, so you may indent directives for clarity.__
+
+__The values of shell environment variables can be used in configuration file lines using the syntax `${ENVVAR}`. If `"ENVVAR"` is the name of a valid environment variable, the value of that variable is substituted into that spot in the configuration file line, and processing continues as if that text were found directly in the configuration file. (If the `ENVVAR` variable is not found, the characters `"${ENVVAR}"` are left unchanged for use by ''later stages'' in the config file processing.)__
+
+The maximum length of a line in the configuration file, after environment-variable substitution, joining any continued lines and removing leading and trailing white space, is 8192 characters.
+
+__You can check your configuration files for syntax errors without starting the server by using `apachectl configtest` or the `-t` command line option. '''(在 Debian 要用 `apache2ctl configtest` 檢查, 但只有 `mods-enabled` 與 `sites-enabled` 下的組態才會被檢查到, 因為那才是 Main Configuration Files 的一部份)'''__
+
+=== Modules ===
+
+ * Related Modules
+   * `mod_so`
+ * Related Directives
+   * `<IfModule>`
+   * `LoadModule`
+
+__Apache is a modular server. This implies that only the most basic functionality is included in the ''core server''. Extended features are available through modules which can be loaded into Apache. '''By default, a base set of modules is included in the server at ''compile-time''. If the server is compiled to use dynamically loaded modules, then modules can be compiled separately and added at any time using the `LoadModule` directive. Otherwise(否則), Apache must be recompiled to add or remove modules.''' Configuration directives may be ''included conditional'' on a presence of a particular module by enclosing them in an `<IfModule>` block.__
+
+__To see which modules are currently compiled into the server, you can use the `-l` command line option. (例如 `apache2ctl -l`, 不含外掛的部份)__
+
+=== Scope of Directives ===
+
+ * Related Modules
+ * Related Directives
+   * `<Directory>`
+   * `<DirectoryMatch>`
+   * `<Files>`
+   * `<FilesMatch>`
+   * `<Location>`
+   * `<LocationMatch>`
+   * `<VirtualHost>`
+
+__'''Directives placed in the main configuration files apply to the ''entire server''.''' If you wish to ''change'' (= override) the configuration for only a part of the server, you can ''scope'' your directives by placing them in `<Directory>`, `<DirectoryMatch>`, `<Files>`, `<FilesMatch>`, `<Location>`, and `<LocationMatch>` ''sections''. '''These sections limit the application of the directives which they enclose to particular filesystem locations or URLs. They can also be ''nested'', allowing for very fine grained configuration.'''__
+
+__Apache has the capability to serve many different websites simultaneously. This is called ''http://httpd.apache.org/docs/2.2/vhosts/[Virtual Hosting]''. Directives can also be scoped by placing them inside `<VirtualHost>` sections, so that they will only apply to requests for a ''particular website''.__
+
+__Although most directives can be placed in any of these sections, some directives do not make sense in some ''contexts''. For example, directives controlling ''process creation'' can only be placed in the main server context.__ To find which directives can be placed in which sections, check the Context of the directive. For further information, we provide details on http://httpd.apache.org/docs/2.2/sections.html[How Directory, Location and Files sections work].
+
+=== .htaccess Files ===
+
+ * Related Modules
+ * Related Directives
+   * `AccessFileName`
+   * `AllowOverride`
+
+__Apache allows for ''decentralized'' management of configuration via special files placed inside the ''web tree''. The special files are usually called `.htaccess`, but any name can be specified in the `AccessFileName` directive. '''Directives placed in `.htaccess` files apply to the directory where you place the file, and all sub-directories. The `.htaccess` files follow the same syntax as the main configuration files. Since `.htaccess` files are read on every request, changes made in these files take immediate effect. (相對地, 效能比較不好)'''__
+
+To find which directives can be placed in `.htaccess` files, check the Context of the directive. __The server administrator further controls what directives may be placed in `.htaccess` files by configuring the `AllowOverride` directive in the main configuration files.__
+
+For more information on `.htaccess` files, see the http://httpd.apache.org/docs/2.2/howto/htaccess.html[.htaccess tutorial].
+
+== Configuration Sections ==
+http://httpd.apache.org/docs/2.2/sections.html @2010/03/20
+
+Directives in the configuration files may apply to the entire server, or they may be restricted to apply only to particular directories, files, hosts, or URLs. This document describes how to use ''configuration section containers'' or `.htaccess` files to change the scope of other configuration directives.
+
+=== Types of Configuration Section Containers ===
+
+ * Related Modules
+   * `core`
+   * `mod_version`
+   * `mod_proxy`
+ * Related Directives
+   * `<Directory>`
+   * `<DirectoryMatch>`
+   * `<Files>`
+   * `<FilesMatch>`
+   * `<IfDefine>`
+   * `<IfModule>`
+   * `<IfVersion>`
+   * `<Location>`
+   * `<LocationMatch>`
+   * `<Proxy>`
+   * `<ProxyMatch>`
+   * `<VirtualHost>`
+
+There are two basic types of ''containers''. __Most containers are ''evaluated for each request''. The enclosed directives are applied only for those requests that match the containers. The `<IfDefine>`, `<IfModule>`, and `<IfVersion>` containers, on the other hand, are evaluated only at server startup and restart.__ If their conditions are true at startup, then the enclosed directives will apply to all requests. If the conditions are not true, the enclosed directives will be ignored.
+
+The `<IfDefine>` directive encloses directives that will only be applied if an appropriate parameter is defined on the `httpd` command line. For example, with the following configuration, all requests will be redirected to another site only if the server is started using `httpd -DClosedForNow`:
+
+ {{{
+<IfDefine ClosedForNow>
+  Redirect / http://otherserver.example.com/
+</IfDefine>
+ }}}
+
+The `<IfModule>` directive is very similar, except it encloses directives that will only be applied if a particular module is available (正確地說, 應該是 Enabled/Loaded) in the server. The module must either be statically compiled in the server, or it must be dynamically compiled and its `LoadModule` line must be earlier in the configuration file. This directive should only be used if you need your configuration file to work whether or not certain modules are installed. __It should not be used to enclose directives that you want to work all the time, because it can suppress useful error messages about missing modules.__
+
+In the following example, the `MimeMagicFiles` directive will be applied only if `mod_mime_magic` is available.
+
+ {{{
+<IfModule mod_mime_magic.c>
+  MimeMagicFile conf/magic
+</IfModule>
+ }}}
+
+The `<IfVersion>` directive is very similar to `<IfDefine>` and `<IfModule>`, except it encloses directives that will only be applied if a particular version of the server is executing. __This module is designed for the use in test suites and large networks which have to deal with different `httpd` versions and different configurations.__
+
+ {{{
+<IfVersion >= 2.1>
+  # this happens only in versions greater or
+  # equal 2.1.0.
+</IfVersion>
+ }}}
+
+__`<IfDefine>`, `<IfModule>`, and the `<IfVersion>` can apply ''negative conditions'' by preceding their test with "!". Also, these sections can be nested to achieve more complex restrictions.__
+
+=== Filesystem and Webspace ===
+
+The most commonly used configuration section containers are the ones that change the configuration of particular places in the filesystem or ''webspace''. First, it is important to understand the difference between the two. The filesystem is the view of your disks as seen by your operating system. For example, in a default install, Apache resides at `/usr/local/apache2` in the Unix filesystem or "`c:/Program Files/Apache Group/Apache2`" in the Windows filesystem. __(Note that forward slashes should always be used as the path separator in Apache, even for Windows.) In contrast, the webspace is the view of your site as delivered by the web server and seen by the client. So the path `/dir/` in the webspace corresponds to the path `/usr/local/apache2/htdocs/dir/` in the filesystem of a default Apache install on Unix. '''The webspace need not map directly to the filesystem, since webpages may be generated dynamically from databases or other locations.'''__
+
+==== Filesystem Containers ====
+
+The `<Directory>` and `<Files>` directives, along with their regex counterparts, apply directives to parts of the filesystem. __Directives enclosed in a `<Directory>` section apply to the named filesystem directory and all subdirectories of that directory. The same effect can be obtained using `.htaccess` files.__ For example, in the following configuration, directory indexes will be enabled for the `/var/web/dir1` directory and all subdirectories.
+
+ {{{
+<Directory /var/web/dir1>
+  Options +Indexes
+</Directory>
+ }}}
+
+__Directives enclosed in a `<Files>` section apply to any file with the specified name, ''regardless of what directory it lies in''.__ So for example, the following configuration directives will, when placed in the main section of the configuration file, deny access to any file named `private.html` regardless of where it is found.
+
+ {{{
+<Files private.html>
+  Order allow,deny
+  Deny from all
+</Files>
+ }}}
+
+__To address files found in a particular part of the filesystem, the `<Files>` and `<Directory>` sections can be combined.__ For example, the following configuration will deny access to `/var/web/dir1/private.html`, `/var/web/dir1/subdir2/private.html`, `/var/web/dir1/subdir3/private.html`, and any other instance of `private.html` found under the `/var/web/dir1/` directory.
+
+ {{{
+<Directory /var/web/dir1>
+  <Files private.html>
+    Order allow,deny
+    Deny from all
+  </Files>
+</Directory>
+ }}}
+
+==== Webspace Containers ====
+
+The `<Location>` directive and its regex counterpart, on the other hand, change the configuration for ''content'' in the webspace. __For example, the following configuration prevents access to any URL-path that ''begins'' in `/private`. In particular, it will apply to requests for http://yoursite.example.com/private, http://yoursite.example.com/private123, and http://yoursite.example.com/private/dir/file.html as well as any other requests starting with the `/private` string. (單純做字串 Prefix 的比對, 而且區分大小寫)__
+
+ {{{
+<Location /private>
+  Order Allow,Deny
+  Deny from all
+</Location>
+ }}}
+
+__The `<Location>` directive need not have anything to do with the filesystem. For example, the following example shows how to map a particular URL to an internal Apache ''handler'' provided by `mod_status`. No file called `server-status` needs to exist in the filesystem.__
+
+ {{{
+<Location /server-status>
+  SetHandler server-status
+</Location>
+ }}}
+
+==== Wildcards and Regular Expressions ====
+
+The `<Directory>`, `<Files>`, and `<Location>` directives can each use ''shell-style wildcard characters'' as in `fnmatch` from the C standard library. __The character "`*`" matches any sequence of characters, "`?`" matches any single character, and "`[seq]`" matches any character in seq. '''The "`/`" character will not be matched by any wildcard; it must be specified explicitly.''' (可以直接套用在 `<Directory>`、`<Files>` 或 `<Location>`, 這跟下面 regex counterparts 的用法不同)__
+
+__If even more flexible matching is required, each container has a regular expression (regex) counterpart `<DirectoryMatch>`, `<FilesMatch>`, and `<LocationMatch>` that allow ''perl-compatible'' regular expressions to be used in choosing the matches.__ But see the section below on ''configuration merging'' to find out how using regex sections will change how directives are applied.
+
+A non-regex wildcard section that changes the configuration of all user directories could look as follows:
+
+ {{{
+<Directory /home/*/public_html>
+Options Indexes
+</Directory>
+ }}}
+ 
+Using regex sections, we can deny access to many types of image files at once:
+
+ {{{
+<FilesMatch \.(?i:gif|jpe?g|png)$> <-- 前面的 "?i:" 是什麼用法?
+  Order allow,deny
+  Deny from all
+</FilesMatch>
+ }}}
+
+==== What to use When ====
+
+__Choosing between filesystem containers and webspace containers is actually quite easy. '''When applying directives to objects that reside in the filesystem always use `<Directory>` or `<Files>`. When applying directives to objects that do not reside in the filesystem (such as a webpage generated from a database), use `<Location>`. (如果檔案或目錄落在 document root 之外, 可以搭配 symbolic link 或 `Alias` 來實作, 一樣可以用 `<Directory>`)'''__
+
+__'''It is important to never use `<Location>` when trying to restrict access to objects in the filesystem.''' This is because many different ''webspace locations'' (URLs) could map to the same filesystem location, allowing your restrictions to be circumvented(可規避的).__ For example, consider the following configuration:
+
+ {{{
+<Location /dir/>
+  Order allow,deny
+  Deny from all
+</Location>
+ }}}
+
+__This works fine if the request is for http://yoursite.example.com/dir/. But what if you are on a case-insensitive filesystem? Then your restriction could be easily circumvented by requesting http://yoursite.example.com/DIR/. '''The `<Directory>` directive, in contrast, will apply to any content served from that location, regardless of how it is called. (因為 `<Location>` 永遠區分大小寫, 不受檔案系統影響)''' (An exception is filesystem links. The same directory can be placed in more than one part of the filesystem using symbolic links. '''The `<Directory>` directive will follow the symbolic link without resetting the pathname. (不會轉換成真正的 Pathname 而言)''' Therefore, for the highest level of security, symbolic links should be disabled with the appropriate `Options` directive.)__
+
+__If you are, perhaps, thinking that none of this applies to you because you use a case-sensitive filesystem, '''remember that there are many other ways to map multiple webspace locations to the same filesystem location. Therefore you should always use the filesystem containers when you can.''' There is, however, one exception to this rule. '''Putting configuration restrictions in a `<Location />` section is perfectly safe because this section will apply to all requests regardless of the specific URL.'''__
+
+=== Virtual Hosts ===
+
+The `<VirtualHost>` container encloses directives that apply to specific hosts. This is useful when serving multiple hosts from the same machine with a different configuration for each. For more information, see the http://httpd.apache.org/docs/2.2/vhosts/[Virtual Host Documentation].
+
+=== Proxy ===
+
+__The `<Proxy>` and `<ProxyMatch>` containers apply enclosed configuration directives only to sites accessed through `mod_proxy`'s proxy server that match the specified URL. (可以針對 `ProxyPass` 做細微的控制)__ For example, the following configuration will prevent the proxy server from being used to access the `cnn.com` website.
+
+ {{{
+<Proxy http://cnn.com/*>
+  Order allow,deny
+  Deny from all
+</Proxy>
+ }}}
+
+=== What Directives are Allowed? ===
+
+To find out what directives are allowed in what types of configuration sections, check the Context of the directive. __Everything that is allowed in `<Directory>` sections is also syntactically(句法上) allowed in `<DirectoryMatch>`, `<Files>`, `<FilesMatch>`, `<Location>`, `<LocationMatch>`, `<Proxy>`, and `<ProxyMatch>` sections.__ There are some exceptions, however:
+
+ * The `AllowOverride` directive works only in `<Directory>` sections.
+ * The `FollowSymLinks` and `SymLinksIfOwnerMatch` Options work only in `<Directory>` sections or `.htaccess` files.
+ * The `Options` directive cannot be used in `<Files>` and `<FilesMatch>` sections.
+
+=== How the sections are merged ===
+
+The configuration sections are applied in a very particular order. Since this can have important effects on how configuration directives are interpreted, it is important to understand how this works.
+
+The order of ''merging'' is:
+
+ 1. `<Directory>` (except regular expressions; 相對比較明確) and `.htaccess` done simultaneously (with `.htaccess`, if allowed, overriding `<Directory>`)
+
+ 2. `<DirectoryMatch>` (and `<Directory ~>`)
+
+ 3. `<Files>` and `<FilesMatch>` done simultaneously
+
+ 4. `<Location>` and `<LocationMatch>` done simultaneously
+
+__'''所謂的 Merge 指的是 "後者覆寫前者", 因此 access control 最好不要寫在 `<Location>/<LocationMatch>` 裡, 不小心就會讓 `<Directory>/<DirectoryMatch>` 所設下的存取控制完全失效...'''__
+
+__Apart from `<Directory>`, each group is processed in the order that they appear in the configuration files. '''`<Directory>` (group 1 above) is processed in the order shortest directory component to longest.''' So for example, `<Directory /var/web/dir>` will be processed before `<Directory /var/web/dir/subdir>`. If multiple `<Directory>` sections apply to the same directory they are processed in the configuration file order. '''Configurations included via the `Include` directive will be treated as if they were inside the including file at the location of the `Include` directive.'''__
+
+__Sections inside `<VirtualHost>` sections are applied after the corresponding sections outside the virtual host definition. This allows virtual hosts to override the main server configuration.__
+
+When the request is served by `mod_proxy`, the `<Proxy>` container takes the place of the `<Directory>` container in the processing order.
+
+__'''Later sections override earlier ones.'''__
+
+==== Technical Note ====
+
+__There is actually a `<Location>/<LocationMatch>` sequence performed just before the ''name translation phase'' (where `Aliases` and `DocumentRoot`s are used to map URLs to filenames). The results of this sequence are completely thrown away after the translation has completed.[?]__
+
+==== Some Examples ====
+
+Below is an artificial example to show the order of merging. Assuming they all apply to the request, the directives in this example will be applied in the order A > B > C > D > E. (注意 B 緊跟在 A 的後面, 而非最後一個)
+
+ {{{
+<Location />
+E
+</Location>
+
+<Files f.html>
+D
+</Files>
+
+<VirtualHost *>
+<Directory /a/b>
+B
+</Directory>
+</VirtualHost>
+
+<DirectoryMatch "^.*b$">
+C
+</DirectoryMatch>
+
+<Directory /a/b>
+A
+</Directory>
+ }}}
+
+__For a more concrete example, consider the following. Regardless of any access restrictions placed in `<Directory>` sections, the `<Location>` section will be evaluated last and will allow unrestricted access to the server. '''In other words, order of merging is important, so be careful!'''__
+
+ {{{
+<Location />
+Order deny,allow
+Allow from all
+</Location>
+
+# Woops! This <Directory> section will have no effect
+<Directory />
+Order allow,deny
+Allow from all
+Deny from badguy.example.com
+</Directory>
+ }}}
+
+== Log Files ==
+http://httpd.apache.org/docs/2.2/logs.html @2010/03/22
+
+In order to effectively manage a web server, it is necessary to get feedback about the activity and performance of the server as well as any problems that may be occurring. The Apache HTTP Server provides very comprehensive and flexible logging capabilities. This document describes how to configure its logging capabilities, and how to understand what the logs contain.
+
+:::
+
+== Mapping URLs to Filesystem Locations ==
+http://httpd.apache.org/docs/2.2/urlmapping.html @2010/03/22
+
+This document explains how Apache uses the URL of a request to determine the filesystem location from which to serve a file.
+
+=== Related Modules and Directives ===
+
+ * Related Modules
+   * `mod_alias`
+   * `mod_proxy`
+   * `mod_rewrite`
+   * `mod_userdir`
+   * `mod_speling`
+   * `mod_vhost_alias`
+ * Related Directives
+   * `Alias`
+   * `AliasMatch`
+   * `CheckSpelling`
+   * `DocumentRoot`
+   * `ErrorDocument`
+   * `Options`
+   * `ProxyPass`
+   * `ProxyPassReverse`
+   * `ProxyPassReverseCookieDomain`
+   * `ProxyPassReverseCookiePath`
+   * `Redirect`
+   * `RedirectMatch`
+   * `RewriteCond`
+   * `RewriteRule`
+   * `ScriptAlias`
+   * `ScriptAliasMatch`
+   * `UserDir`
+
+=== DocumentRoot ===
+
+__In deciding what file to serve for a given request, '''Apache's default behavior is to take the URL-Path for the request (the part of the URL following the hostname and port; 例如 "`http://www.example.org:80/resouce`" 中的 "`/resource`", 包括埠號後面那個 "`/`") and add it to the end of the `DocumentRoot` specified in your configuration files.''' Therefore, the files and directories underneath the `DocumentRoot` make up the ''basic document tree'' which will be visible from the web.__
+
+For example, if `DocumentRoot` were set to `/var/www/html` then a request for `http://www.example.com/fish/guppies.html` would result in the file `/var/www/html/fish/guppies.html` being served to the requesting client.
+
+__Apache is also capable of Virtual Hosting, where the server receives requests for more than one host. In this case, a different `DocumentRoot` can be specified for each virtual host, or alternatively, the directives provided by the module `mod_vhost_alias` can be used to dynamically determine the appropriate place from which to serve content based on the requested IP address or hostname.__
+
+The `DocumentRoot` directive is set in your main server configuration file (`httpd.conf`) and, possibly, once per additional Virtual Host you create.
+
+=== Files Outside the DocumentRoot ===
+
+__There are frequently circumstances where it is necessary to allow web access to parts of the filesystem that are not strictly underneath the `DocumentRoot`. Apache offers several different ways to accomplish this. On Unix systems, symbolic links can bring other parts of the filesystem under the `DocumentRoot`. For security reasons, Apache will follow symbolic links only if the `Options` setting for the relevant directory includes `FollowSymLinks` or `SymLinksIfOwnerMatch`. (下面 `Alias` 的做法比較通用)__
+
+Alternatively, the `Alias` directive will map any part of the filesystem into the web space. For example, with
+
+ {{{
+Alias /docs /var/web
+ }}}
+
+the URL `http://www.example.com/docs/dir/file.html` will be served from `/var/web/dir/file.html`. __The `ScriptAlias` directive works the same way, with the additional effect that all content located at the target path is treated as CGI scripts.__
+
+__'''For situations where you require additional flexibility, you can use the `AliasMatch` and `ScriptAliasMatch` directives to do powerful regular expression based matching and ''substitution''.'''__ For example,
+
+ {{{
+ScriptAliasMatch ^/~([a-zA-Z0-9]+)/cgi-bin/(.+) /home/$1/cgi-bin/$2
+ }}}
+
+will map a request to `http://example.com/~user/cgi-bin/script.cgi` to the path `/home/user/cgi-bin/script.cgi` and will treat the resulting file as a CGI script.
+
+=== User Directories ===
+
+__Traditionally on Unix systems, the home directory of a particular user can be referred to as `~user/`. The module `mod_userdir` extends this idea to the web by allowing files under each user's home directory to be accessed using URLs such as the following.__
+
+ {{{
+http://www.example.com/~user/file.html
+ }}}
+
+__For security reasons, it is inappropriate to give direct access to a user's home directory from the web. Therefore, the `UserDir` directive specifies a directory underneath the user's home directory where web files are located. Using the default setting of `UserDir public_html`, the above URL maps to a file at a directory like `/home/user/public_html/file.html` where `/home/user/` is the user's home directory as specified in `/etc/passwd`.__
+
+There are also several other forms of the `UserDir` directive which you can use on systems where `/etc/passwd` does not contain the location of the home directory.
+
+__Some people find the "~" symbol (which is often encoded on the web as `%7e`) to be awkward(不雅觀的) and prefer to use an alternate string to represent user directories. This functionality is not supported by `mod_userdir`. However, if users' home directories are structured in a regular way, then it is possible to use the `AliasMatch` directive to achieve the desired effect.__ For example, to make `http://www.example.com/upages/user/file.html` map to `/home/user/public_html/file.html`, use the following `AliasMatch` directive:
+
+ {{{
+AliasMatch ^/upages/([a-zA-Z0-9]+)/?(.*) /home/$1/public_html/$2
+ }}}
+
+__@2009/03/10 在 Ubuntu 8.04 LTS Server 上組態 `Alias` 或 `AliasMatch` 時, 發現要重新開機才會有反應, 否則會無法存取, 甚至出現 Redirect Loop 的問題. 不知道為什麼[?]__
+
+=== URL Redirection ===
+
+The configuration directives discussed in the above sections tell Apache to get content from a specific place in the filesystem and return it to the client. __Sometimes, it is desirable instead to inform the client that the requested content is located at a different URL, and instruct the client to make a new request with the new URL. This is called ''redirection'' and is implemented by the `Redirect` directive.__ For example, if the contents of the directory `/foo/` under the `DocumentRoot` are moved to the new directory `/bar/`, you can instruct clients to request the content at the new location as follows:
+
+ {{{
+Redirect permanent /foo/ http://www.example.com/bar/
+ }}}
+
+__This will redirect any URL-Path starting in `/foo/` to the same URL path on the `www.example.com` server with `/bar/` ''substituted'' for `/foo/`. You can redirect clients to any server, not only the origin server. (省去 http://domain 的部份, 表示在同一個 Website 內做轉向)__
+
+Apache also provides a `RedirectMatch` directive for more complicated rewriting problems. For example, to redirect requests for the ''site home page'' to a different site, but leave all other requests alone, use the following configuration:
+
+ {{{
+RedirectMatch permanent ^/$ http://www.example.com/startpage.html <-- 這裡 "^/$" 指的是 URL 只有 "/" 一個字元時
+ }}}
+
+Alternatively, to temporarily redirect all pages on one site to a particular page on another site, use the following:
+
+ {{{
+RedirectMatch temp .* http://othersite.example.com/startpage.html
+ }}}
+
+=== Reverse Proxy ===
+
+__Apache also allows you to bring remote documents into the ''URL space'' of the local server. '''This technique is called ''reverse proxying'' because the web server acts like a proxy server by fetching the documents from a remote server and returning them to the client.''' It is different from normal proxying because, to the client, it appears the documents originate at the reverse proxy server.__
+
+In the following example, when clients request documents under the `/foo/` directory, the server fetches those documents from the `/bar/` directory on `internal.example.com` and returns them to the client as if they were from the local server.
+
+ {{{
+ProxyPass /foo/ http://internal.example.com/bar/
+ProxyPassReverse /foo/ http://internal.example.com/bar/
+ProxyPassReverseCookieDomain internal.example.com public.example.com <-- 不知道有這個東西!!
+ProxyPassReverseCookiePath /foo/ /bar/
+ }}}
+
+The `ProxyPass` configures the server to fetch the appropriate documents, while the `ProxyPassReverse` directive rewrites redirects originating at `internal.example.com` so that they target the appropriate directory on the local server. __Similarly, the `ProxyPassReverseCookieDomain` and `ProxyPassReverseCookiePath` rewrite cookies set by the backend server.__
+
+__It is important to note, however, that links inside the documents will not be rewritten. So any ''absolute links'' on `internal.example.com` will result in the client breaking out of the proxy server and requesting directly from `internal.example.com`. A third-party module `mod_proxy_html` is available to rewrite links in HTML and XHTML.__
+
+=== Rewriting Engine ===
+
+When even more powerful ''substitution'' is required, the rewriting engine provided by `mod_rewrite` can be useful. The directives provided by this module use characteristics of the request such as browser type or source IP address in deciding from where to serve content. __In addition, '''`mod_rewrite` can use external database files or programs to determine how to handle a request.''' The rewriting engine is capable of performing all three types of mappings discussed above: internal redirects (aliases), external redirects, and proxying.__ Many practical examples employing `mod_rewrite` are discussed in the detailed http://httpd.apache.org/docs/2.2/rewrite/[mod_rewrite documentation].
+
+=== File Not Found ===
+
+Inevitably(不可避免地), URLs will be requested for which no matching file can be found in the filesystem. This can happen for several reasons. __In some cases, it can be a result of moving documents from one location to another. In this case, it is best to use URL redirection to inform clients of the new location of the resource. '''In this way, you can assure that old bookmarks and links will continue to work, even though the resource is at a new location.'''__
+
+Another common cause of "File Not Found" errors is accidental mistyping of URLs, either directly in the browser, or in HTML links. __Apache provides the module `mod_speling` (sic) to help with this problem. When this module is activated, it will intercept "File Not Found" errors and look for a resource with a similar filename. If one such file is found, `mod_speling` will send an HTTP redirect to the client informing it of the correct location. If several "close" files are found, a list of available alternatives will be presented to the client.__
+
+__An especially useful feature of `mod_speling`, is that it will compare filenames without respect to case. '''This can help systems where users are unaware of the case-sensitive nature of URLs and the unix filesystem.'''__ But using `mod_speling` for anything more than the occasional(偶發的) URL correction can place additional load on the server, since each "incorrect" request is followed by a URL redirection and a new request from the client.
+
+__If all attempts to locate the content fail, Apache returns an error page with HTTP status code 404 (file not found). The appearance of this page is controlled with the `ErrorDocument` directive and can be customized in a flexible manner__ as discussed in the http://httpd.apache.org/docs/2.2/custom-error.html[Custom error responses] document.
+
+== SSL/TLS Encryption ==
+http://httpd.apache.org/docs/2.2/ssl/ @2009/03/04
+
+__The Apache HTTP Server module `mod_ssl` provides an interface to the http://www.openssl.org/[OpenSSL] library, which provides Strong Encryption using the Secure Sockets Layer and Transport Layer Security protocols.__ The module and this documentation are based on Ralf S. Engelschall's mod_ssl project.
+
+Extensive documentation on the directives and environment variables provided by this module is provided in the http://httpd.apache.org/docs/2.2/mod/mod_ssl.html[mod_ssl reference documentation].
+
+=== An Introduction ===
+http://httpd.apache.org/docs/2.2/ssl/ssl_intro.html @2009/03/04
+
+__The nice thing about standards is that there are so many to choose from.__ And if you really don't like all the standards you just have to wait another year until the one arises you are looking for. -- A. Tanenbaum, "Introduction to Computer Networks"
+
+As an introduction this chapter is aimed at readers who are familiar with the Web, HTTP, and Apache, but are not security experts. It is not intended to be a definitive guide to the SSL protocol, nor does it discuss specific techniques for managing certificates in an organization, or the important legal issues of patents(專利) and import and export restrictions. (加密技術通常都有進出口限制) Rather, __it is intended to provide a common background to `mod_ssl` users by pulling together various concepts, definitions, and examples as a starting point for further exploration.__
+
+The presented content is mainly derived, with the author's permission, from the article http://home.comcast.net/~fjhirsch/Papers/wwwj/[Introducing SSL and Certificates using SSLeay] by Frederick J. Hirsch, of The Open Group Research Institute, which was published in http://www.ora.com/catalog/wjsum97/[Web Security: A Matter of Trust], World Wide Web Journal, Volume 2, Issue 3, Summer 1997. Please send any positive feedback to Frederick Hirsch (the original article author) and all negative feedback to Ralf S. Engelschall (the `mod_ssl` author).
+
+==== Cryptographic(密碼的) Techniques ====
+
+__Understanding SSL requires an understanding of ''cryptographic algorithms'', ''message digest'' functions (aka. one-way or hash functions), and ''digital signatures''.__ These techniques are the subject of entire books (see for instance [AC96]) and provide the basis for privacy, integrity, and authentication.
+
+===== Cryptographic Algorithms =====
+
+Suppose Alice wants to send a message to her bank to transfer some money. Alice would like the message to be private, since it will include information such as her account number and transfer amount. One solution is to use a cryptographic algorithm, a technique that would transform her message into an encrypted form, unreadable until it is decrypted. __Once in this form, the message can only be decrypted by using a ''secret key''. Without the key the message is useless: good cryptographic algorithms make it so difficult for intruders(入侵者) to decode the original text that it isn't worth their effort.__
+
+There are two categories of cryptographic algorithms: ''conventional'' and ''public key''.
+
+ * Conventional cryptography
+
+   .__Also known as symmetric(對稱的) cryptography, requires the sender and receiver to ''share a key'': a secret piece of information that may be used to encrypt or decrypt a message.__ As long as this key is kept secret, nobody other than the sender or recipient can read the message. If Alice and the bank know a secret key, then they can send each other private messages. __The task of sharing a key between sender and recipient before communicating, while also keeping it secret from others, can be problematic. (因為這個 key 可能不單單只是一小串密碼而已; '''這種加密方式很適合用在公司內 Wiki 上要記錄各系統比較敏感的資料時, 系統管理員之間可以 "口頭上" 交換這個 key, 只有系統管理員才能解開編碼後的文字串, 即便文件不小心流出去也不會太糟...''')__
+
+ * Public key cryptography
+
+   .__Also known as asymmetric(非對稱的) cryptography, solves the key exchange problem by defining an algorithm which uses two keys, '''each of which may be used to encrypt a message. If one key is used to encrypt a message then the other must be used to decrypt it.''' This makes it possible to receive secure messages by simply publishing one key (the ''public key'') and keeping the other secret (the ''private key'').__
+
+   .__Anyone can encrypt a message using the public key, but only the owner of the private key will be able to read it. (這與上面 "each of which may be used to encrypt a message" 並不相違背, 因為下面 Digital Signatures 一節就會提到用 private key 來產生數位簽章)__ In this way, Alice can send private messages to the owner of a key-pair (the bank), by encrypting them using their public key. Only the bank will be able to decrypt them. (因此銀行要寫信給客戶時, 也可以用客戶的 public key 加密, 如此信件就只有該客戶可以讀取)
+
+===== Message Digests =====
+
+__Although Alice may encrypt her message to make it private, there is still a concern that someone might modify her original message or substitute it with a different one, in order to transfer the money to themselves, for instance.__ One way of guaranteeing the ''integrity(完整性)'' of Alice's message is for her to create a concise(簡要的) summary of her message and send this to the bank as well. Upon receipt of the message, the bank creates its own summary and compares it with the one Alice sent. If the summaries are the same then the message has been received intact(原封不動的).
+
+__如果訊息已經用銀行的 public key 加密過, 理當只有銀行才能解開, 這裡 "modify her original message" 指的應該就是持有銀行 private key 的人吧? 任何人都可以用銀行的 public key 寫一封宣稱自己是 Alice 的信給銀行, 因此 Alice 必須要另外通知銀行 "我剛才寫了一封信過去, 它的訊息摘要是多少...", 如此銀行才能確保他們收到的是同一封信.__
+
+__A summary such as this is called a ''message digest'', one-way function or hash function. Message digests are used to create a short, fixed-length representation of a longer, variable-length message. '''Digest algorithms are designed to produce a unique digest for each message. Message digests are designed to make it impractically(不能實行的) difficult to determine the message from the digest and (in theory) impossible to find two different messages which create the same digest (理論上是可能重複的!! 因為 fix-length 能表現的東西一定比 variable-length 來得少, 只是機會比較小而已...)''' -- thus eliminating the possibility of substituting one message for another while maintaining the same digest.__
+
+Another challenge that Alice faces is finding a way to send the digest to the bank securely; if the digest is not sent securely, its integrity may be compromised(危害) and with it the possibility for the bank to determine the integrity of the original message. Only if the digest is sent securely can the integrity of the associated message be determined. (要確認 message digest 的完整性, 再來談 message 本身的完整性才有意義)
+
+__One way to send the digest securely is to include it in a ''digital signature''.__
+
+===== Digital Signatures =====
+
+__When Alice sends a message to the bank, the bank needs to ensure that the message is ''really from her'' '''(這跟 authentication 的定位有點像 - verify that someone is who they claim they are)''', so an intruder(入侵者) cannot request a transaction involving her account.__ A digital signature, created by Alice and included with the message, serves this purpose.
+
+__Digital signatures are created by encrypting a digest of the message and other information (such as a ''sequence number'') with the sender's private key. Though anyone can decrypt the signature using the public key, only the sender knows the private key. This means that only the sender can have signed the message. '''Including the digest in the signature means the signature is only good for that message; it also ensures the integrity of the message since no one can change the digest and still sign it. (上面提到 message digest 不可逆的特性很重要, 因為 digital signature 是用 private key 加密的, 任何拿到 public key 的人都可以解開, 如果 digest 是可逆的, 那 message 就完全沒有受到保護了...)'''__
+
+__To guard against interception and reuse of the signature by an intruder at a later date, the signature contains a unique sequence number. This protects the bank from a fraudulent(詐欺的) claim from Alice that she did not send the message -- '''only she could have signed it (non-repudiation; 不得否認性. 本來就只有 Alice 可以用 private 加密, 為什麼還要加上流水號才能讓 Alice 無法否認? 這裡的 squence number 是誰給的? 重點應該是上面的 "at a later date" 吧[?]).'''__
+
+==== Certificates ====
+
+Although Alice could have sent a private message to the bank, signed it and ensured the integrity of the message, she still needs to be sure that she is really communicating with the bank. __This means that she needs to be sure that the public key she is using is part of the bank's key-pair, and not an intruder's. Similarly, the bank needs to verify that the message signature really was signed by the private key that belongs to Alice. (銀行端拿不到 private key, 它也只能確認用來成功解開 message digest 的 public key 是屬於 Alice 的; 上面提到 message 與 message digest 的完整性, 但最終都要建立在 key 的有效性上面)__
+
+__'''If each party has a certificate(證書) which validates the other's identity(身分), confirms the public key and is signed by a ''trusted agency'', then both can be assured that they are communicating with ''whom they think they are''.''' Such a trusted agency is called a ''Certificate Authority(憑證機構)'' and certificates are used for authentication.__
+
+===== Certificate Contents =====
+
+__'''A certificate associates a public key with the real identity of an individual, ''server'', or other ''entity'', known as the ''subject''.''' As shown in Table 1, information about the subject includes identifying information (the ''distinguished name'') and the public key. It also includes the identification and signature of the Certificate Authority (可以用 certificate 來驗證 public key 的有效性, 但前提是這個 certificate 也要真的是由該 CA 發出的才行...) that issued the certificate and the period of time during which the certificate is valid.__ It may have additional information (or extensions) as well as administrative information for the Certificate Authority's use, such as a ''serial number''.
+
+Table 1: Certificate Information
+
+|| Subject || Distinguished Name, Public Key ||
+|| Issuer || Distinguished Name, Signature ||
+|| Period of Validity || Not Before Date, Not After Date ||
+|| Administrative Information || Version, Serial Number ||
+|| Extended Information || Basic Constraints, Netscape Flags, etc. ||
+
+__A distinguished name is used to provide an identity in a ''specific context'' -- for instance, an individual might have a personal certificate as well as one for their identity as an employee. Distinguished names are defined by the http://en.wikipedia.org/wiki/X.509[X.509] standard [X509], which defines the fields, field names and abbreviations used to refer to the fields (see Table 2; 這跟 LDAP 的用法很類似, 雖然 LDAP 是承襲自 X.500 而非 X.509).__
+
+Table 2: Distinguished Name Information
+
+|| DN Field || Abbrev. || Description || Example ||
+|| Common Name || `CN` || Name being certified || `CN=Joe Average` ||
+|| Organization or Company || `O` || Name is associated with this organization || `O=Snake Oil, Ltd.` ||
+|| Organizational Unit || `OU` || Name is associated with this organization unit, such as a department || `OU=Research Institute` ||
+|| City/Locality || `L` || Name is located in this City || `L=Snake City` ||
+|| State/Province || `ST` || Name is located in this State/Province || `ST=Desert` ||
+|| Country || `C` || Name is located in this Country (ISO code) || `C=XZ` ||
+
+__A Certificate Authority may define a ''policy'' specifying which distinguished field names are optional and which are required. It may also place requirements upon the field contents, as may users of certificates. (等同於 LDAP schema 的概念)__ For example, a Netscape browser requires that the Common Name for a certificate representing a server matches a wildcard pattern for the domain name of that server, such as `*.snakeoil.com`.
+
+The ''binary format'' of a certificate is defined using the ASN.1 notation [X208] [PKCS]. This notation defines how to specify the contents and encoding rules define how this information is translated into binary form. The binary encoding of the certificate is defined using Distinguished Encoding Rules (DER), which are based on the more general Basic Encoding Rules (BER). __For those transmissions which cannot handle binary, the binary form may be translated into an ASCII form by using Base64 encoding [MIME]. '''When placed between begin and end delimiter lines (as below), this encoded version is called a ''PEM ("Privacy Enhanced Mail")'' encoded certificate.'''__
+
+Example of a PEM-encoded certificate (`snakeoil.crt`): <-- 這裡的 "crt" 就是 certificate 的縮寫
+
+ {{{
+-----BEGIN CERTIFICATE-----
+MIIC7jCCAlegAwIBAgIBATANBgkqhkiG9w0BAQQFADCBqTELMAkGA1UEBhMCWFkx
+FTATBgNVBAgTDFNuYWtlIERlc2VydDETMBEGA1UEBxMKU25ha2UgVG93bjEXMBUG
+A1UEChMOU25ha2UgT2lsLCBMdGQxHjAcBgNVBAsTFUNlcnRpZmljYXRlIEF1dGhv
+cml0eTEVMBMGA1UEAxMMU25ha2UgT2lsIENBMR4wHAYJKoZIhvcNAQkBFg9jYUBz
+bmFrZW9pbC5kb20wHhcNOTgxMDIxMDg1ODM2WhcNOTkxMDIxMDg1ODM2WjCBpzEL
+MAkGA1UEBhMCWFkxFTATBgNVBAgTDFNuYWtlIERlc2VydDETMBEGA1UEBxMKU25h
+a2UgVG93bjEXMBUGA1UEChMOU25ha2UgT2lsLCBMdGQxFzAVBgNVBAsTDldlYnNl
+cnZlciBUZWFtMRkwFwYDVQQDExB3d3cuc25ha2VvaWwuZG9tMR8wHQYJKoZIhvcN
+AQkBFhB3d3dAc25ha2VvaWwuZG9tMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKB
+gQDH9Ge/s2zcH+da+rPTx/DPRp3xGjHZ4GG6pCmvADIEtBtKBFAcZ64n+Dy7Np8b
+vKR+yy5DGQiijsH1D/j8HlGE+q4TZ8OFk7BNBFazHxFbYI4OKMiCxdKzdif1yfaa
+lWoANFlAzlSdbxeGVHoT0K+gT5w3UxwZKv2DLbCTzLZyPwIDAQABoyYwJDAPBgNV
+HRMECDAGAQH/AgEAMBEGCWCGSAGG+EIBAQQEAwIAQDANBgkqhkiG9w0BAQQFAAOB
+gQAZUIHAL4D09oE6Lv2k56Gp38OBDuILvwLg1v1KL8mQR+KFjghCrtpqaztZqcDt
+2q2QoyulCgSzHbEGmi0EsdkPfg6mp0penssIFePYNI+/8u9HT4LuKMJX15hxBam7
+dUHzICxBVC1lnHyYGjDuAMhe396lYAn8bCld1/L4NMGBCQ==
+-----END CERTIFICATE-----
+ }}}
+
+===== Certificate Authorities =====
+
+__By verifying the information in a certificate request before granting(授與) the certificate, the Certificate Authority assures itself of the identity of the private key owner of a key-pair. (向 CA 申請證書的人, 必須將 key-pair 中的 public key 交給 CA, 但在 CA 要發放證書給對方之前, 必須要先確認對方真的是他宣稱的那個人)__ For instance, if Alice requests a personal certificate, the Certificate Authority must first make sure that Alice really is the person the certificate request claims she is.
+
+====== Certificate Chains ======
+
+__A Certificate Authority may also issue a certificate for another Certificate Authority. When examining a certificate, Alice may need to examine the certificate of the issuer, for each parent Certificate Authority, until reaching one which she has confidence(信賴) in. '''She may decide to trust only certificates with a limited chain of issuers, to reduce her risk of a "bad" certificate in the chain. (管理責任一層層往下放, 驗證時就必須要一層層往上信任; 這跟 directory 分層管理的概念很類似...)'''__
+
+====== Creating a Root-Level CA ======
+
+As noted earlier, each certificate requires an issuer to assert the validity of the identity of the certificate subject, up to the top-level Certificate Authority (CA). __This presents a problem: who can vouch(擔保) for the certificate of the top-level authority, which has no issuer? '''In this unique case, the certificate is "self-signed", so the issuer of the certificate is the same as the subject.''' Browsers are preconfigured to trust well-known certificate authorities, but it is important to exercise extra care in trusting a ''self-signed certificate'' (自己發放的證書). The wide publication of a public key by the root authority reduces the risk in trusting this key -- it would be obvious if someone else publicized a key claiming to be the authority. (如果有人想要冒用您的身份, 要先通過 CA 的審核才行...)__
+
+A number of companies, such as http://www.thawte.com/[Thawte] and http://www.verisign.com/[VeriSign] have established themselves as Certificate Authorities. (憑證機構必須要建立自己的威信才行) These companies provide the following services:
+
+ * Verifying certificate requests
+ * Processing certificate requests
+ * Issuing and managing certificates
+
+__It is also possible to create your own Certificate Authority. '''Although risky in the Internet environment, it may be useful within an Intranet where the organization can easily verify the identities of individuals and servers. (self-signed certificate 有它特殊的用途)'''__
+
+====== Certificate Management ======
+
+Establishing a Certificate Authority is a responsibility which requires a solid administrative, technical and management framework. __Certificate Authorities not only issue certificates, they also manage them -- that is, they determine for how long certificates remain valid, they renew them and keep lists of certificates that were issued in the past but are no longer valid (Certificate Revocation Lists, or CRLs).__
+
+__For example, if Alice is entitled(被賦與) to a certificate as an employee of a company but has now left that company, her certificate may need to be revoked(撤銷). Because certificates are only issued after the subject's identity has been verified and can then be passed around to all those with whom the subject may communicate, it is impossible to tell from the certificate alone that it has been revoked. Therefore when examining certificates for validity it is necessary to contact the issuing Certificate Authority to check CRLs -- this is usually not an automated part of the process. (如果還在有效期間之內, 單從證書本身並無法百分百確認當時的有效性, 必須要再向 issuer 確認是否有提前撤銷才行)__
+
+Note: If you use a Certificate Authority that browsers are not configured to trust by default, it is necessary to load the Certificate Authority certificate into the browser, enabling the browser to validate server certificates signed by that Certificate Authority. __Doing so may be dangerous, since once loaded, the browser will accept all certificates signed by that Certificate Authority.__
+
+==== Secure Sockets Layer (SSL) ====
+
+__'''The Secure Sockets Layer protocol is a ''protocol layer'' which may be placed between a reliable connection-oriented network layer protocol (e.g. TCP/IP) and the application protocol layer (e.g. HTTP). (難怪存在很多先建立 SSL 通道, 再藉由這個通道做安全通訊的應用[...])''' SSL provides for secure communication between client and server by allowing mutual(共通的) authentication, the use of digital signatures for ''integrity'' and encryption for ''privacy''.__
+
+The protocol is designed to support a range of choices for specific algorithms used for cryptography, digests and signatures. This allows algorithm selection for specific servers to be made based on legal, export or other concerns and also enables the protocol to take advantage of new algorithms. __Choices are negotiated between client and server when establishing a protocol session.__
+
+Table 4: Versions of the SSL protocol
+
+|| Version || Source || Description || Browser Support ||
+|| SSL v2.0 || Vendor Standard (from Netscape Corp.) [SSL2] || First SSL protocol for which implementations exist || NS Navigator 1.x/2.x, MS IE 3.x, Lynx/2.8+OpenSSL ||
+|| SSL v3.0 || Expired Internet Draft (from Netscape Corp.) [SSL3] || Revisions to prevent specific security attacks, add non-RSA ciphers(加密算法) and support for ''certificate chains'' ||NS Navigator 2.x/3.x/4.x, MS IE 3.x/4.x, Lynx/2.8+OpenSSL ||
+|| TLS v1.0 || Proposed Internet Standard (from IETF) [TLS1] || Revision of SSL 3.0 to update the MAC layer to HMAC, add block padding for block ciphers, message order standardization and more alert messages. || Lynx/2.8+OpenSSL ||
+
+There are a number of versions of the SSL protocol, as shown in Table 4. As noted there, one of the benefits in SSL 3.0 is that it adds support of ''certificate chain loading''. __This feature allows a server to pass a server certificate along with issuer certificates to the browser. Chain loading also permits the browser to validate the server certificate, even if Certificate Authority certificates are not installed for the intermediate issuers, since they are included in the certificate chain.__ SSL 3.0 is the basis for the Transport Layer Security [TLS] protocol standard, currently in development by the Internet Engineering Task Force (IETF).
+
+===== Establishing a Session =====
+
+__The SSL session is established by following a ''handshake sequence'' between client and server, as shown in Figure 1. This sequence may vary, depending on whether the server is configured to provide a server certificate or request a client certificate.__ Although cases exist where additional handshake steps are required for management of cipher information, this article summarizes one common scenario. See the SSL specification for the full range of possibilities.
+
+__Note: Once an SSL session has been established, it may be reused. This avoids the performance penalty(不利條件) of repeating the many steps needed to start a session. To do this, the server assigns each SSL session a unique ''session identifier'' which is cached in the server and which the client can use in future connections to reduce the handshake time (until the session identifer expires from the cache of the server).__
+
+{{attachment:ssl_intro_fig1.gif}} <<BR>> Figure 1: Simplified SSL Handshake Sequence
+
+The elements of the handshake sequence, as used by the client and server, are listed below:
+
+ 1. Negotiate the ''Cipher Suite'' to be used during data transfer
+ 2. Establish and share a session key between client and server
+ 3. Optionally authenticate the server to the client
+ 4. Optionally authenticate the client to the server
+
+The first step, Cipher Suite Negotiation, allows the client and server to choose a Cipher Suite supported by both of them. The SSL3.0 protocol specification defines 31 Cipher Suites. A Cipher Suite is defined by the following components:
+
+ * Key Exchange Method
+ * Cipher for Data Transfer
+ * Message Digest for creating the Message Authentication Code (MAC)
+
+These three elements are described in the sections that follow.
+
+===== Key Exchange Method =====
+
+__The key exchange method defines how the shared secret ''symmetric cryptography(密碼學) key'' used for application data transfer will be agreed upon by client and server. '''(搞了個老半天, SSL 還是採用對稱式的加密方式... 不過對稱式也沒什麼不好, 只要能夠安全地交換 shared key 就好)'''__ SSL 2.0 uses RSA key exchange only, while SSL 3.0 supports a choice of key exchange algorithms including RSA key exchange (when certificates are used), and Diffie-Hellman key exchange (for exchanging keys without certificates, or without prior communication between client and server).
+
+__One variable in the choice of key exchange methods is digital signatures -- whether or not to use them, and if so, what kind of signatures to use. Signing with a private key provides protection against a man-in-the-middle-attack(中間人攻擊) during the information exchange used to generating the shared key [AC96, p516].__
+
+===== Cipher for Data Transfer =====
+
+__SSL uses conventional symmetric cryptography, as described earlier, for encrypting messages in a session.__ There are nine choices of how to encrypt, including the option not to encrypt:
+
+ * No encryption
+ * Stream Ciphers
+   * RC4 with 40-bit keys
+   * RC4 with 128-bit keys
+ * CBC Block Ciphers
+   * RC2 with 40 bit key
+   * DES with 40 bit key
+   * DES with 56 bit key
+   * Triple-DES with 168 bit key
+   * Idea (128 bit key)
+   * Fortezza (96 bit key)
+
+"CBC" refers to Cipher Block Chaining, which means that a portion of the previously encrypted cipher text is used in the encryption of the current block. "DES" refers to the Data Encryption Standard [AC96, ch12], which has a number of variants (including DES40 and 3DES_EDE). "Idea" is currently one of the best and cryptographically strongest algorithms available, and "RC2" is a proprietary algorithm from RSA DSI [AC96, ch13].
+
+===== Digest Function =====
+
+The choice of digest function determines how a digest is created from a ''record unit''. SSL supports the following:
+
+ * No digest (Null choice)
+ * MD5, a 128-bit hash
+ * Secure Hash Algorithm (SHA-1), a 160-bit hash
+
+__The message digest is used to create a Message Authentication Code (MAC) which is encrypted with the message to verify integrity and to protect against ''replay attacks(重送攻擊)''.__
+
+===== Handshake Sequence Protocol =====
+
+The handshake sequence uses three protocols:
+
+ * The SSL Handshake Protocol for performing the client and server SSL session establishment.
+ * The SSL Change Cipher Spec Protocol for actually establishing agreement on the Cipher Suite for the session.
+ * The SSL Alert Protocol for conveying SSL error messages between client and server.
+
+These protocols, as well as application protocol data, are encapsulated in the SSL Record Protocol, as shown in Figure 2. An encapsulated protocol is transferred as data by the lower layer protocol, which does not examine the data. The encapsulated protocol has no knowledge of the underlying protocol.
+
+attchment:ssl_intro_fig2.gif <<BR>> Figure 2: SSL Protocol Stack
+
+The encapsulation of SSL control protocols by the record protocol means that if an active session is renegotiated the control protocols will be transmitted securely. If there was no previous session, the Null cipher suite is used, which means there will be no encryption and messages will have no integrity digests, until the session has been established.
+
+===== Data Transfer =====
+
+The SSL Record Protocol, shown in Figure 3, is used to transfer application and SSL Control data between the client and server, where necessary fragmenting this data into smaller units, or combining multiple higher level protocol data messages into single units. It may compress, attach digest signatures, and encrypt these units before transmitting them using the underlying reliable transport protocol (Note: currently, no major SSL implementations include support for compression).
+
+{{attachment:ssl_intro_fig3.gif}} <<BR>> Figure 3: SSL Record Protocol 
+
+===== Securing HTTP Communication =====
+
+__One common use of SSL is to secure Web HTTP communication between a browser and a webserver. This does not preclude(消除) the use of non-secured HTTP - the secure version (called HTTPS) is the same as plain HTTP over SSL, but uses the URL scheme `https` rather than `http`, and a different server port (by default, port 443).__ This functionality is a large part of what `mod_ssl` provides for the Apache webserver.
+
+== Apache Virtual Host documentation ==
+http://httpd.apache.org/docs/2.2/vhosts/ @2010/03/22
+
+The term Virtual Host refers to the practice of running more than one web site (such as www.company1.com and www.company2.com) on a single machine. __Virtual hosts can be "IP-based", meaning that you have a different IP address for every web site, or "name-based", meaning that you have multiple names running on each IP address. The fact that they are running on the same physical server is not apparent to the end user.__
+
+Apache was one of the first servers to support IP-based virtual hosts right out of the box. Versions 1.1 and later of Apache support both IP-based and name-based virtual hosts (vhosts). __The latter variant of virtual hosts is sometimes also called host-based or non-IP virtual hosts.__
+
+Below is a list of documentation pages which explain all details of virtual host support in Apache version 1.3 and later.
+
+=== Virtual Host Support ===
+
+ * http://httpd.apache.org/docs/2.2/vhosts/name-based.html[Name-based Virtual Hosts] (More than one web site per IP address)
+ * http://httpd.apache.org/docs/2.2/vhosts/ip-based.html[IP-based Virtual Hosts] (An IP address for each web site)
+ * http://httpd.apache.org/docs/2.2/vhosts/examples.html[Virtual Host examples for common setups]
+ * http://httpd.apache.org/docs/2.2/vhosts/fd-limits.html[File Descriptor Limits] (or, Too many log files)
+ * http://httpd.apache.org/docs/2.2/vhosts/mass.html[Dynamically Configured Mass Virtual Hosting]
+ * http://httpd.apache.org/docs/2.2/vhosts/details.html[In-Depth Discussion of Virtual Host Matching]
+
+=== Configuration directives ===
+
+ * `<VirtualHost>`
+ * `NameVirtualHost`
+ * `ServerName`
+ * `ServerAlias`
+ * `ServerPath`
+
+If you are trying to debug your virtual host configuration, you may find the Apache `-S` command line switch useful. That is, type the following command:
+
+ {{{
+/usr/local/apache2/bin/httpd -S
+ }}}
+
+__This command will dump out a description of how Apache parsed the configuration file. Careful examination of the IP addresses and server names may help uncover configuration mistakes.__ (See the docs for the `httpd` program for other command line options)
+
+== Apache Virtual Host documentation / Name-based Virtual Host Support ==
+http://httpd.apache.org/docs/2.2/vhosts/name-based.html @2010/03/22
+
+This document describes when and how to use name-based virtual hosts.
+
+=== Name-based vs. IP-based Virtual Hosts ===
+
+IP-based virtual hosts use the IP address of the connection to determine the correct virtual host to serve. Therefore you need to have a separate IP address for each host. __With name-based virtual hosting, the server relies on the client to report the hostname as part of the HTTP headers. Using this technique, many different hosts can share the same IP address.__
+
+Name-based virtual hosting is usually simpler, since you need only configure your DNS server to map each hostname to the correct IP address and then configure the Apache HTTP Server to recognize the different hostnames. Name-based virtual hosting also eases the demand for scarce(供不應求的) IP addresses. __Therefore you should use name-based virtual hosting unless there is a specific reason to choose IP-based virtual hosting.__ Some reasons why you might consider using IP-based virtual hosting:
+
+ * Some ancient clients are not compatible with name-based virtual hosting. For name-based virtual hosting to work, the client must send the HTTP Host header. This is required by HTTP/1.1, and is implemented by all modern HTTP/1.0 browsers as an extension. If you need to support obsolete(老舊過時的) clients and still use name-based virtual hosting, a possible technique is discussed at the end of this document.
+
+ * __Name-based virtual hosting cannot be used with SSL secure servers because of the nature of the SSL protocol.__
+
+ * __Some operating systems and network equipment implement bandwidth management techniques that cannot differentiate between hosts unless they are on separate IP addresses.__
+
+=== Using Name-based Virtual Hosts ===
+
+ * Related Modules
+   * `core`
+ * Related Directives
+   * `DocumentRoot`
+   * `NameVirtualHost`
+   * `ServerAlias`
+   * `ServerName`
+   * `ServerPath`
+   * `<VirtualHost>`
+
+To use name-based virtual hosting, you must designate(指派) the IP address (and possibly port) on the server that will be accepting requests for the hosts. This is configured using the `NameVirtualHost` directive. __In the normal case where any and all IP addresses on the server should be used, you can use `*` as the argument to `NameVirtualHost`. If you're planning to use multiple ports (e.g. running SSL) you should add a port to the argument, such as `*:80`. '''Note that mentioning an IP address in a `NameVirtualHost` directive does not automatically make the server listen to that IP address. (跟 `Listen` 的語法很像, `Listen` 要宣告所有的服務接口, 而 `NameVirtualHost` 宣告的則是哪些接口要做為 Name-based Virtual Hosts 之用)'''__ See http://httpd.apache.org/docs/2.2/bind.html[Setting which addresses and ports Apache uses] for more details. In addition, any IP address specified here must be associated with a network interface on the server.
+
+The next step is to create a `<VirtualHost>` block for each different host that you would like to serve. __The argument to the `<VirtualHost>` directive must ''match'' a defined `NameVirtualHost` directive. (In this usual case, this will be `"*:80"`). Inside each `<VirtualHost>` block, you will need at minimum a `ServerName` directive to designate which host is served and a `DocumentRoot` directive to show where in the filesystem the content for that host lives.__
+
+ {{{#!wiki note
+'''Main host goes away'''
+
+If you are adding virtual hosts to an existing web server, you must also create a `<VirtualHost>` block for the existing host. The `ServerName` and `DocumentRoot` included in this virtual host should be the same as the global `ServerName` and `DocumentRoot`. __List this virtual host first in the configuration file so that it will act as the ''default host''. (Ubuntu 安裝完 apache2 之後, 就已經組態了一個 `sites-enabled/000-default`, 在 `apache2.conf` 裡並沒有組態任何 `ServerName` 或 `DocumentRoot`)__
+ }}}
+
+For example, suppose that you are serving the domain www.domain.tld and you wish to add the virtual host www.otherdomain.tld, which points at the same IP address. Then you simply add the following to `httpd.conf`:
+
+ {{{
+NameVirtualHost *:80
+
+<VirtualHost *:80>
+  ServerName www.domain.tld
+  ServerAlias domain.tld *.domain.tld
+  DocumentRoot /www/domain
+</VirtualHost>
+
+<VirtualHost *:80>
+  ServerName www.otherdomain.tld
+  DocumentRoot /www/otherdomain
+</VirtualHost>
+ }}}
+
+You can alternatively specify an explicit IP address in place of the `*` in both the `NameVirtualHost` and `<VirtualHost>` directives. For example, you might want to do this in order to run some name-based virtual hosts on one IP address, and either IP-based, or another set of name-based virtual hosts on another address.
+
+__Many servers want to be accessible by more than one name. This is possible with the `ServerAlias` directive, placed inside the `<VirtualHost>` section.__ For example in the first `<VirtualHost>` block above, the `ServerAlias` directive indicates that the listed names are other names which people can use to see that same web site:
+
+ {{{
+ServerAlias domain.tld *.domain.tld
+ }}}
+
+then requests for all hosts in the domain.tld domain will be served by the www.domain.tld virtual host. __The wildcard characters `*` and `?` can be used to match names. Of course, you can't just make up names and place them in `ServerName` or `ServerAlias`.__ You must first have your DNS server properly configured to map those names to an IP address associated with your server.
+
+Finally, you can fine-tune the configuration of the virtual hosts by placing other directives inside the `<VirtualHost>` containers. Most directives can be placed in these containers and will then change the configuration only of the relevant virtual host. To find out if a particular directive is allowed, check the Context of the directive. Configuration directives set in the main server context (outside any `<VirtualHost>` container) will be used only if they are not overridden by the virtual host settings.
+
+__Now when a request arrives, the server will first check if it is using an IP address that matches the `NameVirtualHost`. If it is, then it will look at each `<VirtualHost>` section with a matching IP address and try to find one where the `ServerName` or `ServerAlias` matches the requested hostname. If it finds one, then it uses the configuration for that server. '''If no matching virtual host is found, then the first listed virtual host that matches the IP address will be used.'''__
+
+__As a consequence, the first listed virtual host is the default virtual host. The `DocumentRoot` from the main server will never be used when an IP address matches the `NameVirtualHost` directive. If you would like to have a special configuration for requests that do not match any particular virtual host, simply put that configuration in a `<VirtualHost>` container and list it first in the configuration file.__
+
+=== Compatibility with Older Browsers ===
+
+:::
+
+

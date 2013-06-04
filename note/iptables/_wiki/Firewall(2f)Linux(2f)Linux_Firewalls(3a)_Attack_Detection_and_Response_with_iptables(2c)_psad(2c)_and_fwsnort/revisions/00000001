@@ -1,0 +1,118 @@
+= Linux Firewalls: Attack Detection and Response with iptables, psad, and fwsnort =
+http://nostarch.com/firewalls.htm
+<<TableOfContents>>
+
+== Introduction ==
+
+The offense(攻擊) seems to be getting the upper hand(佔上風). Rarely a day goes by without news of a new exploit(不當地利用) for a software vulnerability, a more effective method of distributing spam (my inbox can attest to(證實) this), or a high-profile(高姿態的) theft of sensitive personal data from a corporation or government agency(機構). __Achieving ''secure computing'' is a perpetual(永無止境的) challenge. There is no shortage(不足) of technologies designed to foil(阻止) crafty(詭計多端的) ''black hats'', and yet they continue to successfully compromise(危害) systems and networks. (工具不缺, 但顯然大家都不太瞭解怎麼善用這些工具)__
+
+For every class of security problem, there is almost certainly either an open source or proprietary solution designed to combat(抵抗) it. This is particularly true in the areas of ''network intrusion detection'' systems and network ''access control'' devices—firewalls, ''filtering routers'', and the like. __A trend in firewall technology is to combine ''application layer inspection(檢驗)'' techniques from the intrusion detection world with the ability to ''filter network traffic'', something(有些) firewalls have been doing for a long time. '''It is the goal of this book to show that the ''iptables firewall'' on Linux systems is well positioned to take advantage of this trend, especially when it is combined with some additional software designed to leverage iptables from an intrusion detection standpoint. (這本書專攻 iptables 在 secure computing 各方面的應用, 試圖要把 iptables 發揮到極致)'''__
+
+It is my hope that this book is unique in the existing landscape of published works. There are several excellent books out there that discuss various aspects of Linux firewalls, but none to my knowledge that concentrate specifically on attacks that can be detected (and in some cases thwarted(使未能得逞)) by iptables and the data it provides. There are also many books on the topic of intrusion detection, but none focuses on using firewalling technology to truly ''supplement'' the intrusion detection process. This book is about the convergence of these two technologies.
+
+__I will devote significant coverage to three open source software projects that are designed to maximize the effectiveness(效益) of iptables for attack detection and prevention.__ These are the projects:
+
+ * http://www.cipherdyne.org/psad/[psad] - An iptables log analyzer and ''active response'' tool
+ * http://www.cipherdyne.org/fwsnort/[fwsnort] - A script that translates http://www.snort.org/[Snort] rules into equivalent iptables rules
+ * http://www.cipherdyne.org/fwknop/[fwknop] - An implementation of Single Packet Authorization (SPA) for iptables
+
+All of these projects are released as open source software under the GNU Public License (GPL) and can be downloaded from http://www.cipherdyne.org.
+
+=== Why Detect Attacks with iptables? ===
+
+If you run the Linux operating system, you have likely encountered the iptables firewall. This is for good reason, as __iptables provides an effective means to control who talks to your Linux system over a network connection and how they do it.__ In the vast(浩瀚的) uncontrolled network that is the Internet, attacks can herald(通報) from just about any corner of the globe(全球)—even though the perpetrator(行兇者) might physically be located in the next state (or the next room). If you run a networked Linux machine, your system is at risk of being attacked and potentially compromised every second of every day.
+
+Deploying a strict iptables ''filtering policy'' is a good first step toward maintaining a strong security stance(姿態). Even if your Linux system is connected to a network that is protected upstream by another firewall or other filtering device, there is always a chance that this ''upstream device'' may be unable to provide adequate(足夠的) protection. Such a device might be configured improperly, it might suffer from a bug or other failure, or it might not possess(具有) the ability to protect your Linux system from certain classes of attack. __'''It is important to achieve a decent(有分寸的) level of redundancy wherever possible, and the security benefits of running iptables on every Linux system (both servers and desktops) can outweigh(勝過) the additional management overhead. (再次強調, 即便區域網有受外部設備的保護, 裡面的每一台電腦還是要做好自身的防護)''' Put another way(換句話說), the risks of a compromise and the value of the data that could be lost will likely outweigh the cost of deploying and maintaining iptables throughout your Linux infrastructure.__
+
+__The primary goal of this book is to show you how to maximize iptables from the standpoints of detecting and responding to network attacks. A restrictive(限制性的) iptables policy that limits who can talk to which services on a Linux system is a good first step, but you will soon see that you can take things much further.__
+
+[~~~]
+
+== Chapter 1: Care and Feeding of iptables ==
+
+In this chapter we’ll explore essential aspects of properly installing, maintaining, and interacting with the iptables firewall on Linux systems. We’ll cover iptables administration from the perspectives of both ''kernel'' and ''userland'', as well as how to build and maintain an iptables firewall policy. A default policy will be constructed that will serve as a guide throughout several chapters in the book; a script that implements it and a network diagram are included for reference in this chapter. Many of the example attacks throughout this book will be launched from hosts shown in this network diagram. Finally, we’ll cover ''testing'' the default iptables policy to ensure that it is functioning as designed.
+
+=== iptables ===
+
+__The iptables firewall is developed by the Netfilter Project (http://www.netfilter.org) and has been available to the masses(民眾) as part of Linux since the release of the Linux 2.4 kernel in January 2001.__
+
+__Over the years, iptables has matured into a formidable(強大的) firewall with most of the functionality typically found in proprietary commercial firewalls. For example, iptables offers comprehensive(包羅萬象的) ''protocol state tracking'', ''packet application layer inspection'', ''rate limiting'', and a powerful mechanism to specify a ''filtering policy''. All major Linux distributions include iptables, and many prompt the user to deploy an iptables policy right from the installer.__
+
+__The differences between the terms iptables and Netfilter have been a source of some confusion in the Linux community. The official project name for all of the packet filtering and mangling(識別編碼) facilities provided by Linux is Netfilter, but this term also refers to a framework within the Linux kernel that can be used to hook functions into the networking stack at various stages. On the other hand, iptables uses the Netfilter framework to hook functions designed to perform operations on packets (such as filtering) into the networking stack. You can think of Netfilter as providing the framework on which iptables builds firewall functionality.__
+
+The term iptables also refers to the userland tool that parses the command line and communicates a firewall policy to the kernel. Terms such as ''tables'', ''chains'', ''matches'', and ''targets'' (defined later in this chapter) make sense in the context of iptables.
+
+Netfilter does not filter traffic itself—it just allows functions that can filter traffic to be hooked into the right spot within the kernel. (I will not belabor(冗長地討論) this point; much of the material in this book centers around iptables and how it can take action against packets that match certain criteria.) The Netfilter Project also provides several pieces of infrastructure in the kernel, such as connection tracking and logging; any iptables policy can use these facilities to perform specialized packet processing.
+
+Note: In this book I will refer to log messages generated by the Netfilter logging subsystem as iptables log messages; after all, packets are only logged upon matching a LOG rule that is constructed by iptables in the first place. So as to not confuse things, I will use the term iptables by default unless there is a compelling reason to use Netfilter (such as when discussing kernel compilation options or connection-tracking capabilities). Most people associate Linux firewalls with iptables, anyway.
+
+=== Packet Filtering with iptables ===
+
+The iptables firewall allows the user to instrument a high degree of control over IP packets that interact with a Linux system; that control is implemented within the Linux kernel. A policy can be constructed with iptables that acts as a vigorous traffic cop—packets that are not permitted to pass fall into oblivion and are never heard from again, whereas packets that pass muster are sent on their merry way or altered so that they conform to local network requirements.
+
+An iptables policy is built from an ordered set of rules, which describe to the kernel the actions that should be taken against certain classes of packets. Each iptables rule is applied to a chain within a table. An iptables chain is a collection of rules that are compared, in order, against packets that share a common characteristic (such as being routed to the Linux system, as opposed to away from it).
+
+==== Tables ====
+
+A table is an iptables construct that delineates broad categories of functionality, such as packet filtering or Network Address Translation (NAT). There are four tables: filter, nat, mangle, and raw. Filtering rules are applied to the filter table, NAT rules are applied to the nat table, specialized rules that alter packet data are applied to the mangle table, and rules that should function independently of the Netfilter connection-tracking subsystem are applied to the raw table.
+
+==== Chains ====
+
+Each table has its own set of built-in chains, but user-defined chains can also be created so that the user can build a set of rules that is related by a common tag such as INPUT_ESTABLISHED or DMZ_NETWORK. The most important built-in chains for our purposes are the INPUT, OUTPUT, and FORWARD chains in the filter table:
+
+ * The INPUT chain is traversed by packets that are destined for the local Linux system after a routing calculation is made within the kernel (i.e., packets destined for a local socket).
+ * The OUTPUT chain is reserved for packets that are generated by the Linux system itself.
+ * The FORWARD chain governs packets that are routed through the Linux system (i.e., when the iptables firewall is used to connect one network to another and packets between the two networks must flow through the firewall).
+
+Two additional chains that are important for any serious iptables deployment are the PREROUTING and POSTROUTING chains in the nat table, which are used to modify packet headers before and after an IP routing calculation is made within the kernel. Sample iptables commands illustrate the usage of the PREROUTING and POSTROUTING chains later in this chapter, but in the meantime, Figure 1-1 shows how packets flow through the nat and filter tables within the kernel.
+
+{{attachment:figure_1-1.png}} <<BR>> Figure 1-1: iptables packet flow
+
+==== Matches ====
+
+Every iptables rule has a set of matches along with a target that tells iptables what to do with a packet that conforms to the rule. An iptables match is a condition that must be met by a packet in order for iptables to process the packet according to the action specified by the rule target. For example, to apply a rule only to TCP packets, you can use the --protocol match.
+
+Each match is specified on the iptables command line. The most important iptables matches for this book are listed below. (You’ll see more about matches in “Default iptables Policy” on page 20 when we discuss the default iptables policy used throughout this book.)
+
+--source (-s) Match on a source IP address or network
+--destination (-d) Match on a destination IP address or network
+--protocol (-p) Match on an IP value
+--in-interface (-i) Input interface (e.g., eth0)
+--out-interface (-o) Output interface
+--state Match on a set of connection states
+--string Match on a sequence of application layer data bytes
+--comment Associate up to 256 bytes of comment data with a
+rule within kernel memory
+
+==== Targets ====
+
+Finally, iptables supports a set of targets that trigger an action when a packet matches a rule.1 The most important targets used in this book are as follows:
+
+ACCEPT Allows a packet to continue on its way.
+DROP Drops a packet. No further processing is performed, and as far
+as the receiving stack is concerned, it is as though the packet
+was never sent.
+LOG Logs a packet to syslog.
+REJECT Drops a packet and simultaneously sends an appropriate response
+packet (e.g., a TCP Reset packet for a TCP connection or an
+ICMP Port Unreachable message for a UDP packet).
+RETURN Continues processing a packet within the calling chain.
+
+We’ll build ample iptables rules that use several of the matches and targets discussed above in “Default iptables Policy” on page 20.
+
+
+
+== Resource ==
+
+=== Reference ===
+
+=== Attachments ===
+
+|| Filename || Description ||
+||  ||  ||
+
+=== Links ===
+
+=== Search ===
+
+== Scratch ==

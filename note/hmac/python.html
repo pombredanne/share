@@ -1,0 +1,177 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[HMAC] 用 Python 實作 HMAC</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<!--link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" /-->
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <!--div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div-->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <!--a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a--></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="hmac.html">HMAC</a> / Python</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>對照 <a href="http://en.wikipedia.org/wiki/Hash-based_message_authentication_code">Wikipedia</a> 上的範例，我們試著用 Python 算出相同的 HMAC。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>HMAC_MD5("key", "The quick brown fox jumps over the lazy dog") = 0x80070713463e7749b90c2dc24911e275
+HMAC_SHA1("key", "The quick brown fox jumps over the lazy dog") = 0xde7c9b85b8b78aa6bc8a7a36f70a90701c9db4d9
+HMAC_SHA256("key", "The quick brown fox jumps over the lazy dog") = 0xf7bc83f430538424b13298e6aa6fb143ef4d59a14946175997479dbc2d1a3cd8</code></pre>
+</div></div>
+<div class="paragraph"><p>Python 跟 HMAC 相關的 modules 有 <code>hmac</code> 跟 <code>hashlib</code>。下面用 HMAC-MD5 簡單說明這兩個 modules 的用法：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; import hmac, hashlib
+&gt;&gt;&gt; secret_key = 'key'
+&gt;&gt;&gt; message = 'The quick brown fox jumps over the lazy dog'
+&gt;&gt;&gt; digester = hmac.new(secret_key, message, hashlib.md5) # <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+&gt;&gt;&gt; digester.digest().encode('hex') # <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+'80070713463e7749b90c2dc24911e275'</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+<code>hmac.new()</code> 接受 3 個參數，第一個是 client/server 共同保管的 secret key，第二個是雙方要交換的 message，第三個則是 HMAC 要採用的 hash fuction。
+<div class="paragraph"><p>這裡的 <code>hashlib.md5</code> 可以算出 HMAC-MD5，要算出 HMAC-SHA1 或 HMAC-SHA256 只要改用 <code>hashlib.sha1</code> 或 <code>hashlib.sha256</code> 即可。</p></div>
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+<code>digest()</code> 可以算出 HMAC。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>事實上，<code>hmac.new()</code> 的第二個參數是 <em>initial message</em>（通常是空字串），因為 message 可以是一個大檔案的內容。<code>hmac</code> 比較正式的用法應該是事先準備好一個可重複利用的 hmac object － 帶有 secret key、hash function，然後再透過 <code>update()</code> 分批餵進完整的 message。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; _SECRET_KEY = 'key'
+&gt;&gt;&gt; _HMAC_MD5 = hmac.new(_SECRET_KEY, '', hashlib.md5)
+&gt;&gt;&gt;
+&gt;&gt;&gt; digester = _HMAC_MD5.copy()
+&gt;&gt;&gt; blocks = ['The quick brown fox jumps', ' over the lazy dog']
+&gt;&gt;&gt; for block in blocks:
+...     digester.update(block) # <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+...
+&gt;&gt;&gt; digester.hexdigest() # <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+'80070713463e7749b90c2dc24911e275'</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+連續呼叫 <code>update(a)</code> 跟 <code>update(b)</code> 的效果等同於 <code>update(a + b)</code>。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+<code>hexdigest()</code> 的效果等同於 <code>encode('hex')</code>。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>瞭解了 <code>hmac</code> 基本的用法，要計算 HMAC-SHA1 或 HMAC-SHA256 就只是換掉 hash function 而已：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; import hmac, hashlib
+&gt;&gt;&gt; secret_key = 'key'
+&gt;&gt;&gt; message = 'The quick brown fox jumps over the lazy dog'
+&gt;&gt;&gt; hmac.new(secret_key, message, hashlib.sha1).hexdigest()
+'de7c9b85b8b78aa6bc8a7a36f70a90701c9db4d9'
+&gt;&gt;&gt; hmac.new(secret_key, message, hashlib.sha256).hexdigest()
+'f7bc83f430538424b13298e6aa6fb143ef4d59a14946175997479dbc2d1a3cd8'</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">手冊</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://docs.python.org/2/library/hmac.html">hmac — Keyed-Hashing for Message Authentication</a> <sup><a href="https://diigo.com/0y5pm">閱讀</a></sup>
+</p>
+</li>
+<li>
+<p>
+<a href="http://docs.python.org/2/library/hashlib.html">hashlib — Secure hashes and message digests</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">工具</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="https://pypi.python.org/pypi/django-simple-rest">django-simple-rest</a> <sup><a href="https://diigo.com/0y1v9">閱讀</a></sup> - 內建 decorator 做 HMAC 的驗證
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.oreillynet.com/onlamp/blog/2007/09/pymotw_hmac.html">PyMOTW: hmac - O&#8217;Reilly ONLamp Blog</a> <sup><a href="https://diigo.com/0y5px">閱讀</a></sup> (2007-09-12)
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2013-06-04 22:43:36 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<!--script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script-->
+</body>
+</html>

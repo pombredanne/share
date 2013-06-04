@@ -1,0 +1,79 @@
+= link:admin.html[Debian / Administration] / Users =
+:title: [Debian] Users
+
+使用者的帳號資訊分別存放在 `/etc/passwd` (password database) 跟 `/etc/shadow` 裡，後者存放具有安全考量的部份。
+
+`/etc/passwd` 中的每一行都代表一個 user account，例如：
+
+--------------------------------------------------------------------------------
+root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/bin/sh
+bin:x:2:2:bin:/bin:/bin/sh
+sys:x:3:3:sys:/dev:/bin/sh
+...
+jeremy:x:1000:1000:Jeremy Kao,,,:/home/jeremy:/bin/bash
+--------------------------------------------------------------------------------
+
+每一行由 ":" 分隔的 7 個欄位組成：
+
+ 1. 登入帳號（login name）。
+ 2. 加密過的密碼。空白表示沒有密碼，單一個 "x" 表示密碼另外存放在 `/etc/shadow`。
+ 3. User ID。
+ 4. Group ID。
+ 5. 名稱或簡單的說明，方便管理。
+ 6. 家目錄（home directory）。
+ 7. 採用的 command interpreter，預設採用 `/bin/sh`。
+
+至於 `/etc/shadow` 除了存放密碼之外，也記錄了跟帳號、密碼過期（aging）相關的資訊。
+
+--------------------------------------------------------------------------------
+root:!:15455:0:99999:7:::
+daemon:*:15455:0:99999:7:::
+bin:*:15455:0:99999:7:::
+sys:*:15455:0:99999:7:::
+...
+jeremy:xyz...:15705:0:99999:7:::
+--------------------------------------------------------------------------------
+
+每一行由 ":" 分隔的 9 個欄位組成：
+
+ 1. 跟 `/etc/passwd` 對應的 login name。
+ 2. 加密過的密碼。空白表示沒有密碼，如果是單一個 "!" 或 "*" 則表示沒有密碼，因此不能用密碼登入系統。
++
+當一個帳號被 lock 時，會在密碼前面加一個 "!"；原本加密過的密碼不受影響，因為 unlock 時只是把前面的 "!" 拿掉。
++
+ 3. 上次變更密碼的日期（用現在距離 1970-01-01 的天數來表示），0 表示下次登入時必須變更密碼。
++
+如果這個欄位是空白時，表示密碼永遠有效，不會過期。
++
+ 4. 修改密碼後幾天之內不能再變更密碼（minimum password age），空白或 0 表示不設限。
+ 5. 修改密碼幾天之後會過期（maximum password age），空白表示不設限。
++
+有趣的是，使用者還是可以用過期的密碼登入系統，只是登入時會被要求變更密碼而已。
++
+ 6. 密碼過期前幾天開始，登入時要提醒使用者密碼快要過期（password warning period）。空白或 0 表示到期前不做提醒。
+ 7. 密碼過期幾天之後就不能用過期的密碼登入（password inactivity period），空白表示不設限。
+ 8. 帳號過期日，一樣是用現在距離 1970-01-01 的天數來表示。空白或 0 表示帳號不會過期。
+ 9. 保留欄位，目前沒有作用。
+
+`man 5 passwd` 跟 `man 5 shadow` 可以取得更完整的說明。
+
+== 參考資料 ==
+
+.文件
+--
+ * http://manpages.debian.net/cgi-bin/man.cgi?query=usermod[usermod]
+--
+
+ * http://www.debian.org/doc/manuals/system-administrator/ch-sysadmin-users.html[Debian GNU/Linux System Administrator's Manual (Obsolete Documentation) - Managing User Accounts]
+ * http://www.debianhelp.co.uk/userandgroup.htm[User and Group Management] ^https://diigo.com/0ymjk[閱讀]^
+////////////////////////////////////////////////////////////////////////////////
+** user information is stored in the system /etc/passwd and /etc/shadow files, and that additionally, group membership information is stored in the /etc/group file. While it is possible to edit these files by hand, it is not recommended.
+////////////////////////////////////////////////////////////////////////////////
+ * http://www.debianadmin.com/users-and-groups-administration-in-linux.html[Users and Groups Administration in Linux]
+ * http://www.cyberciti.biz/faq/howto-linux-add-user-to-group/[Howto: Linux Add User To Group] (2006-03-14)
+////////////////////////////////////////////////////////////////////////////////
+** The usermod command modifies a user account i.e. it is useful to add user to existing group. There are two types of group. First is primary user group and other is secondary group.
+** `# usermod -a -G ftp tony` - 
+////////////////////////////////////////////////////////////////////////////////
+

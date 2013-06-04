@@ -1,0 +1,174 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Selenium RC] 截取整個網頁的截圖</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<!--link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" /-->
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <!--div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div-->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <!--a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a--></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="recipes.html">Selenium RC / Recipes</a> / 截取整個網頁的截圖</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>Selenium RC API 裡的 <code>captureEntirePageScreenshot</code> 可以對<a href="../api/multiple-windows.html">目前的視窗</a>做整個網頁的截圖 (<code>.png</code>)，但只對 Firefox 有完整的支援。</p></div>
+<div class="paragraph"><p>以下用一個乾淨的 profile 來做測試：</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>$ java -jar selenium-server-standalone-&lt;version&gt;.jar -firefoxProfileTemplate &lt;path-to-clean-firefox-profile&gt;</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; from selenium import selenium
+&gt;&gt;&gt; sel = selenium('localhost', '4444', '*firefox', 'http://en.wikipedia.org')
+&gt;&gt;&gt; sel.start()
+&gt;&gt;&gt; sel.open('wiki/Hello_world_program')
+&gt;&gt;&gt;
+&gt;&gt;&gt; sel.capture_entire_page_screenshot('/tmp/helloworld.png', '') <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+&gt;&gt;&gt; sel.window_maximize() <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+&gt;&gt;&gt; sel.capture_entire_page_screenshot('/tmp/helloworld_maximize.png', '')
+&gt;&gt;&gt;
+&gt;&gt;&gt; sel.capture_entire_page_screenshot('/tmp/folder-not-existing/filename')</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+第二個參數 <em>kwargs</em> 一定要給，只好傳入空字串充數。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+安插了一個 "將視窗放到最大" 的動作，這一個步驟有其必要性，因為截圖的大小會受瀏覽器視窗的寬度影響。下面是將視窗刻意縮小之後的截圖，可以看到文字被嚴重擠壓，但超出視窗大小的部份不致於被截掉。
+<div class="paragraph"><p><span class="image">
+<img src="capture-entire-webpage/helloworld_narrow.png" alt="capture-entire-webpage/helloworld_narrow.png" />
+</span></p></div>
+</td></tr>
+</table></div>
+<div class="paragraph"><p>雖然官方文件說 "The Firefox implementation is mostly borrowed
+from the Screengrab! Firefox extension."，不過執行期在 Tools &gt; Add-ons &gt; Extensions 並沒有發現 Screengrab 被安裝起來，或許被包進 Selenium RC Runner 了吧？但可以確定的是，不需要額外安裝 extension，就可以使用 Selenium 的截圖功能。</p></div>
+<div class="paragraph"><p><span class="image">
+<img src="capture-entire-webpage/extensions.png" alt="capture-entire-webpage/extensions.png" />
+</span></p></div>
+<div class="paragraph"><p>這個 API 不會自動建立資料夾，也不會在檔名後面補上 <code>.png</code>，使用上要注意：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; sel.capture_entire_page_screenshot('/tmp/folder-not-existing/filename', '')
+Traceback (most recent call last):
+...
+Exception: ERROR: Command execution failure. Please search the user group at https://groups.google.com/forum/#!forum/selenium-users for error details from the log window.  The error message is: Component returned failure code: 0x80520012 (NS_ERROR_FILE_NOT_FOUND) [nsIFileOutputStream.init]</code></pre>
+</div></div>
+<div class="paragraph"><p>事實上，官方文件也提到了這個功能在 IE 上的部份支援 - "&#8230; IE non­HTA using the EXPERIMENTAL "Snapsie" utility"，以下是在 IE8 上的測試結果：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; sel = selenium('localhost', '4444', '*iexplore', 'http://en.wikipedia.org') <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+&gt;&gt;&gt; ...
+&gt;&gt;&gt; sel.capture_entire_page_screenshot(r'd:\tmp\hellworld.png', '')
+...
+Exception: ERROR: captureEntirePageScreenshot is only implemented for Firefox ("
+firefox" or "chrome", NOT "firefoxproxy") and IE non-HTA ("iexploreproxy", NOT "
+iexplore" or "iehta"). The current browser isn't one of them!
+
+&gt;&gt;&gt; sel = selenium('localhost', '4444', 'iexploreproxy', 'http://en.wikipedia.org') <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+&gt;&gt;&gt; ...
+&gt;&gt;&gt; sel.capture_entire_page_screenshot(r'c:\tmp\hellworld.png', '')
+Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+  File "C:\Python27\lib\site-packages\selenium-2.6.0-py2.7.egg\selenium\selenium
+.py", line 1907, in capture_entire_page_screenshot
+    self.do_command("captureEntirePageScreenshot", [filename,kwargs,])
+  File "C:\Python27\lib\site-packages\selenium-2.6.0-py2.7.egg\selenium\selenium
+.py", line 217, in do_command
+    raise Exception, data
+Exception: ERROR: Snapsie failed: Is it installed? Does it have permission to ru
+n as an add-on? See http://snapsie.sourceforge.net/</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+先用一般的 mode 做測試，被提示只支援 IE non-HTA ("iexploreproxy", NOT "iexplore" or "iehta")。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+改用 <code>iexploreproxy</code> mode 後，從提示看起來 SnapsIE 應該是要額外安裝才行。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>但不巧的是 <a href="http://snapsie.sourceforge.net/">SnapsIE</a> 官網寫著 "snapsIE is no longer being actively developed here"。有時間再來試試看安裝 SnapsIE 的結果&#8230;</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://selenium.googlecode.com/svn/trunk/docs/api/java/com/thoughtworks/selenium/Selenium.html#captureEntirePageScreenshot%28java.lang.String,%20java.lang.String%29">Selenium RC API &gt; captureEntirePageScreenshot (Javadoc)</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://sauceio.com/index.php/2009/12/selenium-totw-capturing-screenshots-vs-scrollbars/">Selenium Tips: Capturing Screenshots vs. Scrollbars! | Selenium Testing? Do Cross Browser Testing with Sauce Labs</a> (2009-12-11) - 用 <code>focus()</code> 捲動畫面，就可以用 <code>capture_screenshot()</code> 分批拍到 entire page。
+</p>
+</li>
+<li>
+<p>
+<a href="https://developer.mozilla.org/en-US/docs/HTML/Forms/The_native_form_widgets">The native form widgets - HTML | MDN</a> - form control 都是 native widget，<code>capture_entire_page_screenshot()</code> 拍不到東西，得改用 <code>capture_screenshot()</code> 才行。
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2013-06-04 22:46:03 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<!--script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script-->
+</body>
+</html>

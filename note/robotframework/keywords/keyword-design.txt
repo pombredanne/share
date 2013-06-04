@@ -1,0 +1,86 @@
+= [TBD] Robot Framework: Keyword Design =
+
+== 不要預期傳入特定型態的參數 ==
+
+假設一個 keyword `Add` 用來相加兩個數字：
+
+--------------------------------------------------------------------------------
+def add(num1, num2):
+    return num1 + num2
+--------------------------------------------------------------------------------
+
+使用起來會像是：
+
+ ${sum}= | Add | {16} | {20}
+
+Robot Framework 支援用 `{nnn}` 來表示數值型態的參數。如果不這麼做的話，`${sum}` 的內容會是 `"1620"`。
+
+但這樣的表示法看起來並不直覺（某種程式上也降低了 test data 的可讀性），徒增使用者的困擾。通常 keyword 不應該假設參數的型態（如果有也應該是字串），所以 keyword 開頭有一個很重要的工作，就是將參數轉換成內部需要的型態。
+
+--------------------------------------------------------------------------------
+def add(num1, num2):
+    return int(num1) + int(num2)
+--------------------------------------------------------------------------------
+
+這麼一來，使用者就可以避開 `{nnn}` 這類表示法：
+
+--------------------------------------------------------------------------------
+${sum}= | Add | 16 | 20
+${sum}= | Add | ${sum} | 20 <1>
+--------------------------------------------------------------------------------
+<1> `${sum}` 的內容是 `56`，就算傳入整數型態的 `${sum}`，甚或是將它跟字串 `"20"` 相加也沒問題。
+
+[[verify-should]]
+== 儘可能延用現有的 `... Should (Not)` ==
+
+== 避免開發 `Check ...` 的 Keyword ==
+
+ * 檢查的規則寫在 keyword 裡，彈性不大
+ * 有需要的話，使用者可以用 user keyword 自行包裝。
+
+== 大原則 ==
+
+ * 減少後端 keyword 對後端 library 的包裝。
++
+--
+例如 'Configure Group' 可以設計同時接受 `group_id` 跟 `group_name` 兩個參數，方便使用者只要給 group name，內部就會自動轉換成 group ID。
+
+可想而知，背後的 library 一定只接受 group ID，如果可以把 group name 轉換成 group ID 的動作另外提出成獨立的 'Find Group By Name'，自然 'Configure Group' 就不會因為要提供 `group_name` 這個參數，而增加 keyword 內部處理參數的複雜度。
+
+這樣發展下去，keyword 跟後端 library 的對應就會變得很直覺，keyword 本身的工作就單純是正規化參數而已。
+--
+
+== 表示路徑的參數 ==
+
+ * 接受 path 的參數要處理 path separator 的問題 `relpath = relpath.replace('/', os.sep).replace('\\', os.sep)`
+
+== 雜記 ==
+
+ * keyword 的命名最終要提高 test case 的可讀性，因此如果有 test case 可以參考的話，對 keyword 命名會很有幫助。這也就是為什麼底層 `assert_on_this_page()` 不適合直接搬上抬面的關係，因為前端沒有 context。另一個好處是可以減少 keyword 命名衝突的機會。
+ * 雖然說 python function 可以直接拿來做為 keyword，但 keyword 本身接參數時有特殊的 convention，例如 `Click | And Don't Wait` 的用法，'and And Don't Wait' 是要表達 `dont_wait` 等於 `True`。
+ * filter_logs(self, ..., regardless_of_matching='') - 預設沒有 matching 會出錯，但傳入非空字串（尤其是 'and regardless of matching'）時，就算是沒有任何 matching 也不會出錯，使得這個 keyword 平常可以很方便地跟 Wait Until Keyword Succeeds 搭配使用。
+ * `pull_file(self, remote_file, runas=None)`，這個 keyword 會將檔案複製到暫存目錄下，檔名不變，可以避開檔名重複的問題。另外不提供 `local_file` 而採用回傳檔名的方式，是因為 local_file 對某些測試來說並不重要，反而讓人傷腦筋要取什麼名稱。
+ * 不同平台的 keywords 不一要寫在同一個 library 裡（主要考量同一個 test case 會不會跑在不同平台上），如果寫在不同 library 裡，至少命名上要一致。
+ * 搭配內建的 Collections。Keyword 的參數應該是 position 而非 item，只要提供 get_items() 自己再用 Collecitons.Get Index From List 推算出 index 即可。但提供 position_or_item 做為參數會更方便，只要 item 非唯一值時才丟出例外（`ValueError`），否則 test data 會變得很難閱讀。（用 `index` 會讓人有 0-based 的感覺，用 `position` 則有 `1-based` 的感覺）
++
+--
+--------------------------------------------------------------------------------
+def get_item_position(self, position_or_item):
+    position = -1
+    try:
+        position = int(position_or_item)
+    except ValueError: position
+
+    if position == -1:
+        items = self.get_all_items()
+        if (items.count(position_or_item) > 1):
+            raise ValueError('The item (%s) is not unique in the list, please specify numeric position explicitly.' %
+                             position_or_item)
+        position = items.index(position_or_item) + 1
+    return position
+--------------------------------------------------------------------------------
+或許這個方法也要公開，否則使用者用 Collections 取得 index 後還要再加 1，很難理解...
+--
++
+ * 不需要提供一次處理多個對象的操作，例如 `select_groups(groups)` 沒有必要額外提供，只要 `select_group(position_or_name)` 即可，測試時如果需要多選，只要呼叫多次即可。也可以避開 'groups' 這個參數的 parsing，以什麼字元做為分隔字元，若 name 裡面有分隔字元... 最重要的是，test case 可能會失去可讀性。
+

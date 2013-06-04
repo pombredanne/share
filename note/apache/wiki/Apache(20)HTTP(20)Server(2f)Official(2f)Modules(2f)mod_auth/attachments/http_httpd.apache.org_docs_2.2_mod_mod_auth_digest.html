@@ -1,0 +1,399 @@
+   [1]Modules | [2]Directives | [3]FAQ | [4]Glossary | [5]Sitemap
+
+   Apache HTTP Server Version 2.2
+
+   [6]<-
+
+   [7]Apache > [8]HTTP Server > [9]Documentation > [10]Version 2.2 >
+   [11]Modules
+
+Apache Module mod_auth_digest
+
+   Available Languages: [12] en  | [13] ko
+      [14]Description:    User authentication using MD5 Digest Authentication.
+        [15]Status:       Extension
+   [16]Module Identifier: auth_digest_module
+      [17]Source File:    mod_auth_digest.c
+
+Summary
+
+   This module implements HTTP Digest Authentication ([18]RFC2617), and
+   provides a more secure alternative to [19]mod_auth_basic.
+
+Directives
+
+     * [20]AuthDigestAlgorithm
+     * [21]AuthDigestDomain
+     * [22]AuthDigestNcCheck
+     * [23]AuthDigestNonceFormat
+     * [24]AuthDigestNonceLifetime
+     * [25]AuthDigestProvider
+     * [26]AuthDigestQop
+     * [27]AuthDigestShmemSize
+
+Topics
+
+     * [28]Using Digest Authentication
+     * [29]Working with MS Internet Explorer
+
+See also
+
+     * [30]AuthName
+     * [31]AuthType
+     * [32]Require
+     * [33]Satisfy
+     * [34]Authentication howto
+
+   [35]top
+
+Using Digest Authentication
+
+   Using MD5 Digest authentication is very simple. Simply set up
+   authentication normally, using AuthType Digest and
+   [36]AuthDigestProvider instead of the normal AuthType Basic and
+   [37]AuthBasicProvider. Then add a [38]AuthDigestDomain directive
+   containing at least the root URI(s) for this protection space.
+
+   Appropriate user (text) files can be created using the [39]htdigest
+   tool.
+
+Example:
+
+   <Location /private/>
+   AuthType Digest
+   AuthName "private area"
+   AuthDigestDomain /private/ http://mirror.my.dom/private2/
+   AuthDigestProvider file
+   AuthUserFile /web/auth/.digest_pw
+   Require valid-user
+   </Location>
+
+Note
+
+   Digest authentication is more secure than Basic authentication, but
+   only works with supporting browsers. As of September 2004, major
+   browsers that support digest authentication include [40]Amaya,
+   [41]Konqueror, [42]MS Internet Explorer for Mac OS X and Windows
+   (although the Windows version fails when used with a query string --
+   see "[43]Working with MS Internet Explorer" below for a workaround),
+   [44]Mozilla, [45]Netscape 7, [46]Opera, and [47]Safari. [48]lynx does
+   not support digest authentication. Since digest authentication is not
+   as widely implemented as basic authentication, you should use it only
+   in environments where all users will have supporting browsers.
+   [49]top
+
+Working with MS Internet Explorer
+
+   The Digest authentication implementation in previous Internet Explorer
+   for Windows versions (5 and 6) had issues, namely that GET requests
+   with a query string were not RFC compliant. There are a few ways to
+   work around this issue.
+
+   The first way is to use POST requests instead of GET requests to pass
+   data to your program. This method is the simplest approach if your
+   application can work with this limitation.
+
+   Since version 2.0.51 Apache also provides a workaround in the
+   AuthDigestEnableQueryStringHack environment variable. If
+   AuthDigestEnableQueryStringHack is set for the request, Apache will
+   take steps to work around the MSIE bug and remove the query string from
+   the digest comparison. Using this method would look similar to the
+   following.
+
+Using Digest Authentication with MSIE:
+
+   BrowserMatch "MSIE" AuthDigestEnableQueryStringHack=On
+
+   This workaround is not necessary for MSIE 7, though enabling it does
+   not cause any compatibility issues or significant overhead.
+
+   See the [50]BrowserMatch directive for more details on conditionally
+   setting environment variables.
+   [51]top
+
+AuthDigestAlgorithm Directive
+
+   [52]Description: Selects the algorithm used to calculate the challenge
+                    and response hashes in digest authentication
+     [53]Syntax:    AuthDigestAlgorithm MD5|MD5-sess
+     [54]Default:   AuthDigestAlgorithm MD5
+     [55]Context:   directory, .htaccess
+    [56]Override:   AuthConfig
+     [57]Status:    Extension
+     [58]Module:    mod_auth_digest
+
+   The AuthDigestAlgorithm directive selects the algorithm used to
+   calculate the challenge and response hashes.
+   MD5-sess is not correctly implemented yet.
+   [59]top
+
+AuthDigestDomain Directive
+
+   [60]Description: URIs that are in the same protection space for digest
+                    authentication
+     [61]Syntax:    AuthDigestDomain URI [URI] ...
+     [62]Context:   directory, .htaccess
+    [63]Override:   AuthConfig
+     [64]Status:    Extension
+     [65]Module:    mod_auth_digest
+
+   The AuthDigestDomain directive allows you to specify one or more URIs
+   which are in the same protection space (i.e. use the same realm and
+   username/password info). The specified URIs are prefixes; the client
+   will assume that all URIs "below" these are also protected by the same
+   username/password. The URIs may be either absolute URIs (i.e. including
+   a scheme, host, port, etc.) or relative URIs.
+
+   This directive should always be specified and contain at least the (set
+   of) root URI(s) for this space. Omitting to do so will cause the client
+   to send the Authorization header for every request sent to this server.
+   Apart from increasing the size of the request, it may also have a
+   detrimental effect on performance if [66]AuthDigestNcCheck is on.
+
+   The URIs specified can also point to different servers, in which case
+   clients (which understand this) will then share username/password info
+   across multiple servers without prompting the user each time.
+   [67]top
+
+AuthDigestNcCheck Directive
+
+   [68]Description: Enables or disables checking of the nonce-count sent
+                    by the server
+     [69]Syntax:    AuthDigestNcCheck On|Off
+     [70]Default:   AuthDigestNcCheck Off
+     [71]Context:   server config
+     [72]Status:    Extension
+     [73]Module:    mod_auth_digest
+   Not implemented yet.
+   [74]top
+
+AuthDigestNonceFormat Directive
+
+   [75]Description: Determines how the nonce is generated
+     [76]Syntax:    AuthDigestNonceFormat format
+     [77]Context:   directory, .htaccess
+    [78]Override:   AuthConfig
+     [79]Status:    Extension
+     [80]Module:    mod_auth_digest
+   Not implemented yet.
+   [81]top
+
+AuthDigestNonceLifetime Directive
+
+   [82]Description: How long the server nonce is valid
+     [83]Syntax:    AuthDigestNonceLifetime seconds
+     [84]Default:   AuthDigestNonceLifetime 300
+     [85]Context:   directory, .htaccess
+    [86]Override:   AuthConfig
+     [87]Status:    Extension
+     [88]Module:    mod_auth_digest
+
+   The AuthDigestNonceLifetime directive controls how long the server
+   nonce is valid. When the client contacts the server using an expired
+   nonce the server will send back a 401 with stale=true. If seconds is
+   greater than 0 then it specifies the amount of time for which the nonce
+   is valid; this should probably never be set to less than 10 seconds. If
+   seconds is less than 0 then the nonce never expires.
+   [89]top
+
+AuthDigestProvider Directive
+
+   [90]Description: Sets the authentication provider(s) for this location
+     [91]Syntax:    AuthDigestProvider provider-name [provider-name] ...
+     [92]Default:   AuthDigestProvider file
+     [93]Context:   directory, .htaccess
+    [94]Override:   AuthConfig
+     [95]Status:    Extension
+     [96]Module:    mod_auth_digest
+
+   The AuthDigestProvider directive sets which provider is used to
+   authenticate the users for this location. The default file provider is
+   implemented by the [97]mod_authn_file module. Make sure that the chosen
+   provider module is present in the server.
+
+   See [98]mod_authn_dbm, [99]mod_authn_file, and [100]mod_authn_dbd for
+   providers.
+   [101]top
+
+AuthDigestQop Directive
+
+   [102]Description: Determines the quality-of-protection to use in digest
+                     authentication
+     [103]Syntax:    AuthDigestQop none|auth|auth-int [auth|auth-int]
+     [104]Default:   AuthDigestQop auth
+     [105]Context:   directory, .htaccess
+    [106]Override:   AuthConfig
+     [107]Status:    Extension
+     [108]Module:    mod_auth_digest
+
+   The AuthDigestQop directive determines the quality-of-protection to
+   use. auth will only do authentication (username/password); auth-int is
+   authentication plus integrity checking (an MD5 hash of the entity is
+   also computed and checked); none will cause the module to use the old
+   RFC-2069 digest algorithm (which does not include integrity checking).
+   Both auth and auth-int may be specified, in which the case the browser
+   will choose which of these to use. none should only be used if the
+   browser for some reason does not like the challenge it receives
+   otherwise.
+   auth-int is not implemented yet.
+   [109]top
+
+AuthDigestShmemSize Directive
+
+   [110]Description: The amount of shared memory to allocate for keeping
+                     track of clients
+     [111]Syntax:    AuthDigestShmemSize size
+     [112]Default:   AuthDigestShmemSize 1000
+     [113]Context:   server config
+     [114]Status:    Extension
+     [115]Module:    mod_auth_digest
+
+   The AuthDigestShmemSize directive defines the amount of shared memory,
+   that will be allocated at the server startup for keeping track of
+   clients. Note that the shared memory segment cannot be set less than
+   the space that is necessary for tracking at least one client. This
+   value is dependant on your system. If you want to find out the exact
+   value, you may simply set AuthDigestShmemSize to the value of 0 and
+   read the error message after trying to start the server.
+
+   The size is normally expressed in Bytes, but you may let the number
+   follow a K or an M to express your value as KBytes or MBytes. For
+   example, the following directives are all equivalent:
+
+   AuthDigestShmemSize 1048576
+   AuthDigestShmemSize 1024K
+   AuthDigestShmemSize 1M
+
+   Available Languages: [116] en  | [117] ko
+
+   Copyright 2009 The Apache Software Foundation.
+   Licensed under the [118]Apache License, Version 2.0.
+
+   [119]Modules | [120]Directives | [121]FAQ | [122]Glossary |
+   [123]Sitemap
+
+References
+
+   1. http://httpd.apache.org/docs/2.2/mod/
+   2. http://httpd.apache.org/docs/2.2/mod/directives.html
+   3. http://httpd.apache.org/docs/2.2/faq/
+   4. http://httpd.apache.org/docs/2.2/glossary.html
+   5. http://httpd.apache.org/docs/2.2/sitemap.html
+   6. http://httpd.apache.org/docs/2.2/mod/
+   7. http://www.apache.org/
+   8. http://httpd.apache.org/
+   9. http://httpd.apache.org/docs/
+  10. http://httpd.apache.org/docs/2.2/
+  11. http://httpd.apache.org/docs/2.2/mod/
+  12. http://httpd.apache.org/docs/2.2/en/mod/mod_auth_digest.html
+  13. http://httpd.apache.org/docs/2.2/ko/mod/mod_auth_digest.html
+  14. http://httpd.apache.org/docs/2.2/mod/module-dict.html#Description
+  15. http://httpd.apache.org/docs/2.2/mod/module-dict.html#Status
+  16. http://httpd.apache.org/docs/2.2/mod/module-dict.html#ModuleIdentifier
+  17. http://httpd.apache.org/docs/2.2/mod/module-dict.html#SourceFile
+  18. http://www.faqs.org/rfcs/rfc2617.html
+  19. http://httpd.apache.org/docs/2.2/mod/mod_auth_basic.html
+  20. http://httpd.apache.org/docs/2.2/mod/mod_auth_digest.html#authdigestalgorithm
+  21. http://httpd.apache.org/docs/2.2/mod/mod_auth_digest.html#authdigestdomain
+  22. http://httpd.apache.org/docs/2.2/mod/mod_auth_digest.html#authdigestnccheck
+  23. http://httpd.apache.org/docs/2.2/mod/mod_auth_digest.html#authdigestnonceformat
+  24. http://httpd.apache.org/docs/2.2/mod/mod_auth_digest.html#authdigestnoncelifetime
+  25. http://httpd.apache.org/docs/2.2/mod/mod_auth_digest.html#authdigestprovider
+  26. http://httpd.apache.org/docs/2.2/mod/mod_auth_digest.html#authdigestqop
+  27. http://httpd.apache.org/docs/2.2/mod/mod_auth_digest.html#authdigestshmemsize
+  28. http://httpd.apache.org/docs/2.2/mod/mod_auth_digest.html#using
+  29. http://httpd.apache.org/docs/2.2/mod/mod_auth_digest.html#msie
+  30. http://httpd.apache.org/docs/2.2/mod/core.html#authname
+  31. http://httpd.apache.org/docs/2.2/mod/core.html#authtype
+  32. http://httpd.apache.org/docs/2.2/mod/core.html#require
+  33. http://httpd.apache.org/docs/2.2/mod/core.html#satisfy
+  34. http://httpd.apache.org/docs/2.2/howto/auth.html
+  35. http://httpd.apache.org/docs/2.2/mod/mod_auth_digest.html#page-header
+  36. http://httpd.apache.org/docs/2.2/mod/mod_auth_digest.html#authdigestprovider
+  37. http://httpd.apache.org/docs/2.2/mod/mod_auth_basic.html#authbasicprovider
+  38. http://httpd.apache.org/docs/2.2/mod/mod_auth_digest.html#authdigestdomain
+  39. http://httpd.apache.org/docs/2.2/programs/htdigest.html
+  40. http://www.w3.org/Amaya/
+  41. http://konqueror.kde.org/
+  42. http://www.microsoft.com/windows/ie/
+  43. http://httpd.apache.org/docs/2.2/mod/mod_auth_digest.html#msie
+  44. http://www.mozilla.org/
+  45. http://channels.netscape.com/ns/browsers/download.jsp
+  46. http://www.opera.com/
+  47. http://www.apple.com/safari/
+  48. http://lynx.isc.org/
+  49. http://httpd.apache.org/docs/2.2/mod/mod_auth_digest.html#page-header
+  50. http://httpd.apache.org/docs/2.2/mod/mod_setenvif.html#browsermatch
+  51. http://httpd.apache.org/docs/2.2/mod/mod_auth_digest.html#page-header
+  52. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+  53. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+  54. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Default
+  55. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+  56. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Override
+  57. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+  58. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+  59. http://httpd.apache.org/docs/2.2/mod/mod_auth_digest.html#page-header
+  60. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+  61. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+  62. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+  63. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Override
+  64. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+  65. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+  66. http://httpd.apache.org/docs/2.2/mod/mod_auth_digest.html#authdigestnccheck
+  67. http://httpd.apache.org/docs/2.2/mod/mod_auth_digest.html#page-header
+  68. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+  69. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+  70. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Default
+  71. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+  72. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+  73. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+  74. http://httpd.apache.org/docs/2.2/mod/mod_auth_digest.html#page-header
+  75. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+  76. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+  77. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+  78. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Override
+  79. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+  80. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+  81. http://httpd.apache.org/docs/2.2/mod/mod_auth_digest.html#page-header
+  82. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+  83. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+  84. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Default
+  85. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+  86. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Override
+  87. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+  88. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+  89. http://httpd.apache.org/docs/2.2/mod/mod_auth_digest.html#page-header
+  90. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+  91. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+  92. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Default
+  93. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+  94. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Override
+  95. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+  96. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+  97. http://httpd.apache.org/docs/2.2/mod/mod_authn_file.html
+  98. http://httpd.apache.org/docs/2.2/mod/mod_authn_dbm.html
+  99. http://httpd.apache.org/docs/2.2/mod/mod_authn_file.html
+ 100. http://httpd.apache.org/docs/2.2/mod/mod_authn_dbd.html
+ 101. http://httpd.apache.org/docs/2.2/mod/mod_auth_digest.html#page-header
+ 102. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+ 103. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+ 104. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Default
+ 105. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+ 106. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Override
+ 107. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+ 108. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+ 109. http://httpd.apache.org/docs/2.2/mod/mod_auth_digest.html#page-header
+ 110. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+ 111. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+ 112. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Default
+ 113. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+ 114. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+ 115. http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+ 116. http://httpd.apache.org/docs/2.2/en/mod/mod_auth_digest.html
+ 117. http://httpd.apache.org/docs/2.2/ko/mod/mod_auth_digest.html
+ 118. http://www.apache.org/licenses/LICENSE-2.0
+ 119. http://httpd.apache.org/docs/2.2/mod/
+ 120. http://httpd.apache.org/docs/2.2/mod/directives.html
+ 121. http://httpd.apache.org/docs/2.2/faq/
+ 122. http://httpd.apache.org/docs/2.2/glossary.html
+ 123. http://httpd.apache.org/docs/2.2/sitemap.html

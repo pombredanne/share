@@ -1,19 +1,68 @@
 = link:concepts.html[OpenNI / Concepts] / Contexts =
 :title: [OpenNI] Contexts
 
- * context object (`org.OpenNI.Context`)
-   ** entry point to OpenNI
-   ** 1 application -> 1+ contexts
- * holds the complete state of applications using OpenNI.
-   * licenses
-   * entire production graph, which holds the list of all the application's nodes.
- * `Context.release()`
-
 == 參考資料 ==
 
-.文件
---
  * OpenNI Overview > Concepts > Contexts (`Documentation/html/conc_context.html`)
- * `xn::Context` Class Reference (`Documentation/html/classxn_1_1_context.html`) -> https://github.com/OpenNI/OpenNI/blob/Unstable-1.5.4.0/Wrappers/OpenNI.java/src/org/OpenNI/Context.java[`org/OpenNI/Context.java`]
---
+ * `xn::Context` Class Reference (`Documentation/html/classxn_1_1_context.html`)
+ * https://github.com/OpenNI/OpenNI/blob/Unstable-1.5.4.0/Wrappers/OpenNI.java/src/org/OpenNI/Context.java[`org/OpenNI/Context.java`]
+ * https://github.com/OpenNI/OpenNI/blob/Unstable-1.5.4.0/Wrappers/OpenNI.java/src/org/OpenNI/Version.java[`org/OpenNI/Version.java`]
 
+////////////////////////////////////////////////////////////////////////////////
+
+ * context object
+   ** a workspace where the application builds an OpenNI production graph, contains methods for managing the production graph. (1 application -> 1+ contexts)
+   ** entry point to OpenNI
+   ** holds the complete state of applications using OpenNI.
+   ** entire production graph, which holds the list of all the application's nodes.
+ * `org.OpenNI.Context`
+   ** `Context()` - 內部會做 initialize - builds the context's general software environment, examines all registered plug-ins to learn the purpose and specific capabilities of each.
+   ** `createFromXmlFile(String xmlFile, OutArg<ScriptNode> scriptNode): Context` (static)
+   ** `getVersion(): Version` - 取得 OpenNI 的版號。
+   ** `release(): void` - releases a context object, decreasing its ref count by 1. If reference count has reached 0, the context will be destroyed.
+       *** `/usr/bin/XnSensorServer /usr/etc/primesense`，發現沒有呼叫 `release()` 這支 process 也會自己消失。呼叫／不呼叫的差別在哪??
+   ** `startGeneratingAll(): void` - ensures all created generator nodes are generating data.
+   ** `stopGeneratingAll(): void` - ensures all generator nodes are not generating data.
+   ** `waitAndUpdateAll(): void`
+      *** causes all nodes with new data available to update their application buffers with their new data, first waiting for all nodes to have new data available.
+      *** Using this method is not recommended for most applications since it requires all the nodes to have new data.
+      *** an error situation is defined as: after a preset timeout (defaults to 2 seconds), none of the nodes have yet notified OpenNI they have new data available. 除了 `WaitNoneUpdateAll()` 之外，都有可能拋出這個例外，要怎麼應對這個錯誤??
+   ** `waitOneUpdateAll(ProductionNode waitFor): void`
+      *** causes all nodes with new data available to update their application buffers with their new data, first waiting for a specified node to have new data available.
+      *** a node that does not have new data available does not update its application buffer.
+   ** `waitAnyUpdateAll(): void`
+      *** causes all nodes with new data available to update their application buffers with their new data, first waiting for any of the nodes to have new data available.
+      *** a node that does not have new data available does not update its application buffer.
+      *** typical applications use this method. Consider using this method for your application.
+   ** `waitNoneUpdateAll(): void`
+      *** causes all nodes with new data available to update their application buffers with their new data, without waiting for notification that any node has new data available.
+      *** a node that does not have new data available does not update its application buffer.
+   ** `getGlobalMirror(): boolean`
+   ** `setGlobalMirror(boolean mirror): void` - enables/disables the GlobalMirror flag.
+   ** `addLicense(License license): void`
+   ** `enumerateLicenses(): License[]` - enumerates all licenses currently registered. 
+   ** `enumerateProductionTrees(NodeType type, Query query): NodeInfoList`
+      *** enumerates all available production nodes for a specific node type, and returns a full list of matching production nodes.
+      *** the application chooses one of the nodes from the node list returned by this method and uses it as input to the `createProductionTree(NodeInfo nodeInfo)` method to create a new production node.
+   ** `enumerateProductionTrees(NodeType type): NodeInfoList`
+   ** `createProductionTree(NodeInfo nodeInfo): ProductionNode`
+      *** creates a production node from the information supplied in a NodeInfo object.
+      *** if the new production node requires additional nodes for its input, and those nodes do not yet exist, then this method creates those additional nodes also and associates them with the "original" new production node. 這也就是為什麼叫做 "createProductionTree()` 而非 `createProductionNode()` 的關係。
+   ** `createAnyProductionTree(NodeType type, Query query): ProductionNode`
+      *** enumerates for production nodes of a specific node type, and creates the first production node found of that type.
+      *** a 'shortcut' version of using the `enumerateProductionTrees()` method and then passing the first result to `createProductionTree(NodeInfo nodeInfo)`. Thus, this method is exactly like the `create()` method for nodes.
+   ** `enumerateExistingNodes(): NodeInfoList` - returns a list of all the context's existing created nodes.
+   ** `enumerateExistingNodes(NodeType type): NodeInfoList` - returns a list of the context's existing created nodes filtered by type.
+   ** `findExistingNode(NodeType type): ProductionNode` - searches for an existing created node of a specified type (only the first node it finds) and returns a reference to it.
+   ** `getProductionNodeByName(String name): ProductionNode` - gets a handle to an existing production node instance using that instance name.
+   ** `getProductionNodeInfoByName(String name): NodeInfo`
+   ** `getErrorStateChangedEvent(): IObservable<ErrorStateEventArgs>` - to get a signal as soon as any error occurs in one of the production nodes.
+   ** `getNodeCreatedEvent(): IObservable<NodeCreatedEventArgs>`
+   ** `getNodeDestroyedEvent(): IObservable<NodeDestroyedEventArgs>`
+ * `org.OpenNI.Version`
+   ** `getMajor(): byte`
+   ** `getMinor(): byte`
+   ** `getMaintenance(): short`
+   ** `getBuild(): int`
+
+////////////////////////////////////////////////////////////////////////////////

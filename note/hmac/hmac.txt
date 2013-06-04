@@ -1,0 +1,59 @@
+= HMAC (Hash-based Message Authentication Code) =
+:title: HMAC (Hash-based Message Authentication Code)
+
+HMAC 可以用來驗證訊息是否可靠，包括：
+
+ * authentication - 出自可靠人士。
+ * integrity - 內容沒有遭到竄改。
+
+屬於對稱加密（symmetric-key algorithm）－加解密都用同一把 key。原理很簡單，只要用相同的 key、相同的演算法，雙方根據同一個 message 計算出來的 HMAC 就應該要一樣。
+
+假設 X 先生跟 A、B 等不同人約定好，以後交換 message（包括 data 跟 metadata）時，必須同時附上 message 的 HMAC。也就是雙方約定好要保密的事項有：
+
+ * X/A 或 X/B 之間要持有同一把 key，至於 A 跟 B 的 key 是否相同，則視需求而定。
+ * 採用什麼 hash function？例如 HMAC-MD5、HMAC-SHA1 等。
+ * 除了 data 本身之外，還有哪些重要的 metadata 也要納入計算？以防被竄改。例如 data 本身的摘要值（檢查資料的完整性）、傳送時間（檢查資料的效期）等。
+ * data 跟多個 metadata 之間要怎麼串接？串接的順序為何？
+ * 至於 data 本身要不要加密則視需求而定，如果需要加密，摘要值就必須是根據加密過後的版本。
+
+TIP: 通常不會把整個 data 丟進去計算 HMAC，而是取 data 的摘要值，例如 MD5 digest。
+
+下面用一個簡單的例子做說明：
+
+ 1. A 準備要送一份資料 "Happy New Year" 給 X，雙方約定好用 "secret-a" 這把 key 計算 HMAC-SHA1，而且訊息在 2 分鐘內送達才有效。
+ 2. 時間是 2012-12-31 23:56:30。A 用 "secret-a" 計算出 "Happy New Year 6d713031cd29f69c679de72c234e45aa 2012-12-31 23:56:30" 的 HMAC-SHA1。
++
+其中 "6d713031cd29f69c679de72c234e45aa" 是資料本身（"Happy New Year"）的 MD5 digest，連同當時的時間一起加入 HMAC 的計算。其中 MD5 digest 可以確認資料的完整性，而時間的部份則可以確認紙條上寫的時間沒有問題。
++
+ 3. A 把時間跟 HMAC-SHA1 都寫在一張小紙條上，跟資料本身一起放到信封裡，並在信封外頭署名 A。
+ 4. 時間來到 2012-12-31 23:59:30，X 收到一份外頭署名 A 的信件。
+ 5. X 從保險箱裡找出之前跟 A 約定好的 "secret-a"，按照相同的方式對資料本身、MD5 digest、紙條上寫的時間計算出 HMAC-SHA1，發現結果跟 A 在紙條上寫的 HMAC 相符。
+ 6. 雖然時間已經超過 2 分鐘，但至少可以確認兩件事－訊息是 A 傳的，資料本身沒有被竄改過（MD5），而且紙條上面寫的時間點也沒問題。
+
+各語言對 HMAC 都有不同程度的支援：
+
+ * link:python.html[用 Python 實作 HMAC]
+ * link:java.html[用 Java 實作 HMAC]
+
+另外還有 JavaScript 的 https://code.google.com/p/crypto-js/[CryptoJS] 等。
+
+== 參考資料 ==
+
+.工具
+--
+ * http://www.freeformatter.com/hmac-generator.html[Free Online HMAC Generator / Checker Tool (MD5, SHA-1, SHA-256, etc.) - FreeFormatter.com]
+--
+
+.文件
+--
+ * http://en.wikipedia.org/wiki/Hash-based_message_authentication_code[Hash-based message authentication code - Wikipedia, the free encyclopedia] ^https://diigo.com/0y05k[閱讀]^
+ * http://en.wikipedia.org/wiki/Symmetric-key_algorithm[Symmetric-key algorithm - Wikipedia, the free encyclopedia] ^https://diigo.com/0y05j[閱讀]^
+ * http://tools.ietf.org/html/rfc2104.html[RFC 2104 - HMAC: Keyed-Hashing for Message Authentication]
+--
+
+////////////////////////////////////////////////////////////////////////////////
+
+ * The HMAC algorithm can be used to verify the integrity of information passed between applications or stored in a potentially vulnerable location. The basic idea is to generate a cryptographic hash of the actual data combined with a shared secret key. The resulting hash can then be used to check the transmitted or stored message to determine a level of trust, without transmitting the secret key. - 不怕別人看，只怕別人造假。
+
+////////////////////////////////////////////////////////////////////////////////
+

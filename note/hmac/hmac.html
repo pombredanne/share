@@ -1,0 +1,210 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>HMAC (Hash-based Message Authentication Code)</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<!--link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" /-->
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <!--div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div-->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <!--a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a--></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>HMAC (Hash-based Message Authentication Code)</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>HMAC 可以用來驗證訊息是否可靠，包括：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+authentication - 出自可靠人士。
+</p>
+</li>
+<li>
+<p>
+integrity - 內容沒有遭到竄改。
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>屬於對稱加密（symmetric-key algorithm）－加解密都用同一把 key。原理很簡單，只要用相同的 key、相同的演算法，雙方根據同一個 message 計算出來的 HMAC 就應該要一樣。</p></div>
+<div class="paragraph"><p>假設 X 先生跟 A、B 等不同人約定好，以後交換 message（包括 data 跟 metadata）時，必須同時附上 message 的 HMAC。也就是雙方約定好要保密的事項有：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+X/A 或 X/B 之間要持有同一把 key，至於 A 跟 B 的 key 是否相同，則視需求而定。
+</p>
+</li>
+<li>
+<p>
+採用什麼 hash function？例如 HMAC-MD5、HMAC-SHA1 等。
+</p>
+</li>
+<li>
+<p>
+除了 data 本身之外，還有哪些重要的 metadata 也要納入計算？以防被竄改。例如 data 本身的摘要值（檢查資料的完整性）、傳送時間（檢查資料的效期）等。
+</p>
+</li>
+<li>
+<p>
+data 跟多個 metadata 之間要怎麼串接？串接的順序為何？
+</p>
+</li>
+<li>
+<p>
+至於 data 本身要不要加密則視需求而定，如果需要加密，摘要值就必須是根據加密過後的版本。
+</p>
+</li>
+</ul></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">通常不會把整個 data 丟進去計算 HMAC，而是取 data 的摘要值，例如 MD5 digest。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>下面用一個簡單的例子做說明：</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+A 準備要送一份資料 "Happy New Year" 給 X，雙方約定好用 "secret-a" 這把 key 計算 HMAC-SHA1，而且訊息在 2 分鐘內送達才有效。
+</p>
+</li>
+<li>
+<p>
+時間是 2012-12-31 23:56:30。A 用 "secret-a" 計算出 "Happy New Year 6d713031cd29f69c679de72c234e45aa 2012-12-31 23:56:30" 的 HMAC-SHA1。
+</p>
+<div class="paragraph"><p>其中 "6d713031cd29f69c679de72c234e45aa" 是資料本身（"Happy New Year"）的 MD5 digest，連同當時的時間一起加入 HMAC 的計算。其中 MD5 digest 可以確認資料的完整性，而時間的部份則可以確認紙條上寫的時間沒有問題。</p></div>
+</li>
+<li>
+<p>
+A 把時間跟 HMAC-SHA1 都寫在一張小紙條上，跟資料本身一起放到信封裡，並在信封外頭署名 A。
+</p>
+</li>
+<li>
+<p>
+時間來到 2012-12-31 23:59:30，X 收到一份外頭署名 A 的信件。
+</p>
+</li>
+<li>
+<p>
+X 從保險箱裡找出之前跟 A 約定好的 "secret-a"，按照相同的方式對資料本身、MD5 digest、紙條上寫的時間計算出 HMAC-SHA1，發現結果跟 A 在紙條上寫的 HMAC 相符。
+</p>
+</li>
+<li>
+<p>
+雖然時間已經超過 2 分鐘，但至少可以確認兩件事－訊息是 A 傳的，資料本身沒有被竄改過（MD5），而且紙條上面寫的時間點也沒問題。
+</p>
+</li>
+</ol></div>
+<div class="paragraph"><p>各語言對 HMAC 都有不同程度的支援：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="python.html">用 Python 實作 HMAC</a>
+</p>
+</li>
+<li>
+<p>
+<a href="java.html">用 Java 實作 HMAC</a>
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>另外還有 JavaScript 的 <a href="https://code.google.com/p/crypto-js/">CryptoJS</a> 等。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">工具</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.freeformatter.com/hmac-generator.html">Free Online HMAC Generator / Checker Tool (MD5, SHA-1, SHA-256, etc.) - FreeFormatter.com</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://en.wikipedia.org/wiki/Hash-based_message_authentication_code">Hash-based message authentication code - Wikipedia, the free encyclopedia</a> <sup><a href="https://diigo.com/0y05k">閱讀</a></sup>
+</p>
+</li>
+<li>
+<p>
+<a href="http://en.wikipedia.org/wiki/Symmetric-key_algorithm">Symmetric-key algorithm - Wikipedia, the free encyclopedia</a> <sup><a href="https://diigo.com/0y05j">閱讀</a></sup>
+</p>
+</li>
+<li>
+<p>
+<a href="http://tools.ietf.org/html/rfc2104.html">RFC 2104 - HMAC: Keyed-Hashing for Message Authentication</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2013-06-04 22:47:48 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<!--script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script-->
+</body>
+</html>

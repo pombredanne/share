@@ -1,0 +1,75 @@
+= link:python.html[GAE / Python] / webapp2 Framework =
+:title: [GAE][Python] webapp2 Framework
+
+--------------------------------------------------------------------------------
+import webapp2
+
+class MainPage(webapp2.RequestHandler):
+
+  def get(self):
+      self.response.headers['Content-Type'] = 'text/plain'
+      self.response.write('Hello, webapp2 World!')
+
+app = webapp2.WSGIApplication([('/', MainPage)], <2>
+                              debug=True)
+--------------------------------------------------------------------------------
+
+== 參考資料 ==
+
+.網站
+--
+ * http://webapp-improved.appspot.com/[webapp2]
+--
+
+.文件
+--
+ * http://www.python.org/dev/peps/pep-0333/[PEP 333 -- Python Web Server Gateway Interface v1.0]
+ * https://developers.google.com/appengine/docs/python/tools/webapp2[The webapp2 Framework - Google App Engine — Google Developers]
+ * https://developers.google.com/appengine/docs/python/gettingstartedpython27/usingwebapp[Explaining the webapp2 Framework - Google App Engine — Google Developers]
+ * https://developers.google.com/appengine/docs/python/gettingstartedpython27/handlingforms[Handling Forms with webapp2 - Google App Engine — Google Developers]
+--
+
+////////////////////////////////////////////////////////////////////////////////
+
+ * The WSGI standard is simple, but it would be cumbersome to write all of the code that uses it by hand. Web application frameworks handle these details for you, so you can focus your development efforts on your application's features.
+ * Google App Engine supports any framework written in pure Python that speaks WSGI, including Django, CherryPy, Pylons, web.py, and web2py. You can bundle a framework of your choosing with your application code by copying its code into your application directory.
+ * App Engine includes a simple web application framework, called webapp2. The webapp2 framework is already installed in the App Engine environment and in the SDK, so you do not need to bundle it with your application code to use it. 
+ * A webapp2 application has two parts:
+   ** one or more `RequestHandler` classes that process requests and build responses
+   ** a `WSGIApplication` instance that routes incoming requests to handlers based on the URL
+
+--------------------------------------------------------------------------------
+import cgi
+import webapp2
+
+from google.appengine.api import users
+
+class MainPage(webapp2.RequestHandler):
+    def get(self):
+        self.response.out.write("""
+          <html>
+            <body>
+              <form action="/sign" method="post">
+                <div><textarea name="content" rows="3" cols="60"></textarea></div>
+                <div><input type="submit" value="Sign Guestbook"></div>
+              </form>
+            </body>
+          </html>""")
+
+
+class Guestbook(webapp2.RequestHandler):
+    def post(self): # <2>
+        self.response.out.write('<html><body>You wrote:<pre>')
+        self.response.out.write(cgi.escape(self.request.get('content'))) # <3>
+        self.response.out.write('</pre></body></html>')
+
+app = webapp2.WSGIApplication([('/', MainPage), # <1>
+                              ('/sign', Guestbook)],
+                              debug=True)
+--------------------------------------------------------------------------------
+<1> This version has two handlers: MainPage, mapped to the URL /, displays a web form. Guestbook, mapped to the URL /sign, displays the data submitted by the web form.
+<2> The Guestbook handler has a post() method instead of a get() method. This is because the form displayed by MainPage uses the HTTP POST method (method="post") to submit the form data. If for some reason you need a single handler to handle both GET and POST actions to the same URL, you can define a method for each action in the same class. The code for the post() method gets the form data from self.request.
+<3> Before displaying it back to the user, it uses cgi.escape() to escape HTML special characters to their character entity equivalents. (Standard Library 的一部份)
+
+////////////////////////////////////////////////////////////////////////////////
+

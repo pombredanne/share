@@ -1,0 +1,44 @@
+= link:escape.html[HTML / Escaping] / Python =
+:title: [HTML][Python] HTML Escaping/Unescaping
+
+[source,python]
+.`htmlescape.py`
+--------------------------------------------------------------------------------
+_HTML_ESCAPE_TABLE = [
+    ('&', '&amp;'),
+    ('"', '&quot;'),
+    ("'", '&apos;'),
+    ('>', '&gt;'),
+    ('<', '&lt;'),
+    ]
+
+_HTML_UNESCAPE_TABLE = [(v, k) for k, v in reversed(_HTML_ESCAPE_TABLE)] # <1>
+
+def html_escape(text):
+    for k, v in _HTML_ESCAPE_TABLE:
+        text = text.replace(k, v)
+    return text
+
+def html_unescape(text):
+    for k, v in _HTML_UNESCAPE_TABLE:
+        text = text.replace(k, v)
+    return text
+--------------------------------------------------------------------------------
+<1> `reversed()` 的作用是要讓 `&amp;` 才代換成 `&`，否則會有類似 `&amp;lt;` 被誤植為 `<` 的問題。
+
+[source,pycon]
+--------------------------------------------------------------------------------
+>>> from htmlescape import *
+>>> '<input type="text" value="%s" />' % html_escape("\"<&>\'")
+'<input type="text" value="&quot;&lt;&amp;&gt;&apos;" />'
+>>> html_unescape('&quot;&lt;&amp;&gt;&apos;')
+'"<&>\''
+>>> html_unescape('&amp;lt;')
+>>> '&lt;'
+--------------------------------------------------------------------------------
+
+== 參考資料 ==
+
+ * http://docs.python.org/2/library/cgi.html[cgi — Common Gateway Interface support] ^https://diigo.com/0y74t[閱讀]^
+ * http://wiki.python.org/moin/EscapingHtml[EscapingHtml - Python Wiki] ^https://diigo.com/0y74y[閱讀]^
+

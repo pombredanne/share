@@ -1,0 +1,68 @@
+= link:gae.html[GAE] / Cost Control =
+:title: [GAE] 成本控制
+
+== 參考資料 ==
+
+.工具
+--
+ * https://code.google.com/p/pis-demo/[pis-demo - Demo project showing how to use GAE's (AppEngine) image hosting service. - Google Project Hosting]
+////////////////////////////////////////////////////////////////////////////////
+** GAE (App Engine) has a image serving service that uses the Picasa infrastructure to serve images from the "edge" of the cloud. Similar to serving images out of Amazon's S3. 背後由 Picasa 支撐??
+////////////////////////////////////////////////////////////////////////////////
+--
+
+.文件
+--
+ * https://cloud.google.com/pricing/[Google App Engine Pricing — Cloud Platform]
+////////////////////////////////////////////////////////////////////////////////
+** 只提到 Blobstore API 5G $0.13 / G / month，但儲存的部份沒有額外提到，應該是併入 High Replication Datastore 1G $0.24 / G / month。
+** 
+////////////////////////////////////////////////////////////////////////////////
+ * https://developers.google.com/appengine/docs/python/tools/appstats[Appstats for Python - Google App Engine — Google Developers]
+ * http://googleappengine.blogspot.tw/2011/11/app-engine-160-out-of-preview-release.html[Google App Engine Blog: App Engine 1.6.0 Out of Preview Release] (2011-11-07) - 離開 preview，同時調整了收費方式。
+--
+
+.其他文件
+--
+ * http://stackoverflow.com/questions/14758929/most-cost-effective-gae-app-settings[google app engine - Most cost-effective GAE app settings? - Stack Overflow] ^https://diigo.com/0ybsn[閱讀]^ (2013-02-07)
+////////////////////////////////////////////////////////////////////////////////
+** What I can think of reducing the costs for data reads is store more items with memcache. But I don't know how to reduce costs for the front instances.
+** About lowering front end instance costs you could have a smaller number of idle Instances as that reduces costs. 這確實很難預估。
+////////////////////////////////////////////////////////////////////////////////
+ * http://blog.initlabs.com/post/16359268329/how-i-reduced-google-app-engine-costs-by-75[InitLabs • How I reduced Google App Engine costs by 75%] ^https://diigo.com/0y84s[閱讀]^ (2012-01-23)
+////////////////////////////////////////////////////////////////////////////////
+** after the pricing model changed to “instance based” usage, my costs sky rocketed by about 30x
+** setup Appstats (event recorder), to analyze app usage and make optimizations.
+** Datastore usage on GAE is one of the biggest factors that can affect the cost. One way to easily do this is by searching for any datastore put() call and set memcache after it. Next make sure to get data from memcache before attempting a datastore query.
+** I changed the design to make all GET API calls from client side using JQuery.
+** Also I moved large images bigger than 30kb served in the application to external host like picasa. 商用是合法的嗎??
+** In spite of the ridiculous price hike, GAE is still a very good app hosting service, you don’t have to worry about scaling your application. You however have to optimize and architect your application to reduce the usage cost.
+////////////////////////////////////////////////////////////////////////////////
+ * http://stackoverflow.com/questions/8267220/cost-of-serving-blobstore-requests-through-httpresponse[google app engine - Cost of serving blobstore requests through httpresponse - Stack Overflow] (2011-11-25)
+ * http://stackoverflow.com/questions/8810125/how-to-estimate-hosting-services-cost-on-gae[google app engine - How to estimate hosting services cost on GAE? - Stack Overflow] (2012-01-10)
+////////////////////////////////////////////////////////////////////////////////
+** The cost won't be very accurate until I have completed the development. GAE uses such fine grained price calculation such as READs and WRITEs that it becomes a very daunting task to estimate operation cost per user. 確實!!
+** I've been exploiting my users stories to create a cost baseline per user story. Then I roughly estimate how will the user execute each story workflow to finally compute a simplistic estimation. 用 user stories 來估，聽起來不錯
+** I figure out what my largest cost-drivers are likely to be (don't forget any backend processing you may have!), then figure up an estimate of operations / action and use a spreadsheet to estimate.
+** Based on my experience, the three major areas of cost that I encountered while doing my analysis are the instance hour cost, the datastore read/write cost, and the datastore stored data cost.
+** you might also base your estimate on the Google App Engine System Status page (e.g. what would be the latency for a datastore write for a particularly sized entity) to get a (very) rough picture on how long would it take to process your request.
+** I think the indexes could increase the storage size between 40% to 400%, depending on how many index you have for the particular entity. 這麼可怕？
+////////////////////////////////////////////////////////////////////////////////
+--
+
+////////////////////////////////////////////////////////////////////////////////
+
+我真覺得 GAE 要收費是件好事，因為它逼迫你要將應用程式開發得更有效率，過程中可能要涉及架構的調整，這些都是很好的訓練。
+
+ * GAE 主要的開支來自：
+   ** datastore 的資料量跟存取次數 - 這部份成長最慢。
+   ** instance hours （不用考量 backend，那不是 app server）
+   ** 對外頻寬（outgoing bandwidth） - link:image-hosting.html[image hosting] 的成本最重，但移出去的成本似乎也差不多??
+ * 對策
+   ** 由於 Datastore read/write 都要算錢，但 memcached 不算錢，所以儘可能往 memcached 快取。
+   ** 將圖檔或影片放在外部代管，按月計費且無流量限制。但目前仍找不到適合的 hosting service??
+   ** 由於圖片上傳後是靜態的，可以加上 cache control header。
+   ** 減少使用 URL Fetch，儘可能用 client 自己向別處拉資料。
+
+////////////////////////////////////////////////////////////////////////////////
+

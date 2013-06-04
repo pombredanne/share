@@ -1,0 +1,220 @@
+   #Michael Collins' LEGO NXT With Perl RSS feed Michael Collins' LEGO NXT
+   With Perl Atom feed
+
+   [nxt.png]
+
+Monday, October 2. 2006
+
+   Posted by Michael Collins in Linux Bluetooth
+   Comments (2)
+   Trackbacks (15)
+
+How to get started with Linux Bluetooth and the NXT:
+
+   Assumptions:
+   1) You have a bluetooth adapter.
+   2) You already have a kernel with the bluez modules loaded. (I use
+   debian 2.4.27)
+   3) You've installed bluez-utils
+   * There are already many documents available on how to do these tasks.
+   Okay, there are some tools you need to familiarize yourself with:
+   hciconfig - displays status information on your bluetooth interface
+   (similar to ifconfig)
+   hcitool - used to query all kinds of information about bluetooth
+   devices in your piconet
+   sdptool - used to create and query "service description protocol"
+   bluetooth services, like SP=serial port
+   rfcomm - establishes connections to remote bluetooth services or
+   listens for incomming service connections
+
+Testing out Your Bluetooth Connection:
+
+   You will first need to get your bluez daemons running.
+   On debian, this looks like:
+   /etc/init.d/bluez-utils start
+   On Gentoo, I think it's
+   /etc/init.d/bluetooth start
+   Check that your connection is working:
+   hciconfig hci0
+   You should see something like:
+   hci0: Type: USB
+   BD Address: 00:0E:A1:31:57:48 ACL MTU: 377:10 SCO MTU: 16:0
+   UP RUNNING PSCAN ISCAN
+   RX bytes:15156 acl:468 sco:0 events:799 errors:0
+   TX bytes:11447 acl:450 sco:0 commands:198 errors:0
+   Hint: I have an AmbiCom USB bluetooth adapter. For whatever reason I
+   need to issue the following command to get it started:
+   hciconfig hci0 reset
+   So, now, make sure your NXT is on,
+   make sure bluetooth on the NXT is on,
+   cross your fingers,
+   and then type:
+   hcitool scan
+   If everything went to plan, you should see:
+   Scanning ...
+   00:16:53:00:23:E4 NXT
+   Good. Now you can use the Nxt.pm module!
+   Download the Nxt Perl API: Download
+   Try to run the included test program:
+   tar xvzf LEGO-NXT-1.41.tar.gz
+   cd LEGO-NXT-1.41
+   perl test.pl <xx:xx:xx:xx:xx:xx>
+   You should hear your NXT make a chirping sound. :)
+   Trackbacks
+   Trackback specific URI for this entry
+   No Trackbacks
+   Comments
+   Display comments as (Linear | Threaded)
+   Hi Michael, I finally tried this and I got as far as that it connects,
+   and then the NXT shows in its display: Passkey: 1234_ 3 2 1 [v] a b c I
+   tried entering the passkey of /etc/bluetooth/bin , but this does not
+   make sense as we are connecting from the PC to the nxt. Perhaps the
+   latest NXT firmware (1.0.3) introduced this feature? I looked through
+   Net::Bluetooth trying to figure out how to set the pin, but I didn't
+   find anything. Any clues?
+   #1 Anonymous on 2006-10-18 22:12
+   Hmmm... I think you may need to tweak your /etc/bluetooth/hcid.conf
+   file. I included mine below. You should also have the script:
+   /usr/bin/bluez-pin I believe this is included with the bluez-utils
+   package. You should set your pin in the file: /usr/bluetooth/pin You
+   referenced: /usr/bluetooth/bin, not sure if that is what you meant. The
+   nxt defaults to pw 1234 and I have the same value in the
+   "/usr/bluetooth/pin" file, just plain text "1234". Dont tell anyone,
+   but I have the same combination on my luggage. ;) You know, I goofed
+   around with the rfcomm utils for quite a while before I got the
+   connection to work properly, but I can't remember exactly how I got the
+   devices paired. If this doesn't work, I'd recommend doing the same (ie
+   hacking) - I first paired my nxt to my PC using the rfcomm utils to get
+   things working - perhaps this strategy would help. If you have detailed
+   hints for others, please post them back here. Also feel free to email
+   me if you run into trouble! Michael # HCId options options { #
+   Automatically initialize new devices autoinit yes; # Security Manager
+   mode # none - Security manager disabled # auto - Use local PIN for
+   incoming connections # user - Always ask user for a PIN # security
+   auto; # Pairing mode # none - Pairing disabled # multi - Allow pairing
+   with already paired devices # once - Pair once and deny successive
+   attempts pairing multi; # PIN helper pin_helper /usr/bin/bluez-pin; #
+   D-Bus PIN helper #dbus_pin_helper; } # Default settings for HCI devices
+   device { # Local device name # %d - device id # %h - host name name
+   "%h-%d"; # Local device class class 0x3e0100; # Default packet type
+   #pkt_type DH1,DM1,HV1; # Inquiry and Page scan iscan enable; pscan
+   enable; # Default link mode # none - no specific policy # accept -
+   always accept incoming connections # master - become master on incoming
+   connections, # deny role switch on outgoing connections lm accept; #
+   Default link policy # none - no specific policy # rswitch - allow role
+   switch # hold - allow hold mode # sniff - allow sniff mode # park -
+   allow park mode lp rswitch,hold,sniff,park; # Authentication and
+   Encryption (Security Mode 3) #auth enable; #encrypt enable; }
+   #1.1 Michael Collins on 2006-10-18 23:36
+   I finally figure out what went wrong. I had not commented out the
+   dbus_pin_helper in the HCId options file. Just doing tail -f on
+   /var/log/messages actually showed me that. So now I can finally speak
+   to the NXT. I tried the UltraSound program and was surprised how slow
+   the sampling was. I guess the next step is trying to figure out how to
+   upload programs and then how to send bluetooth messages to the program.
+   Thanks, Dov
+   #1.1.1 Dov Grobgeld on 2006-10-19 19:05
+   Yes, you are correct. Sampling ultrasound over bluetooth is extremely
+   slow. I actually am not using the BT functionality much anymore for
+   that reason. I've decided to go all-USB instead. My rig actually mounts
+   an ultra-light laptop on a Lego chassis with the NXT and controlls the
+   NXT via USB. That way I can get 802.11, full linux functionality, and
+   usb controlled motion and sensor gathering all in one unit. It's not
+   light or fast on wheels, but it works and provides me with all the
+   platform functionality I want.
+   #1.1.1.1 Michael Collins on 2006-10-19 19:45
+   The author does not allow comments to this entry
+   Frontpage - Top level
+
+LEGO::NXT
+
+   LEGO-NXT-2.00-1 Download
+   Browse SVN
+   NXT.pm Doc
+
+Categories
+
+     * [_] XML LEGO::NXT
+     * [_] XML Linux Bluetooth
+     * [_] XML Linux USB
+
+   Go!
+   All categories
+
+Michael Collins
+
+   [michael_collins.jpg]
+
+Sponsored Links
+
+External Resources
+
+   ruby-nxt
+   jstuber nxt linux
+   nxt step blog
+
+nxtasy.org
+
+   Fixes and features
+   Monday, December 7. 2009
+   BricxCC and the Bluetooth Blues
+   Wednesday, December 2. 2009
+   NXC updates
+   Tuesday, December 1. 2009
+
+Syndicate This Blog
+
+   XML RSS 0.91 feed
+   XML RSS 1.0 feed
+   XML RSS 2.0 feed
+   ATOM/XML ATOM 1.0 feed
+   XML RSS 2.0 Comments
+
+   Copyright 2006 Michael Collins. All Rights Reserved. Powered by
+   Serendipity
+http://nxt.ivorycity.com/index.php?/feeds/index.rss2
+http://nxt.ivorycity.com/index.php?/feeds/atom.xml
+http://nxt.ivorycity.com/index.php?/authors/1-Michael-Collins
+http://nxt.ivorycity.com/index.php?/categories/1-Linux-Bluetooth
+http://nxt.ivorycity.com/index.php?/archives/3-How-to-get-started-with-Linux-Bluetooth-and-the-NXT.html#comments
+http://nxt.ivorycity.com/index.php?/archives/3-How-to-get-started-with-Linux-Bluetooth-and-the-NXT.html#trackbacks
+http://nxt.ivorycity.com/index.php?/archives/3-How-to-get-started-with-Linux-Bluetooth-and-the-NXT.html
+http://nxt.ivorycity.com/source/NXT-1.40.tar.gz
+http://nxt.ivorycity.com/comment.php?type=trackback&entry_id=3
+http://nxt.ivorycity.com/index.php?url=archives/3-How-to-get-started-with-Linux-Bluetooth-and-the-NXT.html&serendipity[cview]=linear#comments
+http://nxt.ivorycity.com/index.php?/archives/3-How-to-get-started-with-Linux-Bluetooth-and-the-NXT.html#c7
+http://nxt.ivorycity.com/index.php?/archives/3-How-to-get-started-with-Linux-Bluetooth-and-the-NXT.html#c8
+mailto:michaelcollins[at]ivorycity.com
+http://nxt.ivorycity.com/index.php?/archives/3-How-to-get-started-with-Linux-Bluetooth-and-the-NXT.html#c9
+mailto:dov.grobgeld[at]gmail.com
+http://nxt.ivorycity.com/index.php?/archives/3-How-to-get-started-with-Linux-Bluetooth-and-the-NXT.html#c10
+mailto:michaelcollins[at]ivorycity.com
+http://nxt.ivorycity.com/
+http://nxt.ivorycity.com/index.php?/archives/3-How-to-get-started-with-Linux-Bluetooth-and-the-NXT.html#topofpage
+http://nxt.ivorycity.com/files/source/releases/LEGO-NXT-2.00-1.tar.gz
+http://nxt.ivorycity.com/websvn/listing.php?repname=nxt&path=%2F&sc=0
+http://nxt.ivorycity.com/files/nxtdoc.html
+http://nxt.ivorycity.com/index.php?/feeds/categories/2-LEGONXT.rss
+http://nxt.ivorycity.com/index.php?/categories/2-LEGONXT
+http://nxt.ivorycity.com/index.php?/feeds/categories/1-Linux-Bluetooth.rss
+http://nxt.ivorycity.com/index.php?/categories/1-Linux-Bluetooth
+http://nxt.ivorycity.com/index.php?/feeds/categories/3-Linux-USB.rss
+http://nxt.ivorycity.com/index.php?/categories/3-Linux-USB
+http://nxt.ivorycity.com/index.php?frontpage
+http://juju.org/
+http://www.jstuber.net/lego/nxt-programming/bluetooth-linux.html
+http://thenxtstep.blogspot.com/
+http://nxtasy.org/2009/12/06/fixes-and-features/
+http://nxtasy.org/2009/12/02/bricxcc-and-the-bluetooth-blues/
+http://nxtasy.org/2009/11/30/nxc-updates/
+http://nxt.ivorycity.com/index.php?/feeds/index.rss
+http://nxt.ivorycity.com/index.php?/feeds/index.rss
+http://nxt.ivorycity.com/index.php?/feeds/index.rss1
+http://nxt.ivorycity.com/index.php?/feeds/index.rss1
+http://nxt.ivorycity.com/index.php?/feeds/index.rss2
+http://nxt.ivorycity.com/index.php?/feeds/index.rss2
+http://nxt.ivorycity.com/index.php?/feeds/atom10.xml
+http://nxt.ivorycity.com/index.php?/feeds/atom10.xml
+http://nxt.ivorycity.com/index.php?/feeds/comments.rss2
+http://nxt.ivorycity.com/index.php?/feeds/comments.rss2
+http://www.s9y.org/

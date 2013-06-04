@@ -4,11 +4,11 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <meta name="generator" content="AsciiDoc 8.6.8" />
-<title>[Python][Exceptions] Choice</title>
+<title>[Python] 選擇丟出適當的例外</title>
 <link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
 <link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
 <link rel="stylesheet" href="../../../_asciidoc/stylesheets/pygments.css" type="text/css" />
-<link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" />
+<!--link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" /-->
 <script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
 <script type="text/javascript">
 /*<![CDATA[*/
@@ -25,39 +25,102 @@ asciidoc.install();
     <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
   </div>
   <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
-  <div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <!--div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
   <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
   <a class="addthis_button_tweet" tw:count="vertical"></a>
   <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
   <a class="addthis_counter"></a>
-  </div>
+  </div-->
 </div>
 </div>
 <div id="layout-content-box">
 <div id="layout-banner">
   <div id="layout-title">在電梯裡遇見雙胞胎</div>
-  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a></div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <!--a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a--></div>
 </div>
 <div id="layout-content">
 <div id="header">
 <h1><a href="exceptions.html">Python / Exceptions</a> / Choice</h1>
 </div>
 <div id="content">
-<div class="sect1">
-<h2 id="_參考資料">參考資料</h2>
+<div id="preamble">
 <div class="sectionbody">
+<div class="paragraph"><p>Python <a href="http://docs.python.org/library/exceptions.html">內建有許多 exceptions</a>，很多時候其實是不需要<a href="customization.html">自訂 exceptions</a> 的。常用的有：</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-<a href="http://stackoverflow.com/questions/7505941/object-not-in-the-right-state-which-exception-is-appropriate">python - Object not in the right state; which exception is appropriate? - Stack Overflow</a> (2011-09-21) - 建議自訂 exception，不要跟 <code>ValueError</code> 混用，因為使用者會很驚訝 <code>except ValueError:</code> 時，會 catch 到你的 exception。從 exception handling 的角度來看 exception 要怎麼設計。
+<code>NotImplementedError</code> - 尚未完成實作，或是需要 subclass 覆寫並提供實作時。
 </p>
 </li>
 <li>
 <p>
-<a href="http://stackoverflow.com/questions/1701199/is-there-an-analogue-to-java-illegalstateexception-in-python">Is there an analogue to Java IllegalStateException in Python? - Stack Overflow</a> (2009-11-09) - 普遍認為 <code>ValueError</code> 定位上類似於 Java 的 <code>IllegalStateException</code>
+<code>TypeError</code> - 傳入的參數型態有問題時。
+</p>
+</li>
+<li>
+<p>
+<code>ValueError</code> - 傳入的參數型態沒問題，但值不符合要求時。
+</p>
+</li>
+<li>
+<p>
+<code>IndexError</code> - 內部用 sequence 序列的形式儲存資料，但索引超出範圍時。
+</p>
+</li>
+<li>
+<p>
+<code>KeyError</code> - 內部用 key-value pairs 對照表的形式儲存資料，但索引的 key 值不存在時。
+</p>
+</li>
+<li>
+<p>
+<code>AssertionError</code> - <a href="../programming/assertions.html">斷言</a>的條件不成立時。
+</p>
+<div class="paragraph"><p>許多人問到 Java <a href="http://docs.oracle.com/javase/7/docs/api/java/lang/IllegalStateException.html"><code>IllegalStateException</code></a> 適用的狀況，在 Python 裡要丟出什麼例外？目前大家比較能接受的答案是 <code>ValueError</code>，也就是第一個參數 <code>self</code> 的狀態有問題。但我個人認為，如果有人在不對的時機呼叫某個方法，丟出 <code>AssertionError</code> 應該更為恰當，因為它違反了當初設計 API 的人的假設。</p></div>
+</li>
+<li>
+<p>
+<code>RuntimeError</code> - 當上面的 exceptions 都不適用時。
 </p>
 </li>
 </ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://docs.python.org/library/exceptions.html">Built-in Exceptions</a> <sup><a href="https://diigo.com/0xf1l">閱讀</a></sup>
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">其他文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/10726919/what-error-to-raise-when-class-state-is-invalid">python - What error to raise when class state is invalid? - Stack Overflow</a> <sup><a href="https://diigo.com/0xrez">閱讀</a></sup> (2012-05-23) - 建議延用 <code>ValueError</code>，因為沒有人會去 catch 這類的錯誤（基本上這是 API 用法上的錯誤，屬於 programming error），所以沒必要去自訂 exception。
+</p>
+</li>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/7505941/object-not-in-the-right-state-which-exception-is-appropriate">python - Object not in the right state; which exception is appropriate? - Stack Overflow</a> <sup><a href="https://diigo.com/0xrev">閱讀</a></sup> (2011-09-21) - 建議自訂 exception，不要跟 <code>ValueError</code> 混用，因為使用者會很驚訝 <code>except ValueError:</code> 時，會 catch 到你的 exception。從 exception handling 的角度來看 exception 要怎麼設計。
+</p>
+</li>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/1701199/is-there-an-analogue-to-java-illegalstateexception-in-python">Is there an analogue to Java IllegalStateException in Python? - Stack Overflow</a> <sup><a href="https://diigo.com/0xrer">閱讀</a></sup> (2009-11-09) - 普遍認為 <code>ValueError</code> 定位上類似於 Java 的 <code>IllegalStateException</code>
+</p>
+</li>
+</ul></div>
+</div></div>
 </div>
 </div>
 <div id="disqus_thread"></div>
@@ -75,7 +138,7 @@ dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
 <div id="footnotes"><hr /></div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2013-01-24 20:20:14 CST
+Last updated 2013-06-04 22:51:18 CST
 </div>
 </div>
 </div>
@@ -83,6 +146,6 @@ Last updated 2013-01-24 20:20:14 CST
 <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
 <script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
 <script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
-<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script>
+<!--script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script-->
 </body>
 </html>

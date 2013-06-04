@@ -1,0 +1,349 @@
+= Apache HTTP Server / Official / Modules / mod_auth =
+<<TableOfContents>>
+
+== mod_auth_digest ==
+http://httpd.apache.org/docs/2.2/mod/mod_auth_digest.html @2009/02/23
+
+ * Description: User authentication using MD5 Digest Authentication.
+ * Status: Extension
+ * Module Identifier: `auth_digest_module`
+ * Source File: `mod_auth_digest.c`
+
+=== Summary ===
+
+This module implements HTTP Digest Authentication (http://www.faqs.org/rfcs/rfc2617.html[RFC2617]), and provides a more secure alternative to `mod_auth_basic`. __(使用者感覺不到 Basic 與 Digest 有什麼差別, 都是跳出視窗詢問帳號/密碼; '''雖然說 more secure, 但摘要值被攔截到還是有可能被別人假冒身份, 最好的方式還是透過 SSL 運作''')__
+
+=== Using Digest Authentication ===
+
+Using MD5 Digest authentication is very simple. __Simply set up authentication normally, using `AuthType Digest` and `AuthDigestProvider` instead of the normal `AuthType Basic` and `AuthBasicProvider`. Then add a `AuthDigestDomain` directive containing at least the ''root URI(s)'' for this ''protection space''.__
+
+Appropriate user (text) files can be created using the `htdigest` tool.
+
+Example:
+
+ {{{
+<Location /private/>
+  AuthType Digest
+  AuthName "private area"
+  AuthDigestDomain /private/ http://mirror.my.dom/private2/ <-- 感覺 /private/ 的宣告有點多餘? 實驗確認這一行不加也沒關係
+
+  AuthDigestProvider file
+  AuthUserFile /web/auth/.digest_pw
+  Require valid-user
+</Location>
+ }}}
+
+`htdigest` 工具的使用與 `htpasswd` 不太一樣:
+
+ {{{
+# htdigest -c passwords "private data" admin <-- 實驗確認, 這裡的 realm 要與 AuthName 的宣告一致才行
+# cat passwords
+admin:private data:5f599d18061727b85368a6b3382ab9c1
+ }}}
+
+Note: Digest authentication is more secure than Basic authentication, but only works with supporting browsers. As of September 2004, major browsers that support digest authentication include Amaya, Konqueror, MS Internet Explorer for Mac OS X and Windows (although the Windows version fails when used with a query string -- see "Working with MS Internet Explorer" below for a workaround), Mozilla, Netscape 7, Opera, and Safari. `lynx` does not support digest authentication. __Since digest authentication is not as widely implemented as basic authentication, you should use it only in environments where all users will have supporting browsers.__
+
+=== Working with MS Internet Explorer ===
+
+The Digest authentication implementation in previous Internet Explorer for Windows versions (5 and 6) had issues, namely(也就是) that GET requests with a query string were not RFC compliant. There are a few ways to work around this issue.
+
+The first way is to use POST requests instead of GET requests to pass data to your program. This method is the simplest approach if your application can work with this limitation.
+
+Since version 2.0.51 Apache also provides a workaround in the `AuthDigestEnableQueryStringHack` ''environment variable''. If `AuthDigestEnableQueryStringHack` is set for the request, Apache will take steps to work around the MSIE bug and remove the query string from the digest comparison. Using this method would look similar to the following.
+
+Using Digest Authentication with MSIE:
+
+ {{{
+BrowserMatch "MSIE" AuthDigestEnableQueryStringHack=On
+ }}}
+
+__This workaround is not necessary for MSIE 7, though enabling it does not cause any compatibility issues or significant overhead.__
+
+See the `BrowserMatch` directive for more details on ''conditionally'' setting environment variables.
+
+:::
+
+=== AuthDigestDomain Directive ===
+
+ * Description: URIs that are in the same protection space for digest authentication
+ * Syntax: `AuthDigestDomain URI [URI] ...`
+ * Context: `directory`, `.htaccess`
+ * Override: `AuthConfig`
+ * Status: Extension
+ * Module: `mod_auth_digest`
+
+__The `AuthDigestDomain` directive allows you to specify one or more URIs which are in the same protection space (i.e. use the same realm and username/password info). The specified URIs are ''prefixes''; the client will assume that all URIs "below" these are also protected by the same username/password. The URIs may be either absolute URIs (i.e. including a scheme, host, port, etc.) or relative URIs.__
+
+__This directive should always be specified and contain at least the (set of) root URI(s) for this space. Omitting to do so will cause the client to send the `Authorization` header for every request sent to this server. Apart from increasing the size of the request, it may also have a detrimental(不利的) effect on performance if `AuthDigestNcCheck` is on.__
+
+__'''The URIs specified can also point to different servers, in which case clients (which understand this) will then share username/password info across multiple servers without prompting the user each time. (聽起來好像也可以用在 SSO[...])'''__
+
+:::
+
+== mod_authnz_ldap ==
+http://httpd.apache.org/docs/2.2/mod/mod_authnz_ldap.html @2009/03/04
+
+ * Description: Allows an LDAP directory to be used to store the database for HTTP Basic authentication. (應該也可以搭配 Digest 運作吧?)
+ * Status: Extension
+ * Module Identifier: `authnz_ldap_module`
+ * Source File: `mod_authnz_ldap.c`
+ * Compatibility: Available in version 2.1 and later
+
+=== Summary ===
+
+This module provides authentication front-ends such as `mod_auth_basic` to authenticate users through an ldap directory.
+
+`mod_authnz_ldap` supports the following features:
+
+ * Known to support the OpenLDAP SDK (both 1.x and 2.x), Novell LDAP SDK and the iPlanet (Netscape) SDK.
+ * __Complex ''authorization policies'' can be implemented by representing the policy with LDAP filters.__
+ * Uses extensive caching of LDAP operations via `mod_ldap`.
+ * Support for LDAP over SSL (requires the Netscape SDK) or TLS (requires the OpenLDAP 2.x SDK or Novell LDAP SDK).
+
+When using `mod_auth_basic`, this module is invoked via the `AuthBasicProvider` directive with the `ldap` value.
+
+=== Operation ===
+
+__There are two phases in granting access to a user. The first phase is ''authentication'', in which the `mod_authnz_ldap` authentication provider verifies that the user's credentials(憑證) are valid. This is also called the ''search/bind phase''. The second phase is ''authorization'', in which `mod_authnz_ldap` determines if the authenticated user is allowed access to the resource in question. This is also known as the ''compare phase''.__
+
+__`mod_authnz_ldap` registers both an `authn_ldap` ''authentication provider'' and an `authz_ldap` ''authorization handler''. The `authn_ldap` authentication provider can be enabled through the `AuthBasicProvider` directive using the `ldap` value. The `authz_ldap` handler extends the `Require` directive's authorization types by adding `ldap-user`, `ldap-dn` and `ldap-group` values.__
+
+==== The Authentication Phase ====
+
+__During the authentication phase, `mod_authnz_ldap` searches for an entry in the directory that matches the username that the HTTP client passes. If a ''single unique match'' is found, then `mod_authnz_ldap` attempts to bind to the directory server using the DN of the entry plus the password provided by the HTTP client. '''Because it does a search, then a bind, it is often referred to as the ''search/bind phase''.'''__ Here are the steps taken during the search/bind phase.
+
+ 1. Generate a ''search filter'' by combining the attribute and filter provided in the `AuthLDAPURL` directive with the username passed by the HTTP client.
+
+ 2. Search the directory using the generated filter. __If the search does not return ''exactly one'' entry, deny or decline access.__
+
+ 3. __Fetch the distinguished name of the entry retrieved from the search and attempt to bind to the LDAP server using the DN and the password passed by the HTTP client. '''(注意這裡的 DN 不是由 client 直接提供的, 而是透過帳號比對之後再間接取得的; 因此 search 的動作在這個階段是很關鍵的...)'''__ If the bind is unsuccessful, deny or decline access.
+
+The following directives are used during the search/bind phase
+
+ * `AuthLDAPURL` - Specifies the LDAP server, the ''base DN'', the attribute to use in the search, as well as the extra search filter to use.
+
+ * `AuthLDAPBindDN` - An optional DN to bind with during the search phase. (如果不能匿名搜尋的話?)
+
+ * `AuthLDAPBindPassword` - An optional password to bind with during the search phase.
+
+==== The Authorization Phase ====
+
+During the authorization phase, `mod_authnz_ldap` attempts to determine if the user is authorized to access the resource. __Many of these checks require `mod_authnz_ldap` to do a compare operation on the LDAP server. This is why this phase is often referred to as the ''compare phase''.__ `mod_authnz_ldap` accepts the following `Require` directives to determine if the credentials are acceptable:
+
+__'''其中 `ldap-group` 可以應用在 "應用程式群組", 只要某個使用者有被歸到某個群組之下, 就可以使用特定的應用程式, 這可以大幅簡化 IT 人員在人員進出時的維護工作. 雖然 `ldap-attribute` 跟 `ldap-filter` 也可以有類似的應用, 但可能還要額外定義 schemas, 用起來不是那麼方便... 依部門來區分也不見得適用, 因為同部門的人可能有不同的存取權限, 只有群組才能做最有彈性的搭配... @2009/03/18'''__
+
+ * Grant access if there is a `Require ldap-user` directive, and the username in the directive matches the username passed by the client.
+
+ * Grant access if there is a `Require ldap-dn` directive, and the DN in the directive matches the DN fetched from the LDAP directory.
+
+ * Grant access if there is a `Require ldap-group` directive, and the DN fetched from the LDAP directory (or the username passed by the client) ''occurs in'' the LDAP group.
+
+ * Grant access if there is a `Require ldap-attribute` directive, and the attribute fetched from the LDAP directory matches the given value.
+
+ * Grant access if there is a `Require ldap-filter` directive, and the search filter successfully finds a single user object that matches the `dn` of the authenticated user.
+
+ * otherwise, deny or decline access
+
+Other `Require` values may also be used which may require loading additional authorization modules. Note that if you use a `Require` value from another authorization module, you will need to ensure that `AuthzLDAPAuthoritative` is set to `off` to allow the authorization phase to ''fall back'' to the module providing the alternate `Require` value. __When no LDAP-specific `Require` directives are used, authorization is allowed to fall back to other modules as if `AuthzLDAPAuthoritative` was set to `off`. (做更具彈性的比對)__
+
+ * Grant access if there is a `Require valid-user` directive. (requires `mod_authz_user`)
+
+ * Grant access if there is a `Require group` directive, and `mod_authz_groupfile` has been loaded with the `AuthGroupFile` directive set.
+
+ * others...
+
+`mod_authnz_ldap` uses the following directives during the compare phase:
+
+ * `AuthLDAPURL` - The attribute specified in the URL is used in compare operations for the `Require ldap-user` operation.
+
+ * `AuthLDAPCompareDNOnServer` - Determines the behavior of the `Require ldap-dn` directive.
+
+ * `AuthLDAPGroupAttribute` - Determines the attribute to use for comparisons in the `Require ldap-group` directive.
+
+ * `AuthLDAPGroupAttributeIsDN` - Specifies whether to use the user DN or the username when doing comparisons for the `Require ldap-group` directive.
+
+=== The Require Directives ===
+
+Apache's `Require` directives are used during the authorization phase to ensure that a user is allowed to access a resource. `mod_authnz_ldap` extends the authorization types with `ldap-user`, `ldap-dn`, `ldap-group`, `ldap-attribute` and `ldap-filter`. Other authorization types may also be used but may require that additional authorization modules be loaded.
+
+==== Require valid-user ====
+
+If this directive exists, `mod_authnz_ldap` grants access to any user that has successfully authenticated during the search/bind phase. Requires that `mod_authz_user` be loaded.
+
+:::
+
+==== Require ldap-group ====
+
+This directive specifies an LDAP group whose members are allowed access. It takes the distinguished name of the LDAP group. Note: Do not surround the group name with quotes. For example, assume that the following entry existed in the LDAP directory:
+
+ {{{
+dn: cn=Administrators, o=Airius
+objectClass: groupOfUniqueNames
+uniqueMember: cn=Barbara Jenson, o=Airius
+uniqueMember: cn=Fred User, o=Airius
+ }}}
+
+The following directive would grant access to both Fred and Barbara:
+
+ {{{
+Require ldap-group cn=Administrators, o=Airius
+Require ldap-group CN=BTUsers,OU=雋曜整合,OU=美閣股份有限公司,DC=HWATALEE,DC=LOCAL <-- @2009/03/25 實驗確認, 寫中文也沒問題
+ }}}
+
+Behavior of this directive is modified by the `AuthLDAPGroupAttribute` and `AuthLDAPGroupAttributeIsDN` directives.
+
+:::
+
+=== Examples ===
+
+ * Grant access to anyone who exists in the LDAP directory, using their UID for searches.
+
+   {{{
+AuthLDAPURL "ldap://ldap1.airius.com:389/ou=People,o=Airius?uid?sub?(objectClass=*)"
+Require valid-user
+   }}}
+
+   .__按照 LDAP System Administration 一書中 2.6 Distributed Directories 的說法, LDAP URI 的格式為 `ldap://[host:port]/dn[?attribute][?scope][?filter]`, 因此範例串 `uid` 就是要拿來跟帳號做比對的 attribute, `sub` 是 scope, 而 `(objectClass=*)` 就是 search filter. 中間有參數要省略時就連續下問號即可, 例如 "`ldap://ldap.airius.com/o=Airius?uid??(qpagePagerID=*)`"__
+
+ * The next example is the same as above; but with the fields that have useful defaults omitted. Also, note the use of a ''redundant'' LDAP server.
+
+   {{{
+AuthLDAPURL "ldap://ldap1.airius.com ldap2.airius.com/ou=People,o=Airius"
+Require valid-user
+   }}}
+
+ * The next example is similar to the previous one, but it uses the common name instead of the UID. __Note that this could be problematical if multiple people in the directory share the same `cn`, because a search on `cn` must return exactly one entry.__ That's why this approach is not recommended: it's a better idea to choose an attribute that is guaranteed unique in your directory, such as `uid`.
+
+   {{{
+AuthLDAPURL "ldap://ldap.airius.com/ou=People,o=Airius?cn"
+Require valid-user
+   }}}
+
+ * Grant access to anybody in the `Administrators` group. The users must authenticate using their UID.
+
+   {{{
+AuthLDAPURL ldap://ldap.airius.com/o=Airius?uid
+Require ldap-group cn=Administrators,o=Airius
+   }}}
+
+ * The next example assumes that everyone at Airius who carries an alphanumeric pager will have an LDAP attribute of `qpagePagerID`. The example will grant access only to people (authenticated via their UID) who have alphanumeric pagers:
+
+   {{{
+AuthLDAPURL ldap://ldap.airius.com/o=Airius?uid??(qpagePagerID=*)
+Require valid-user
+   }}}
+
+ * The next example demonstrates the power of using filters to accomplish complicated administrative requirements. Without filters, it would have been necessary to create a new LDAP group and ensure that the group's members remain synchronized with the pager users. This becomes trivial with filters. The goal is to grant access to anyone who has a pager, plus grant access to Joe Manager, who doesn't have a pager, but does need to access the same resource:
+
+   {{{
+AuthLDAPURL ldap://ldap.airius.com/o=Airius?uid??(|(qpagePagerID=*)(uid=jmanager))
+Require valid-user
+   }}}
+
+   .This last may look confusing at first, so it helps to evaluate what the search filter will look like based on who connects, as shown below. If Fred User connects as `fuser`, the filter would look like
+
+   {{{
+(&(|(qpagePagerID=*)(uid=jmanager))(uid=fuser))
+   }}}
+
+   .The above search will only succeed if fuser has a pager. When Joe Manager connects as `jmanager`, the filter looks like
+
+   {{{
+(&(|(qpagePagerID=*)(uid=jmanager))(uid=jmanager))
+   }}}
+
+   .The above search will succeed whether jmanager has a pager or not.
+
+__'''下面的 `sAMAccountName` 正是整合 AD 驗證時, 最常拿來做帳號比對的欄位.''' http://msdn.microsoft.com/en-us/library/ms679635(VS.85).aspx[官網]是這樣說的 - The logon name used to support clients and servers running older versions of the operating system, such as Windows NT 4.0, Windows 95, Windows 98, and LAN Manager. This attribute must be less than 20 characters to support older clients.__
+
+ {{{
+$ ldapsearch -h 10.40.1.154 -x -D "administrator@hwatalee.local" -W -b "cn=users,dc=hwatalee,dc=local" "(cn=Administrator)"
+...
+# Administrator, Users, hwatalee.local
+dn: CN=Administrator,CN=Users,DC=hwatalee,DC=local
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: user
+cn: Administrator
+description:: 566h55CG6Zu76IWmL+e2suWfn+eahOWFp+W7uuW4s+aItg== <-- 中文的部份採用 base64 編碼
+distinguishedName: CN=Administrator,CN=Users,DC=hwatalee,DC=local
+...
+memberOf: CN=Group Policy Creator Owners,CN=Users,DC=hwatalee,DC=local
+memberOf: CN=Domain Admins,CN=Users,DC=hwatalee,DC=local
+memberOf: CN=Enterprise Admins,CN=Users,DC=hwatalee,DC=local
+memberOf: CN=Schema Admins,CN=Users,DC=hwatalee,DC=local
+memberOf: CN=Administrators,CN=Builtin,DC=hwatalee,DC=local
+...
+sAMAccountName: Administrator
+...
+$ echo '566h55CG6Zu76IWmL+e2suWfn+eahOWFp+W7uuW4s+aItg==' | base64 -d
+管理電腦/網域的內建帳戶
+ }}}
+
+有很多地方都是這麼用的:
+
+ * http://blogs.open.collab.net/svn/2009/03/subversion-with-apache-and-ldap-updated.html[Subversion with Apache and LDAP: Updated]
+ * http://www.le.ac.uk/cc/sh23/adldap.html[Apache 2 Secure Reverse Proxy with LDAP Authentication against AD]
+ * http://www.yolinux.com/TUTORIALS/LinuxTutorialApacheAddingLoginSiteProtection.html#SINGLE[Adding password protection to a web site using Apache web server authentication]
+
+ {{{
+<Directory /var/www>
+  AuthType Basic
+  AuthName "LDAP Protected"
+  AuthBasicProvider ldap
+  AuthLDAPURL "ldap://10.40.1.154/dc=hwatalee,dc=local?sAMAccountName??objectClass=user"
+  AuthLDAPBindDN "administrator@hwatalee.local"
+  AuthLDAPBindPassword "p4wrd" <-- 內含密碼, 因此這支組態檔要設定成只有 www-data 可以存取
+  Require valid-user
+</Directory>
+ }}}
+
+:::
+
+=== AuthLDAPGroupAttribute Directive ===
+
+ * Description: LDAP attributes used to check for group membership
+ * Syntax: `AuthLDAPGroupAttribute attribute`
+ * Context: directory, `.htaccess`
+ * Override: `AuthConfig`
+ * Status: Extension
+ * Module: `mod_authnz_ldap`
+
+This directive specifies which LDAP attributes are used to check for ''group membership''. __Multiple attributes can be used by specifying this directive multiple times. If not specified, then `mod_authnz_ldap` uses the `member` and `uniquemember` attributes.__
+
+其中 `Member` 正是 AD 所採用的 attribute:
+
+ {{{
+$ ldapsearch -h 211.22.130.12 -p 38899 -x -D "admin@hwatalee.local" -W -b "dc=hwatalee,dc=local" "(objectclass=group)"
+...
+objectClass: group
+cn: itmans
+member:: Q0495b6Q5YWL55GLLE9VPeaJgOacieWBnOeUqOW4s+iZnyxPVT3ploDluIIsT1U9576O6
+ Zaj6IKh5Lu95pyJ6ZmQ5YWs5Y+4LERDPUhXQVRBTEVFLERDPUxPQ0FM <-- 跟上一行接起來, 再用 base64 反解即可
+member:: Q049546L54Kv55qTLE9VPeaJgOacieWBnOeUqOW4s+iZnyxPVT3ploDluIIsT1U9576O6
+ Zaj6IKh5Lu95pyJ6ZmQ5YWs5Y+4LERDPUhXQVRBTEVFLERDPUxPQ0FM
+member:: Q0495p6X5a625ZCMLE9VPee4vee2k+eQhuWupCxPVT3nvo7plqPogqHku73mnInpmZDlh
+ azlj7gsREM9SFdBVEFMRUUsREM9TE9DQUw=
+member:: Q0496auY5q2j5bKzLE9VPeeuoeeQhumDqCxPVT3nvo7plqPogqHku73mnInpmZDlhazlj
+ 7gsREM9SFdBVEFMRUUsREM9TE9DQUw=
+distinguishedName:: Q049aXRtYW5zLE9VPeeuoeeQhumDqCxPVT3nvo7plqPogqHku73mnInpmZ
+ Dlhazlj7gsREM9SFdBVEFMRUUsREM9TE9DQUw=
+...
+ }}}
+ 
+=== AuthLDAPGroupAttributeIsDN ===
+
+ * Description: Use the DN of the client username when checking for group membership (由此看來, 每一個 entry 真的只有一個 DN[?])
+ * Syntax: `AuthLDAPGroupAttributeIsDN on|off`
+ * Default: `AuthLDAPGroupAttributeIsDN on`
+ * Context: directory, `.htaccess`
+ * Override: `AuthConfig`
+ * Status: Extension
+ * Module: `mod_authnz_ldap`
+
+__When set `on`, this directive says to use the distinguished name of the client username when checking for group membership. Otherwise, the username will be used.__ For example, assume that the client sent the username `bjenson`, which corresponds to the LDAP DN `cn=Babs Jenson, o=Airius`. If this directive is set, `mod_authnz_ldap` will check if the group has `cn=Babs Jenson, o=Airius` as a member. If this directive is not set, then `mod_authnz_ldap` will check if the group has `bjenson` as a member.
+
+:::
+
+

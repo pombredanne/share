@@ -1,0 +1,55 @@
+= link:gae.html[GAE] / Image Hosting =
+:title: [GAE] Image Hosting
+
+== 參考資料 ==
+
+.文件
+--
+ * http://googleappengine.blogspot.tw/2010/08/multi-tenancy-support-high-performance_17.html[Google App Engine Blog: Multi-tenancy Support, High Performance Image Serving, Increased Datastore Quotas and More Delivered In New App Engine Release] (2010-08-12)
+////////////////////////////////////////////////////////////////////////////////
+** This release also includes a new, high-performance image serving system for your applications, based on the same infrastructure we use to serve images for Picasa.
+** You simply store a single copy of your original image in Blobstore, and then request a high-performance per-image URL. This special URL can serve that image resized and/or cropped automatically, and serving from this URL does not incur any CPU or dynamic serving load on your application (though bandwidth is still charged as usual).
+** It’s easy to use, just call the Python function get_serving_url, or the Java function getServingUrl and supply a Blob key (with optional serving size and/or crop arguments), and you can now serve dozens or hundreds of thumbnails on a single page with ease.
+////////////////////////////////////////////////////////////////////////////////
+--
+
+.其他文件
+--
+ * http://stackoverflow.com/questions/9465659/google-app-engine-blobstore-as-image-host[amazon s3 - Google App Engine BlobStore as image host? - Stack Overflow] ^https://diigo.com/0ybmo[閱讀]^ (2012-02-27)
+////////////////////////////////////////////////////////////////////////////////
+** If I were to make a project with the Google App Engine (using Python), and this project contained small user-generated images (which, once uploaded, will be accessed a lot, but won't change or altered dynamically anymore), would the Google App Engine BlobStore make sense to use (in terms of costs, speed etc.)? Or would GAE or the client connecting to Amazon S3 and storing images there make more sense, as these files will end up being static?
+** For what it's worth, the generated image files are all considered to be public, not user-private, and it would be perfectly fine for them to be on another subdomain. 這讓我想到，如果將圖片放到另一個 domain，瀏覽器存取的速度會更快。
+** These images are served by google's high performance image servers, and will never cost you instance hours, just bandwidth. 儲存的部份應該併入 datastore?? 沒有 blobstore API 存取的成本??
+** i set a Cache Control header to ensure they arent requested too many times.
+////////////////////////////////////////////////////////////////////////////////
+ * http://stackoverflow.com/questions/8685324/cost-of-storing-a-file-in-datastore-vs-blobstore[google app engine - Cost of storing a file in Datastore vs Blobstore - Stack Overflow] ^https://diigo.com/0ybmx[閱讀]^ (2011-12-31)
+////////////////////////////////////////////////////////////////////////////////
+** every file in the blobstore has an associated BlobInfo entity in the datastore
+** We store millions of images on App Engine, and we're currently storing them in datastore entities (the images are smaller than 1MB). I'm wondering if using the blobstore would reduce our cost. I'm not concerned about the cost of storage. The real cost is the act of writing and reading. 為什麼圖片放 blobstore 成本比較高??
+////////////////////////////////////////////////////////////////////////////////
+ * http://stackoverflow.com/questions/6553311/google-storage-or-amazon-s3-or-google-app-engine-blobstore[Google Storage or Amazon S3 or Google App Engine BlobStore - Stack Overflow] ^https://diigo.com/0ybna[閱讀]^ (2011-07-01)
+////////////////////////////////////////////////////////////////////////////////
+** I am going to build a site using Google App Engine. My public site contains thousands of pictures. I want to store these pictures in the Cloud: Google Storage or Amazon S3 or Google App Engine BlobStore.
+** What I need is simple referrer protection: Only show the image when the referrer is my site. 如果流量會產生費用，這一點倒是要考慮。
+** The easiest option would be to use the blobstore. You can provide whatever upload interface you want - it's up to you to write it - and the blobstore doesn't constrain your download URLs, only your upload ones?? You can serve blobstore images under any URL simply by setting the appropriate headers, or you can use get_serving_url to take advantage of the built-in fast image serving support, which generates cryptic but consistent URLs (but doesn't let you do referer checks).
+////////////////////////////////////////////////////////////////////////////////
+ * http://jeremyblythe.blogspot.tw/2010/07/google-app-engine-image-storage.html[Jeremy's Blog: Google App Engine Image Storage?] (2010-07-31)
+////////////////////////////////////////////////////////////////////////////////
+** Note that I'm using the Cache-Control header with a max-age of two weeks. The image with the given id never changes so in theory this could be set to forever. This caching is very important because otherwise the app gets hit every time for the image.
+** The downside to this is that sometimes the Datastore can be very slow?
+** 5.9 In order to use the Picasa Web Albums API with your service, all End Users on your service must have previously created their own individual Picasa Web Albums accounts. You must explicitly notify End Users that they are accessing their Picasa Web Albums accounts through your service. In other words, you may not create one or more Picasa Web Albums accounts for the purpose of storing images on behalf of users without those users creating their own individual Picasa Web Albums accounts. 使用者必須被告知他正在存取自己的相簿，不能建一或多個相簿存放使用者上傳的圖片。
+** So, I've removed Picasa from my app and I'm now using the Datastore to hold an 800x600 image as well. Now that the Datastore performance has improved this is not so bad.
+** I've looked at Flickr and Photobucket as well and they also seem to have a clause like this in their terms. 
+** Sites like Picasa are designed to serve images super-fast. S3 is a generic storage service that I'm guessing is not optimized to serve images.
+** I believe Amazon S3 is super optimized for serving images. there is an API so your app can store the image in your S3 bucket (can be filename or a special key) and simply returns the URL to the file. Perhaps your web app can store the URL to the amazon s3 image (rather than the image data itself) which would cause the user to hit S3 for the images.
+** You should use app engine's new high-perf image serving system that's based off of the same infrastructure as Picasa.
+////////////////////////////////////////////////////////////////////////////////
+--
+
+////////////////////////////////////////////////////////////////////////////////
+
+ * image hosting 的成本最高，儲存成本並不會成長得太快，最大的成本來自提供圖片內容的頻寬。
+   ** 減少存取就能降低成本，所以 CDN 是可能的方案??
+
+////////////////////////////////////////////////////////////////////////////////
+

@@ -1,0 +1,240 @@
+= NXT / Bluetooth =
+<<TableOfContents>>
+
+== Setting up NXT-Bluetooth support on Linux (2009-04-19) ==
+http://vikram.eggwall.com/computers/nxt-bluetooth-setup.html @2009/12/19
+
+So you want your NXT device to talk back to your Linux machine? Perhaps you want to control your robot through your computer. As a first step, you have to set up the Linux - NXT bluetooth connection. My setup is explained below.
+
+ * Ubuntu Gutsy (7.10) Linux, though these instructions are not version dependant. The only instructions that depend on the distribution are the ones related to package installation (`apt-get`). If you know your distribution's package manager, you should have no trouble.
+
+ * An x86 computer. Typically, you'll want a laptop with bluetooth support, so you can walk around with your NXT construction. A desktop will do just fine too. You need an x86 because the http://bricxcc.sourceforge.net/nbc/[nbc] binary only works on an x86.
+
+ * A Lego Mindstorm NXT.
+
+ * Bluetooth hardware on your linux machine.
+
+ * The Linux packages: `bluez-utils`, `python-bluez`, `bluez-hcidump`, `bluez-gnome`, `bluetooth`
+
+Make sure you have all the packages installed. On Ubuntu, you can run this command.
+
+ {{{
+sudo apt-get install bluez-utils python-bluez bluez-hcidump bluez-gnome bluetooth
+ }}}
+
+Now, once all the packages are installed, make sure that your bluetooth hardware is supported and is running fine. One way to do this is to check for the bluetooth icon in the taskbar of Gnome.
+
+{{attachment:icon.png}}
+
+You should be able to click on that icon and get a list of preferences. In case you are not sure if you device is getting recognized and used, check for lines similar to the ones below in the output of `dmesg`
+
+ {{{
+[243203.060226] Bluetooth: HCI USB driver ver 2.9
+[243203.063512] usbcore: registered new interface driver hci_usb
+ }}}
+
+Now that you have a working bluetooth setup, you need to pair it with the NXT brick. First, you need to ensure that the ''serial service'' is started by selecting it in the preferences dialog from the bluetooth icon. (UNR 9.04 已經沒有這個頁籤了?)
+
+{{attachment:serialStarted.png}}
+
+Now turn on your NXT Brick, and enter bluetooth settings, and turn bluetooth on. You can verify that bluetooth is turned on by looking in the top left of the NXT display. It should have a bluetooth icon. Now run the command `sudo hcitool scan` from a console. The output should contain a line for your NXT device. My device is called Snow, and I get the following output.
+
+ {{{
+Scanning ...
+  11:22:33:44:55:66  Snow
+ }}}
+
+Great!. This is definite proof that your bluetooth device works, and that it can see your NXT. __Time to set them up for pairing. Edit the file `/etc/bluetooth/rfcomm.conf` to contain the following block: (透過 http://en.wikipedia.org/wiki/Bluetooth#RFCOMM_.28Cable_replacement_protocol.29[RFCOMM] 可以為藍牙裝置模擬出 RS-232 通訊介面, 但為什麼跟 NXT 通訊要透過 RFCOMM?)__
+
+ {{{
+rfcomm0 {
+        # Automatically bind the device at startup
+        bind yes;
+
+        # Bluetooth address of the device
+        device 11:22:33:44:55:66;
+
+        # RFCOMM channel for the connection
+        channel 1;
+
+        # Description of the connection
+        comment "Snow Mindstorm";
+}
+ }}}
+
+Change the address `11:22:33:44:55:66` to match the output of your `hcitool scan` command that you made in the previous step. Now run the command `sudo /etc/init.d/bluetooth restart`, and then `rfcomm`. The output should contain your device's address. A sample session is shown here:
+
+ {{{
+$ sudo /etc/init.d/bluetooth restart
+   * Restarting bluetooth            [ OK ]
+$ rfcomm
+rfcomm0: 11:22:33:44:55:66 channel 1 clean
+ }}}
+
+Now, you need to pair your device. This is done with the following command (一定要透過 `sudo` 執行, 否則會出現 "Can't create socket: Operation not permitted" 的錯誤)
+
+ {{{
+$ sudo l2ping 11:22:33:44:55:66
+ }}}
+
+__This will prompt the NXT to beep happily, asking for a passphrase. (此時 Bluetooth Applet 必須開著才行, 否則會直接丟出 "Can't connect: Permission denied" 的錯誤)__ The number "1234" is already entered, so just accept it by pressing the orange button. Now your computer will want to know this passphrase. Click on the button in the notification that pops up (example shown below), and enter the same number as shown. __This is a ''one-time procedure'' for each computer-NXT combination. (因為配對之後就會被列入 "Known Devices")__
+
+{{attachment:request.png}}
+
+{{attachment:pass.png}}
+
+If you have a multi-seat (or multi-terminal) setup, this notification might be going to another seat, so check all notification areas on every terminal. If you don't know what multi-seat or multi-terminal setup is, ignore the previous statement. If all went well, your ping command should be able to send packets back and forth to the NXT. A happy sample output is shown below.
+
+ {{{
+Ping: 11:22:33:44:55:66 from 00:09:DD:50:67:CE (data size 44) ...
+4 bytes from 11:22:33:44:55:66 id 0 time 49.95ms
+4 bytes from 11:22:33:44:55:66 id 1 time 85.71ms
+4 bytes from 11:22:33:44:55:66 id 2 time 27.80ms
+4 bytes from 11:22:33:44:55:66 id 3 time 54.80ms
+4 bytes from 11:22:33:44:55:66 id 4 time 65.81ms
+4 bytes from 11:22:33:44:55:66 id 5 time 47.80ms
+4 bytes from 11:22:33:44:55:66 id 6 time 84.79ms
+4 bytes from 11:22:33:44:55:66 id 7 time 45.81ms
+ }}}
+
+Great! So now your NXT is paired with the computer. In order to communicate with the desktop, you need to download the http://home.comcast.net/~dplau/nxt_python/[NXT Python library]. Once you have downloaded and installed it, enter the sample program, and you should be able to get the NXT's name and ID. If you have any problems at this stage, try rebooting the NXT brick, it sometimes helps. After running the sample program, you should see your hostname in the "My Contacts" in the NXT's bluetooth menu. This verifies that you can connect with the NXT, and have the NXT talk back to the desktop computer.
+
+== How to get started with Linux Bluetooth and the NXT (2006-10-02) ==
+http://nxt.ivorycity.com/index.php?/archives/3-How-to-get-started-with-Linux-Bluetooth-and-the-NXT.html @2009/12/19
+
+Assumptions:
+
+ * 1) You have a bluetooth adapter.
+ * 2) You already have a kernel with the `bluez` modules loaded. (I use debian 2.4.27)
+ * 3) You've installed `bluez-utils`
+
+There are already many documents available on how to do these tasks.
+
+Okay, there are some tools you need to familiarize yourself with: (還是不瞭解 `sdptool` 與 `rfcomm` 是怎麼用?)
+
+ * `hciconfig` - displays status information on your bluetooth interface (similar to `ifconfig`)
+ * `hcitool` - used to query all kinds of information about bluetooth devices in your http://en.wikipedia.org/wiki/Piconet[piconet]
+ * `sdptool` - used to create and query "service description protocol" bluetooth services, like `SP=serial` port
+ * `rfcomm` - establishes connections to remote bluetooth services or listens for incomming service connections
+
+=== Testing out Your Bluetooth Connection ===
+
+You will first need to get your bluez daemons running.
+
+On debian, this looks like:
+
+ {{{
+/etc/init.d/bluez-utils start
+ }}}
+
+On Gentoo, I think it's
+
+ {{{
+/etc/init.d/bluetooth start
+ }}}
+
+Check that your connection is working:
+
+ {{{
+hciconfig hci0
+ }}}
+
+You should see something like:
+
+ {{{
+hci0: Type: USB
+BD Address: 00:0E:A1:31:57:48 ACL MTU: 377:10 SCO MTU: 16:0
+UP RUNNING PSCAN ISCAN
+RX bytes:15156 acl:468 sco:0 events:799 errors:0
+TX bytes:11447 acl:450 sco:0 commands:198 errors:0
+ }}}
+
+__Hint: I have an !AmbiCom USB bluetooth adapter. For whatever reason I need to issue the following command to get it started: (最新買的 Esense D500 就是這樣!!)__
+
+ {{{
+hciconfig hci0 reset
+ }}}
+
+So, now, make sure your NXT is on, make sure bluetooth on the NXT is on, cross your fingers, and then type:
+
+ {{{
+hcitool scan
+ }}}
+
+If everything went to plan, you should see:
+
+ {{{
+Scanning ...
+00:16:53:00:23:E4 NXT
+ }}}
+
+Good. Now you can use the `Nxt.pm` module!
+
+Download the Nxt Perl API: http://nxt.ivorycity.com/source/NXT-1.40.tar.gz[Download]
+
+Try to run the included test program:
+
+ {{{
+tar xvzf LEGO-NXT-1.41.tar.gz
+cd LEGO-NXT-1.41
+perl test.pl <xx:xx:xx:xx:xx:xx>
+ }}}
+
+You should hear your NXT make a chirping sound. :)
+
+== How to play with Bluetooth under Linux (2006-08-18) ==
+http://www.jstuber.net/lego/nxt-programming/bluetooth-linux.html @2009/12/13
+
+This is a starter for Bluetooth on Linux. Things are still a little in flux(變遷) so it may work somewhat differently for you.
+
+Have a program ready on the NXT that sends some data via Bluetooth.
+
+Install `bluez-utils` and a recent kernel with Bluetooth enabled. (I have Debian with kernel 2.6.17.6 and `bluez-utils` 3.1 .)
+
+Plug in your Bluetooth dongle (any recent one should do).
+
+Then look at the manpages and play a little with the commands `hcitool`, `sdptool` and `rfcomm`.
+
+To receive data from an NXT do the following: (接下來就看不懂在寫什麼了?)
+
+ {{{
+sdptool add --channel=3 SP
+ }}}
+
+This announces the Serial Port service, hence `SP`. It may already be done by your system, you can check with `sdptool browse local`. You may also leave out the `--channel` option, the default channel is one.
+
+ {{{
+rfcomm listen /dev/rfcomm0 3
+ }}}
+
+This listens on RFCOMM channel three, when the connection is established the device `/dev/rfcomm0` will be created and data will arrive there.
+
+On the NXT connect to your host. A sore point(痛處) is the entry of the pin on the Linux host, for me it is in the file `/etc/bluetooth/pin`. A "line is busy" message on the NXT can mean anything, e.g. if you forgot one of the commands above.
+
+On another terminal do something like
+
+ {{{
+cat /dev/rfcomm0 | od -t x1 -w1 -v -Ax
+ }}}
+
+start the program on the NXT and watch the data arrive. I had a small program that sent "good job", this is the output I got:
+
+ {{{
+000000 00
+000001 80
+000002 09
+000003 00
+000004 09
+000005 67
+000006 6f
+000007 6f
+000008 64
+000009 20
+00000a 6a
+00000b 6f
+00000c 62
+00000d 00
+00000e 0a
+00000f
+ }}}
+

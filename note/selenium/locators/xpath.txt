@@ -1,0 +1,90 @@
+= Selenium Locators: XPath =
+
+[WARNING]
+================================================================================
+XPath 已被證實在 IE 下運作得特別沒有效率，所以 locator 應該儘可能避開 XPath。通常簡單的 XPath 都可以用 CSS selector 取代，會更有效率。而且有時候如果遇到 IE 下突然中斷的錯誤（通常不是很穩定），通常換成 CSS 就可以了。
+
+ERROR: Command execution failure. Please search the user group at https://groups.google.com/forum/#!forum/selenium-users for error details from the log window.  The error message is: Invalid argument.
+================================================================================
+
+ [xpath=]<path_expression>
+
+Element 沒有 `id`/`name` 屬性可供定位時，通常採用 XPath “就近“ 找一個有 `id`/`name` 屬性的 element（最好是 parent element）做為 “相對的起點“，然後再依兩者的關係（relationship）用 relative 的表示法（path expression 以 `//` 開頭）定位到該沒有 `id`/`name` 屬性的 element。
+
+TIP: 可以用 Firebug + FirePath 來幫忙拼寫 path expression（事實上 Firepath 也支援 CSS selector）。只是 FirePath 提示的 relative path expression 以 `.//` 開頭（前面多了一個點，表示 current node），記得要把前面換成 `//` 才能被 Selenium 所接受。
+
+[IMPORTANT]
+================================================================================
+XPath 當然也支援 absolute 的表示法（path expression 以 `/` 開頭，而非 `//`），但這會讓測試變得很脆弱，除非頁面中完全沒有 `id`/`name` 屬性可用，也就只好用 absolute 表示法了。當然也別忘了，XPath 也可以比對 `id`/`name` 以外的屬性，如果某些屬性值的變動性不大，拿來做為定位的依據，通常會比用相依於頁面結構的 path expression 來得好。
+
+由於 XPath 本質上就是在走 DOM 的內容，所以撰寫 path expression 時也要注意不同瀏覽器在 DOM 上表現的差異。
+================================================================================
+
+以上面 Identifier/ID/Name strategy 的例子為例，說明 XPath strategy 相對應的用法：
+
+.`id_name.html`
+--------------------------------------------------------------------------------
+<html>
+  <body>
+    <form>
+      Username: <input type="text" name="Username" id="acc" />                                         <1>
+      Password: <input type="password" name="Password" id="pwd" />
+      <input type="radio" name="Trusted" id="Trusted" value="no" />This is a public or shared computer <2>
+      <input type="radio" name="Trusted" id="Trusted" value="yes" />This is a private computer         <3>
+      <input type="submit" value="Sign in" />
+    </form>
+  </body>
+</html>
+--------------------------------------------------------------------------------
+<1> 下面這幾種寫法都可以定位到輸入帳號的欄位：
+ * `xpath=//*[@id='acc']`（'relative' 表不法以 `//` 開頭，`xpath=` 可以省略）
+ * `//*[@name='Username']`
+ * `xpath=/html/body/form/input`（'absolute' 表示法不是以 `//` 開頭，`xpath=` 不可以省略）
+ * `//input[@type='radio'][1]`（XPath 的索引值是 one-based）
+<2> 下面這幾種寫法都可以定位到選擇 “使用公用電腦“ 的欄位：
+ * `//*[@id='Trusted']`（雖然同一份 HTML 文件裡 `id` 屬性值不該重複）
+ * `//*[@name='Trusted']` 或 `//*[@name='Trusted'][1]`（採用第一個 `name` 屬性符合條件者）
+ * `//*[@name='Trusted'][@value='no']`
+<3> 下面這幾種寫法都可以定位到選擇 “使用私人電腦“ 的欄位：
+ * `//*[@type='radio'][2]`
+ * `//*[@name='Trusted'][@value='yes']`
+
+TIP: 雖然 path expression 以 `//` 開頭時，`xpath=` 可以省略掉，但如果偶而會用到 absolute 的表示法，忘了加 `xpath=` 就會出錯。糟糕的是這個錯誤並不容易發現（因為 path expression 怎麼看都對），因此建議習慣性地加上 `xpath=`，才不會不小心掉進這個陷阱裡。
+
+另外 XPath 還支援 function，可以用來做更為彈性的判斷。常用的 function 有：
+
+ * `contains(string1,string2)` - 判斷 'string1' 裡是否包含 'string2'。
+ * `starts-with(string1,string2)` - 判斷 'string1' 是否以 'string2' 開頭。
+ * `ends-with(string1,string2)` - 判斷 'string1' 是否以 'string2' 結尾。
+
+[TIP]
+================================================================================
+能夠用 `id`/`name` 屬性值來定位當然最好，不過許多 Web framework 採用動態產生 ID 的技術，導致 `id`/`name` 屬情值經常變動。
+
+例如 Ajax.NET 產生 `ctl00_ctl00_cp_cpTab_txtFirstName` 的 ID（前面的 `ctl00_ctl00_cp_cpTab_` 會一直變），單純用 Identifer/ID/Name strategy 無法定位，但可以改用下面的 XPath strategy 來定位：
+
+ //input[ends-with(@id, '_txtFirstName')]
+
+當然除了 `id`/`name` 之外，如果有相對穩定的屬性值可供參考，也是不錯的選擇。
+================================================================================
+
+更多關於 XPath 的用法，請參考：
+
+ * http://en.wikipedia.org/wiki/Xpath[XPath - Wikipedia, the free encyclopedia]
+ * http://www.w3schools.com/xpath/default.asp[XPath Tutorial - W3Schools]
+   ** http://www.w3schools.com/xpath/xpath_functions.asp[XPath, XQuery, and XSLT Function Reference]
+ * http://www.w3.org/TR/xpath/[W3C XPath Recommendation (1.0)]
+ * http://www.w3.org/TR/xpath20/[W3C XPath Recommendation (2.0)]
+
+[TIP]
+.XPath 1.0 或 2.0
+================================================================================
+從各種資料看起來，Selenium 用的是 XPath 1.0，因此像是 `upper-case(string)`、`lower-case(string)` 丟 XPath function 都不能用...
+
+ * http://stackoverflow.com/questions/554964/selenium-how-do-i-execute-an-xpath-function-or-expression-in-my-test[Selenium: How do I execute an Xpath function or expression in my test? - Stack Overflow] (2009-02-16)
+ * http://stackoverflow.com/questions/1936301/can-i-use-xpath-2-0-with-firefox-and-selenium[Can I use xpath 2.0 with firefox and selenium? - Stack Overflow] (2009-12-20)
+ * http://selenium-python.readthedocs.org/en/latest/faq.html#does-selenium-2-supports-xpath-2-0[Does Selenium 2 supports XPath 2.0 ? — Selenium Python Bindings 2.3 documentation]
+================================================================================
+
+http://blogs.atlassian.com/developer/2007/08/selenium_is_the_pain_worth_it.html[也有人提到 Each browser constructs its DOM differently and may evaluate the expressions differently.]...
+

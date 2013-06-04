@@ -1,0 +1,33 @@
+= link:audio.html[JavaFX / Audio] / Sound Effects =
+:title: [JavaFX] 播放音效
+
+要播放音效檔（目前支援 MP3、WAV 跟 AIFF 三種格式），可以利用 `AudioClip`，因為它具有下面幾個特性：
+
+ * 會事先將解壓縮的音訊整個放在記憶體裡，以確保臨時要播放時不會有延遲（minimal latency）。
+ * 透過 `play()` 可以直接播放，也可以同時間播放數次，不需要藉助 `MediaPlayer`。
+ * 射後不理（fire and forget），但可以用 `stop()` 停止所有尚未播放完畢的部份。
+
+例如下面這段程式，不規則重複播放同一個槍聲（`gunshot.mp3`），可以營造出槍戰的效果：
+
+--------------------------------------------------------------------------------
+AudioClip clip = new AudioClip(getClass().getResource("gunshot.mp3").toExternalForm());
+for (int i = 0; i < 10; i++) {
+    double random = Math.random();
+    clip.setBalance(random < 0.5 ? -random : +random);
+    clip.play();
+    Thread.sleep((int)(random * 500));
+}
+--------------------------------------------------------------------------------
+
+當然它也很適合用來重複播放背景音樂：
+
+--------------------------------------------------------------------------------
+AudioClip clip = new AudioClip(getClass().getResource("music.wav").toExternalForm());
+clip.setCycleCount(AudioClip.INDEFINITE);
+clip.play();
+--------------------------------------------------------------------------------
+
+== 參考資料 ==
+
+ * http://docs.oracle.com/javafx/2/api/javafx/scene/media/AudioClip.html[`javafx.scene.media.AudioClip`] ^https://diigo.com/0xg38[問讀]^
+

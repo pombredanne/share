@@ -1,0 +1,147 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[UUID] 用 Python 處理 UUID</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<!--link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" /-->
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <!--div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div-->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <!--a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a--></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="uuid.html">UUID</a> / Python</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>在 Python 裡要處理 UUID 可以藉助 <code>uuid</code> 模組。</p></div>
+<div class="paragraph"><p>如果要產生一個 UUID，可以用 <code>uuid.uuid1()</code> 或 <code>uuid.uuid4()</code>，其中 <code>uuid1()</code> 是用網卡的 MAC address 跟當下的時間混合算出來的，所以有揭露網卡跟產生 UUID 時間點的安全疑慮。實務上建議用 <code>uuid4()</code> 來產生隨機（random）的 UUID：</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">uuid</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid1</span><span class="p">(),</span> <span class="n">uuid</span><span class="o">.</span><span class="n">uuid1</span><span class="p">()</span> <span class="c"># <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></span>
+<span class="go">(UUID(&#39;c981e3c4-03b1-11e2-bcab-0024d6124544&#39;), UUID(&#39;c981f56c-03b1-11e2-bcab-0024d6124544&#39;))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">(),</span> <span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span> <span class="c"># <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></span>
+<span class="go">(UUID(&#39;0656336a-7505-46a1-aa3e-4809db42e1f4&#39;), UUID(&#39;ce651e1b-4ce2-4179-9cf3-6516ec0d840c&#39;))</span>
+</pre></div></div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+<code>uuid1()</code> 連續產生的兩個 UUID，中間的那一段 <code>03b1-11e2-bcab</code> 竟然是一樣的，這應該就是所謂的安全疑慮吧。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+<code>uuid4()</code> 連續產生兩個完全不一樣的 UUID。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>UUID 除了正規 8-4-4-4-12 的表示法之外，還有兩種 16-byte string 的表示法：</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">UUID</span> <span class="o">=</span> <span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">();</span> <span class="n">UUID</span>
+<span class="go">UUID(&#39;a50d9647-d559-4e9d-a8ab-c300d05d36ab&#39;)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">UUID</span><span class="o">.</span><span class="n">bytes</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">UUID</span><span class="o">.</span><span class="n">bytes</span><span class="p">)</span> <span class="c"># <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></span>
+<span class="go">(&#39;\xa5\r\x96G\xd5YN\x9d\xa8\xab\xc3\x00\xd0]6\xab&#39;, 16)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">UUID</span><span class="o">.</span><span class="n">hex</span> <span class="c"># <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></span>
+<span class="go">&#39;a50d9647d5594e9da8abc300d05d36ab&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">UUID</span><span class="o">.</span><span class="n">hex</span> <span class="o">==</span> <span class="n">UUID</span><span class="o">.</span><span class="n">bytes</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&#39;hex&#39;</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">UUID</span><span class="o">.</span><span class="n">bytes_le</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">UUID</span><span class="o">.</span><span class="n">bytes_le</span><span class="p">)</span> <span class="c"># <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></span>
+<span class="go">(&#39;G\x96\r\xa5Y\xd5\x9dN\xa8\xab\xc3\x00\xd0]6\xab&#39;, 16)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">UUID</span><span class="o">.</span><span class="n">bytes_le</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&#39;hex&#39;</span><span class="p">)</span>
+<span class="go">&#39;47960da559d59d4ea8abc300d05d36ab&#39;</span>
+</pre></div></div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+UUID 本來就是由 16 個 octet 組成的數字。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+UUID 的 16 進制表示法。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+<a href="../computing/byte-order.html">little-endian</a> byte order
+</td></tr>
+</table></div>
+<div class="paragraph"><p>拿到不同表示法的 UUID 之後，也可以用 <code>uuid.UUID([hex[, bytes[, bytes_le]]])</code> 轉回來：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; uuid.UUID('a50d9647-d559-4e9d-a8ab-c300d05d36ab')
+UUID('a50d9647-d559-4e9d-a8ab-c300d05d36ab')
+&gt;&gt;&gt; uuid.UUID(hex='a50d9647d5594e9da8abc300d05d36ab')
+UUID('a50d9647-d559-4e9d-a8ab-c300d05d36ab')
+&gt;&gt;&gt; uuid.UUID(bytes='a50d9647d5594e9da8abc300d05d36ab'.decode('hex'))
+UUID('a50d9647-d559-4e9d-a8ab-c300d05d36ab')
+&gt;&gt;&gt; uuid.UUID(bytes_le='47960da559d59d4ea8abc300d05d36ab'.decode('hex'))
+UUID('a50d9647-d559-4e9d-a8ab-c300d05d36ab')</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://docs.python.org/library/uuid.html">uuid — UUID objects according to RFC 4122</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2013-06-04 22:38:04 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<!--script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script-->
+</body>
+</html>

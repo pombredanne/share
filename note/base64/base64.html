@@ -1,0 +1,189 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>Base64</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<!--link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" /-->
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <!--div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div-->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <!--a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a--></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>Base64</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>Base64 encoding 主要應用在以純文字的型式保存或傳送 binary data 時，編／解碼的原則被規範 <a href="http://tools.ietf.org/html/rfc3548">RFC 3548</a> 裡（之後被 <a href="http://tools.ietf.org/html/rfc4648">RFC 4648</a> 取代）。</p></div>
+<div class="paragraph"><p>簡單地來說，Base64 就是將 3 個 8-bit 為一組的資料，拆成 4 個 6-bit 重新做編碼。以 <code>abc</code> 三個字元為例：</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+<code>abc</code> 三個字元的 ASCII 編碼分別是 <code>01100001</code>、<code>01100010</code> 跟 <code>01100011</code>。（<a href="http://en.wikipedia.org/wiki/ASCII#ASCII_printable_characters">對照表</a>）
+</p>
+</li>
+<li>
+<p>
+將 3 個 8-bit 的資料串接起來，再依 6-bit 為單位由左至右做切割的結果會是 <code>011000</code>(24)、<code>010110</code>(22)、<code>001001</code>(9) 跟 <code>100011</code>(35)。
+</p>
+</li>
+<li>
+<p>
+對照 <a href="http://en.wikipedia.org/wiki/Base64#Examples">Base64 Index Table</a> 的結果就是 "YWJj"。
+</p>
+</li>
+</ol></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">以前很直覺地會認為 Base64 的編碼結果，結尾不一定會有等號，但事實並非如此。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>上面的例子其實刻意選了 3 個字元來做編碼，因為 3 個 8-bit 剛好可以被 6-bit 完整地劃分（8 跟 6 的最小公倍數是 24）。但如果情況不這樣，會先在資料右側補上幾個 bit 的 0 之後才做編碼，這個動作就叫做 padding。可以肯定的是，無論資料內容為何，編碼後的字元數一定是 4 的倍數。</p></div>
+<div class="admonitionblock" id="index-table">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">
+<div class="paragraph"><p>Base64 最後是以 64 個<a href="http://en.wikipedia.org/wiki/ASCII#ASCII_printable_characters">可列印的字元</a>來表示編碼後的結果，而 64 這個數字就是從上面 6-bit 分割單位而來（2^6 = 64）。</p></div>
+<div class="paragraph"><p>前 62 個字元中大小寫字母跟數字組成，對大部份的應用都不會是問題，但第 62 跟 63 個字元分別是 <code>+</code> 跟 <code>/</code>，可能不適合某些應用。因此後面這兩個字元，就會衍生出不同實作間的差異。</p></div>
+<div class="paragraph"><p>關於編／解碼的細節，<a href="http://en.wikipedia.org/wiki/Base64">Wikipedia</a> 有很詳細的說明。</p></div>
+</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>下面先以少 8-bit 的 <code>ab</code> 為例：</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+將 <code>ab</code> 二個字元 ASCII 編碼串接 <code>0110000101100010</code>，再依 6-bit 切割後的結果是 <code>011000</code>、<code>010110</code>、<code>0010</code>。
+</p>
+</li>
+<li>
+<p>
+很顯然，最後一個 6-bit 少了 2 bits，會在右邊補上 0 之後再做編碼。結果就是 <code>011000</code>(24)、<code>010110</code>(22)、<code>001000</code>(8) &#8594; "YWI"。
+</p>
+</li>
+<li>
+<p>
+由於 Base64 編碼結果的字元數一定是 4 的倍數，所以在後面補上一個 <code>=</code>，成為 <code>YWI=</code>。
+</p>
+</li>
+</ol></div>
+<div class="paragraph"><p>最後再看多 8-bit 的 <code>abca</code>：</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+將 <code>abca</code> 二個字元 ASCII 編碼串接 <code>01100001011000100110001101100001</code>，再依 6-bit 切割後的結果是 <code>011000</code>、<code>010110</code>、<code>001001</code>、<code>100011</code>、<code>011000</code>、<code>01</code>。
+</p>
+</li>
+<li>
+<p>
+很顯然，最後一個 6-bit 少了 4 bits，會在右邊補上 0 之後再做編碼。結果就是 <code>011000</code>(24)、<code>010110</code>(22)、<code>001001</code>(9)、<code>100011</code>(35)、<code>011000</code>(24)、<code>010000</code>(16) &#8594; "YWJjYQ"。
+</p>
+</li>
+<li>
+<p>
+由於 Base64 編碼結果的字元數一定是 4 的倍數，所以在後面補上兩個 <code>=</code>，成為 <code>YWJjYQ==</code>。
+</p>
+</li>
+</ol></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_延伸閱讀">延伸閱讀</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="python.html">用 Python 做 Base64 的編／解碼</a>
+</p>
+</li>
+<li>
+<p>
+<a href="unix-like.html">Unix-like 下做 Base64 編／解碼的工具</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://en.wikipedia.org/wiki/Base64">Base64 - Wikipedia, the free encyclopedia</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://tools.ietf.org/html/rfc4648">RFC 4648 - The Base16, Base32, and Base64 Data Encodings</a> - 取代舊有的 <a href="http://tools.ietf.org/html/rfc3548">RFC 3548</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2013-06-04 22:56:45 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<!--script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script-->
+</body>
+</html>

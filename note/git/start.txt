@@ -1,0 +1,97 @@
+= 入門 Git =
+
+官網首頁提供了兩個 Quick Start：
+
+.Cloning and Creating a Patch
+--------------------------------------------------------------------------------
+$ git clone git://github.com/git/hello-world.git <1>
+$ cd hello-world
+$ (edit files)
+$ git add (files)
+$ git commit -m 'Explain what I changed'
+$ git format-patch origin/master
+--------------------------------------------------------------------------------
+<1> https://github.com/git/hello-world[git/hello-world] 這個專案很有趣，包含許多程式語言的 Hello World 範例。
+
+.Creating and Commiting
+--------------------------------------------------------------------------------
+$ cd (project-directory)
+$ git init
+$ (add some files)
+$ git add .
+$ git commit -m 'Initial commit'
+--------------------------------------------------------------------------------
+
+== Clone ==
+
+Clone 一個 repository 時，會把所有 revision history 都抓下來，也就是一個完整的 repository。
+
+以 jQuery 為例：
+
+--------------------------------------------------------------------------------
+/tmp$ git clone git://github.com/jquery/jquery.git
+  Initialized empty Git repository in /tmp/jquery/.git/ <1>
+  remote: Counting objects: 20883, done.
+  remote: Compressing objects: 100% (5629/5629), done.
+  remote: Total 20883 (delta 15043), reused 20427 (delta 14687)
+  Receiving objects: 100% (20883/20883), 13.01 MiB | 640 KiB/s, done.
+  Resolving deltas: 100% (15043/15043), done.
+--------------------------------------------------------------------------------
+<1> 會往下自動建立另一層目錄。
+
+== 延伸閱讀 ==
+
+ * link:install.html[安裝 Git]
+ * link:../github/github-start.html[入門 GitHub]
+
+== 參考資料 ==
+
+ * http://gitref.org/[Git Reference]
+
+== 雜記 ==
+
+ * `https://` 跟 `git://`，後者可能會有 proxy 不支援或 firewall 過不了的問題，因此前者是官方比較建議的用法。
+ * Amend 可以用來調整 last commit，但如果已經 push 到 remote repository，則不建議這麼做。
+ * SVN 無法離線工作，最怕的就是 server 掛掉，另外就是 branch/merge 的成本很高。
+ * Git 不是記錄檔案的差異，而是記錄檔案的快照？ 用 checksum 來確保檔案的完整性
+ * 從 Git dir (repository) 將程式碼 checkout 到 working directory，修改過後送到 staging area，之後再整批 commit 到 Git repository。
+ * 找一個要用 Git 做版控的資料夾，然後在裡面執行 `git init` 即可，所有 Git 的 metadata 都存放在 `.git` 的資料夾裡。
+ * `git` 的用法跟 `svn` 相似度很高。
++
+--------------------------------------------------------------------------------
+/tmp$ mkdir repo; cd repo <1>
+/tmp$ git init; ls -a     <2>
+.  ..  .git
+/tmp/repo$ touch README
+/tmp/repo$ git add . <3>
+/tmp/repo$ git commit -m 'Initial commit'
+   Committer: Jeremy Kao <jeremy@jeremy-laptop.(none)>
+  Your name and email address were configured automatically based
+  on your username and hostname. Please check that they are accurate.
+  You can suppress this message by setting them explicitly:
+
+      git config --global user.name "Your Name"
+      git config --global user.email you@example.com
+
+  If the identity used for this commit is wrong, you can fix it with:
+
+      git commit --amend --author='Your Name <you@example.com>'
+
+   0 files changed, 0 insertions(+), 0 deletions(-)
+   create mode 100644 README
+--------------------------------------------------------------------------------
+<1> Git directory 要自己先建好
+<2> `git init` 可以將某個 directory 初始化成一個 repository，過程中會產生一個 `.git` 的資料夾，裡面存放 Git 的 metadata。
+<3> 為什麼是將 Git directory 整個加進去？
++
+ * `git status`
+ * `git log`, GitX (Mac), giggle (Linux)
+ * file status lifecycle
+ * Instead of writing a tool that versions each file individually, like Subversion, we would probably write one that makes it easier to store snapshots of our project without having to copy the whole directory each time. You tell Git you want to save a snapshot of your project with the git commit command and it basically records a manifest of what all of the files in your project look like at that point. If you think about Git as a tool for storing and comparing and merging snapshots of your project, it may be easier to understand what is going on and how to do things properly. 
+ * `.git` 其實就是 Git repository，裡面存放許多 snapshots。也因此 `git init` 完只是建立一個存放 snapshot 的地方而已，第一個 snapshot 並還沒有建立。取得 Git repository 有兩種方式，一是用 `git init` 建立一個新的，或是 clone 一個現有的 repository。
+ * compose and commit snapshots of your project - a staging area for your snapshot
+ * `git commit` 就是拍 snapshot 的動作，`git add` 可以用來編寫 snapshot - adds file contents/modifications to the staging area
+ * `git add` 不是是加新檔案，`git <dir>` 是會將新檔案以及舊檔案的異動都加到 staging area
+ * `git status -s` 中的 M 指的是從上次 `git add` 加到 staging area 後又有新的異動。Git does not assume that what the file looks like on disk is necessarily what you want to snapshot - you have to tell Git with the git add command. 
+ * `git status` 會比對 working directory 跟 staging area 的差異
+

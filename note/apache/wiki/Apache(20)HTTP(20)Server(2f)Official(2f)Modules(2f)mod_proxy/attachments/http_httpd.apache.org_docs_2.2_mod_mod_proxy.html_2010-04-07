@@ -1,0 +1,1574 @@
+   Modules | Directives | FAQ | Glossary | Sitemap
+
+   Apache HTTP Server Version 2.2
+
+   <-
+
+   Apache > HTTP Server > Documentation > Version 2.2 > Modules
+
+Apache Module mod_proxy
+
+   Available Languages:  en  |  ja
+      Description:    HTTP/1.1 proxy/gateway server
+        Status:       Extension
+   Module Identifier: proxy_module
+      Source File:    mod_proxy.c
+
+Summary
+
+Warning
+
+   Do not enable proxying with ProxyRequests until you have secured your
+   server. Open proxy servers are dangerous both to your network and to
+   the Internet at large.
+
+   This module implements a proxy/gateway for Apache. It implements
+   proxying capability for AJP13 (Apache JServe Protocol version 1.3),
+   FTP, CONNECT (for SSL), HTTP/0.9, HTTP/1.0, and HTTP/1.1. The module
+   can be configured to connect to other proxy modules for these and other
+   protocols.
+
+   Apache's proxy features are divided into several modules in addition to
+   mod_proxy: mod_proxy_http, mod_proxy_ftp, mod_proxy_ajp,
+   mod_proxy_balancer, and mod_proxy_connect. Thus, if you want to use one
+   or more of the particular proxy functions, load mod_proxy and the
+   appropriate module(s) into the server (either statically at
+   compile-time or dynamically via the LoadModule directive).
+
+   In addition, extended features are provided by other modules. Caching
+   is provided by mod_cache and related modules. The ability to contact
+   remote servers using the SSL/TLS protocol is provided by the SSLProxy*
+   directives of mod_ssl. These additional modules will need to be loaded
+   and configured to take advantage of these features.
+
+Directives
+
+     * AllowCONNECT
+     * BalancerMember
+     * NoProxy
+     * <Proxy>
+     * ProxyBadHeader
+     * ProxyBlock
+     * ProxyDomain
+     * ProxyErrorOverride
+     * ProxyFtpDirCharset
+     * ProxyIOBufferSize
+     * <ProxyMatch>
+     * ProxyMaxForwards
+     * ProxyPass
+     * ProxyPassInterpolateEnv
+     * ProxyPassMatch
+     * ProxyPassReverse
+     * ProxyPassReverseCookieDomain
+     * ProxyPassReverseCookiePath
+     * ProxyPreserveHost
+     * ProxyReceiveBufferSize
+     * ProxyRemote
+     * ProxyRemoteMatch
+     * ProxyRequests
+     * ProxySet
+     * ProxyStatus
+     * ProxyTimeout
+     * ProxyVia
+
+Topics
+
+     * Forward Proxies and Reverse Proxies/Gateways
+     * Basic Examples
+     * Controlling access to your proxy
+     * Slow Startup
+     * Intranet Proxy
+     * Protocol Adjustments
+     * Request Bodies
+     * Reverse Proxy Request Headers
+
+See also
+
+     * mod_cache
+     * mod_proxy_http
+     * mod_proxy_ftp
+     * mod_proxy_connect
+     * mod_proxy_balancer
+     * mod_ssl
+
+   top
+
+Forward Proxies and Reverse Proxies/Gateways
+
+   Apache can be configured in both a forward and reverse proxy (also
+   known as gateway) mode.
+
+   An ordinary forward proxy is an intermediate server that sits between
+   the client and the origin server. In order to get content from the
+   origin server, the client sends a request to the proxy naming the
+   origin server as the target and the proxy then requests the content
+   from the origin server and returns it to the client. The client must be
+   specially configured to use the forward proxy to access other sites.
+
+   A typical usage of a forward proxy is to provide Internet access to
+   internal clients that are otherwise restricted by a firewall. The
+   forward proxy can also use caching (as provided by mod_cache) to reduce
+   network usage.
+
+   The forward proxy is activated using the ProxyRequests directive.
+   Because forward proxies allow clients to access arbitrary sites through
+   your server and to hide their true origin, it is essential that you
+   secure your server so that only authorized clients can access the proxy
+   before activating a forward proxy.
+
+   A reverse proxy (or gateway), by contrast, appears to the client just
+   like an ordinary web server. No special configuration on the client is
+   necessary. The client makes ordinary requests for content in the
+   name-space of the reverse proxy. The reverse proxy then decides where
+   to send those requests, and returns the content as if it was itself the
+   origin.
+
+   A typical usage of a reverse proxy is to provide Internet users access
+   to a server that is behind a firewall. Reverse proxies can also be used
+   to balance load among several back-end servers, or to provide caching
+   for a slower back-end server. In addition, reverse proxies can be used
+   simply to bring several servers into the same URL space.
+
+   A reverse proxy is activated using the ProxyPass directive or the [P]
+   flag to the RewriteRule directive. It is not necessary to turn
+   ProxyRequests on in order to configure a reverse proxy.
+   top
+
+Basic Examples
+
+   The examples below are only a very basic idea to help you get started.
+   Please read the documentation on the individual directives.
+
+   In addition, if you wish to have caching enabled, consult the
+   documentation from mod_cache.
+
+Forward Proxy
+
+   ProxyRequests On
+   ProxyVia On
+   <Proxy *>
+   Order deny,allow
+   Deny from all
+   Allow from internal.example.com
+   </Proxy>
+
+Reverse Proxy
+
+   ProxyRequests Off
+   <Proxy *>
+   Order deny,allow
+   Allow from all
+   </Proxy>
+   ProxyPass /foo http://foo.example.com/bar
+   ProxyPassReverse /foo http://foo.example.com/bar
+   top
+
+Controlling access to your proxy
+
+   You can control who can access your proxy via the <Proxy> control block
+   as in the following example:
+
+   <Proxy *>
+   Order Deny,Allow
+   Deny from all
+   Allow from 192.168.0
+   </Proxy>
+
+   For more information on access control directives, see mod_authz_host.
+
+   Strictly limiting access is essential if you are using a forward proxy
+   (using the ProxyRequests directive). Otherwise, your server can be used
+   by any client to access arbitrary hosts while hiding his or her true
+   identity. This is dangerous both for your network and for the Internet
+   at large. When using a reverse proxy (using the ProxyPass directive
+   with ProxyRequests Off), access control is less critical because
+   clients can only contact the hosts that you have specifically
+   configured.
+   top
+
+Slow Startup
+
+   If you're using the ProxyBlock directive, hostnames' IP addresses are
+   looked up and cached during startup for later match test. This may take
+   a few seconds (or more) depending on the speed with which the hostname
+   lookups occur.
+   top
+
+Intranet Proxy
+
+   An Apache proxy server situated in an intranet needs to forward
+   external requests through the company's firewall (for this, configure
+   the ProxyRemote directive to forward the respective scheme to the
+   firewall proxy). However, when it has to access resources within the
+   intranet, it can bypass the firewall when accessing hosts. The NoProxy
+   directive is useful for specifying which hosts belong to the intranet
+   and should be accessed directly.
+
+   Users within an intranet tend to omit the local domain name from their
+   WWW requests, thus requesting "http://somehost/" instead of
+   http://somehost.example.com/. Some commercial proxy servers let them
+   get away with this and simply serve the request, implying a configured
+   local domain. When the ProxyDomain directive is used and the server is
+   configured for proxy service, Apache can return a redirect response and
+   send the client to the correct, fully qualified, server address. This
+   is the preferred method since the user's bookmark files will then
+   contain fully qualified hosts.
+   top
+
+Protocol Adjustments
+
+   For circumstances where mod_proxy is sending requests to an origin
+   server that doesn't properly implement keepalives or HTTP/1.1, there
+   are two environment variables that can force the request to use
+   HTTP/1.0 with no keepalive. These are set via the SetEnv directive.
+
+   These are the force-proxy-request-1.0 and proxy-nokeepalive notes.
+
+   <Location /buggyappserver/>
+   ProxyPass http://buggyappserver:7001/foo/
+   SetEnv force-proxy-request-1.0 1
+   SetEnv proxy-nokeepalive 1
+   </Location>
+   top
+
+Request Bodies
+
+   Some request methods such as POST include a request body. The HTTP
+   protocol requires that requests which include a body either use chunked
+   transfer encoding or send a Content-Length request header. When passing
+   these requests on to the origin server, mod_proxy_http will always
+   attempt to send the Content-Length. But if the body is large and the
+   original request used chunked encoding, then chunked encoding may also
+   be used in the upstream request. You can control this selection using
+   environment variables. Setting proxy-sendcl ensures maximum
+   compatibility with upstream servers by always sending the
+   Content-Length, while setting proxy-sendchunked minimizes resource
+   usage by using chunked encoding.
+   top
+
+Reverse Proxy Request Headers
+
+   When acting in a reverse-proxy mode (using the ProxyPass directive, for
+   example), mod_proxy_http adds several request headers in order to pass
+   information to the origin server. These headers are:
+
+   X-Forwarded-For
+          The IP address of the client.
+
+   X-Forwarded-Host
+          The original host requested by the client in the Host HTTP
+          request header.
+
+   X-Forwarded-Server
+          The hostname of the proxy server.
+
+   Be careful when using these headers on the origin server, since they
+   will contain more than one (comma-separated) value if the original
+   request already contained one of these headers. For example, you can
+   use %{X-Forwarded-For}i in the log format string of the origin server
+   to log the original clients IP address, but you may get more than one
+   address if the request passes through several proxies.
+
+   See also the ProxyPreserveHost and ProxyVia directives, which control
+   other request headers.
+   top
+
+AllowCONNECT Directive
+
+   Description: Ports that are allowed to CONNECT through the proxy
+     Syntax:    AllowCONNECT port [port] ...
+     Default:   AllowCONNECT 443 563
+     Context:   server config, virtual host
+     Status:    Extension
+     Module:    mod_proxy
+
+   The AllowCONNECT directive specifies a list of port numbers to which
+   the proxy CONNECT method may connect. Today's browsers use this method
+   when a https connection is requested and proxy tunneling over HTTP is
+   in effect.
+
+   By default, only the default https port (443) and the default snews
+   port (563) are enabled. Use the AllowCONNECT directive to override this
+   default and allow connections to the listed ports only.
+
+   Note that you'll need to have mod_proxy_connect present in the server
+   in order to get the support for the CONNECT at all.
+   top
+
+BalancerMember Directive
+
+    Description:  Add a member to a load balancing group
+      Syntax:     BalancerMember [balancerurl] url [key=value [key=value ...]]
+      Context:    directory
+      Status:     Extension
+      Module:     mod_proxy
+   Compatibility: BalancerMember is only available in Apache 2.2 and
+                  later.
+
+   This directive adds a member to a load balancing group. It could be
+   used within a <Proxy balancer://...> container directive, and can take
+   any of the key value pairs available to ProxyPass directives.
+
+   The balancerurl is only needed when not in <Proxy balancer://...>
+   container directive. It corresponds to the url of a balancer defined in
+   ProxyPass directive.
+   top
+
+NoProxy Directive
+
+   Description: Hosts, domains, or networks that will be connected to
+                directly
+     Syntax:    NoProxy host [host] ...
+     Context:   server config, virtual host
+     Status:    Extension
+     Module:    mod_proxy
+
+   This directive is only useful for Apache proxy servers within
+   intranets. The NoProxy directive specifies a list of subnets, IP
+   addresses, hosts and/or domains, separated by spaces. A request to a
+   host which matches one or more of these is always served directly,
+   without forwarding to the configured ProxyRemote proxy server(s).
+
+Example
+
+   ProxyRemote * http://firewall.example.com:81
+   NoProxy .example.com 192.168.112.0/21
+
+   The host arguments to the NoProxy directive are one of the following
+   type list:
+
+   Domain
+          A Domain is a partially qualified DNS domain name, preceded by a
+          period. It represents a list of hosts which logically belong to
+          the same DNS domain or zone (i.e., the suffixes of the hostnames
+          are all ending in Domain).
+
+Examples
+
+          .com .apache.org.
+
+          To distinguish Domains from Hostnames (both syntactically and
+          semantically; a DNS domain can have a DNS A record, too!),
+          Domains are always written with a leading period.
+
+Note
+
+          Domain name comparisons are done without regard to the case, and
+          Domains are always assumed to be anchored in the root of the DNS
+          tree, therefore two domains .ExAmple.com and .example.com. (note
+          the trailing period) are considered equal. Since a domain
+          comparison does not involve a DNS lookup, it is much more
+          efficient than subnet comparison.
+
+   SubNet
+          A SubNet is a partially qualified internet address in numeric
+          (dotted quad) form, optionally followed by a slash and the
+          netmask, specified as the number of significant bits in the
+          SubNet. It is used to represent a subnet of hosts which can be
+          reached over a common network interface. In the absence of the
+          explicit net mask it is assumed that omitted (or zero valued)
+          trailing digits specify the mask. (In this case, the netmask can
+          only be multiples of 8 bits wide.) Examples:
+
+        192.168 or 192.168.0.0
+                the subnet 192.168.0.0 with an implied netmask of 16 valid
+                bits (sometimes used in the netmask form 255.255.0.0)
+
+        192.168.112.0/21
+                the subnet 192.168.112.0/21 with a netmask of 21 valid
+                bits (also used in the form 255.255.248.0)
+
+          As a degenerate case, a SubNet with 32 valid bits is the
+          equivalent to an IPAddr, while a SubNet with zero valid bits
+          (e.g., 0.0.0.0/0) is the same as the constant _Default_,
+          matching any IP address.
+
+   IPAddr
+          A IPAddr represents a fully qualified internet address in
+          numeric (dotted quad) form. Usually, this address represents a
+          host, but there need not necessarily be a DNS domain name
+          connected with the address.
+
+Example
+
+          192.168.123.7
+
+Note
+
+          An IPAddr does not need to be resolved by the DNS system, so it
+          can result in more effective apache performance.
+
+   Hostname
+          A Hostname is a fully qualified DNS domain name which can be
+          resolved to one or more IPAddrs via the DNS domain name service.
+          It represents a logical host (in contrast to Domains, see above)
+          and must be resolvable to at least one IPAddr (or often to a
+          list of hosts with different IPAddrs).
+
+Examples
+
+          prep.ai.example.com
+          www.apache.org
+
+Note
+
+          In many situations, it is more effective to specify an IPAddr in
+          place of a Hostname since a DNS lookup can be avoided. Name
+          resolution in Apache can take a remarkable deal of time when the
+          connection to the name server uses a slow PPP link.
+
+          Hostname comparisons are done without regard to the case, and
+          Hostnames are always assumed to be anchored in the root of the
+          DNS tree, therefore two hosts WWW.ExAmple.com and
+          www.example.com. (note the trailing period) are considered
+          equal.
+
+See also
+
+     * DNS Issues
+
+   top
+
+<Proxy> Directive
+
+   Description: Container for directives applied to proxied resources
+     Syntax:    <Proxy wildcard-url> ...</Proxy>
+     Context:   server config, virtual host
+     Status:    Extension
+     Module:    mod_proxy
+
+   Directives placed in <Proxy> sections apply only to matching proxied
+   content. Shell-style wildcards are allowed.
+
+   For example, the following will allow only hosts in
+   yournetwork.example.com to access content via your proxy server:
+
+   <Proxy *>
+   Order Deny,Allow
+   Deny from all
+   Allow from yournetwork.example.com
+   </Proxy>
+
+   The following example will process all files in the foo directory of
+   example.com through the INCLUDES filter when they are sent through the
+   proxy server:
+
+   <Proxy http://example.com/foo/*>
+   SetOutputFilter INCLUDES
+   </Proxy>
+   top
+
+ProxyBadHeader Directive
+
+    Description:  Determines how to handle bad header lines in a response
+      Syntax:     ProxyBadHeader IsError|Ignore|StartBody
+      Default:    ProxyBadHeader IsError
+      Context:    server config, virtual host
+      Status:     Extension
+      Module:     mod_proxy
+   Compatibility: Available in Apache 2.0.44 and later
+
+   The ProxyBadHeader directive determines the behaviour of mod_proxy if
+   it receives syntactically invalid header lines (i.e. containing no
+   colon). The following arguments are possible:
+
+   IsError
+          Abort the request and end up with a 502 (Bad Gateway) response.
+          This is the default behaviour.
+
+   Ignore
+          Treat bad header lines as if they weren't sent.
+
+   StartBody
+          When receiving the first bad header line, finish reading the
+          headers and treat the remainder as body. This helps to work
+          around buggy backend servers which forget to insert an empty
+          line between the headers and the body.
+
+   top
+
+ProxyBlock Directive
+
+   Description: Words, hosts, or domains that are banned from being
+                proxied
+     Syntax:    ProxyBlock *|word|host|domain [word|host|domain] ...
+     Context:   server config, virtual host
+     Status:    Extension
+     Module:    mod_proxy
+
+   The ProxyBlock directive specifies a list of words, hosts and/or
+   domains, separated by spaces. HTTP, HTTPS, and FTP document requests to
+   sites whose names contain matched words, hosts or domains are blocked
+   by the proxy server. The proxy module will also attempt to determine IP
+   addresses of list items which may be hostnames during startup, and
+   cache them for match test as well. That may slow down the startup time
+   of the server.
+
+Example
+
+   ProxyBlock joes-garage.com some-host.co.uk rocky.wotsamattau.edu
+
+   rocky.wotsamattau.edu would also be matched if referenced by IP
+   address.
+
+   Note that wotsamattau would also be sufficient to match
+   wotsamattau.edu.
+
+   Note also that
+
+   ProxyBlock *
+
+   blocks connections to all sites.
+   top
+
+ProxyDomain Directive
+
+   Description: Default domain name for proxied requests
+     Syntax:    ProxyDomain Domain
+     Context:   server config, virtual host
+     Status:    Extension
+     Module:    mod_proxy
+
+   This directive is only useful for Apache proxy servers within
+   intranets. The ProxyDomain directive specifies the default domain which
+   the apache proxy server will belong to. If a request to a host without
+   a domain name is encountered, a redirection response to the same host
+   with the configured Domain appended will be generated.
+
+Example
+
+   ProxyRemote * http://firewall.example.com:81
+   NoProxy .example.com 192.168.112.0/21
+   ProxyDomain .example.com
+   top
+
+ProxyErrorOverride Directive
+
+    Description:  Override error pages for proxied content
+      Syntax:     ProxyErrorOverride On|Off
+      Default:    ProxyErrorOverride Off
+      Context:    server config, virtual host
+      Status:     Extension
+      Module:     mod_proxy
+   Compatibility: Available in version 2.0 and later
+
+   This directive is useful for reverse-proxy setups, where you want to
+   have a common look and feel on the error pages seen by the end user.
+   This also allows for included files (via mod_include's SSI) to get the
+   error code and act accordingly (default behavior would display the
+   error page of the proxied server, turning this on shows the SSI Error
+   message).
+
+   This directive does not affect the processing of informational (1xx),
+   normal success (2xx), or redirect (3xx) responses.
+   top
+
+ProxyFtpDirCharset Directive
+
+    Description:  Define the character set for proxied FTP listings
+      Syntax:     ProxyFtpDirCharset character set
+      Default:    ProxyFtpDirCharset ISO-8859-1
+      Context:    server config, virtual host, directory
+      Status:     Extension
+      Module:     mod_proxy
+   Compatibility: Available in Apache 2.2.7 and later
+
+   The ProxyFtpDirCharset directive defines the character set to be set
+   for FTP directory listings in HTML generated by mod_proxy_ftp.
+   top
+
+ProxyIOBufferSize Directive
+
+   Description: Determine size of internal data throughput buffer
+     Syntax:    ProxyIOBufferSize bytes
+     Default:   ProxyIOBufferSize 8192
+     Context:   server config, virtual host
+     Status:    Extension
+     Module:    mod_proxy
+
+   The ProxyIOBufferSize directive adjusts the size of the internal
+   buffer, which is used as a scratchpad for the data between input and
+   output. The size must be less or equal 8192.
+
+   In almost every case there's no reason to change that value.
+   top
+
+<ProxyMatch> Directive
+
+   Description: Container for directives applied to
+                regular-expression-matched proxied resources
+     Syntax:    <ProxyMatch regex> ...</ProxyMatch>
+     Context:   server config, virtual host
+     Status:    Extension
+     Module:    mod_proxy
+
+   The <ProxyMatch> directive is identical to the <Proxy> directive,
+   except it matches URLs using regular expressions.
+   top
+
+ProxyMaxForwards Directive
+
+    Description:  Maximium number of proxies that a request can be forwarded
+                  through
+      Syntax:     ProxyMaxForwards number
+      Default:    ProxyMaxForwards -1
+      Context:    server config, virtual host
+      Status:     Extension
+      Module:     mod_proxy
+   Compatibility: Available in Apache 2.0 and later; default behaviour
+                  changed in 2.2.7
+
+   The ProxyMaxForwards directive specifies the maximum number of proxies
+   through which a request may pass, if there's no Max-Forwards header
+   supplied with the request. This may be set to prevent infinite proxy
+   loops, or a DoS attack.
+
+Example
+
+   ProxyMaxForwards 15
+
+   Note that setting ProxyMaxForwards is a violation of the HTTP/1.1
+   protocol (RFC2616), which forbids a Proxy setting Max-Forwards if the
+   Client didn't set it. Earlier Apache versions would always set it. A
+   negative ProxyMaxForwards value, including the default -1, gives you
+   protocol-compliant behaviour, but may leave you open to loops.
+   top
+
+ProxyPass Directive
+
+   Description: Maps remote servers into the local server URL-space
+     Syntax:    ProxyPass [path] !|url [key=value key=value ...]] [nocanon]
+                [interpolate]
+     Context:   server config, virtual host, directory
+     Status:    Extension
+     Module:    mod_proxy
+
+   This directive allows remote servers to be mapped into the space of the
+   local server; the local server does not act as a proxy in the
+   conventional sense, but appears to be a mirror of the remote server.
+   The local server is often called a reverse proxy or gateway. The path
+   is the name of a local virtual path; url is a partial URL for the
+   remote server and cannot include a query string.
+   The ProxyRequests directive should usually be set off when using
+   ProxyPass.
+
+   Suppose the local server has address http://example.com/; then
+
+   ProxyPass /mirror/foo/ http://backend.example.com/
+
+   will cause a local request for http://example.com/mirror/foo/bar to be
+   internally converted into a proxy request to
+   http://backend.example.com/bar.
+
+   If the first argument ends with a trailing /, the second argument
+   should also end with a trailing / and vice versa. Otherwise the
+   resulting requests to the backend may miss some needed slashes and do
+   not deliver the expected results.
+
+   The ! directive is useful in situations where you don't want to
+   reverse-proxy a subdirectory, e.g.
+
+   ProxyPass /mirror/foo/i !
+   ProxyPass /mirror/foo http://backend.example.com
+
+   will proxy all requests to /mirror/foo to backend.example.com except
+   requests made to /mirror/foo/i.
+
+Note
+
+   Order is important: exclusions must come before the general ProxyPass
+   directive.
+
+   As of Apache 2.1, the ability to use pooled connections to a backend
+   server is available. Using the key=value parameters it is possible to
+   tune this connection pooling. The default for a Hard Maximum for the
+   number of connections is the number of threads per process in the
+   active MPM. In the Prefork MPM, this is always 1, while with the Worker
+   MPM it is controlled by the ThreadsPerChild.
+
+   Setting min will determine how many connections will always be open to
+   the backend server. Upto the Soft Maximum or smax number of connections
+   will be created on demand. Any connections above smax are subject to a
+   time to live or ttl. Apache will never create more than the Hard
+   Maximum or max connections to the backend server.
+
+   ProxyPass /example http://backend.example.com smax=5 max=20 ttl=120
+   retry=300
+   Parameter Default Description
+   min 0 Minimum number of connections that will always be open to the
+   backend server.
+   max 1...n Hard Maximum number of connections that will be allowed to
+   the backend server. The default for a Hard Maximum for the number of
+   connections is the number of threads per process in the active MPM. In
+   the Prefork MPM, this is always 1, while with the Worker MPM it is
+   controlled by the ThreadsPerChild. Apache will never create more than
+   the Hard Maximum connections to the backend server.
+   smax max Upto the Soft Maximum number of connections will be created on
+   demand. Any connections above smax are subject to a time to live or
+   ttl.
+   acquire - If set this will be the maximum time to wait for a free
+   connection in the connection pool, in milliseconds. If there are no
+   free connections in the pool the Apache will return SERVER_BUSY status
+   to the client.
+   connectiontimeout timeout Connect timeout in seconds. The number of
+   seconds Apache waits for the creation of a connection to the backend to
+   complete. By adding a postfix of ms the timeout can be also set in
+   milliseconds.
+   disablereuse Off This parameter should be used when you want to force
+   mod_proxy to immediately close a connection to the backend after being
+   used, and thus, disable its persistent connection and pool for that
+   backend. This helps in various situations where a firewall between
+   Apache and the backend server (regardless of protocol) tends to
+   silently drop connections or when backends themselves may be under
+   round- robin DNS. To disable connection pooling reuse, set this
+   property value to On.
+   flushpackets off Determines whether the proxy module will auto-flush
+   the output brigade after each "chunk" of data. 'off' means that it will
+   flush only when needed, 'on' means after each chunk is sent and 'auto'
+   means poll/wait for a period of time and flush if no input has been
+   received for 'flushwait' milliseconds. Currently this is in effect only
+   for AJP.
+   flushwait 10 The time to wait for additional input, in milliseconds,
+   before flushing the output brigade if 'flushpackets' is 'auto'.
+   keepalive Off This parameter should be used when you have a firewall
+   between your Apache and the backend server, who tend to drop inactive
+   connections. This flag will tell the Operating System to send
+   KEEP_ALIVE messages on inactive connections (interval depends on global
+   OS settings, generally 120ms), and thus prevent the firewall to drop
+   the connection. To enable keepalive set this property value to On.
+   lbset 0 Sets the load balancer cluster set that the worker is a member
+   of. The load balancer will try all members of a lower numbered lbset
+   before trying higher numbered ones.
+   ping 0 Ping property tells webserver to send a CPING request on ajp13
+   connection before forwarding a request. The parameter is the delay in
+   seconds to wait for the CPONG reply. This features has been added to
+   avoid problem with hung and busy Tomcat's and require ajp13 ping/pong
+   support which has been implemented on Tomcat 3.3.2+, 4.1.28+ and
+   5.0.13+. This will increase the network traffic during the normal
+   operation which could be an issue, but it will lower the traffic in
+   case some of the cluster nodes are down or busy. Currently this has an
+   effect only for AJP. By adding a postfix of ms the delay can be also
+   set in milliseconds.
+   loadfactor 1 Worker load factor. Used with BalancerMember. It is a
+   number between 1 and 100 and defines the normalized weighted load
+   applied to the worker.
+   redirect - Redirection Route of the worker. This value is usually set
+   dynamically to enable safe removal of the node from the cluster. If set
+   all requests without session id will be redirected to the
+   BalancerMember that has route parametar equal as this value.
+   retry 60 Connection pool worker retry timeout in seconds. If the
+   connection pool worker to the backend server is in the error state,
+   Apache will not forward any requests to that server until the timeout
+   expires. This enables to shut down the backend server for maintenance,
+   and bring it back online later. A value of 0 means always retry workers
+   in an error state with no timeout.
+   route - Route of the worker when used inside load balancer. The route
+   is a value appended to session id.
+   status - Single letter value defining the initial status of this
+   worker: 'D' is disabled, 'S' is stopped, 'I' is ignore-errors, 'H' is
+   hot-standby and 'E' is in an error state. Status can be set (which is
+   the default) by prepending with '+' or cleared by prepending with '-'.
+   Thus, a setting of 'S-E' sets this worker to Stopped and clears the
+   in-error flag.
+   timeout ProxyTimeout Connection timeout in seconds. The number of
+   seconds Apache waits for data sent by / to the backend.
+   ttl - Time To Live for the inactive connections above the smax
+   connections in seconds. Apache will close all connections that has not
+   been used inside that time period.
+
+   If the Proxy directive scheme starts with the balancer:// (eg:
+   balancer://cluster/, any path information is ignored) then a virtual
+   worker that does not really communicate with the backend server will be
+   created. Instead it is responsible for the management of several "real"
+   workers. In that case the special set of parameters can be add to this
+   virtual worker. See mod_proxy_balancer for more information about how
+   the balancer works.
+   Parameter Default Description
+   lbmethod byrequests Balancer load-balance method. Select the
+   load-balancing scheduler method to use. Either byrequests, to perform
+   weighted request counting, bytraffic, to perform weighted traffic byte
+   count balancing, or bybusyness, to perform pending request balancing.
+   Default is byrequests.
+   maxattempts 1 Maximum number of failover attempts before giving up.
+   nofailover Off If set to On the session will break if the worker is in
+   error state or disabled. Set this value to On if backend servers do not
+   support session replication.
+   stickysession - Balancer sticky session name. The value is usually set
+   to something like JSESSIONID or PHPSESSIONID, and it depends on the
+   backend application server that support sessions. If the backend
+   application server uses different name for cookies and url encoded id
+   (like servlet containers) use | to to separate them. The first part is
+   for the cookie the second for the path.
+   scolonpathdelim Off If set to On the semi-colon character ';' will be
+   used as an additional sticky session path deliminator/separator. This
+   is mainly used to emulate mod_jk's behavior when dealing with paths
+   such as JSESSIONID=6736bcf34;foo=aabfa
+   timeout 0 Balancer timeout in seconds. If set this will be the maximum
+   time to wait for a free worker. Default is not to wait.
+
+   A sample balancer setup
+
+   ProxyPass /special-area http://special.example.com smax=5 max=10
+   ProxyPass / balancer://mycluster/ stickysession=JSESSIONID|jsessionid
+   nofailover=On
+   <Proxy balancer://mycluster>
+   BalancerMember http://1.2.3.4:8009
+   BalancerMember http://1.2.3.5:8009 smax=10
+   # Less powerful server, don't send as many requests there
+   BalancerMember http://1.2.3.6:8009 smax=1 loadfactor=20
+   </Proxy>
+
+   Setting up a hot-standby, that will only be used if no other members
+   are available
+
+   ProxyPass / balancer://hotcluster/
+   <Proxy balancer://hotcluster>
+   BalancerMember http://1.2.3.4:8009 loadfactor=1
+   BalancerMember http://1.2.3.5:8009 loadfactor=2
+   # The below is the hot standby
+   BalancerMember http://1.2.3.6:8009 status=+H
+   ProxySet lbmethod=bytraffic </Proxy>
+
+   Normally, mod_proxy will canonicalise ProxyPassed URLs. But this may be
+   incompatible with some backends, particularly those that make use of
+   PATH_INFO. The optional nocanon keyword suppresses this, and passes the
+   URL path "raw" to the backend. Note that may affect the security of
+   your backend, as it removes the normal limited protection against
+   URL-based attacks provided by the proxy.
+
+   The optional interpolate keyword (available in httpd 2.2.9 and later),
+   in combination with ProxyPassInterpolateEnv causes the ProxyPass to
+   interpolate environment variables, using the syntax ${VARNAME}. Note
+   that many of the standard CGI-derived environment variables will not
+   exist when this interpolation happens, so you may still have to resort
+   to mod_rewrite for complex rules.
+
+   When used inside a <Location> section, the first argument is omitted
+   and the local directory is obtained from the <Location>.
+
+   If you require a more flexible reverse-proxy configuration, see the
+   RewriteRule directive with the [P] flag.
+   top
+
+ProxyPassInterpolateEnv Directive
+
+    Description:  Enable Environment Variable interpolation in Reverse Proxy
+                  configurations
+      Syntax:     ProxyPassInterpolateEnv On|Off
+      Default:    ProxyPassInterpolateEnv Off
+      Context:    server config, virtual host, directory
+      Status:     Extension
+      Module:     mod_proxy
+   Compatibility: Available in httpd 2.2.9 and later
+
+   This directive, together with the interpolate argument to ProxyPass,
+   ProxyPassReverse, ProxyPassReverseCookieDomain and
+   ProxyPassReverseCookiePath enables reverse proxies to be dynamically
+   configured using environment variables, which may be set by another
+   module such as mod_rewrite. It affects the ProxyPass, ProxyPassReverse,
+   ProxyPassReverseCookieDomain, and ProxyPassReverseCookiePath
+   directives, and causes them to substitute the value of an environment
+   variable varname for the string ${varname} in configuration directives.
+
+   Keep this turned off (for server performance) unless you need it!
+   top
+
+ProxyPassMatch Directive
+
+    Description:  Maps remote servers into the local server URL-space using
+                  regular expressions
+      Syntax:     ProxyPassMatch [regex] !|url [key=value [key=value ...]]
+      Context:    server config, virtual host, directory
+      Status:     Extension
+      Module:     mod_proxy
+   Compatibility: available in Apache 2.2.5 and later
+
+   This directive is equivalent to ProxyPass, but makes use of regular
+   expressions, instead of simple prefix matching. The supplied regular
+   expression is matched against the url, and if it matches, the server
+   will substitute any parenthesized matches into the given string and use
+   it as a new url.
+
+   Suppose the local server has address http://example.com/; then
+
+   ProxyPassMatch ^(/.*\.gif)$ http://backend.example.com$1
+
+   will cause a local request for http://example.com/foo/bar.gif to be
+   internally converted into a proxy request to
+   http://backend.example.com/foo/bar.gif.
+
+Note
+
+   The URL argument must be parsable as a URL before regexp substitutions
+   (as well as after). This limits the matches you can use. For instance,
+   if we had used
+
+   ProxyPassMatch ^(/.*\.gif)$ http://backend.example.com:8000$1
+
+   in our previous example, it would fail with a syntax error at server
+   startup. This is a bug (PR 46665 in the ASF bugzilla), and the
+   workaround is to reformulate the match:
+
+   ProxyPassMatch ^/(.*\.gif)$ http://backend.example.com:8000/$1
+
+   The ! directive is useful in situations where you don't want to
+   reverse-proxy a subdirectory.
+   top
+
+ProxyPassReverse Directive
+
+   Description: Adjusts the URL in HTTP response headers sent from a
+                reverse proxied server
+     Syntax:    ProxyPassReverse [path] url [interpolate]
+     Context:   server config, virtual host, directory
+     Status:    Extension
+     Module:    mod_proxy
+
+   This directive lets Apache adjust the URL in the Location,
+   Content-Location and URI headers on HTTP redirect responses. This is
+   essential when Apache is used as a reverse proxy (or gateway) to avoid
+   by-passing the reverse proxy because of HTTP redirects on the backend
+   servers which stay behind the reverse proxy.
+
+   Only the HTTP response headers specifically mentioned above will be
+   rewritten. Apache will not rewrite other response headers, nor will it
+   rewrite URL references inside HTML pages. This means that if the
+   proxied content contains absolute URL references, they will by-pass the
+   proxy. A third-party module that will look inside the HTML and rewrite
+   URL references is Nick Kew's mod_proxy_html.
+
+   path is the name of a local virtual path. url is a partial URL for the
+   remote server - the same way they are used for the ProxyPass directive.
+
+   For example, suppose the local server has address http://example.com/;
+   then
+
+   ProxyPass /mirror/foo/ http://backend.example.com/
+   ProxyPassReverse /mirror/foo/ http://backend.example.com/
+   ProxyPassReverseCookieDomain backend.example.com public.example.com
+   ProxyPassReverseCookiePath / /mirror/foo/
+
+   will not only cause a local request for the
+   http://example.com/mirror/foo/bar to be internally converted into a
+   proxy request to http://backend.example.com/bar (the functionality
+   ProxyPass provides here). It also takes care of redirects the server
+   backend.example.com sends: when http://backend.example.com/bar is
+   redirected by him to http://backend.example.com/quux Apache adjusts
+   this to http://example.com/mirror/foo/quux before forwarding the HTTP
+   redirect response to the client. Note that the hostname used for
+   constructing the URL is chosen in respect to the setting of the
+   UseCanonicalName directive.
+
+   Note that this ProxyPassReverse directive can also be used in
+   conjunction with the proxy pass-through feature (RewriteRule ... [P])
+   from mod_rewrite because it doesn't depend on a corresponding ProxyPass
+   directive.
+
+   The optional interpolate keyword (available in httpd 2.2.9 and later),
+   used together with ProxyPassInterpolateEnv, enables interpolation of
+   environment variables specified using the format ${VARNAME}.
+
+   When used inside a <Location> section, the first argument is omitted
+   and the local directory is obtained from the <Location>.
+   top
+
+ProxyPassReverseCookieDomain Directive
+
+   Description: Adjusts the Domain string in Set-Cookie headers from a
+                reverse- proxied server
+     Syntax:    ProxyPassReverseCookieDomain internal-domain public-domain
+                [interpolate]
+     Context:   server config, virtual host, directory
+     Status:    Extension
+     Module:    mod_proxy
+
+   Usage is basically similar to ProxyPassReverse, but instead of
+   rewriting headers that are a URL, this rewrites the domain string in
+   Set-Cookie headers.
+   top
+
+ProxyPassReverseCookiePath Directive
+
+   Description: Adjusts the Path string in Set-Cookie headers from a
+                reverse- proxied server
+     Syntax:    ProxyPassReverseCookiePath internal-path public-path
+                [interpolate]
+     Context:   server config, virtual host, directory
+     Status:    Extension
+     Module:    mod_proxy
+
+   Usage is basically similar to ProxyPassReverse, but instead of
+   rewriting headers that are a URL, this rewrites the path string in
+   Set-Cookie headers.
+   top
+
+ProxyPreserveHost Directive
+
+    Description:  Use incoming Host HTTP request header for proxy request
+      Syntax:     ProxyPreserveHost On|Off
+      Default:    ProxyPreserveHost Off
+      Context:    server config, virtual host
+      Status:     Extension
+      Module:     mod_proxy
+   Compatibility: Available in Apache 2.0.31 and later.
+
+   When enabled, this option will pass the Host: line from the incoming
+   request to the proxied host, instead of the hostname specified in the
+   ProxyPass line.
+
+   This option should normally be turned Off. It is mostly useful in
+   special configurations like proxied mass name-based virtual hosting,
+   where the original Host header needs to be evaluated by the backend
+   server.
+   top
+
+ProxyReceiveBufferSize Directive
+
+   Description: Network buffer size for proxied HTTP and FTP connections
+     Syntax:    ProxyReceiveBufferSize bytes
+     Default:   ProxyReceiveBufferSize 0
+     Context:   server config, virtual host
+     Status:    Extension
+     Module:    mod_proxy
+
+   The ProxyReceiveBufferSize directive specifies an explicit (TCP/IP)
+   network buffer size for proxied HTTP and FTP connections, for increased
+   throughput. It has to be greater than 512 or set to 0 to indicate that
+   the system's default buffer size should be used.
+
+Example
+
+   ProxyReceiveBufferSize 2048
+   top
+
+ProxyRemote Directive
+
+   Description: Remote proxy used to handle certain requests
+     Syntax:    ProxyRemote match remote-server
+     Context:   server config, virtual host
+     Status:    Extension
+     Module:    mod_proxy
+
+   This defines remote proxies to this proxy. match is either the name of
+   a URL-scheme that the remote server supports, or a partial URL for
+   which the remote server should be used, or * to indicate the server
+   should be contacted for all requests. remote-server is a partial URL
+   for the remote server. Syntax:
+
+   remote-server = scheme://hostname[:port]
+
+   scheme is effectively the protocol that should be used to communicate
+   with the remote server; only http and https are supported by this
+   module. When using https, the requests are forwarded through the remote
+   proxy using the HTTP CONNECT method.
+
+Example
+
+   ProxyRemote http://goodguys.example.com/
+   http://mirrorguys.example.com:8000
+   ProxyRemote * http://cleverproxy.localdomain
+   ProxyRemote ftp http://ftpproxy.mydomain:8080
+
+   In the last example, the proxy will forward FTP requests, encapsulated
+   as yet another HTTP proxy request, to another proxy which can handle
+   them.
+
+   This option also supports reverse proxy configuration - a backend
+   webserver can be embedded within a virtualhost URL space even if that
+   server is hidden by another forward proxy.
+   top
+
+ProxyRemoteMatch Directive
+
+   Description: Remote proxy used to handle requests matched by regular
+                expressions
+     Syntax:    ProxyRemoteMatch regex remote-server
+     Context:   server config, virtual host
+     Status:    Extension
+     Module:    mod_proxy
+
+   The ProxyRemoteMatch is identical to the ProxyRemote directive, except
+   the first argument is a regular expression match against the requested
+   URL.
+   top
+
+ProxyRequests Directive
+
+   Description: Enables forward (standard) proxy requests
+     Syntax:    ProxyRequests On|Off
+     Default:   ProxyRequests Off
+     Context:   server config, virtual host
+     Status:    Extension
+     Module:    mod_proxy
+
+   This allows or prevents Apache from functioning as a forward proxy
+   server. (Setting ProxyRequests to Off does not disable use of the
+   ProxyPass directive.)
+
+   In a typical reverse proxy or gateway configuration, this option should
+   be set to Off.
+
+   In order to get the functionality of proxying HTTP or FTP sites, you
+   need also mod_proxy_http or mod_proxy_ftp (or both) present in the
+   server.
+
+Warning
+
+   Do not enable proxying with ProxyRequests until you have secured your
+   server. Open proxy servers are dangerous both to your network and to
+   the Internet at large.
+
+See also
+
+     * Forward and Reverse Proxies/Gateways
+
+   top
+
+ProxySet Directive
+
+    Description:  Set various Proxy balancer or member parameters
+      Syntax:     ProxySet url key=value [key=value ...]
+      Context:    directory
+      Status:     Extension
+      Module:     mod_proxy
+   Compatibility: ProxySet is only available in Apache 2.2 and later.
+
+   This directive is used as an alternate method of setting any of the
+   parameters available to Proxy balancers and workers normally done via
+   the ProxyPass directive. If used within a <Proxy balancer url|worker
+   url> container directive, the url argument is not required. As a side
+   effect the respective balancer or worker gets created. This can be
+   useful when doing reverse proxying via a RewriteRule instead of a
+   ProxyPass directive.
+
+   <Proxy balancer://hotcluster>
+   BalancerMember http://www2.example.com:8009 loadfactor=1
+   BalancerMember http://www3.example.com:8009 loadfactor=2
+   ProxySet lbmethod=bytraffic
+   </Proxy>
+
+   <Proxy http://backend>
+   ProxySet keepalive=On
+   </Proxy>
+
+   ProxySet balancer://foo lbmethod=bytraffic timeout=15
+
+   ProxySet ajp://backend:7001 timeout=15
+
+Warning
+
+   Keep in mind that the same parameter key can have a different meaning
+   depending whether it is applied to a balancer or a worker as shown by
+   the two examples above regarding timeout.
+   top
+
+ProxyStatus Directive
+
+    Description:  Show Proxy LoadBalancer status in mod_status
+      Syntax:     ProxyStatus Off|On|Full
+      Default:    ProxyStatus Off
+      Context:    server config, virtual host
+      Status:     Extension
+      Module:     mod_proxy
+   Compatibility: Available in version 2.2 and later
+
+   This directive determines whether or not proxy loadbalancer status data
+   is displayed via the mod_status server-status page.
+
+Note
+
+   Full is synonymous with On
+   top
+
+ProxyTimeout Directive
+
+    Description:  Network timeout for proxied requests
+      Syntax:     ProxyTimeout seconds
+      Default:    Value of Timeout
+      Context:    server config, virtual host
+      Status:     Extension
+      Module:     mod_proxy
+   Compatibility: Available in Apache 2.0.31 and later
+
+   This directive allows a user to specifiy a timeout on proxy requests.
+   This is useful when you have a slow/buggy appserver which hangs, and
+   you would rather just return a timeout and fail gracefully instead of
+   waiting however long it takes the server to return.
+   top
+
+ProxyVia Directive
+
+   Description: Information provided in the Via HTTP response header for
+                proxied requests
+     Syntax:    ProxyVia On|Off|Full|Block
+     Default:   ProxyVia Off
+     Context:   server config, virtual host
+     Status:    Extension
+     Module:    mod_proxy
+
+   This directive controls the use of the Via: HTTP header by the proxy.
+   Its intended use is to control the flow of proxy requests along a chain
+   of proxy servers. See RFC 2616 (HTTP/1.1), section 14.45 for an
+   explanation of Via: header lines.
+     * If set to Off, which is the default, no special processing is
+       performed. If a request or reply contains a Via: header, it is
+       passed through unchanged.
+     * If set to On, each request and reply will get a Via: header line
+       added for the current host.
+     * If set to Full, each generated Via: header line will additionally
+       have the Apache server version shown as a Via: comment field.
+     * If set to Block, every proxy request will have all its Via: header
+       lines removed. No new Via: header will be generated.
+
+   Available Languages:  en  |  ja
+
+   Copyright 2009 The Apache Software Foundation.
+   Licensed under the Apache License, Version 2.0.
+
+   Modules | Directives | FAQ | Glossary | Sitemap
+http://httpd.apache.org/docs/2.2/mod/
+http://httpd.apache.org/docs/2.2/mod/directives.html
+http://httpd.apache.org/docs/2.2/faq/
+http://httpd.apache.org/docs/2.2/glossary.html
+http://httpd.apache.org/docs/2.2/sitemap.html
+http://httpd.apache.org/docs/2.2/mod/
+http://www.apache.org/
+http://httpd.apache.org/
+http://httpd.apache.org/docs/
+http://httpd.apache.org/docs/2.2/
+http://httpd.apache.org/docs/2.2/mod/
+http://httpd.apache.org/docs/2.2/en/mod/mod_proxy.html
+http://httpd.apache.org/docs/2.2/ja/mod/mod_proxy.html
+http://httpd.apache.org/docs/2.2/mod/module-dict.html#Description
+http://httpd.apache.org/docs/2.2/mod/module-dict.html#Status
+http://httpd.apache.org/docs/2.2/mod/module-dict.html#ModuleIdentifier
+http://httpd.apache.org/docs/2.2/mod/module-dict.html#SourceFile
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxyrequests
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#access
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html
+http://httpd.apache.org/docs/2.2/mod/mod_proxy_http.html
+http://httpd.apache.org/docs/2.2/mod/mod_proxy_ftp.html
+http://httpd.apache.org/docs/2.2/mod/mod_proxy_ajp.html
+http://httpd.apache.org/docs/2.2/mod/mod_proxy_balancer.html
+http://httpd.apache.org/docs/2.2/mod/mod_proxy_connect.html
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html
+http://httpd.apache.org/docs/2.2/mod/mod_so.html#loadmodule
+http://httpd.apache.org/docs/2.2/mod/mod_cache.html
+http://httpd.apache.org/docs/2.2/mod/mod_ssl.html
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#allowconnect
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#balancermember
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#noproxy
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxy
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxybadheader
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxyblock
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxydomain
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxyerroroverride
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxyftpdircharset
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxyiobuffersize
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxymatch
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxymaxforwards
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxypass
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxypassinterpolateenv
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxypassmatch
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxypassreverse
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxypassreversecookiedomain
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxypassreversecookiepath
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxypreservehost
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxyreceivebuffersize
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxyremote
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxyremotematch
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxyrequests
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxyset
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxystatus
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxytimeout
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxyvia
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#forwardreverse
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#examples
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#access
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#startup
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#intranet
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#envsettings
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#request-bodies
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#x-headers
+http://httpd.apache.org/docs/2.2/mod/mod_cache.html
+http://httpd.apache.org/docs/2.2/mod/mod_proxy_http.html
+http://httpd.apache.org/docs/2.2/mod/mod_proxy_ftp.html
+http://httpd.apache.org/docs/2.2/mod/mod_proxy_connect.html
+http://httpd.apache.org/docs/2.2/mod/mod_proxy_balancer.html
+http://httpd.apache.org/docs/2.2/mod/mod_ssl.html
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#page-header
+http://httpd.apache.org/docs/2.2/mod/mod_cache.html
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxyrequests
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#access
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxypass
+http://httpd.apache.org/docs/2.2/mod/mod_rewrite.html#rewriterule
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxyrequests
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#page-header
+http://httpd.apache.org/docs/2.2/mod/mod_cache.html
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#page-header
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxy
+http://httpd.apache.org/docs/2.2/mod/mod_authz_host.html
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxyrequests
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxypass
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#page-header
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxyblock
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#page-header
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxyremote
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#noproxy
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxydomain
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxyrequests
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#page-header
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html
+http://httpd.apache.org/docs/2.2/env.html
+http://httpd.apache.org/docs/2.2/mod/mod_env.html#setenv
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#page-header
+http://httpd.apache.org/docs/2.2/mod/mod_proxy_http.html
+http://httpd.apache.org/docs/2.2/env.html
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#page-header
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxypass
+http://httpd.apache.org/docs/2.2/mod/mod_proxy_http.html
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxypreservehost
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxyvia
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#page-header
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Default
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+http://httpd.apache.org/docs/2.2/mod/mod_proxy_connect.html
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#page-header
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Compatibility
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxypass
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxypass
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#page-header
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxyremote
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#hostname
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#ipadr
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#ipaddr
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#domain
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#ipaddr
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#ipaddr
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#ipaddr
+http://httpd.apache.org/docs/2.2/dns-caveats.html
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#page-header
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#page-header
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Default
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Compatibility
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#page-header
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#page-header
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#page-header
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Default
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Compatibility
+http://httpd.apache.org/docs/2.2/mod/mod_include.html
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#page-header
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Default
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Compatibility
+http://httpd.apache.org/docs/2.2/mod/mod_proxy_ftp.html
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#page-header
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Default
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#page-header
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxy
+http://httpd.apache.org/docs/2.2/glossary.html#regex
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#page-header
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Default
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Compatibility
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#page-header
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxyrequests
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxytimeout
+http://httpd.apache.org/docs/2.2/mod/mod_proxy_balancer.html
+http://httpd.apache.org/docs/2.2/mod/mod_rewrite.html
+http://httpd.apache.org/docs/2.2/mod/core.html#location
+http://httpd.apache.org/docs/2.2/mod/core.html#location
+http://httpd.apache.org/docs/2.2/mod/mod_rewrite.html#rewriterule
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#page-header
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Default
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Compatibility
+http://httpd.apache.org/docs/2.2/mod/mod_rewrite.html
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#page-header
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Compatibility
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxypass
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#page-header
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+http://apache.webthing.com/mod_proxy_html/
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxypass
+http://httpd.apache.org/docs/2.2/mod/core.html#usecanonicalname
+http://httpd.apache.org/docs/2.2/mod/mod_rewrite.html
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxypass
+http://httpd.apache.org/docs/2.2/mod/core.html#location
+http://httpd.apache.org/docs/2.2/mod/core.html#location
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#page-header
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxypassreverse
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#page-header
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxypassreverse
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#page-header
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Default
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Compatibility
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#page-header
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Default
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#page-header
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#page-header
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxyremote
+http://httpd.apache.org/docs/2.2/glossary.html#regex
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#page-header
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Default
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxypass
+http://httpd.apache.org/docs/2.2/mod/mod_proxy_http.html
+http://httpd.apache.org/docs/2.2/mod/mod_proxy_ftp.html
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxyrequests
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#access
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#forwardreverse
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#page-header
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Compatibility
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxypass
+http://httpd.apache.org/docs/2.2/mod/mod_rewrite.html#rewriterule
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#proxypass
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#page-header
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Default
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Compatibility
+http://httpd.apache.org/docs/2.2/mod/mod_status.html
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#page-header
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Default
+http://httpd.apache.org/docs/2.2/mod/core.html#timeout
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Compatibility
+http://httpd.apache.org/docs/2.2/mod/mod_proxy.html#page-header
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Default
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+http://www.ietf.org/rfc/rfc2616.txt
+http://httpd.apache.org/docs/2.2/en/mod/mod_proxy.html
+http://httpd.apache.org/docs/2.2/ja/mod/mod_proxy.html
+http://www.apache.org/licenses/LICENSE-2.0
+http://httpd.apache.org/docs/2.2/mod/
+http://httpd.apache.org/docs/2.2/mod/directives.html
+http://httpd.apache.org/docs/2.2/faq/
+http://httpd.apache.org/docs/2.2/glossary.html
+http://httpd.apache.org/docs/2.2/sitemap.html

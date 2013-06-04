@@ -1,0 +1,81 @@
+   Content
+
+   [js logo]
+   Jürgen Stuber
+
+   Home Page
+     * Java
+     * LEGO
+          + NXT Programming
+     * About Me
+     * Contact Data
+
+How to play with Bluetooth under Linux
+
+   This is a starter for Bluetooth on Linux. Things are still a little in
+   flux so it may work somewhat differently for you.
+
+   Have a program ready on the NXT that sends some data via Bluetooth.
+
+   Install bluez-utils and a recent kernel with Bluetooth enabled. (I have
+   Debian with kernel 2.6.17.6 and bluez-utils 3.1 .)
+
+   Plug in your Bluetooth dongle (any recent one should do).
+
+   Then look at the manpages and play a little with the commands hcitool,
+   sdptool and rfcomm.
+
+   To receive data from an NXT do the following:
+
+   sdptool add --channel=3 SP
+
+   This announces the Serial Port service, hence SP. It may already be
+   done by your system, you can check with sdptool browse local. You may
+   also leave out the --channel option, the default channel is one.
+
+   rfcomm listen /dev/rfcomm0 3
+
+   This listens on RFCOMM channel three, when the connection is
+   established the device /dev/rfcomm0 will be created and data will
+   arrive there.
+
+   On the NXT connect to your host. A sore point is the entry of the pin
+   on the Linux host, for me it is in the file /etc/bluetooth/pin. A "line
+   is busy" message on the NXT can mean anything, e.g. if you forgot one
+   of the commands above.
+
+   On another terminal do something like
+
+   cat /dev/rfcomm0 | od -t x1 -w1 -v -Ax
+
+   start the program on the NXT and watch the data arrive. I had a small
+   program that sent "good job", this is the output I got:
+000000 00
+000001 80
+000002 09
+000003 00
+000004 09
+000005 67
+000006 6f
+000007 6f
+000008 64
+000009 20
+00000a 6a
+00000b 6f
+00000c 62
+00000d 00
+00000e 0a
+00000f
+
+   Jürgen Stuber <juergen@jstuber.net>
+   Built using Apache Cocoon
+http://www.jstuber.net/lego/nxt-programming/bluetooth-linux.html#content
+http://www.jstuber.net/index.html
+http://www.jstuber.net/java/index.html
+http://www.jstuber.net/lego/index.html
+http://www.jstuber.net/lego/nxt-programming/index.html
+http://www.jstuber.net/about-me.html
+http://www.jstuber.net/contact.html
+http://www.jstuber.net/
+mailto:juergen@jstuber.net
+http://cocoon.apache.org/

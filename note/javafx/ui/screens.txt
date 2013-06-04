@@ -1,0 +1,79 @@
+= link:ui.html[JavaFX / UI] / Screens =
+:title: [JavaFX] Screens
+
+image::screens/configuration.png[]
+
+--------------------------------------------------------------------------------
+public void start(Stage stage) throws Exception {
+    ObservableList<Screen> screens = Screen.getScreens();
+    System.out.println("# of screens: " + screens.size());
+
+    int i = 0;
+    for (Screen screen : screens) {
+        i++;
+        Rectangle2D bounds = screen.getBounds();
+        System.out.println("Screen #" + i +
+                ": min (x,y) = (" + bounds.getMinX() + "," + bounds.getMinY() +
+                "), max (x,y) = (" + bounds.getMaxX()+ "," + bounds.getMaxY() +
+                "), width x height = " + bounds.getWidth() +  " x " + bounds.getHeight());
+    }
+
+    stage.setScene(new Scene(new Group(), 400, 300));
+    stage.setFullScreen(true);
+    stage.show();
+}
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+# of screens: 2
+Screen #1: min (x,y) = (0.0,0.0), max (x,y) = (1366.0,768.0), width x height = 1366.0 x 768.0
+Screen #2: min (x,y) = (1366.0,0.0), max (x,y) = (2446.0,1920.0), width x height = 1080.0 x 1920.0
+--------------------------------------------------------------------------------
+
+Mirro Displays
+
+--------------------------------------------------------------------------------
+# of screens: 2
+Screen #1: min (x,y) = (0.0,0.0), max (x,y) = (1024.0,768.0), width x height = 1024.0 x 768.0
+Screen #2: min (x,y) = (0.0,0.0), max (x,y) = (1024.0,768.0), width x height = 1024.0 x 768.0
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+ObservableList<Screen> screens = Screen.getScreens();
+if (screens.size() > 1) {
+    Rectangle2D bounds = screens.get(screens.size() - 1).getBounds();
+    stage.setX(bounds.getMinX());
+    stage.setY(bounds.getMinY());
+}
+
+stage.setFullScreen(true);
+--------------------------------------------------------------------------------
+
+== 參考資料 ==
+
+.手冊
+--
+ * http://docs.oracle.com/javafx/2/api/javafx/stage/Screen.html[`javafx.stage.Screen`] ^https://diigo.com/0xnp8[閱讀]^
+--
+
+.文件
+--
+ * http://blog.randahl.dk/2012/12/javafx-designing-for-multiple-screen.html[R A N D A H L 's    P E R S P E C T I V E: JavaFX: Designing for Multiple Screen Resolutions] (2012-12-07)
+ * https://forums.oracle.com/forums/thread.jspa?threadID=2456097&tstart=450[OTN Discussion Forums : Multiple JavaFX stages in fullscreen ...] (2012-10-24)
+ * http://stackoverflow.com/questions/13030556/multiple-javafx-stages-in-fullscreen-mode[Multiple JavaFX stages in fullscreen mode - Stack Overflow] (2012-10-23)
+ * https://forums.oracle.com/forums/thread.jspa?messageID=10331468[OTN Discussion Forums : How to use Dual Monitor in JavaFX2 ? ...] ^https://diigo.com/0xnpd[閱讀]^ (2012-05-12)
+--
+
+////////////////////////////////////////////////////////////////////////////////
+
+ * full screen 時固定會出在 non-primary screen 展開??
+ * characteristics of a graphics destination such as monitor.
+ * In a virtual device multi-screen environment?? in which the desktop area could span multiple physical screen devices, the bounds of the Screen objects are relative to the `Screen.primary`.
+ * Screen (static methods)
+   ** `getPrimary(): Screen` (static) - primary screen
+   ** `getScreens(): ObservableList<Screen>` (static) - current available screens.
+   ** `getBounds(): Rectangle2D` - bounds of this screen. 注意不是 `javafx.geometry.Bounds`
+   ** `getVisualBounds(): Rectangle2D` - virtual bounds?? of this screen, contained by `Screen.bounds`. 
+
+////////////////////////////////////////////////////////////////////////////////
+

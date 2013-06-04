@@ -1,0 +1,138 @@
+                                Vikram Aggarwal
+
+     * Home
+     * Interests
+     * Computers
+          + Main
+          + x86 Assembly
+          + Lego NXT
+     * Pictures
+
+Setting up NXT-Bluetooth support on Linux
+
+   So you want your NXT device to talk back to your Linux machine? Perhaps
+   you want to control your robot through your computer. As a first step,
+   you have to set up the Linux - NXT bluetooth connection. My setup is
+   explained below.
+     * Ubuntu Gutsy (7.10) Linux, though these instructions are not
+       version dependant. The only instructions that depend on the
+       distribution are the ones related to package installation
+       (apt-get). If you know your distribution's package manager, you
+       should have no trouble.
+     * An x86 computer. Typically, you'll want a laptop with bluetooth
+       support, so you can walk around with your NXT construction. A
+       desktop will do just fine too. You need an x86 because the nbc
+       binary only works on an x86.
+     * A Lego Mindstorm NXT.
+     * Bluetooth hardware on your linux machine.
+     * The Linux packages: bluez-utils, python-bluez, bluez-hcidump,
+       bluez-gnome, bluetooth
+
+   Make sure you have all the packages installed. On Ubuntu, you can run
+   this command.
+sudo apt-get install bluez-utils python-bluez bluez-hcidump bluez-gnome bluetoot
+h
+
+   Now, once all the packages are installed, make sure that your bluetooth
+   hardware is supported and is running fine. One way to do this is to
+   check for the bluetooth icon in the taskbar of Gnome.
+     * [icon.png]
+
+   You should be able to click on that icon and get a list of preferences.
+   In case you are not sure if you device is getting recognized and used,
+   check for lines similar to the ones below in the output of dmesg
+[243203.060226] Bluetooth: HCI USB driver ver 2.9
+[243203.063512] usbcore: registered new interface driver hci_usb
+
+   Now that you have a working bluetooth setup, you need to pair it with
+   the NXT brick. First, you need to ensure that the serial service is
+   started by selecting it in the preferences dialog from the bluetooth
+   icon.
+     * [serialStarted.png]
+
+   Now turn on your NXT Brick, and enter bluetooth settings, and turn
+   bluetooth on. You can verify that bluetooth is turned on by looking in
+   the top left of the NXT display. It should have a bluetooth icon. Now
+   run the command sudo hcitool scan from a console. The output should
+   contain a line for your NXT device. My device is called Snow, and I get
+   the following output.
+Scanning ...
+        11:22:33:44:55:66       Snow
+
+   Great!. This is definite proof that your bluetooth device works, and
+   that it can see your NXT. Time to set them up for pairing. Edit the
+   file /etc/bluetooth/rfcomm.conf to contain the following block:
+rfcomm0 {
+        # Automatically bind the device at startup
+        bind yes;
+
+        # Bluetooth address of the device
+        device 11:22:33:44:55:66;
+
+        # RFCOMM channel for the connection
+        channel 1;
+
+        # Description of the connection
+        comment "Snow Mindstorm";
+}
+
+   Change the address 11:22:33:44:55:66 to match the output of your
+   hcitool scan command that you made in the previous step. Now run the
+   command sudo /etc/init.d/bluetooth restart, and then rfcomm. The output
+   should contain your device's address. A sample session is shown here:
+$ sudo /etc/init.d/bluetooth restart
+   * Restarting bluetooth            [ OK ]
+$ rfcomm
+rfcomm0: 11:22:33:44:55:66 channel 1 clean
+
+   Now, you need to pair your device. This is done with the following
+   command
+$ sudo l2ping 11:22:33:44:55:66
+
+   This will prompt the NXT to beep happily, asking for a passphrase. The
+   number "1234" is already entered, so just accept it by pressing the
+   orange button. Now your computer will want to know this passphrase.
+   Click on the button in the notification that pops up (example shown
+   below), and enter the same number as shown. This is a one-time
+   procedure for each computer-NXT combination.
+     * [request.png]
+     * Enter the passphrase
+
+   If you have a multi-seat (or multi-terminal) setup, this notification
+   might be going to another seat, so check all notification areas on
+   every terminal. If you don't know what multi-seat or multi-terminal
+   setup is, ignore the previous statement. If all went well, your ping
+   command should be able to send packets back and forth to the NXT. A
+   happy sample output is shown below.
+Ping: 11:22:33:44:55:66 from 00:09:DD:50:67:CE (data size 44) ...
+4 bytes from 11:22:33:44:55:66 id 0 time 49.95ms
+4 bytes from 11:22:33:44:55:66 id 1 time 85.71ms
+4 bytes from 11:22:33:44:55:66 id 2 time 27.80ms
+4 bytes from 11:22:33:44:55:66 id 3 time 54.80ms
+4 bytes from 11:22:33:44:55:66 id 4 time 65.81ms
+4 bytes from 11:22:33:44:55:66 id 5 time 47.80ms
+4 bytes from 11:22:33:44:55:66 id 6 time 84.79ms
+4 bytes from 11:22:33:44:55:66 id 7 time 45.81ms
+
+   Great! So now your NXT is paired with the computer. In order to
+   communicate with the desktop, you need to download the NXT Python
+   library. Once you have downloaded and installed it, enter the sample
+   program, and you should be able to get the NXT's name and ID. If you
+   have any problems at this stage, try rebooting the NXT brick, it
+   sometimes helps. After running the sample program, you should see your
+   hostname in the "My Contacts" in the NXT's bluetooth menu. This
+   verifies that you can connect with the NXT, and have the NXT talk back
+   to the desktop computer.
+     __________________________________________________________________
+
+   This page was last modified on: Sun Apr 19 17:57:22 PDT 2009
+http://vikram.eggwall.com/
+http://vikram.eggwall.com/
+http://vikram.eggwall.com/interests/
+http://vikram.eggwall.com/computers/
+http://vikram.eggwall.com/computers/assembly.html
+http://vikram.eggwall.com/computers/nxt.html
+http://vikram.eggwall.com/pictures/
+http://mindstorms.lego.com/
+http://en.wikipedia.org/wiki/Multiseat
+http://home.comcast.net/~dplau/nxt_python/

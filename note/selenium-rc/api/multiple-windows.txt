@@ -1,0 +1,73 @@
+= link:api.html[Selenium RC / API] / Multiple Windows =
+:title: [Selenium][RC] 多視窗操作
+
+TIP: 多視窗的操作會衍生許多問題（通常會受限於安全性，用程式開出來的視窗就是不太一樣），如果可以話，取得 URL 後再用 `open()` 開在同一個視窗。
+
+跟視窗操作有關的 Selenium command 有：
+
+ * `close()` - 關閉 window 或 tab，之後要用明確選擇其他 window 才行，否則會遇到 "Current window or frame is closed!" 的錯誤。
+ * `open_window(url, windowID)`
+ * `select_frame(locator)`
+ * `select_pop_up(windowID)` - 只是將 `select_window()` 包裝得更容易使用。
++
+--
+跟 `select_window()` 不同的地方是，`select_window('null')` 會選回 main window，但 `select_pop_up('null')` 則會選取 first NON-top window，可以很方便地選到操作過程中開出來的新視窗。注意傳入 `None` 反而會得到 "ERROR: Could not find window with title None" 的錯誤。
+
+另外，按下按鈕或連結開出新視窗的那一刻，呼叫 `select_pop_up('null')` 通常會選不到新開出來的視窗（事實上，視窗還沒有開出來），建議在前面加上 `wait_for_pop_up('null', timeout)`，然後再呼叫 `select_pop_up('null')`。
+--
++
+ * `deselect_pop_up()` - 選回 main window，效果同 `select_window('null')`。
+ * `wait_for_pop_up(windowID, timeout)` - 等待新視窗開啟並載入完成（load up）。同樣地，`wait_for_pop_up('null', timeout)` 會等待 first NON-top window。要注意的是，這個方法並不會選取新的視窗，還是得明確呼叫 `select_window()` 或 `select_pop_up()` 來切換視窗。
+ * `select_window(windowID)`
+ * `window_focus()` - 讓目前選定的視窗取得焦點，但好像沒作用？
+ * `window_maximize()`
+ * `get_all_window_ids()`
+ * `get_all_window_names()`
+ * `get_all_window_titles()`
+ * `get_whether_this_frame_match_frame_expression(currentFrameString, target)`
+ * `get_whether_this_window_match_window_expression(currentWindowString, target)`
+ * `wait_for_frame_to_load(frameAddress, timeout)`
+
+TIP: 這裡所說的視窗（window）也適用有 http://en.wikipedia.org/wiki/Tab_%28GUI%29[tabbed browsing] 概念的瀏覽器的 tab。
+
+Selenium 內部會維護一份所有視窗的清單（known windows），除了 browser 一開始帶出來的 main window （有時也稱做 top window）與 `open_window()` 開出來的視窗之外，Selenium 也會攔截所有 JavaScript `window.open()` 的呼叫，將開出來新的視窗記錄起來。
+
+通常 Selenium command 如果沒有提供 `windowID` 參數的話，操作的對象就是目前選定的視窗（current window 或 currently selected window）。一開始 main window 會被選為 current window，之後就得透過 `selectPopUp()`、`select_window()` 或 `deselectPopUp()` 來切換 current window。
+
+CAUTION: 要注意 `open_window()` 不會自動選定新開出來的視窗，`close()` 把 current window 關掉之後也不會自動選回 main window（如果繼續操作的話，會遇到 Current window or frame is closed! 的錯誤），都得明確呼叫 `select_window()` 重新選取才行。
+
+如果操作的對象是在某個 frame 裡（包括 `<frameset><frame>` 與 `<iframe>`），光是選定 current window 還不夠，還必須透過 `select_frame()` 來選定 current frame 才行。
+
+`open_window()` 與 `waitForPopUp()` 裡的 `windowID` 單純是指 JavaScript window ID，也就是 `open_window()` 帶入的第二個參數。從 `xxxAllWindowNames` 與 `xxxAllWindowIds` 兩組 Selenium command 的規劃看起來，window ID 與 JavaScript `window.open()` 帶入的第二個參數 `windowName`，兩者應該是不同的概念？
+
+至於 `selectPopUp()` 與 `select_window()` 裡的 `windowID` 就沒有那麼單純了，就如同選取 element 時有 element locator 一般，選取 window 也會用到 window locator （甚至選取 frame 時也有 frame selector，之後會做說明），有下面幾種表示法：
+
+ * `title=`
+ * 傳入 `''` 或 `'null'` 時，表示 main window。
+
+`selectPopUp()` 跟 `select_window()` 的差別好像只是 `select_window()` 額外支援了 `prefix=` 的 window locator 而已？
+
+所謂的 main window 指的是什麼？有時也稱做 top window，即 browser 開起來的第一個 window。
+
+selenium looks in a hash it maintains that maps string names to window "names".
+
+CAUTION: 之前發現 `select_window()` 遇到兩個視窗有相同的 title 時，有取得 admin 權限時可以正常選到新開出來那個視窗，但沒有事先取得 admin 權限的則切不過去。不知道為什麼？...
+
+== 參考資料 ==
+
+.文件
+--
+ * http://selenium.googlecode.com/svn/trunk/docs/api/py/selenium/selenium.selenium.html[selenium.selenium — Selenium 2.0 documentation]
+--
+
+.其他文件
+--
+ * http://jira.openqa.org/browse/SEL-339[[#SEL-339&#93; Can't select popUp window opened before onload - OpenQA Bug Tracker]
+--
+
+////////////////////////////////////////////////////////////////////////////////
+
+ * Firefox 20.0 還到 click 連結帶出的視窗 address bar 是灰色的，之後 
+
+////////////////////////////////////////////////////////////////////////////////
+

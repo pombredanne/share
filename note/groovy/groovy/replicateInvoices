@@ -1,0 +1,70 @@
+#!/usr/bin/env groovy
+import groovy.sql.Sql
+
+/**
+ * 彭姐 2010-03-17 交辦, 希望能自動將某些收款單單身的發票號碼補齊.
+ * 
+ * 對象是單據日期 2008-01-01 之後所有已核的訂金收款單 (631) 與尾款收款單 (632)
+ * 規則是依序號由上往下找到第一個貸方的發票號碼, 然後抄寫到其他沒有發票號碼的單身
+ */
+
+def START_DATE = "20080101"
+
+def args = this.args
+if (args.length != 1 || !(args[0] == "test" || args[0] == "prod")) {
+  println "Usage: replicateInvoices { test | prod }"
+  System.exit(-1)
+}
+
+def sql = initSql(args[0])
+
+// 找出日期範圍內符合條件的訂金/尾款收款單單身
+// 收款單單頭 ACRTC ==> 單別 TC001, 單號 TC002, 確認 TC008 (Y/N/V), 單據日期 TC017
+// 收款單單身 ACRTD ==> 單別 TD001, 單號 TD002, 序號 TD003, 借貸別 TD004 (1: 借、-1: 貸), 確認碼 TD020 (Y/N/V), 發票號碼 TD022
+def invoices = [:] // 記錄單號與第一個貸方發票號碼的對照, 例如 "631" : "X9709001435"
+def candidates = [] // 記錄沒有發票號碼的單身, 如果貸方的發票號碼有找到的話, 就會成為更新的對象
+sql.eachRow("SELECT TD001, TD002, TD003, TD004, TD022 FROM ACRTD JOIN ACRTC ON TC001 = TD001 AND TC002 = TD002 WHERE TC017 >= $START_DATE AND TC008 = 'Y' AND TC001 IN ('631', '632') ORDER BY TD001, TD002, TD003") { row ->
+  def formType = row.TD001.trim()
+  def formNo = row.TD002.trim()
+  def itemNo = row.TD003.trim()
+  def credit = row.TD004 == -1
+  def invoiceNo = row.TD022.trim()
+
+  if (invoiceNo != "") {
+    def key = formType + "-" + formNo
+    if (invoices[key] == null && credit)
+      invoices[key] = invoiceNo
+  } else {
+    def candidate = [:]
+    candidates << candidate
+
+    candidate.formType = formType
+    candidate.formNo = formNo
+    candidate.itemNo = itemNo
+  }
+}
+
+println "找到 ${invoices.size()} 筆發票資料, 可能更新 ${candidates.size()} 筆收款單單身"
+
+def updated = 0
+candidates.each { candidate ->
+  def key = candidate.formType + "-" + candidate.formNo
+  def invoiceNo = invoices[key]
+  if (invoiceNo != null) {
+    println "更新收款單單身 ${candidate.formType}-${candidate.formNo}:${candidate.itemNo} 的發票為 ${invoiceNo}"
+    sql.executeUpdate("UPDATE ACRTD SET TD022 = ? WHERE TD001 = ? AND TD002 = ? AND TD003 = ?", [invoiceNo, candidate.formType, candidate.formNo, candidate.itemNo])
+    updated++
+  }
+}
+
+println "實際更新 ${updated} 筆收款單單身的發票資料"
+
+def initSql(env) {
+  def url = "jdbc:jtds:sqlserver://10.40.1.1/${ env == 'test' ? 'Leader' : 'htltw' }"
+  def user = "sa"
+  def password = "sardolmr"
+
+  println "JDBC URL: $url"
+  return Sql.newInstance(url, user, password, "net.sourceforge.jtds.jdbc.Driver")
+}
+

@@ -1,0 +1,609 @@
+   [1]Modules | [2]Directives | [3]FAQ | [4]Glossary | [5]Sitemap
+
+   Apache HTTP Server Version 2.2
+
+   [6]<-
+
+   [7]Apache > [8]HTTP Server > [9]Documentation > [10]Version 2.2 >
+   [11]SSL/TLS
+
+SSL/TLS Strong Encryption: An Introduction
+
+   Available Languages: [12] en  | [13] ja
+
+     The nice thing about standards is that there are so many to choose
+     from. And if you really don't like all the standards you just have
+     to wait another year until the one arises you are looking for.
+
+     -- A. Tanenbaum, "Introduction to Computer Networks"
+
+   As an introduction this chapter is aimed at readers who are familiar
+   with the Web, HTTP, and Apache, but are not security experts. It is not
+   intended to be a definitive guide to the SSL protocol, nor does it
+   discuss specific techniques for managing certificates in an
+   organization, or the important legal issues of patents and import and
+   export restrictions. Rather, it is intended to provide a common
+   background to [14]mod_ssl users by pulling together various concepts,
+   definitions, and examples as a starting point for further exploration.
+
+   The presented content is mainly derived, with the author's permission,
+   from the article [15]Introducing SSL and Certificates using SSLeay by
+   [16]Frederick J. Hirsch, of The Open Group Research Institute, which
+   was published in [17]Web Security: A Matter of Trust, World Wide Web
+   Journal, Volume 2, Issue 3, Summer 1997. Please send any positive
+   feedback to [18]Frederick Hirsch (the original article author) and all
+   negative feedback to [19]Ralf S. Engelschall (the [20]mod_ssl author).
+     * [21]Cryptographic Techniques
+     * [22]Certificates
+     * [23]Secure Sockets Layer (SSL)
+     * [24]References
+
+   [25]top
+
+Cryptographic Techniques
+
+   Understanding SSL requires an understanding of cryptographic
+   algorithms, message digest functions (aka. one-way or hash functions),
+   and digital signatures. These techniques are the subject of entire
+   books (see for instance [[26]AC96]) and provide the basis for privacy,
+   integrity, and authentication.
+
+Cryptographic Algorithms
+
+   Suppose Alice wants to send a message to her bank to transfer some
+   money. Alice would like the message to be private, since it will
+   include information such as her account number and transfer amount. One
+   solution is to use a cryptographic algorithm, a technique that would
+   transform her message into an encrypted form, unreadable until it is
+   decrypted. Once in this form, the message can only be decrypted by
+   using a secret key. Without the key the message is useless: good
+   cryptographic algorithms make it so difficult for intruders to decode
+   the original text that it isn't worth their effort.
+
+   There are two categories of cryptographic algorithms: conventional and
+   public key.
+
+   Conventional cryptography
+          also known as symmetric cryptography, requires the sender and
+          receiver to share a key: a secret piece of information that may
+          be used to encrypt or decrypt a message. As long as this key is
+          kept secret, nobody other than the sender or recipient can read
+          the message. If Alice and the bank know a secret key, then they
+          can send each other private messages. The task of sharing a key
+          between sender and recipient before communicating, while also
+          keeping it secret from others, can be problematic.
+
+   Public key cryptography
+          also known as asymmetric cryptography, solves the key exchange
+          problem by defining an algorithm which uses two keys, each of
+          which may be used to encrypt a message. If one key is used to
+          encrypt a message then the other must be used to decrypt it.
+          This makes it possible to receive secure messages by simply
+          publishing one key (the public key) and keeping the other secret
+          (the private key).
+
+   Anyone can encrypt a message using the public key, but only the owner
+   of the private key will be able to read it. In this way, Alice can send
+   private messages to the owner of a key-pair (the bank), by encrypting
+   them using their public key. Only the bank will be able to decrypt
+   them.
+
+Message Digests
+
+   Although Alice may encrypt her message to make it private, there is
+   still a concern that someone might modify her original message or
+   substitute it with a different one, in order to transfer the money to
+   themselves, for instance. One way of guaranteeing the integrity of
+   Alice's message is for her to create a concise summary of her message
+   and send this to the bank as well. Upon receipt of the message, the
+   bank creates its own summary and compares it with the one Alice sent.
+   If the summaries are the same then the message has been received
+   intact.
+
+   A summary such as this is called a message digest, one-way function or
+   hash function. Message digests are used to create a short, fixed-length
+   representation of a longer, variable-length message. Digest algorithms
+   are designed to produce a unique digest for each message. Message
+   digests are designed to make it impractically difficult to determine
+   the message from the digest and (in theory) impossible to find two
+   different messages which create the same digest -- thus eliminating the
+   possibility of substituting one message for another while maintaining
+   the same digest.
+
+   Another challenge that Alice faces is finding a way to send the digest
+   to the bank securely; if the digest is not sent securely, its integrity
+   may be compromised and with it the possibility for the bank to
+   determine the integrity of the original message. Only if the digest is
+   sent securely can the integrity of the associated message be
+   determined.
+
+   One way to send the digest securely is to include it in a digital
+   signature.
+
+Digital Signatures
+
+   When Alice sends a message to the bank, the bank needs to ensure that
+   the message is really from her, so an intruder cannot request a
+   transaction involving her account. A digital signature, created by
+   Alice and included with the message, serves this purpose.
+
+   Digital signatures are created by encrypting a digest of the message
+   and other information (such as a sequence number) with the sender's
+   private key. Though anyone can decrypt the signature using the public
+   key, only the sender knows the private key. This means that only the
+   sender can have signed the message. Including the digest in the
+   signature means the signature is only good for that message; it also
+   ensures the integrity of the message since no one can change the digest
+   and still sign it.
+
+   To guard against interception and reuse of the signature by an intruder
+   at a later date, the signature contains a unique sequence number. This
+   protects the bank from a fraudulent claim from Alice that she did not
+   send the message -- only she could have signed it (non-repudiation).
+   [27]top
+
+Certificates
+
+   Although Alice could have sent a private message to the bank, signed it
+   and ensured the integrity of the message, she still needs to be sure
+   that she is really communicating with the bank. This means that she
+   needs to be sure that the public key she is using is part of the bank's
+   key-pair, and not an intruder's. Similarly, the bank needs to verify
+   that the message signature really was signed by the private key that
+   belongs to Alice.
+
+   If each party has a certificate which validates the other's identity,
+   confirms the public key and is signed by a trusted agency, then both
+   can be assured that they are communicating with whom they think they
+   are. Such a trusted agency is called a Certificate Authority and
+   certificates are used for authentication.
+
+Certificate Contents
+
+   A certificate associates a public key with the real identity of an
+   individual, server, or other entity, known as the subject. As shown in
+   [28]Table 1, information about the subject includes identifying
+   information (the distinguished name) and the public key. It also
+   includes the identification and signature of the Certificate Authority
+   that issued the certificate and the period of time during which the
+   certificate is valid. It may have additional information (or
+   extensions) as well as administrative information for the Certificate
+   Authority's use, such as a serial number.
+
+Table 1: Certificate Information
+
+            Subject           Distinguished Name, Public Key
+             Issuer           Distinguished Name, Signature
+       Period of Validity     Not Before Date, Not After Date
+   Administrative Information Version, Serial Number
+      Extended Information    Basic Constraints, Netscape Flags, etc.
+
+   A distinguished name is used to provide an identity in a specific
+   context -- for instance, an individual might have a personal
+   certificate as well as one for their identity as an employee.
+   Distinguished names are defined by the X.509 standard [[29]X509], which
+   defines the fields, field names and abbreviations used to refer to the
+   fields (see [30]Table 2).
+
+Table 2: Distinguished Name Information
+
+   DN Field Abbrev. Description Example
+   Common Name CN Name being certified CN=Joe Average
+   Organization or Company O Name is associated with this
+   organization O=Snake Oil, Ltd.
+   Organizational Unit OU Name is associated with this
+   organization unit, such as a department OU=Research Institute
+   City/Locality L Name is located in this City L=Snake City
+   State/Province ST Name is located in this State/Province ST=Desert
+   Country C Name is located in this Country (ISO code) C=XZ
+
+   A Certificate Authority may define a policy specifying which
+   distinguished field names are optional and which are required. It may
+   also place requirements upon the field contents, as may users of
+   certificates. For example, a Netscape browser requires that the Common
+   Name for a certificate representing a server matches a wildcard pattern
+   for the domain name of that server, such as *.snakeoil.com.
+
+   The binary format of a certificate is defined using the ASN.1 notation
+   [[31]X208] [[32]PKCS]. This notation defines how to specify the
+   contents and encoding rules define how this information is translated
+   into binary form. The binary encoding of the certificate is defined
+   using Distinguished Encoding Rules (DER), which are based on the more
+   general Basic Encoding Rules (BER). For those transmissions which
+   cannot handle binary, the binary form may be translated into an ASCII
+   form by using Base64 encoding [[33]MIME]. When placed between begin and
+   end delimiter lines (as below), this encoded version is called a PEM
+   ("Privacy Enhanced Mail") encoded certificate.
+
+Example of a PEM-encoded certificate (snakeoil.crt)
+
+-----BEGIN CERTIFICATE-----
+MIIC7jCCAlegAwIBAgIBATANBgkqhkiG9w0BAQQFADCBqTELMAkGA1UEBhMCWFkx
+FTATBgNVBAgTDFNuYWtlIERlc2VydDETMBEGA1UEBxMKU25ha2UgVG93bjEXMBUG
+A1UEChMOU25ha2UgT2lsLCBMdGQxHjAcBgNVBAsTFUNlcnRpZmljYXRlIEF1dGhv
+cml0eTEVMBMGA1UEAxMMU25ha2UgT2lsIENBMR4wHAYJKoZIhvcNAQkBFg9jYUBz
+bmFrZW9pbC5kb20wHhcNOTgxMDIxMDg1ODM2WhcNOTkxMDIxMDg1ODM2WjCBpzEL
+MAkGA1UEBhMCWFkxFTATBgNVBAgTDFNuYWtlIERlc2VydDETMBEGA1UEBxMKU25h
+a2UgVG93bjEXMBUGA1UEChMOU25ha2UgT2lsLCBMdGQxFzAVBgNVBAsTDldlYnNl
+cnZlciBUZWFtMRkwFwYDVQQDExB3d3cuc25ha2VvaWwuZG9tMR8wHQYJKoZIhvcN
+AQkBFhB3d3dAc25ha2VvaWwuZG9tMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKB
+gQDH9Ge/s2zcH+da+rPTx/DPRp3xGjHZ4GG6pCmvADIEtBtKBFAcZ64n+Dy7Np8b
+vKR+yy5DGQiijsH1D/j8HlGE+q4TZ8OFk7BNBFazHxFbYI4OKMiCxdKzdif1yfaa
+lWoANFlAzlSdbxeGVHoT0K+gT5w3UxwZKv2DLbCTzLZyPwIDAQABoyYwJDAPBgNV
+HRMECDAGAQH/AgEAMBEGCWCGSAGG+EIBAQQEAwIAQDANBgkqhkiG9w0BAQQFAAOB
+gQAZUIHAL4D09oE6Lv2k56Gp38OBDuILvwLg1v1KL8mQR+KFjghCrtpqaztZqcDt
+2q2QoyulCgSzHbEGmi0EsdkPfg6mp0penssIFePYNI+/8u9HT4LuKMJX15hxBam7
+dUHzICxBVC1lnHyYGjDuAMhe396lYAn8bCld1/L4NMGBCQ==
+-----END CERTIFICATE-----
+
+Certificate Authorities
+
+   By verifying the information in a certificate request before granting
+   the certificate, the Certificate Authority assures itself of the
+   identity of the private key owner of a key-pair. For instance, if Alice
+   requests a personal certificate, the Certificate Authority must first
+   make sure that Alice really is the person the certificate request
+   claims she is.
+
+Certificate Chains
+
+   A Certificate Authority may also issue a certificate for another
+   Certificate Authority. When examining a certificate, Alice may need to
+   examine the certificate of the issuer, for each parent Certificate
+   Authority, until reaching one which she has confidence in. She may
+   decide to trust only certificates with a limited chain of issuers, to
+   reduce her risk of a "bad" certificate in the chain.
+
+Creating a Root-Level CA
+
+   As noted earlier, each certificate requires an issuer to assert the
+   validity of the identity of the certificate subject, up to the
+   top-level Certificate Authority (CA). This presents a problem: who can
+   vouch for the certificate of the top-level authority, which has no
+   issuer? In this unique case, the certificate is "self-signed", so the
+   issuer of the certificate is the same as the subject. Browsers are
+   preconfigured to trust well-known certificate authorities, but it is
+   important to exercise extra care in trusting a self-signed certificate.
+   The wide publication of a public key by the root authority reduces the
+   risk in trusting this key -- it would be obvious if someone else
+   publicized a key claiming to be the authority.
+
+   A number of companies, such as [34]Thawte and [35]VeriSign have
+   established themselves as Certificate Authorities. These companies
+   provide the following services:
+     * Verifying certificate requests
+     * Processing certificate requests
+     * Issuing and managing certificates
+
+   It is also possible to create your own Certificate Authority. Although
+   risky in the Internet environment, it may be useful within an Intranet
+   where the organization can easily verify the identities of individuals
+   and servers.
+
+Certificate Management
+
+   Establishing a Certificate Authority is a responsibility which requires
+   a solid administrative, technical and management framework. Certificate
+   Authorities not only issue certificates, they also manage them -- that
+   is, they determine for how long certificates remain valid, they renew
+   them and keep lists of certificates that were issued in the past but
+   are no longer valid (Certificate Revocation Lists, or CRLs).
+
+   For example, if Alice is entitled to a certificate as an employee of a
+   company but has now left that company, her certificate may need to be
+   revoked. Because certificates are only issued after the subject's
+   identity has been verified and can then be passed around to all those
+   with whom the subject may communicate, it is impossible to tell from
+   the certificate alone that it has been revoked. Therefore when
+   examining certificates for validity it is necessary to contact the
+   issuing Certificate Authority to check CRLs -- this is usually not an
+   automated part of the process.
+
+Note
+
+   If you use a Certificate Authority that browsers are not configured to
+   trust by default, it is necessary to load the Certificate Authority
+   certificate into the browser, enabling the browser to validate server
+   certificates signed by that Certificate Authority. Doing so may be
+   dangerous, since once loaded, the browser will accept all certificates
+   signed by that Certificate Authority.
+   [36]top
+
+Secure Sockets Layer (SSL)
+
+   The Secure Sockets Layer protocol is a protocol layer which may be
+   placed between a reliable connection-oriented network layer protocol
+   (e.g. TCP/IP) and the application protocol layer (e.g. HTTP). SSL
+   provides for secure communication between client and server by allowing
+   mutual authentication, the use of digital signatures for integrity and
+   encryption for privacy.
+
+   The protocol is designed to support a range of choices for specific
+   algorithms used for cryptography, digests and signatures. This allows
+   algorithm selection for specific servers to be made based on legal,
+   export or other concerns and also enables the protocol to take
+   advantage of new algorithms. Choices are negotiated between client and
+   server when establishing a protocol session.
+
+Table 4: Versions of the SSL protocol
+
+   Version Source Description Browser Support
+   SSL v2.0 Vendor Standard (from Netscape Corp.) [[37]SSL2] First SSL
+   protocol for which implementations exist - NS Navigator 1.x/2.x
+   - MS IE 3.x
+   - Lynx/2.8+OpenSSL
+   SSL v3.0 Expired Internet Draft (from Netscape Corp.) [[38]SSL3]
+   Revisions to prevent specific security attacks, add non-RSA ciphers and
+   support for certificate chains - NS Navigator 2.x/3.x/4.x
+   - MS IE 3.x/4.x
+   - Lynx/2.8+OpenSSL
+   TLS v1.0 Proposed Internet Standard (from IETF) [[39]TLS1] Revision of
+   SSL 3.0 to update the MAC layer to HMAC, add block padding for block
+   ciphers, message order standardization and more alert messages. -
+   Lynx/2.8+OpenSSL
+
+   There are a number of versions of the SSL protocol, as shown in
+   [40]Table 4. As noted there, one of the benefits in SSL 3.0 is that it
+   adds support of certificate chain loading. This feature allows a server
+   to pass a server certificate along with issuer certificates to the
+   browser. Chain loading also permits the browser to validate the server
+   certificate, even if Certificate Authority certificates are not
+   installed for the intermediate issuers, since they are included in the
+   certificate chain. SSL 3.0 is the basis for the Transport Layer
+   Security [[41]TLS] protocol standard, currently in development by the
+   Internet Engineering Task Force (IETF).
+
+Establishing a Session
+
+   The SSL session is established by following a handshake sequence
+   between client and server, as shown in [42]Figure 1. This sequence may
+   vary, depending on whether the server is configured to provide a server
+   certificate or request a client certificate. Although cases exist where
+   additional handshake steps are required for management of cipher
+   information, this article summarizes one common scenario. See the SSL
+   specification for the full range of possibilities.
+
+Note
+
+   Once an SSL session has been established, it may be reused. This avoids
+   the performance penalty of repeating the many steps needed to start a
+   session. To do this, the server assigns each SSL session a unique
+   session identifier which is cached in the server and which the client
+   can use in future connections to reduce the handshake time (until the
+   session identifer expires from the cache of the server).
+
+   Figure 1: Simplified SSL Handshake Sequence
+
+   The elements of the handshake sequence, as used by the client and
+   server, are listed below:
+    1. Negotiate the Cipher Suite to be used during data transfer
+    2. Establish and share a session key between client and server
+    3. Optionally authenticate the server to the client
+    4. Optionally authenticate the client to the server
+
+   The first step, Cipher Suite Negotiation, allows the client and server
+   to choose a Cipher Suite supported by both of them. The SSL3.0 protocol
+   specification defines 31 Cipher Suites. A Cipher Suite is defined by
+   the following components:
+     * Key Exchange Method
+     * Cipher for Data Transfer
+     * Message Digest for creating the Message Authentication Code (MAC)
+
+   These three elements are described in the sections that follow.
+
+Key Exchange Method
+
+   The key exchange method defines how the shared secret symmetric
+   cryptography key used for application data transfer will be agreed upon
+   by client and server. SSL 2.0 uses RSA key exchange only, while SSL 3.0
+   supports a choice of key exchange algorithms including RSA key exchange
+   (when certificates are used), and Diffie-Hellman key exchange (for
+   exchanging keys without certificates, or without prior communication
+   between client and server).
+
+   One variable in the choice of key exchange methods is digital
+   signatures -- whether or not to use them, and if so, what kind of
+   signatures to use. Signing with a private key provides protection
+   against a man-in-the-middle-attack during the information exchange used
+   to generating the shared key [[43]AC96, p516].
+
+Cipher for Data Transfer
+
+   SSL uses conventional symmetric cryptography, as described earlier, for
+   encrypting messages in a session. There are nine choices of how to
+   encrypt, including the option not to encrypt:
+     * No encryption
+     * Stream Ciphers
+          + RC4 with 40-bit keys
+          + RC4 with 128-bit keys
+     * CBC Block Ciphers
+          + RC2 with 40 bit key
+          + DES with 40 bit key
+          + DES with 56 bit key
+          + Triple-DES with 168 bit key
+          + Idea (128 bit key)
+          + Fortezza (96 bit key)
+
+   "CBC" refers to Cipher Block Chaining, which means that a portion of
+   the previously encrypted cipher text is used in the encryption of the
+   current block. "DES" refers to the Data Encryption Standard [[44]AC96,
+   ch12], which has a number of variants (including DES40 and 3DES_EDE).
+   "Idea" is currently one of the best and cryptographically strongest
+   algorithms available, and "RC2" is a proprietary algorithm from RSA DSI
+   [[45]AC96, ch13].
+
+Digest Function
+
+   The choice of digest function determines how a digest is created from a
+   record unit. SSL supports the following:
+     * No digest (Null choice)
+     * MD5, a 128-bit hash
+     * Secure Hash Algorithm (SHA-1), a 160-bit hash
+
+   The message digest is used to create a Message Authentication Code
+   (MAC) which is encrypted with the message to verify integrity and to
+   protect against replay attacks.
+
+Handshake Sequence Protocol
+
+   The handshake sequence uses three protocols:
+     * The SSL Handshake Protocol for performing the client and server SSL
+       session establishment.
+     * The SSL Change Cipher Spec Protocol for actually establishing
+       agreement on the Cipher Suite for the session.
+     * The SSL Alert Protocol for conveying SSL error messages between
+       client and server.
+
+   These protocols, as well as application protocol data, are encapsulated
+   in the SSL Record Protocol, as shown in [46]Figure 2. An encapsulated
+   protocol is transferred as data by the lower layer protocol, which does
+   not examine the data. The encapsulated protocol has no knowledge of the
+   underlying protocol.
+
+   Figure 2: SSL Protocol Stack
+
+   The encapsulation of SSL control protocols by the record protocol means
+   that if an active session is renegotiated the control protocols will be
+   transmitted securely. If there was no previous session, the Null cipher
+   suite is used, which means there will be no encryption and messages
+   will have no integrity digests, until the session has been established.
+
+Data Transfer
+
+   The SSL Record Protocol, shown in [47]Figure 3, is used to transfer
+   application and SSL Control data between the client and server, where
+   necessary fragmenting this data into smaller units, or combining
+   multiple higher level protocol data messages into single units. It may
+   compress, attach digest signatures, and encrypt these units before
+   transmitting them using the underlying reliable transport protocol
+   (Note: currently, no major SSL implementations include support for
+   compression).
+
+   Figure 3: SSL Record Protocol
+
+Securing HTTP Communication
+
+   One common use of SSL is to secure Web HTTP communication between a
+   browser and a webserver. This does not preclude the use of non-secured
+   HTTP - the secure version (called HTTPS) is the same as plain HTTP over
+   SSL, but uses the URL scheme https rather than http, and a different
+   server port (by default, port 443). This functionality is a large part
+   of what [48]mod_ssl provides for the Apache webserver.
+   [49]top
+
+References
+
+   [AC96]
+          Bruce Schneier, "Applied Cryptography", 2nd Edition, Wiley,
+          1996. See [50]http://www.counterpane.com/ for various other
+          materials by Bruce Schneier.
+
+   [X208]
+          ITU-T Recommendation X.208, "Specification of Abstract Syntax
+          Notation One (ASN.1)", 1988. See for instance
+          [51]http://www.itu.int/rec/recommendation.asp?type=items&lang=e&
+          parent=T-REC-X.208-198811-I.
+
+   [X509]
+          ITU-T Recommendation X.509, "The Directory - Authentication
+          Framework". See for instance
+          [52]http://www.itu.int/rec/recommendation.asp?type=folders&lang=
+          e&parent=T-REC-X.509.
+
+   [PKCS]
+          "Public Key Cryptography Standards (PKCS)", RSA Laboratories
+          Technical Notes, See
+          [53]http://www.rsasecurity.com/rsalabs/pkcs/.
+
+   [MIME]
+          N. Freed, N. Borenstein, "Multipurpose Internet Mail Extensions
+          (MIME) Part One: Format of Internet Message Bodies", RFC2045.
+          See for instance [54]http://ietf.org/rfc/rfc2045.txt.
+
+   [SSL2]
+          Kipp E.B. Hickman, "The SSL Protocol", 1995. See
+          [55]http://www.netscape.com/eng/security/SSL_2.html.
+
+   [SSL3]
+          Alan O. Freier, Philip Karlton, Paul C. Kocher, "The SSL
+          Protocol Version 3.0", 1996. See
+          [56]http://www.netscape.com/eng/ssl3/draft302.txt.
+
+   [TLS1]
+          Tim Dierks, Christopher Allen, "The TLS Protocol Version 1.0",
+          1999. See [57]http://ietf.org/rfc/rfc2246.txt.
+
+   Available Languages: [58] en  | [59] ja
+
+   Copyright 2009 The Apache Software Foundation.
+   Licensed under the [60]Apache License, Version 2.0.
+
+   [61]Modules | [62]Directives | [63]FAQ | [64]Glossary | [65]Sitemap
+
+References
+
+   1. http://httpd.apache.org/docs/2.2/mod/
+   2. http://httpd.apache.org/docs/2.2/mod/directives.html
+   3. http://httpd.apache.org/docs/2.2/faq/
+   4. http://httpd.apache.org/docs/2.2/glossary.html
+   5. http://httpd.apache.org/docs/2.2/sitemap.html
+   6. http://httpd.apache.org/docs/2.2/ssl/
+   7. http://www.apache.org/
+   8. http://httpd.apache.org/
+   9. http://httpd.apache.org/docs/
+  10. http://httpd.apache.org/docs/2.2/
+  11. http://httpd.apache.org/docs/2.2/ssl/
+  12. http://httpd.apache.org/docs/2.2/en/ssl/ssl_intro.html
+  13. http://httpd.apache.org/docs/2.2/ja/ssl/ssl_intro.html
+  14. http://httpd.apache.org/docs/2.2/mod/mod_ssl.html
+  15. http://home.comcast.net/~fjhirsch/Papers/wwwj/
+  16. http://home.comcast.net/~fjhirsch/
+  17. http://www.ora.com/catalog/wjsum97/
+  18. mailto:hirsch@fjhirsch.com
+  19. mailto:rse@engelschall.com
+  20. http://httpd.apache.org/docs/2.2/mod/mod_ssl.html
+  21. http://httpd.apache.org/docs/2.2/ssl/ssl_intro.html#cryptographictech
+  22. http://httpd.apache.org/docs/2.2/ssl/ssl_intro.html#certificates
+  23. http://httpd.apache.org/docs/2.2/ssl/ssl_intro.html#ssl
+  24. http://httpd.apache.org/docs/2.2/ssl/ssl_intro.html#references
+  25. http://httpd.apache.org/docs/2.2/ssl/ssl_intro.html#page-header
+  26. http://httpd.apache.org/docs/2.2/ssl/ssl_intro.html#AC96
+  27. http://httpd.apache.org/docs/2.2/ssl/ssl_intro.html#page-header
+  28. http://httpd.apache.org/docs/2.2/ssl/ssl_intro.html#table1
+  29. http://httpd.apache.org/docs/2.2/ssl/ssl_intro.html#X509
+  30. http://httpd.apache.org/docs/2.2/ssl/ssl_intro.html#table2
+  31. http://httpd.apache.org/docs/2.2/ssl/ssl_intro.html#X208
+  32. http://httpd.apache.org/docs/2.2/ssl/ssl_intro.html#PKCS
+  33. http://httpd.apache.org/docs/2.2/ssl/ssl_intro.html#MIME
+  34. http://www.thawte.com/
+  35. http://www.verisign.com/
+  36. http://httpd.apache.org/docs/2.2/ssl/ssl_intro.html#page-header
+  37. http://httpd.apache.org/docs/2.2/ssl/ssl_intro.html#SSL2
+  38. http://httpd.apache.org/docs/2.2/ssl/ssl_intro.html#SSL3
+  39. http://httpd.apache.org/docs/2.2/ssl/ssl_intro.html#TLS1
+  40. http://httpd.apache.org/docs/2.2/ssl/ssl_intro.html#table4
+  41. http://httpd.apache.org/docs/2.2/ssl/ssl_intro.html#TLS1
+  42. http://httpd.apache.org/docs/2.2/ssl/ssl_intro.html#figure1
+  43. http://httpd.apache.org/docs/2.2/ssl/ssl_intro.html#AC96
+  44. http://httpd.apache.org/docs/2.2/ssl/ssl_intro.html#AC96
+  45. http://httpd.apache.org/docs/2.2/ssl/ssl_intro.html#AC96
+  46. http://httpd.apache.org/docs/2.2/ssl/ssl_intro.html#figure2
+  47. http://httpd.apache.org/docs/2.2/ssl/ssl_intro.html#figure3
+  48. http://httpd.apache.org/docs/2.2/mod/mod_ssl.html
+  49. http://httpd.apache.org/docs/2.2/ssl/ssl_intro.html#page-header
+  50. http://www.counterpane.com/
+  51. http://www.itu.int/rec/recommendation.asp?type=items&lang=e&parent=T-REC-X.208-198811-I
+  52. http://www.itu.int/rec/recommendation.asp?type=folders&lang=e&parent=T-REC-X.509
+  53. http://www.rsasecurity.com/rsalabs/pkcs/
+  54. http://ietf.org/rfc/rfc2045.txt
+  55. http://www.netscape.com/eng/security/SSL_2.html
+  56. http://www.netscape.com/eng/ssl3/draft302.txt
+  57. http://ietf.org/rfc/rfc2246.txt
+  58. http://httpd.apache.org/docs/2.2/en/ssl/ssl_intro.html
+  59. http://httpd.apache.org/docs/2.2/ja/ssl/ssl_intro.html
+  60. http://www.apache.org/licenses/LICENSE-2.0
+  61. http://httpd.apache.org/docs/2.2/mod/
+  62. http://httpd.apache.org/docs/2.2/mod/directives.html
+  63. http://httpd.apache.org/docs/2.2/faq/
+  64. http://httpd.apache.org/docs/2.2/glossary.html
+  65. http://httpd.apache.org/docs/2.2/sitemap.html

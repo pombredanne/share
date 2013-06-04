@@ -1,0 +1,540 @@
+   Modules | Directives | FAQ | Glossary | Sitemap
+
+   Apache HTTP Server Version 2.2
+
+   <-
+
+   Apache > HTTP Server > Documentation > Version 2.2 > Modules
+
+Apache Module mod_alias
+
+   Available Languages:  en  |  ja  |  ko  |  tr
+      Description:    Provides for mapping different parts of the host
+                      filesystem in the document tree and for URL redirection
+        Status:       Base
+   Module Identifier: alias_module
+      Source File:    mod_alias.c
+
+Summary
+
+   The directives contained in this module allow for manipulation and
+   control of URLs as requests arrive at the server. The Alias and
+   ScriptAlias directives are used to map between URLs and filesystem
+   paths. This allows for content which is not directly under the
+   DocumentRoot served as part of the web document tree. The ScriptAlias
+   directive has the additional effect of marking the target directory as
+   containing only CGI scripts.
+
+   The Redirect directives are used to instruct clients to make a new
+   request with a different URL. They are often used when a resource has
+   moved to a new location.
+
+   mod_alias is designed to handle simple URL manipulation tasks. For more
+   complicated tasks such as manipulating the query string, use the tools
+   provided by mod_rewrite.
+
+Directives
+
+     * Alias
+     * AliasMatch
+     * Redirect
+     * RedirectMatch
+     * RedirectPermanent
+     * RedirectTemp
+     * ScriptAlias
+     * ScriptAliasMatch
+
+Topics
+
+     * Order of Processing
+
+See also
+
+     * mod_rewrite
+     * Mapping URLs to the filesystem
+
+   top
+
+Order of Processing
+
+   Aliases and Redirects occuring in different contexts are processed like
+   other directives according to standard merging rules. But when multiple
+   Aliases or Redirects occur in the same context (for example, in the
+   same <VirtualHost> section) they are processed in a particular order.
+
+   First, all Redirects are processed before Aliases are processed, and
+   therefore a request that matches a Redirect or RedirectMatch will never
+   have Aliases applied. Second, the Aliases and Redirects are processed
+   in the order they appear in the configuration files, with the first
+   match taking precedence.
+
+   For this reason, when two or more of these directives apply to the same
+   sub-path, you must list the most specific path first in order for all
+   the directives to have an effect. For example, the following
+   configuration will work as expected:
+
+   Alias /foo/bar /baz
+   Alias /foo /gaq
+
+   But if the above two directives were reversed in order, the /foo Alias
+   would always match before the /foo/bar Alias, so the latter directive
+   would be ignored.
+   top
+
+Alias Directive
+
+   Description: Maps URLs to filesystem locations
+     Syntax:    Alias URL-path file-path|directory-path
+     Context:   server config, virtual host
+     Status:    Base
+     Module:    mod_alias
+
+   The Alias directive allows documents to be stored in the local
+   filesystem other than under the DocumentRoot. URLs with a (%-decoded)
+   path beginning with url-path will be mapped to local files beginning
+   with directory-path. The url-path is case-sensitive, even on
+   case-insensitive file systems.
+
+Example:
+
+   Alias /image /ftp/pub/image
+
+   A request for http://myserver/image/foo.gif would cause the server to
+   return the file /ftp/pub/image/foo.gif. Only complete path segments are
+   matched, so the above alias would not match a request for
+   http://myserver/imagefoo.gif. For more complex matching using regular
+   expressions, see the AliasMatch directive.
+
+   Note that if you include a trailing / on the url-path then the server
+   will require a trailing / in order to expand the alias. That is, if you
+   use
+
+          Alias /icons/ /usr/local/apache/icons/
+
+   then the url /icons will not be aliased.
+
+   Note that you may need to specify additional <Directory> sections which
+   cover the destination of aliases. Aliasing occurs before <Directory>
+   sections are checked, so only the destination of aliases are affected.
+   (Note however <Location> sections are run through once before aliases
+   are performed, so they will apply.)
+
+   In particular, if you are creating an Alias to a directory outside of
+   your DocumentRoot, you may need to explicitly permit access to the
+   target directory.
+
+Example:
+
+   Alias /image /ftp/pub/image
+   <Directory /ftp/pub/image>
+   Order allow,deny
+   Allow from all
+   </Directory>
+   top
+
+AliasMatch Directive
+
+   Description: Maps URLs to filesystem locations using regular
+                expressions
+     Syntax:    AliasMatch regex file-path|directory-path
+     Context:   server config, virtual host
+     Status:    Base
+     Module:    mod_alias
+
+   This directive is equivalent to Alias, but makes use of regular
+   expressions, instead of simple prefix matching. The supplied regular
+   expression is matched against the URL-path, and if it matches, the
+   server will substitute any parenthesized matches into the given string
+   and use it as a filename. For example, to activate the /icons
+   directory, one might use:
+
+   AliasMatch ^/icons(.*) /usr/local/apache/icons$1
+
+   The full range of regular expression power is available. For example,
+   it is possible to construct an alias with case-insensitive matching of
+   the url-path:
+
+   AliasMatch (?i)^/image(.*) /ftp/pub/image$1
+
+   One subtle difference between Alias and AliasMatch is that Alias will
+   automatically copy any additional part of the URI, past the part that
+   matched, onto the end of the file path on the right side, while
+   AliasMatch will not. This means that in almost all cases, you will want
+   the regular expression to match the entire request URI from beginning
+   to end, and to use substitution on the right side.
+
+   In other words, just changing Alias to AliasMatch will not have the
+   same effect. At a minimum, you need to add ^ to the beginning of the
+   regular expression and add (.*)$ to the end, and add $1 to the end of
+   the replacement.
+
+   For example, suppose you want to replace this with AliasMatch:
+
+   Alias /image/ /ftp/pub/image/
+
+   This is NOT equivalent - don't do this! This will send all requests
+   that have /image/ anywhere in them to /ftp/pub/image/:
+
+   AliasMatch /image/ /ftp/pub/image/
+
+   This is what you need to get the same effect:
+
+   AliasMatch ^/image/(.*)$ /ftp/pub/image/$1
+
+   Of course, there's no point in using AliasMatch where Alias would work.
+   AliasMatch lets you do more complicated things. For example, you could
+   serve different kinds of files from different directories:
+
+   AliasMatch ^/image/(.*)\.jpg$ /files/jpg.images/$1.jpg
+   AliasMatch ^/image/(.*)\.gif$ /files/gif.images/$1.gif
+   top
+
+Redirect Directive
+
+   Description: Sends an external redirect asking the client to fetch a
+                different URL
+     Syntax:    Redirect [status] URL-path URL
+     Context:   server config, virtual host, directory, .htaccess
+    Override:   FileInfo
+     Status:    Base
+     Module:    mod_alias
+
+   The Redirect directive maps an old URL into a new one by asking the
+   client to refetch the resource at the new location.
+
+   The old URL-path is a case-sensitive (%-decoded) path beginning with a
+   slash. A relative path is not allowed. The new URL should be an
+   absolute URL beginning with a scheme and hostname, but a URL-path
+   beginning with a slash may also be used, in which case the scheme and
+   hostname of the current server will be added.
+
+   Then any request beginning with URL-Path will return a redirect request
+   to the client at the location of the target URL. Additional path
+   information beyond the matched URL-Path will be appended to the target
+   URL.
+
+Example:
+
+   Redirect /service http://foo2.example.com/service
+
+   If the client requests http://example.com/service/foo.txt, it will be
+   told to access http://foo2.example.com/service/foo.txt instead. Only
+   complete path segments are matched, so the above example would not
+   match a request for http://example.com/servicefoo.txt. For more complex
+   matching using regular expressions, see the RedirectMatch directive.
+
+Note
+
+   Redirect directives take precedence over Alias and ScriptAlias
+   directives, irrespective of their ordering in the configuration file.
+
+   If no status argument is given, the redirect will be "temporary" (HTTP
+   status 302). This indicates to the client that the resource has moved
+   temporarily. The status argument can be used to return other HTTP
+   status codes:
+
+   permanent
+          Returns a permanent redirect status (301) indicating that the
+          resource has moved permanently.
+
+   temp
+          Returns a temporary redirect status (302). This is the default.
+
+   seeother
+          Returns a "See Other" status (303) indicating that the resource
+          has been replaced.
+
+   gone
+          Returns a "Gone" status (410) indicating that the resource has
+          been permanently removed. When this status is used the URL
+          argument should be omitted.
+
+   Other status codes can be returned by giving the numeric status code as
+   the value of status. If the status is between 300 and 399, the URL
+   argument must be present, otherwise it must be omitted. Note that the
+   status must be known to the Apache code (see the function
+   send_error_response in http_protocol.c).
+
+Example:
+
+   Redirect permanent /one http://example.com/two
+   Redirect 303 /three http://example.com/other
+   top
+
+RedirectMatch Directive
+
+   Description: Sends an external redirect based on a regular expression
+                match of the current URL
+     Syntax:    RedirectMatch [status] regex URL
+     Context:   server config, virtual host, directory, .htaccess
+    Override:   FileInfo
+     Status:    Base
+     Module:    mod_alias
+
+   This directive is equivalent to Redirect, but makes use of regular
+   expressions, instead of simple prefix matching. The supplied regular
+   expression is matched against the URL-path, and if it matches, the
+   server will substitute any parenthesized matches into the given string
+   and use it as a filename. For example, to redirect all GIF files to
+   like-named JPEG files on another server, one might use:
+
+   RedirectMatch (.*)\.gif$ http://www.anotherserver.com$1.jpg
+   top
+
+RedirectPermanent Directive
+
+   Description: Sends an external permanent redirect asking the client to
+                fetch a different URL
+     Syntax:    RedirectPermanent URL-path URL
+     Context:   server config, virtual host, directory, .htaccess
+    Override:   FileInfo
+     Status:    Base
+     Module:    mod_alias
+
+   This directive makes the client know that the Redirect is permanent
+   (status 301). Exactly equivalent to Redirect permanent.
+   top
+
+RedirectTemp Directive
+
+   Description: Sends an external temporary redirect asking the client to
+                fetch a different URL
+     Syntax:    RedirectTemp URL-path URL
+     Context:   server config, virtual host, directory, .htaccess
+    Override:   FileInfo
+     Status:    Base
+     Module:    mod_alias
+
+   This directive makes the client know that the Redirect is only
+   temporary (status 302). Exactly equivalent to Redirect temp.
+   top
+
+ScriptAlias Directive
+
+   Description: Maps a URL to a filesystem location and designates the
+                target as a CGI script
+     Syntax:    ScriptAlias URL-path file-path|directory-path
+     Context:   server config, virtual host
+     Status:    Base
+     Module:    mod_alias
+
+   The ScriptAlias directive has the same behavior as the Alias directive,
+   except that in addition it marks the target directory as containing CGI
+   scripts that will be processed by mod_cgi's cgi-script handler. URLs
+   with a case-sensitive (%-decoded) path beginning with URL-path will be
+   mapped to scripts beginning with the second argument, which is a full
+   pathname in the local filesystem.
+
+Example:
+
+   ScriptAlias /cgi-bin/ /web/cgi-bin/
+
+   A request for http://myserver/cgi-bin/foo would cause the server to run
+   the script /web/cgi-bin/foo. This configuration is essentially
+   equivalent to:
+
+   Alias /cgi-bin/ /web/cgi-bin/
+   <Location /cgi-bin >
+   SetHandler cgi-script
+   Options +ExecCGI
+   </Location>
+   It is safer to avoid placing CGI scripts under the DocumentRoot in
+   order to avoid accidentally revealing their source code if the
+   configuration is ever changed. The ScriptAlias makes this easy by
+   mapping a URL and designating CGI scripts at the same time. If you do
+   choose to place your CGI scripts in a directory already accessible from
+   the web, do not use ScriptAlias. Instead, use <Directory>, SetHandler,
+   and Options as in:
+
+   <Directory /usr/local/apache2/htdocs/cgi-bin >
+   SetHandler cgi-script
+   Options ExecCGI
+   </Directory>
+   This is necessary since multiple URL-paths can map to the same
+   filesystem location, potentially bypassing the ScriptAlias and
+   revealing the source code of the CGI scripts if they are not restricted
+   by a Directory section.
+
+See also
+
+     * CGI Tutorial
+
+   top
+
+ScriptAliasMatch Directive
+
+   Description: Maps a URL to a filesystem location using a regular
+                expression and designates the target as a CGI script
+     Syntax:    ScriptAliasMatch regex file-path|directory-path
+     Context:   server config, virtual host
+     Status:    Base
+     Module:    mod_alias
+
+   This directive is equivalent to ScriptAlias, but makes use of regular
+   expressions, instead of simple prefix matching. The supplied regular
+   expression is matched against the URL-path, and if it matches, the
+   server will substitute any parenthesized matches into the given string
+   and use it as a filename. For example, to activate the standard
+   /cgi-bin, one might use:
+
+   ScriptAliasMatch ^/cgi-bin(.*) /usr/local/apache/cgi-bin$1
+
+   As for AliasMatch, the full range of regular expression power is
+   available. For example, it is possible to construct an alias with
+   case-insensitive matching of the url-path:
+
+   ScriptAliasMatch (?i)^/cgi-bin(.*) /usr/local/apache/cgi-bin$1
+
+   The considerations related to the difference between Alias and
+   AliasMatch also apply to the difference between ScriptAlias and
+   ScriptAliasMatch. See AliasMatch for details.
+
+   Available Languages:  en  |  ja  |  ko  |  tr
+
+   Copyright 2009 The Apache Software Foundation.
+   Licensed under the Apache License, Version 2.0.
+
+   Modules | Directives | FAQ | Glossary | Sitemap
+http://httpd.apache.org/docs/2.2/mod/
+http://httpd.apache.org/docs/2.2/mod/directives.html
+http://httpd.apache.org/docs/2.2/faq/
+http://httpd.apache.org/docs/2.2/glossary.html
+http://httpd.apache.org/docs/2.2/sitemap.html
+http://httpd.apache.org/docs/2.2/mod/
+http://www.apache.org/
+http://httpd.apache.org/
+http://httpd.apache.org/docs/
+http://httpd.apache.org/docs/2.2/
+http://httpd.apache.org/docs/2.2/mod/
+http://httpd.apache.org/docs/2.2/en/mod/mod_alias.html
+http://httpd.apache.org/docs/2.2/ja/mod/mod_alias.html
+http://httpd.apache.org/docs/2.2/ko/mod/mod_alias.html
+http://httpd.apache.org/docs/2.2/tr/mod/mod_alias.html
+http://httpd.apache.org/docs/2.2/mod/module-dict.html#Description
+http://httpd.apache.org/docs/2.2/mod/module-dict.html#Status
+http://httpd.apache.org/docs/2.2/mod/module-dict.html#ModuleIdentifier
+http://httpd.apache.org/docs/2.2/mod/module-dict.html#SourceFile
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#alias
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#scriptalias
+http://httpd.apache.org/docs/2.2/mod/core.html#documentroot
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#scriptalias
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#redirect
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html
+http://httpd.apache.org/docs/2.2/mod/mod_rewrite.html
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#alias
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#aliasmatch
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#redirect
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#redirectmatch
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#redirectpermanent
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#redirecttemp
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#scriptalias
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#scriptaliasmatch
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#order
+http://httpd.apache.org/docs/2.2/mod/mod_rewrite.html
+http://httpd.apache.org/docs/2.2/urlmapping.html
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#page-header
+http://httpd.apache.org/docs/2.2/sections.html#mergin
+http://httpd.apache.org/docs/2.2/mod/core.html#virtualhost
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#redirect
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#redirectmatch
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#alias
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#alias
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#page-header
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+http://httpd.apache.org/docs/2.2/mod/core.html#documentroot
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#aliasmatch
+http://httpd.apache.org/docs/2.2/mod/core.html#directory
+http://httpd.apache.org/docs/2.2/mod/core.html#directory
+http://httpd.apache.org/docs/2.2/mod/core.html#location
+http://httpd.apache.org/docs/2.2/mod/core.html#documentroot
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#page-header
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#alias
+http://httpd.apache.org/docs/2.2/glossary.html#regex
+http://httpd.apache.org/docs/2.2/glossary.html#regex
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#alias
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#aliasmatch
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#alias
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#aliasmatch
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#alias
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#aliasmatch
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#aliasmatch
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#alias
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#aliasmatch
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#page-header
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Override
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#redirectmatch
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#page-header
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Override
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#redirect
+http://httpd.apache.org/docs/2.2/glossary.html#regex
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#page-header
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Override
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#page-header
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Override
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#page-header
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#alias
+http://httpd.apache.org/docs/2.2/mod/mod_cgi.html
+http://httpd.apache.org/docs/2.2/mod/core.html#documentroot
+http://httpd.apache.org/docs/2.2/mod/core.html#directory
+http://httpd.apache.org/docs/2.2/mod/core.html#sethandler
+http://httpd.apache.org/docs/2.2/mod/core.html#options
+http://httpd.apache.org/docs/2.2/mod/core.html#directory
+http://httpd.apache.org/docs/2.2/howto/cgi.html
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#page-header
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Description
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Syntax
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Context
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Status
+http://httpd.apache.org/docs/2.2/mod/directive-dict.html#Module
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#scriptalias
+http://httpd.apache.org/docs/2.2/glossary.html#regex
+http://httpd.apache.org/docs/2.2/glossary.html#rexex
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#alias
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#aliasmatch
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#scriptalias
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#scriptaliasmatch
+http://httpd.apache.org/docs/2.2/mod/mod_alias.html#aliasmatch
+http://httpd.apache.org/docs/2.2/en/mod/mod_alias.html
+http://httpd.apache.org/docs/2.2/ja/mod/mod_alias.html
+http://httpd.apache.org/docs/2.2/ko/mod/mod_alias.html
+http://httpd.apache.org/docs/2.2/tr/mod/mod_alias.html
+http://www.apache.org/licenses/LICENSE-2.0
+http://httpd.apache.org/docs/2.2/mod/
+http://httpd.apache.org/docs/2.2/mod/directives.html
+http://httpd.apache.org/docs/2.2/faq/
+http://httpd.apache.org/docs/2.2/glossary.html
+http://httpd.apache.org/docs/2.2/sitemap.html

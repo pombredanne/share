@@ -1,0 +1,44 @@
+== tpconfig (TeamPace Config) ==
+
+需要增加一或多家門市時, 可以用 `tpconfig` 來產生 SQL 語法與其他組態資料，過程中會連往 `10.40.1.60/teampace` 推算可用的 ID。
+
+假設 `tpconfig_sample` 的內容如下：
+
+--------------------------------------------------------------------------------
+北,70801|MS日月光,7080101|MS日月光,7080103|MS日月光展售倉,7080106|MS日月光瑕疵倉,7080109|MS日月光AD
+|  |                       |
+|  |                       +-- 一或多個庫別的代號|名稱
+|  |
+|  +-- 門市代號|名稱
++-- 北／中／南
+--------------------------------------------------------------------------------
+
+執行 `tpconfig tpconfig_sample` 的結果，就會輸出下面的資料：
+
+--------------------------------------------------------------------------------
+INSERT INTO schedule_group (schedule_group_id, name, position, top_group) VALUES (58, 'MS日月光', 58, 0);        <1>
+INSERT INTO schedule (schedule_id, name, position, mapping_schedule_group_id) VALUES (53, 'MS日月光', 53, 58);
+INSERT INTO schedule_group_mapping(schedule_group_id, schedule_id) VALUES (58, 53);
+INSERT INTO schedule_group_mapping(schedule_group_id, schedule_id) VALUES (58, 1);
+INSERT INTO schedule_group_mapping(schedule_group_id, schedule_id) VALUES (2, 53);
+
+DEP-70801@MS日月光                        <2>
+DEP-70801=53
+DEP-70801-DIS=5
+WHS-7080101@MS日月光
+WHS-7080101=53
+WHS-7080101-DIS=5
+WHS-7080103@MS日月光展售倉
+WHS-7080103=53
+WHS-7080103-DIS=5
+WHS-7080106@MS日月光瑕疵倉
+WHS-7080106=53
+WHS-7080106-DIS=5
+WHS-7080109@MS日月光AD
+WHS-7080109=53
+WHS-7080109-DIS=5
+--------------------------------------------------------------------------------
+
+1> SQL 語法必須執行在 `teampace` 資料庫上。
+2> 組態資料必須手動串到 `config.schedule_mapping_table` 後面。
+

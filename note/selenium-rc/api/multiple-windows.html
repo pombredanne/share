@@ -1,0 +1,237 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Selenium][RC] 多視窗操作</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<!--link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" /-->
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <!--div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div-->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <!--a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a--></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="api.html">Selenium RC / API</a> / Multiple Windows</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">多視窗的操作會衍生許多問題（通常會受限於安全性，用程式開出來的視窗就是不太一樣），如果可以話，取得 URL 後再用 <code>open()</code> 開在同一個視窗。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>跟視窗操作有關的 Selenium command 有：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>close()</code> - 關閉 window 或 tab，之後要用明確選擇其他 window 才行，否則會遇到 "Current window or frame is closed!" 的錯誤。
+</p>
+</li>
+<li>
+<p>
+<code>open_window(url, windowID)</code>
+</p>
+</li>
+<li>
+<p>
+<code>select_frame(locator)</code>
+</p>
+</li>
+<li>
+<p>
+<code>select_pop_up(windowID)</code> - 只是將 <code>select_window()</code> 包裝得更容易使用。
+</p>
+<div class="openblock">
+<div class="content">
+<div class="paragraph"><p>跟 <code>select_window()</code> 不同的地方是，<code>select_window('null')</code> 會選回 main window，但 <code>select_pop_up('null')</code> 則會選取 first NON-top window，可以很方便地選到操作過程中開出來的新視窗。注意傳入 <code>None</code> 反而會得到 "ERROR: Could not find window with title None" 的錯誤。</p></div>
+<div class="paragraph"><p>另外，按下按鈕或連結開出新視窗的那一刻，呼叫 <code>select_pop_up('null')</code> 通常會選不到新開出來的視窗（事實上，視窗還沒有開出來），建議在前面加上 <code>wait_for_pop_up('null', timeout)</code>，然後再呼叫 <code>select_pop_up('null')</code>。</p></div>
+</div></div>
+</li>
+<li>
+<p>
+<code>deselect_pop_up()</code> - 選回 main window，效果同 <code>select_window('null')</code>。
+</p>
+</li>
+<li>
+<p>
+<code>wait_for_pop_up(windowID, timeout)</code> - 等待新視窗開啟並載入完成（load up）。同樣地，<code>wait_for_pop_up('null', timeout)</code> 會等待 first NON-top window。要注意的是，這個方法並不會選取新的視窗，還是得明確呼叫 <code>select_window()</code> 或 <code>select_pop_up()</code> 來切換視窗。
+</p>
+</li>
+<li>
+<p>
+<code>select_window(windowID)</code>
+</p>
+</li>
+<li>
+<p>
+<code>window_focus()</code> - 讓目前選定的視窗取得焦點，但好像沒作用？
+</p>
+</li>
+<li>
+<p>
+<code>window_maximize()</code>
+</p>
+</li>
+<li>
+<p>
+<code>get_all_window_ids()</code>
+</p>
+</li>
+<li>
+<p>
+<code>get_all_window_names()</code>
+</p>
+</li>
+<li>
+<p>
+<code>get_all_window_titles()</code>
+</p>
+</li>
+<li>
+<p>
+<code>get_whether_this_frame_match_frame_expression(currentFrameString, target)</code>
+</p>
+</li>
+<li>
+<p>
+<code>get_whether_this_window_match_window_expression(currentWindowString, target)</code>
+</p>
+</li>
+<li>
+<p>
+<code>wait_for_frame_to_load(frameAddress, timeout)</code>
+</p>
+</li>
+</ul></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">這裡所說的視窗（window）也適用有 <a href="http://en.wikipedia.org/wiki/Tab_%28GUI%29">tabbed browsing</a> 概念的瀏覽器的 tab。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>Selenium 內部會維護一份所有視窗的清單（known windows），除了 browser 一開始帶出來的 main window （有時也稱做 top window）與 <code>open_window()</code> 開出來的視窗之外，Selenium 也會攔截所有 JavaScript <code>window.open()</code> 的呼叫，將開出來新的視窗記錄起來。</p></div>
+<div class="paragraph"><p>通常 Selenium command 如果沒有提供 <code>windowID</code> 參數的話，操作的對象就是目前選定的視窗（current window 或 currently selected window）。一開始 main window 會被選為 current window，之後就得透過 <code>selectPopUp()</code>、<code>select_window()</code> 或 <code>deselectPopUp()</code> 來切換 current window。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../../_asciidoc/images/icons/caution.png" alt="Caution" />
+</td>
+<td class="content">要注意 <code>open_window()</code> 不會自動選定新開出來的視窗，<code>close()</code> 把 current window 關掉之後也不會自動選回 main window（如果繼續操作的話，會遇到 Current window or frame is closed! 的錯誤），都得明確呼叫 <code>select_window()</code> 重新選取才行。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>如果操作的對象是在某個 frame 裡（包括 <code>&lt;frameset&gt;&lt;frame&gt;</code> 與 <code>&lt;iframe&gt;</code>），光是選定 current window 還不夠，還必須透過 <code>select_frame()</code> 來選定 current frame 才行。</p></div>
+<div class="paragraph"><p><code>open_window()</code> 與 <code>waitForPopUp()</code> 裡的 <code>windowID</code> 單純是指 JavaScript window ID，也就是 <code>open_window()</code> 帶入的第二個參數。從 <code>xxxAllWindowNames</code> 與 <code>xxxAllWindowIds</code> 兩組 Selenium command 的規劃看起來，window ID 與 JavaScript <code>window.open()</code> 帶入的第二個參數 <code>windowName</code>，兩者應該是不同的概念？</p></div>
+<div class="paragraph"><p>至於 <code>selectPopUp()</code> 與 <code>select_window()</code> 裡的 <code>windowID</code> 就沒有那麼單純了，就如同選取 element 時有 element locator 一般，選取 window 也會用到 window locator （甚至選取 frame 時也有 frame selector，之後會做說明），有下面幾種表示法：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>title=</code>
+</p>
+</li>
+<li>
+<p>
+傳入 <code>''</code> 或 <code>'null'</code> 時，表示 main window。
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p><code>selectPopUp()</code> 跟 <code>select_window()</code> 的差別好像只是 <code>select_window()</code> 額外支援了 <code>prefix=</code> 的 window locator 而已？</p></div>
+<div class="paragraph"><p>所謂的 main window 指的是什麼？有時也稱做 top window，即 browser 開起來的第一個 window。</p></div>
+<div class="paragraph"><p>selenium looks in a hash it maintains that maps string names to window "names".</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../../_asciidoc/images/icons/caution.png" alt="Caution" />
+</td>
+<td class="content">之前發現 <code>select_window()</code> 遇到兩個視窗有相同的 title 時，有取得 admin 權限時可以正常選到新開出來那個視窗，但沒有事先取得 admin 權限的則切不過去。不知道為什麼？&#8230;</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://selenium.googlecode.com/svn/trunk/docs/api/py/selenium/selenium.selenium.html">selenium.selenium — Selenium 2.0 documentation</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">其他文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://jira.openqa.org/browse/SEL-339">[#SEL-339&#93; Can&#8217;t select popUp window opened before onload - OpenQA Bug Tracker</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2013-06-04 23:37:55 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<!--script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script-->
+</body>
+</html>

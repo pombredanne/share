@@ -1,0 +1,83 @@
+= link:api.html[Selenium RC / API] / 操作表單控制項 - Radio Buttons =
+:title: [Selenium][RC] 操作表單控制項 - Radio Buttons
+
+跟 radio buttons 操作相關的 API 跟 link:checkbox.html[checkbox] 幾乎一樣：
+
+ * `check(locator)` - 切換選項。
+ * `uncheck(locator)` - 取消選取。
+ * `is_checked(locator)` - 檢查是否為選取的項目。
+ * `get_value(locator)` - 跟 `is_checked()` 一樣，但傳回 `'on'` 或 `'off'`。
+
+比較不同的地方是 'locator' 的寫法。由於 HTML 會將 `name` 屬性值相同的 radio buttons 視為一組，所以 locator 光用 `name` 屬性值來定位是不夠的，還得藉助 element filters 才行，例如 `name=sex value=male` 或 `name=sex male`。
+
+另外 RC API 沒有方法可以直接取得某個 radio group 選取的值，還好現有的 API 已經足夠讓我們<<radio-group-value,自己實作一個>>。
+
+以 http://www.w3schools.com/html/html_forms.asp[HTML Forms and Input - W3Schools] 為例。
+
+[source,html]
+--------------------------------------------------------------------------------
+<form>
+<input type="radio" name="sex" value="male">Male<br>
+<input type="radio" name="sex" value="female">Female
+</form> 
+--------------------------------------------------------------------------------
+
+[source,python]
+--------------------------------------------------------------------------------
+>>> male = 'name=sex male'
+>>> female = 'name=sex female'
+>>>
+>>> sel.get_value(male), sel.is_checked(male) # 一開始沒有項目被選取
+(u'off', False)
+>>> sel.get_value(female), sel.is_checked(female)
+(u'off', False)
+>>>
+>>> sel.check(male)
+>>> sel.is_checked(male), sel.is_checked(female)
+(True, False)
+>>> sel.check(female) # 切換選項
+>>> sel.is_checked(male), sel.is_checked(female)
+(False, True)
+--------------------------------------------------------------------------------
+
+[[radio-group-value]]
+== 直接取得某個 radio group 選取的值 ==
+
+--------------------------------------------------------------------------------
+def get_radio_group_value(sel, name):
+    xloc = "//input[@name='%s']" % name
+    for idx in range(1, sel.get_xpath_count(xloc) + 1):
+        option = 'xpath=(%s)[%s]' % (xloc, idx) # <1>
+        if sel.is_checked(option): return sel.get_attribute(option + '@value')
+    return None
+
+def set_radio_group_value(sel, name, value):
+    loc = 'name=%s value=%s' % (name, value)
+    sel.check(loc)
+--------------------------------------------------------------------------------
+<1> `xpath=(...)` 的寫法不能用在 `get_xpath_count()`，否則會丟出類似下面的錯誤。
++
+\'xpath\' is the xpath expression to evaluate. do NOT wrap this expression in a \'count()\' function; we will do that for you.
+
+實際上用起來會像是：
+
+--------------------------------------------------------------------------------
+>>> print get_radio_group_value(sel, 'sex')
+None
+>>> sel.check(male)
+>>> get_radio_group_value(sel, 'sex')
+u'male'
+>>>
+>>> sel.check(female)
+>>> get_radio_group_value(sel, 'sex')
+u'female'
+>>>
+>>> sel.check(female)
+>>> print get_radio_group_value(sel, 'sex')
+None
+--------------------------------------------------------------------------------
+
+== 參考資料 ==
+
+ * http://selenium.googlecode.com/svn/trunk/docs/api/py/selenium/selenium.selenium.html[selenium.selenium — Selenium 2.0 documentation] ^https://diigo.com/0y264[閱讀]^
+

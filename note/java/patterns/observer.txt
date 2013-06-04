@@ -1,0 +1,96 @@
+= link:patterns.html[Java / Patterns] / Observer =
+:title: [Java] Observer Pattern
+
+--------------------------------------------------------------------------------
+import java.util.Observable;
+
+public class ObservableEvent<T> extends Observable {
+
+    public void fire() {
+        setChanged();
+        notifyObservers(null);
+    }
+
+    public void fire(T arg) {
+        setChanged();
+        notifyObservers(arg);
+    }
+
+}
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+import java.util.Observable;
+import java.util.Observer;
+
+public class ObserverPattern {
+
+    public static void main(String[] args) {
+        final Machine machine = new Machine();
+        machine.getStateChangedEvent().addObserver(new Observer() {
+
+            public void update(Observable observable, Object arg) {
+                // Machine machine = (Machine) observable;
+                System.out.println("Machine state changed -> " + machine.getState().name());
+            }
+        });
+
+        machine.turnOn();
+        machine.turnOff();
+    }
+
+}
+
+class ObservableEvent extends Observable {
+
+    public void fire() {
+        setChanged(); // <1>
+        notifyObservers();
+    }
+
+}
+
+class Machine {
+
+    public enum State { ON, OFF };
+
+    private State state = State.OFF;
+    private ObservableEvent stateChangedEvent = new ObservableEvent();
+
+    public Observable getStateChangedEvent() {
+        return stateChangedEvent;
+    }
+
+    public State getState() {
+        return state;
+    }
+
+    public void turnOn() {
+        state = State.ON;
+        stateChangedEvent.fire();
+    }
+
+    public void turnOff() {
+        state = State.OFF;
+        stateChangedEvent.fire();
+    }
+
+}
+--------------------------------------------------------------------------------
+<1> 由於 `setChanged()` 宣告成 protected，不得不繼承 `Observable` 再定義另一個 class，否則 `notifyObservers()` 沒有作用。
+
+== 參考資料 ==
+
+.手冊
+--
+ * http://docs.oracle.com/javase/7/docs/api/java/util/Observable.html[`Observable`] ^https://diigo.com/0xgm9[閱讀]^
+ * http://docs.oracle.com/javase/7/docs/api/java/util/Observer.html[`Observer`] ^https://diigo.com/0xgli[閱讀]^
+--
+
+.文件
+--
+ * http://en.wikipedia.org/wiki/Observer_pattern[Observer pattern - Wikipedia, the free encyclopedia]
+ * http://www.javaworld.com/javaworld/javaqa/2001-05/04-qa-0525-observer.html[Speaking on the Observer pattern - JavaWorld] ^https://diigo.com/0xgkx[閱讀]^, http://www.javaworld.com/javaworld/javaqa/2001-05/04-qa-0525-observer.html?page=2[Page 2] ^https://diigo.com/0xgl8[閱讀]^ (2001-05-25) - observer (subscriber) -> subject (publisher), decoupling。自訂 `Subject` 跟 `Observer` 兩個介面來實現這個 pattern。
+ * http://www.javaworld.com/jw-10-1996/jw-10-howto.html[Observer and Observable - JavaWorld] (1996-10-01)
+--
+

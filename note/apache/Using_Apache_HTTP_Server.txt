@@ -1,0 +1,300 @@
+= Using Apache HTTP Server =
+
+== 安裝 ==
+
+ # yum install httpd
+
+== SSL ==
+
+以 CentOS 5.3 為例，只要額外安裝 `mod_ssl` 就好。
+
+ # yum install mod_ssl
+ # service httpd restart
+
+`ssl.conf` 的內容是：
+
+.`/etc/httpd/conf.d/ssl.conf`
+--------------------------------------------------------------------------------
+...
+#   Server Certificate:
+# Point SSLCertificateFile at a PEM encoded certificate.  If
+# the certificate is encrypted, then you will be prompted for a
+# pass phrase.  Note that a kill -HUP will prompt again.  A new
+# certificate can be generated using the genkey(1) command.
+SSLCertificateFile /etc/pki/tls/certs/localhost.crt
+
+#   Server Private Key:
+#   If the key is not combined with the certificate, use this
+#   directive to point at the key file.  Keep in mind that if
+#   you've both a RSA and a DSA private key you can configure
+#   both in parallel (to also allow the use of DSA ciphers, etc.)
+SSLCertificateKeyFile /etc/pki/tls/private/localhost.key
+...
+--------------------------------------------------------------------------------
+
+用 Firefox 瀏覽時會看到：
+
+image::Using_Apache_HTTP_Server.files/localhost_crt.png[]
+
+到這裡，SSL 已經生效了...
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://httpd.apache.org/docs/current/mod/mod_ssl.html[mod_ssl - Apache HTTP Server]
+ * http://wiki.centos.org/HowTos/Https[HowTos/Https - CentOS Wiki]
+ * http://en.wikipedia.org/wiki/Certificate_signing_request[Certificate signing request - Wikipedia, the free encyclopedia]
+================================================================================
+
+=== 產生 self-signed certificate 供測試用 ===
+
+--------------------------------------------------------------------------------
+# openssl genrsa -out ca.key 1024                                    <1>
+Generating RSA private key, 1024 bit long modulus
+.........++++++
+.........................++++++
+e is 65537 (0x10001)
+
+# openssl req -new -key ca.key -out ca.csr                           <2>
+You are about to be asked to enter information that will be incorporated
+into your certificate request.
+What you are about to enter is what is called a Distinguished Name or a DN.
+There are quite a few fields but you can leave some blank
+For some fields there will be a default value,
+If you enter '.', the field will be left blank.
+\-\-\-\-\-
+Country Name (2 letter code) [GB]:
+State or Province Name (full name) [Berkshire]:
+Locality Name (eg, city) [Newbury]:
+Organization Name (eg, company) [My Company Ltd]:
+Organizational Unit Name (eg, section) []:
+Common Name (eg, your name or your server's hostname) []:
+Email Address []:
+
+Please enter the following 'extra' attributes
+to be sent with your certificate request
+A challenge password []:
+An optional company name []:
+
+# openssl x509 -req -days 365 -in ca.csr -signkey ca.key -out ca.crt <3>
+Signature ok
+subject=/C=GB/ST=Berkshire/L=Newbury/O=My Company Ltd
+Getting Private key
+
+# cp ca.crt /etc/pki/tls/certs
+# cp ca.key /etc/pki/tls/private/ca.key
+# cp ca.csr /etc/pki/tls/private/ca.csr
+--------------------------------------------------------------------------------
+<1> 產生 private key。
+<2> 產生 CSR (Certificate Signing Request)。
+<3> 產生 self-signed certificate。
+
+修改 `ssl.conf`：
+
+--------------------------------------------------------------------------------
+SSLCertificateFile /etc/pki/tls/certs/ca.crt
+SSLCertificateKeyFile /etc/pki/tls/private/ca.key
+--------------------------------------------------------------------------------
+
+重新啟動 httpd，用 Firefox 瀏覽時會看到：
+
+image::Using_Apache_HTTP_Server.files/ca_crt.png[]
+
+== Logging ==
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://httpd.apache.org/docs/trunk/logs.html[Apache HTTP Server Documentation > Log Files]
+================================================================================
+
+== Configuration ==
+
+ * 有 context 的概念：(main) server configuration、virtual host、directory、.htaccess
+ * main server vs. virtual hosts
+ * comment 要怎麼寫？
+ * 看似 XML 的語法，但其實不是。
+ * 應該仿效 Debian 的做法，將
+ * main configuration files
+   ** 異動後必須重新啟動 Server 才會生效
+   ** 通常是指 `httpd.conf`, 為了方便維護冗長的組態檔, 可以將部份的設定拆出去, 再用 `Include` 引進來 (支援 wildcards); as if they were inside the including file... 因此後續提到 main configuration file 時, 也包含那些拆出去再引進來的部份.
+ * 相對路徑是相對於 `ServerRoot` 的設定，預設是 `/etc/httpd`
++
+.`/etc/httpd` (`ServerRoot`)
+--------------------------------------------------------------------------------
+[jeremy@Sunsance01 httpd]$ ls -l
+total 8
+drwxr-xr-x. 3 root root 4096 Sep 22 04:50 conf
+drwxr-xr-x. 2 root root 4096 Sep 18 16:40 conf.d
+lrwxrwxrwx. 1 root root   19 Sep  9 14:45 logs -> ../../var/log/httpd <1>
+lrwxrwxrwx. 1 root root   27 Sep  9 14:45 modules -> ../../usr/lib/httpd/modules
+lrwxrwxrwx. 1 root root   19 Sep  9 14:45 run -> ../../var/run/httpd
+--------------------------------------------------------------------------------
+<1> 也之所以組態檔裡可以寫成 CustomLog logs/access_log combined，最後會寫到 `/var/log/httpd/access_log`。
++ 
+ * 網站剛放上去時，最重要的是設定 log 輸出的位置；`ErrorLog` 跟 `CustomLog`（即 access log）
+ * 
+
+--------------------------------------------------------------------------------
+# The configuration directives are grouped into three basic sections:
+#  1. Directives that control the operation of the Apache server process as a
+#     whole (the 'global environment').
+#  2. Directives that define the parameters of the 'main' or 'default' server,
+#     which responds to requests that aren't handled by a virtual host.
+#     These directives also provide default values for the settings
+#     of all virtual hosts.
+#  3. Settings for virtual hosts, which allow Web requests to be sent to
+#     different IP addresses or hostnames and have them handled by the
+#     same Apache server process.
+#
+# Configuration and logfile names: If the filenames you specify for many
+# of the server's control files begin with "/" (or "drive:/" for Win32), the
+# server will use that explicit path.  If the filenames do *not* begin
+# with "/", the value of ServerRoot is prepended -- so "logs/foo.log"
+# with ServerRoot set to "/etc/httpd" will be interpreted by the
+# server as "/etc/httpd/logs/foo.log".
+#
+
+### Section 1: Global Environment
+#
+# The directives in this section affect the overall operation of Apache,
+# such as the number of concurrent requests it can handle or where it
+# can find its configuration files.
+#
+
+### Section 2: 'Main' server configuration
+#
+# The directives in this section set up the values used by the 'main'
+# server, which responds to any requests that aren't handled by a
+# <VirtualHost> definition.  These values also provide defaults for
+# any <VirtualHost> containers you may define later in the file.
+#
+# All of these directives may appear inside <VirtualHost> containers,
+# in which case these default settings will be overridden for the
+# virtual host being defined.
+#
+
+### Section 3: Virtual Hosts
+#
+# VirtualHost: If you want to maintain multiple domains/hostnames on your
+# machine you can setup VirtualHost containers for them. Most configurations
+# use only name-based virtual hosts so the server doesn't need to worry about
+# IP addresses. This is indicated by the asterisks in the directives below.
+#
+# Please see the documentation at
+# <URL:http://httpd.apache.org/docs/2.2/vhosts/>
+# for further details before you try to setup virtual hosts.
+#
+# You may use the command line option '-S' to verify your virtual host
+# configuration.
+--------------------------------------------------------------------------------
+
+首先用一或多個 `Listen` 來設定 Apache httpd 要監聽哪些 IP/port 的組合（只能用在 server config）。
+
+ Listen [IP-address:]portnumber
+
+其中 'IP-address' 省略時，表示要監聽本機所有 network interface 綁定的 IP。例如：
+
+--------------------------------------------------------------------------------
+Listen 80
+Listen 192.168.1.100:80
+--------------------------------------------------------------------------------
+
+要監聽多個 IP/port 的組合時，可以利用多個 `Listen` 來達成。要注意 IP/port 的組合不能重複，否則會遇到 Address already in use 的錯誤。
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://httpd.apache.org/docs/trunk/mod/mpm_common.html#listen[Apache HTTP Server Documentation > Listen Directive]
+================================================================================
+
+Listen [IP-address:]portnumber [protocol]
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://httpd.apache.org/docs/trunk/mod/directive-dict.html#Context[Apache HTTP Server Documentation > Terms Used to Describe Directives]
+================================================================================
+
+== Virtual Hosting ==
+
+'Virtual Hosts (vhosts)' 是指用單一台伺服器服務一個以上的網站而言（例如 www.foo.com 與 www.bar.com）。
+
+做法上可以區分為 'IP-based' 跟 'name-based'。前者 IP-based 用不同 IP/port 的組合來識別同一伺服器上的不同網站，而後者 name-based 則是共用一個 IP/port 的組合，但進一步用 hostname 來識別不同的網站。
+
+TIP: 由於 IP 非常的珍貴，應儘可能優先考量 name-based 的做法。除非是 SSL 的應用被迫要採用 IP-based（因為 SSL 協定的限制）。
+
+首先從 IP-based 的做法看起，因為 name-based 是架構在 IP-based 之上。
+
+ <VirtualHost addr[:port] [addr[:port]] ...> ... </VirtualHost>
+
+TIP: 用 `httpd -S` 來查看 virtual host 的組態。
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://httpd.apache.org/docs/trunk/vhosts/[Apache HTTP Server Documentation > Virtual Host]
+   ** http://httpd.apache.org/docs/trunk/vhosts/ip-based.html[IP-based Virtual Hosts]
+   ** http://httpd.apache.org/docs/trunk/vhosts/name-based.html[Name-based Virtual Hosts]
+   ** http://httpd.apache.org/docs/trunk/vhosts/details.html[In-Depth Discussion of Virtual Host Matching]
+   ** http://httpd.apache.org/docs/trunk/vhosts/examples.html[Virtual Host examples for common setups]
+================================================================================
+
+== mod_alias ==
+
+當 URL 存取的內容不在 `DocumentRoot` 底下時，可以用 `Alias` 將 URL path 對應到檔案系統的其他位置。也就是說，網站的內容不一定要實際存放在 `DocumentRoot` 底下，`Alias` 就像是 symblic links 一般，可以指向其他位置的檔案或目錄。
+
+ Alias url-path file-path|directory-path
+
+其中 'url-path' 是 case-sensitive 的，而 'file-path' 跟 'directory-path' 則要用絕對路徑來表示 。
+
+當 URL 以 'url-path' 開頭時，內容其實是來自 'file-path' 或 'directory-path' 底下的檔案。例如：
+
+ Alias /img /ftp/pub/images
+
+存取 http://server/img/logo/small.png 時，檔案內容其實是來自 /ftp/pub/images/logo/small.png。但這樣的轉換只發生在 complete path segments，所以 http://server/imglogo.png 並不會被轉向 /ftp/pub/imageslogo.png。
+
+TIP: `Alias` 只處理 URL path 的轉換，如果要進一步操作 query string 的話，可以考慮 `mod_rewrite`。
+
+可以把 `Alias` 想成是把 'url-path' 去掉之後，再把剩下的部份接到 'file-path' 或 'directory-path' 之後。也因此 'url-path' 以 '/' 結尾時，'file-path' 或 'directory-path' 也要以 '/' 結尾才行。例如：
+
+ Alias /img/logo/ /ftp/pub/images/logo/
+
+但寫成下面這個樣子就不能正常運作了：
+
+ Alias /img/logo/ /ftp/pub/images/logo
+ Alias /img/logo /ftp/pub/images/logo/
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://httpd.apache.org/docs/current/mod/mod_alias.html[mod_alias - Apache HTTP Server]
+================================================================================
+
+== mod_status ==
+
+--------------------------------------------------------------------------------
+<Location /server-status>
+  SetHandler server-status
+  Order Deny,Allow
+  Deny from all
+  Allow from .example.com
+</Location>
+--------------------------------------------------------------------------------
+
+之後就可以透過 http://your.server.name/server-status 來查看。`?refresh=<sec>` 可以用來控制幾秒自動更新一次。
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://httpd.apache.org/docs/current/mod/mod_status.html[mod_status - Apache HTTP Server]
+================================================================================
+
+== 參考資料 ==
+
+ * http://httpd.apache.org/[The Apache HTTP Server Project]
+ * http://wiki.apache.org/httpd/[Httpd Wiki]
+ * http://httpd.apache.org/docs/[Apache HTTP Server Documentation] (http://httpd.apache.org/docs/trunk/[latest])
+   ** http://httpd.apache.org/docs/trunk/mod/[Module Index]
+   ** http://httpd.apache.org/docs/trunk/mod/directives.html[Directive Index]
+

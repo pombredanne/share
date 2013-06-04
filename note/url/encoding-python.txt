@@ -1,0 +1,24 @@
+= link:url.html[URL] / Encoding/Decoding (Python) =
+:title: [Python] URL Encoding/Decoding
+
+`urllib.urlencode()` 可以將 key-value pairs 轉換成符合 application/x-www-form-urlencoded 編碼要求的單一字串，適合做為發出 HTTP POST 時的 body，例如：
+
+--------------------------------------------------------------------------------
+>>> import urllib
+>>> urllib.urlencode({'title': 'New Document', 'content': '<html>'}) <1>
+'content=%3Chtml%3E&title=New+Document'                              <2>
+--------------------------------------------------------------------------------
+<1> `urlencode(query)` 其中 'query' 可以是 mapping 或 sequence of 2-tuple。
+<2> 結果就是 percent-encoded 的 `key=value`，多個 key-value pair 用 `&` 分隔開來。其中 `<` 被編成 `%3C`，別跟 HTML Entities 的 `&lt;` 搞混了。
+
+由於 `urlencode()` 內部實際上是用 `urllib.quote_plus()` 來做編碼，因此如果要做 decoding 的話，就要採用 `urllib.unquote_plus()`：
+
+--------------------------------------------------------------------------------
+>>> import urllib
+>>> urllib.unquote_plus('content=%3Chtml%3E&title=New+Document')
+'content=<html>&title=New Document'
+>>> urllib.unquote('content=%3Chtml%3E&title=New+Document') <1>
+'content=<html>&title=New+Document'
+--------------------------------------------------------------------------------
+<1> 用 `urllib.unquote()` 來做 decoding 會漏掉 `+` 的部份。
+

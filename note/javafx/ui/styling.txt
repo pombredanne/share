@@ -1,7 +1,108 @@
 = link:ui.html[JavaFX / UI] / Styling =
 :title: [JavaFX][UI] Styling
 
+ * `-fx-blend-mode` - add | blue | color-burn | color-dodge | darken | difference | exclusion | green | hard-light | lighten | multiply | overlay | red | screen | soft-light | src-atop | src-in | src-out | src-over
+ * `-fx-cursor` - null | crosshair | default | hand | move | e-resize | h-resize | ne-resize | nw-resize | n-resize | se-resize | sw-resize | s-resize | w-resize | v-resize | text | wait | <url>
+ * `-fx-effect` - <effect>
+ * `-fx-focus-traversable` - <boolean>
+ * `-fx-opacity` - 0.0 ~ 1.0
+ * `visibility` - visible | hidden | collapse | inherit
+ * `-fx-background-color`
+ * `-fx-background-insets` - 背景內縮的 padding，跟 `-fx-padding` 不同。
+ * `-fx-background-radius` - 背景圓角的半徑。
+ * `-fx-background-image`
+ * `-fx-background-
+
 == 參考資料 ==
 
- * http://docs.oracle.com/javafx/2/api/javafx/scene/doc-files/cssref.html[JavaFX CSS Reference Guide]
- * http://docs.oracle.com/javafx/2/css_tutorial/jfxpub-css_tutorial.htm[Skinning JavaFX Applications with CSS | JavaFX 2 Tutorials and Documentation]
+.手冊
+--
+ * http://docs.oracle.com/javafx/2/api/javafx/scene/doc-files/cssref.html[JavaFX CSS Reference Guide] ^https://diigo.com/0xsrk[閱讀]^
+ * http://www.w3.org/TR/CSS21/[Cascading Style Sheets Level 2 Revision 1 (CSS 2.1) Specification]
+ * http://www.w3.org/Style/CSS/current-work[CSS 3 work in progress]
+--
+
+.文件
+--
+ * http://docs.oracle.com/javafx/2/css_tutorial/jfxpub-css_tutorial.htm[Skinning JavaFX Applications with CSS | JavaFX 2 Tutorials and Documentation] ^https://diigo.com/0xk0a[閱讀]^
+ * http://docs.oracle.com/javafx/2/layout/style_css.htm[Working With Layouts in JavaFX: Styling Layout Panes with CSS | JavaFX 2 Tutorials and Documentation] ^https://diigo.com/0xk2c[閱讀]^
+ * http://docs.oracle.com/javafx/2/charts/css-styles.htm[Using JavaFX Charts: Styling Charts with CSS | JavaFX 2 Tutorials and Documentation]
+ * http://fxexperience.com/2012/03/interview-with-david-grieve/[Interview with David Grieve // JavaFX News, Demos and Insight // FX Experience] (2012-03-28)
+ * http://fxexperience.com/2011/12/styling-fx-buttons-with-css/[Styling FX Buttons with CSS // JavaFX News, Demos and Insight // FX Experience] (2011-12-20) - 各式美到冒泡的按鈕，CSS 語法很值得參考
+ * http://netbeans.dzone.com/articles/styling-javafx-control-css[Styling a JavaFX Control with CSS | NetBeans Zone] (2012-01-02) - 為自訂的 DateChooser 上色。
+ * http://www.javadesk.co/css/javaFXCssIntro.html[JavaFX 2 CSS Introduction] - button 跟 text field 右下方的圓角也滿特別的。
+ * http://pleasingsoftware.blogspot.tw/2010/04/advanced-javafx-control-styling.html[Pleasing Software: Advanced JavaFX Control Styling] (2010-04-26) - JavaFX 1.x 的 CSS 用法也可以套到 JavaFX 2。
+--
+
+.其他文件
+--
+ * http://stackoverflow.com/questions/13425746/javafx-css-root-property-reference-not-resolved[JavaFX CSS root property reference not resolved - Stack Overflow] ^https://diigo.com/0xsrv[閱讀]^ (2012-11-16) - 證實了 CSS Reference Guide 裡 "If the scene graph contains a `Control`, a default user agent style sheet is loaded." 的說法。
+ * http://stackoverflow.com/questions/13082981/learning-css-javafx-style[Learning CSS (JavaFx style) - Stack Overflow] (2012-10-26)
+ * http://stackoverflow.com/questions/10734193/javafx-2-debug-css[java - JavaFX 2 debug css - Stack Overflow] (2012-05-24)
+ * http://stackoverflow.com/questions/9851200/setting-background-image-by-javafx-code-not-css[Setting background image by javafx code (not css) - Stack Overflow] (2012-03-24)
+ * http://www.toedter.com/blog/?p=663[Kai's Blog » Java FX 2.0 CSS Styling] ^https://diigo.com/0xk2j[閱讀]^ (2011-10-26) - 
+--
+
+////////////////////////////////////////////////////////////////////////////////
+
+ * 現在比較混亂的是，視覺上有些東西只能 CSS 控制，但又些又能同時從 CSS 跟程式控制，例如 `setPadding(Insets)` 跟 `-fx-padding`，兩者是互通的。目前只有 `Shape` 跟 `Scene` 支援 `setFill()`，其他都必須透過 style 來操作。
+ * style 由 `.pagination` 來控制，如果要讓整個下方的控制項不見，可以將底下 `.pagination-control` 的 `visibility` 設成 `hidden`。-> 可以做為 CSS Reference 要怎麼看的說明範例。
+ * CSS 2.1+ (some CSS 3), and some extensions (`-fx-`) that support specific JavaFX features.
+   ** allow web developers already familiar with CSS for HTML to use CSS to customize and develop themes for JavaFX controls and scene graph objects in a natural way. 
+   ** can be parsed cleanly by any compliant CSS parser, even though it might not support JavaFX extensions. enables the mixing of CSS styles for JavaFX and for other purposes (such as for HTML pages) into a single style sheet. (有這種需求嗎？)
+ * JavaFX CSS 跟 HTML CSS 其實差很大！只能說借用了 CSS 的語法跟概念，因為大部份 properties 的寫法都不同於 HTML 的 CSS。
+   ** Even properties that might seem to be compatible with standard HTML CSS have been prefixed, because JavaFX has somewhat different semantics for their values. （除了 `visibility` 以外） web developer 還是得花一點時間才能適應...
+   ** JavaFX CSS does not support CSS layout properties such as float, position, overflow, and width. However, the CSS padding and margins properties are supported on some JavaFX scene graph objects. All other aspects of layout are handled programmatically in JavaFX code.
+   ** JavaFX has a rich set of extensions to CSS in support of features such as color derivation??, property lookup??, and multiple background colors and borders for a single node.
+   ** Naming conventions have been established for deriving CSS style class names from JavaFX class names, and for deriving CSS property names from JavaFX variable (property) names. 例如 class `ToggleButton` -> `.toggle-button`, property `blendMode` -> `-fx-blend-mode`
+ * value types for JavaFX CSS properties
+   ** each property has a type, which determines what kind of value and the syntax/grammar for specifying those values.
+   ** for each control, the substructure?? of that control's skin?? is given, along with the style class names for the Region objects that implement that substructure. for example?? 
+ * default style sheet (or "user agent style sheet), in JavaFX runtime JAR file (`jfxrt.jar`)
+   ** `com/sun/javafx/scene/control/skin/caspian/caspian.css` - 可以做為 JavaFX CSS 語法的學習範例。
+   ** link:styling/caspian.css[`caspian.css`]
+   ** http://hg.openjdk.java.net/openjfx/2.2/master/rt/raw-file/tip/javafx-ui-controls/src/com/sun/javafx/scene/control/skin/caspian/caspian.css
+   ** The .root style class is applied to the root node of the Scene instance.
+      *** Because all nodes in the scene graph are a descendant of the root node, styles in the .root style class can be applied to any node.
+      *** The .root style class includes properties that can be used by other styles to provide consistency in a UI.
+      *** 幾乎所有顏色都是從 -fx-base 衍生出來的，所以只要改掉 `.root` 的 `-fx-base` 就可以改變整體的色調。
+ * controls and layout panes
+   ** If the scene graph contains a Control, a default user agent style sheet is loaded.
+   ** controls such as the button and check box, which have the respective style classes, ex. `.button`, `check-box`, `.text-field`...
+   ** no style classes are predefined for the layout panes. To style your layout panes, you must create a style sheet and define the style classes that you want.
+ * custom style sheets
+   ** `.css`, located in the same directory as the main class for your JavaFX application.
+   ** `Scene.getStylesheets().add("path/stylesheet.css");`
+   ** `Parent.getStylesheets().add("path/stylesheet.css");` (JavaFX 2.1+)
+   ** class selector - ex. `.class-name { ... }` 或 `.class-name1.class-name2 { ... }`, `Node.getStyleClass().add(String class)`, like `class="..."` attribute in HTML, adding styles to a node is accumulative.
+   ** ID selector - ex. `#id { ... }`, `Node.setId(String id)`, like `id="..."` attribute in HTML
+   ** type selector - ex. `ToggleButton { ... }`. not recommended, because the name used to match the type selector is the actual concrete class name used in the JavaFX program (exact match).
+   ** descendant selector - ex. `.message-pane .title`
+   ** child selector - ex. `.message-pane > .title`
+   ** `Node.setStyle(String inlineStyle)` - inline style, take precedence over styles from a style sheet
+ * pseudo-class states
+   ** :disabled, :focused, :hover, :pressed, :show-mnemonic, :default, :cancel, :visited, ...
+ * applying styles
+   ** CSS styles are applied to nodes in the JavaFX scene graph in a way similar to the way CSS styles are applied to elements in the HTML DOM. Styles are first applied to the parent, then to its children.
+   ** a node is styled after it is added to the scene graph. Styles are reapplied when there is a change to the node's pseudo-class state, style class, id, inline style, or parent. 
+   ** CSS styles are applied asynchronously. That is, CSS styles are loaded and values are converted and assigned some time after a scene graph object has been created and added to the scene graph, but before the scene graph is first laid out and painted.
+ * inheritance
+   ** occurs from parent nodes in the scene graph - takes the same computed value as the property for the node's parent.
+   ** Any property can be made to inherit by giving it the value "inherit".
+   ** within the hierarchy of JavaFX classes, the CSS properties of an ancestor are also CSS properties of the descendant.
+   ** properties inherit by default: `Node.cursor` (`-fx-cursor`), `Text.textAlignment` (`-fx-text-alignment`), `Font.font` (`-fx-font`)
+ * precedence
+   ** The property value that is actually applied depends on the precedence of the origin of the rule, as described above, as well as the specificity of the rule's selector as described in CSS 2
+   ** Styles loaded from a Scene's style sheets take precedence over rules from the user agent style sheet. Inline styles take precedence over styles originating elsewhere. The precedence order of style rules can be modified using "!important" in a style declaration.
+   ** A child will take its styles from its own inline styles, the style sheets of all its ancestors, and any style sheets from the Scene. (JavaFX 2.1+)
+   ** If a property of a node is initialized by calling the set method of the property, the CSS implementation will see this as a user set value and the value will not be overwritten by a style from a user agent style sheet. 
+   ** a style from a user agent style sheet has lower priority than a value set from code (指 padding 這裡也可以從程式控制的 style), which has lower priority than a Scene or Parent style sheet. Inline styles have highest precedence. Style sheets from a Parent instance are considered to be more specific than those styles from Scene style sheets.
+ * :hover 跟 :pressed 來做按鈕的效果很不錯，但好像只支援 drop shadow?
+--------------------------------------------------------------------------------
+.check-box:focused {
+    -fx-color: -fx-focused-base; <-- 為什麼 -fx-focused-base 定義在 .root，確可以拿 property name 來當 value??
+}
+--------------------------------------------------------------------------------
+
+////////////////////////////////////////////////////////////////////////////////
+

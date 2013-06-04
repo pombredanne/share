@@ -1,0 +1,60 @@
+= link:uuid.html[UUID] / Python =
+:title: [UUID] 用 Python 處理 UUID
+
+在 Python 裡要處理 UUID 可以藉助 `uuid` 模組。
+
+如果要產生一個 UUID，可以用 `uuid.uuid1()` 或 `uuid.uuid4()`，其中 `uuid1()` 是用網卡的 MAC address 跟當下的時間混合算出來的，所以有揭露網卡跟產生 UUID 時間點的安全疑慮。實務上建議用 `uuid4()` 來產生隨機（random）的 UUID：
+
+[source,pycon]
+--------------------------------------------------------------------------------
+>>> import uuid
+>>> uuid.uuid1(), uuid.uuid1() # <1>
+(UUID('c981e3c4-03b1-11e2-bcab-0024d6124544'), UUID('c981f56c-03b1-11e2-bcab-0024d6124544'))
+>>> uuid.uuid4(), uuid.uuid4() # <2>
+(UUID('0656336a-7505-46a1-aa3e-4809db42e1f4'), UUID('ce651e1b-4ce2-4179-9cf3-6516ec0d840c'))
+--------------------------------------------------------------------------------
+<1> `uuid1()` 連續產生的兩個 UUID，中間的那一段 `03b1-11e2-bcab` 竟然是一樣的，這應該就是所謂的安全疑慮吧。
+<2> `uuid4()` 連續產生兩個完全不一樣的 UUID。
+
+UUID 除了正規 8-4-4-4-12 的表示法之外，還有兩種 16-byte string 的表示法：
+
+[source,pycon]
+--------------------------------------------------------------------------------
+>>> UUID = uuid.uuid4(); UUID
+UUID('a50d9647-d559-4e9d-a8ab-c300d05d36ab')
+>>> UUID.bytes, len(UUID.bytes) # <1>
+('\xa5\r\x96G\xd5YN\x9d\xa8\xab\xc3\x00\xd0]6\xab', 16)
+>>>
+>>> UUID.hex # <2>
+'a50d9647d5594e9da8abc300d05d36ab'
+>>> assert UUID.hex == UUID.bytes.encode('hex')
+>>>
+>>> UUID.bytes_le, len(UUID.bytes_le) # <3>
+('G\x96\r\xa5Y\xd5\x9dN\xa8\xab\xc3\x00\xd0]6\xab', 16)
+>>> UUID.bytes_le.encode('hex')
+'47960da559d59d4ea8abc300d05d36ab'
+--------------------------------------------------------------------------------
+<1> UUID 本來就是由 16 個 octet 組成的數字。
+<2> UUID 的 16 進制表示法。
+<3> link:../computing/byte-order.html[little-endian] byte order
+
+拿到不同表示法的 UUID 之後，也可以用 `uuid.UUID([hex[, bytes[, bytes_le]]])` 轉回來：
+
+--------------------------------------------------------------------------------
+>>> uuid.UUID('a50d9647-d559-4e9d-a8ab-c300d05d36ab')
+UUID('a50d9647-d559-4e9d-a8ab-c300d05d36ab')
+>>> uuid.UUID(hex='a50d9647d5594e9da8abc300d05d36ab')
+UUID('a50d9647-d559-4e9d-a8ab-c300d05d36ab')
+>>> uuid.UUID(bytes='a50d9647d5594e9da8abc300d05d36ab'.decode('hex'))
+UUID('a50d9647-d559-4e9d-a8ab-c300d05d36ab')
+>>> uuid.UUID(bytes_le='47960da559d59d4ea8abc300d05d36ab'.decode('hex'))
+UUID('a50d9647-d559-4e9d-a8ab-c300d05d36ab')
+--------------------------------------------------------------------------------
+
+== 參考資料 ==
+
+.文件
+--
+ * http://docs.python.org/library/uuid.html[uuid — UUID objects according to RFC 4122]
+--
+

@@ -1,0 +1,76 @@
+= link:performance.html[JavaFX / Performance] / Hardware Acceleration =
+:title: [JavaFX] 硬體加速
+
+要查看 hardware acceleration 有沒有生效，可以透過 `-Dprism.verbose=true` 來觀察，例如：
+
+--------------------------------------------------------------------------------
+Prism pipeline init order: es2 j2d 
+Using t2k for text rasterization
+Using dirty region optimizations
+Prism pipeline name = com.sun.prism.es2.ES2Pipeline
+Loading ES2 native library ... prism-es2
+	succeeded.
+GLFactory using com.sun.prism.es2.gl.x11.X11GLFactory
+(X) Got class = class com.sun.prism.es2.ES2Pipeline
+Failed Graphics Hardware Qualifier check.
+System GPU doesn't meet the es2 pipe requirement
+GraphicsPipeline.createPipeline: error initializing pipeline com.sun.prism.es2.ES2Pipeline
+*** Fallback to Prism SW pipeline <1>
+Prism pipeline name = com.sun.prism.j2d.J2DPipeline
+(X) Got class = class com.sun.prism.j2d.J2DPipeline
+Initialized prism pipeline: com.sun.prism.j2d.J2DPipeline
+Glass native format: 1
+QuantumRenderer: shutdown
+--------------------------------------------------------------------------------
+<1> 不符合 hardware acceleration 的要求，退一步採用 software pipeline。
+
+透過 `-Dprism.forceGPU=true` 略過檢查時會發生錯誤：
+
+--------------------------------------------------------------------------------
+Prism pipeline init order: es2 j2d 
+Using t2k for text rasterization
+Using dirty region optimizations
+Prism pipeline name = com.sun.prism.es2.ES2Pipeline
+Loading ES2 native library ... prism-es2
+	succeeded.
+GLFactory using com.sun.prism.es2.gl.x11.X11GLFactory
+(X) Got class = class com.sun.prism.es2.ES2Pipeline
+Initialized prism pipeline: com.sun.prism.es2.ES2Pipeline
+#
+# A fatal error has been detected by the Java Runtime Environment:
+#
+...
+--------------------------------------------------------------------------------
+
+== 延伸閱讀 ==
+
+ * link:../architecture.html[JavaFX 架構]
+
+== 參考資料 ==
+
+.文件
+--
+ * http://www.oracle.com/technetwork/java/javafx/downloads/supportedconfigurations-1506746.html[JavaFX Supported Configurations] ^https://diigo.com/0xm9f[閱讀]^ - System Requirements 支援 hardware acceleration 的顯卡。
+ * http://www.adamish.com/blog/archives/320[JavaFX hidden VM args | Blog] (2011-12-22)
+ * http://www.infoq.com/news/2011/03/jfx2ea[JavaFX 2.0 Will Bring Hardware Accelerated Graphics and Better Licensing Terms to the Platform] ^https://diigo.com/0xm75[閱讀]^ (2011-03-16)
+--
+
+.其他文件
+--
+ * http://stackoverflow.com/questions/14966427/is-it-possible-to-enable-hardware-acceleration-with-java-fx-on-windows-2008-serv[graphics - Is it possible to enable hardware acceleration with Java FX on Windows 2008 server? - Stack Overflow] ^https://diigo.com/0xm8n[閱讀]^ (2013-02-19) - `-Dprism.forceGPU=true` 略過檢查
+ * http://stackoverflow.com/questions/14566379/is-there-a-way-to-detect-if-java-fx-is-using-hardware-acceleration[javafx 2 - Is there a way to detect if Java FX is using hardware acceleration? - Stack Overflow] ^https://diigo.com/0xm7m[閱讀]^ (2013-01-28) - `-Dprism.verbose=true`, "sw"/"j2d" for software, "d3d"/"es2" for hardware accelerated
+ * https://forums.oracle.com/forums/thread.jspa?threadID=2316849[OTN Discussion Forums : How to verify, JavaFX 2.0 uses directx ...] ^https://diigo.com/0xm7g[閱讀]^ (2011-12-06) - in Java2D the hardware pipeline is disabled by default for specific chipsets, notably Intel ones, because of unreliable drivers
+ ＊ http://stackoverflow.com/questions/8344168/how-to-verify-javafx-2-0-uses-directx-9-on-a-xp-box[java - How to verify, JavaFX 2.0 uses directx 9 on a XP box? - Stack Overflow] ^https://diigo.com/0xm97[閱讀]^ （2011-12-01) - Intel 945 Chipset 再次被提到，不在支援之列。`set NWT_TRACE_LEVEL=4` 可以看到更多細節?
+--
+
+////////////////////////////////////////////////////////////////////////////////
+
+ * Prism - the hardware-accelerated graphics platform
+ * Swing/AWT - event dispatching thread is responsible both for event dispatch and rendering
+ * Prism - event dispatch and rendering are separated into different threads -> increased frame rates.
+ * `-Dprism.verbose=true` which will print what graphics pipeline it uses. "sw" or "j2d" for software and "d3d" or "es2" for hardware accelerated.
+ * in Java2D the hardware pipeline is disabled by default for specific chipsets, notably Intel ones, because of unreliable drivers
+ * accelerated -> GPU, instead of CPU
+
+////////////////////////////////////////////////////////////////////////////////
+

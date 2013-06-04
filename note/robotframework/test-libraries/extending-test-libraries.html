@@ -1,0 +1,228 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Robot Framework] 擴充現有的 Test Libraries</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<!--link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" /-->
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <!--div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div-->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <!--a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a--></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="test-libraries.html">Robot Framework / Test Libraries</a> / Extending Test Libraries</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>官方 <a href="http://robotframework.googlecode.com/hg/doc/userguide/RobotFrameworkUserGuide.html">User Guide</a> 的 Extending existing test libraries 一節提到，<em>active library instance</em> 是擴充現有 test libraries 最被推薦的方式。</p></div>
+<div class="quoteblock">
+<div class="content">
+<div class="paragraph"><p>Returns the currently active instance of the specified test library. This keyword makes it easy for test libraries to interact with other test libraries that have state&#8230; If a library is imported with a custom name, the name used to get the instance must be that name and not the original library name.</p></div>
+</div>
+<div class="attribution">
+&#8212; <a href="http://robotframework.googlecode.com/hg/doc/libraries/BuiltIn.html?r=2.7.6">BuiltIn</a>
+</div></div>
+<div class="paragraph"><p>下面以擴充 <a href="https://code.google.com/p/robotframework/wiki/ScreenshotLibrary">Screenshot Library</a> 為例：</p></div>
+<div class="listingblock">
+<div class="title"><a href="extending-test-libraries/test.txt"><code>test.txt</code></a></div>
+<div class="content">
+<pre><code>| *Setting* | *Value*
+| Library | Screenshot
+| Library | MyScreenshotLibrary
+
+| *Test Case* | *Action* | *Argument*
+| Test | Take Snapshot | desktop</code></pre>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../../_asciidoc/images/icons/caution.png" alt="Caution" />
+</td>
+<td class="content">雖然沒有直接用到 Screenshot Library，但如果沒有明確引進來的話，執行期會出現 "No library with name 'Screenshot' found." 的錯誤，建議在 test library 的文件上額外做說明。</td>
+</tr></table>
+</div>
+<div class="listingblock">
+<div class="title"><a href="extending-test-libraries/MyScreenshotLibrary.py"><code>MyScreenshotLibrary.py</code></a></div>
+<div class="content"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">robot.libraries.BuiltIn</span> <span class="kn">import</span> <span class="n">BuiltIn</span>
+
+<span class="k">class</span> <span class="nc">MyScreenshotLibrary</span><span class="p">:</span>
+
+  <span class="n">_builtin</span> <span class="o">=</span> <span class="n">BuiltIn</span><span class="p">()</span>
+
+  <span class="nd">@property</span>
+  <span class="k">def</span> <span class="nf">_screenshot_lib</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_builtin</span><span class="o">.</span><span class="n">get_library_instance</span><span class="p">(</span><span class="s">&#39;Screenshot&#39;</span><span class="p">)</span> <span class="c"># <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></span>
+
+  <span class="k">def</span> <span class="nf">take_snapshot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="s">&#39;800px&#39;</span><span class="p">):</span>
+      <span class="n">img</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_screenshot_lib</span><span class="o">.</span><span class="n">take_screenshot</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">width</span><span class="p">)</span> <span class="c"># <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></span>
+      <span class="k">print</span> <span class="s">&#39;*WARN* snapshot:&#39;</span><span class="p">,</span> <span class="n">img</span>
+</pre></div></div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+透過 <code>BuiltIn</code> instance 取得其他 library 的 active instance，跟 test library 的 scope 無關。
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../../_asciidoc/images/icons/warning.png" alt="Warning" />
+</td>
+<td class="content">
+<div class="paragraph"><p><code>get_library_instance()</code> 不能在 <code>__init()</code> 裡呼叫，否則在 <a href="../../ride/ride.html">RIDE</a> 裡和真正跑測試時，會分別出現下面的錯誤：（事實上任何初始化的工作都不應該在 <code>__init__()</code> 裡做）</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>AttributeError: 'NoneType' object has no attribute 'get_library_instance'</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>[ ERROR ] Invalid syntax in file 'xxx.txt' in table 'Settings': Creating an instance of the test library 'MyScreenshotLibrary' with no arguments failed: No library with name 'Screenshot' found.</code></pre>
+</div></div>
+<div class="paragraph"><p>顯然我們不能假設 Robot Framework 載入 test libraries 的順序&#8230;</p></div>
+</td>
+</tr></table>
+</div>
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+等同在 test data 裡 <code>Screenshot.Take Screenshot</code> 的用法。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>執行結果：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ pybot -d /tmp test.txt
+==============================================================================
+Test
+==============================================================================
+[ WARN ] snapshot: /tmp/desktop_1.jpg
+Test                                                                  | PASS |</code></pre>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">
+<div class="paragraph"><p>BuiltIn Library 是 global scope，我們手動生成的那個 <code>BuiltIn</code> instance 當然跟 runtime 系統唯一的那個 BuiltIn Library instance 不同，但我們卻可以透過它去取得其他 library instance？</p></div>
+<div class="paragraph"><p>那是因為 test library instance 並不是記錄在 BuiltIn Library instance 裡：</p></div>
+<div class="listingblock">
+<div class="title"><code>libraries/BuiltIn.py</code></div>
+<div class="content"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">robot.running</span> <span class="kn">import</span> <span class="n">Keyword</span><span class="p">,</span> <span class="n">NAMESPACES</span><span class="p">,</span> <span class="n">RUN_KW_REGISTER</span>
+
+<span class="k">class</span> <span class="nc">_Misc</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="nf">get_library_instance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_namespace</span><span class="o">.</span><span class="n">get_library_instance</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">DataError</span><span class="p">,</span> <span class="n">err</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="nb">unicode</span><span class="p">(</span><span class="n">err</span><span class="p">))</span>
+
+<span class="k">class</span> <span class="nc">BuiltIn</span><span class="p">(</span><span class="n">_Verify</span><span class="p">,</span> <span class="n">_Converter</span><span class="p">,</span> <span class="n">_Variables</span><span class="p">,</span> <span class="n">_RunKeyword</span><span class="p">,</span> <span class="n">_Misc</span><span class="p">):</span>
+    <span class="n">ROBOT_LIBRARY_SCOPE</span> <span class="o">=</span> <span class="s">&#39;GLOBAL&#39;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_namespace</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">NAMESPACES</span><span class="o">.</span><span class="n">current</span>
+</pre></div></div></div>
+<div class="listingblock">
+<div class="title"><code>running/__init__.py</code></div>
+<div class="content"><div class="highlight"><pre><span class="k">class</span> <span class="nc">_Namespaces</span><span class="p">:</span>
+
+<span class="c"># Hook to namespaces</span>
+<span class="n">NAMESPACES</span> <span class="o">=</span> <span class="n">_Namespaces</span><span class="p">()</span> <span class="c"># <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></span>
+</pre></div></div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+原來 <code>NAMESPACES</code> 是個 singleton。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>或許 <code>BuiltIn.get_library_instance()</code> 一開始就被設計成 static/class method 就不會有使用上的疑慮了。</p></div>
+<div class="paragraph"><p>如果這是改變不了的事實，建議將 <code>BuiltIn</code> instance 快取起來，這樣取用 active library instance 時，就不用一直生成全新的 <code>BuiltIn</code> instance。</p></div>
+</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_延伸閱讀">延伸閱讀</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="../../seleniumlibrary/interoperability.html">[SeleniumLibrary&#93; 與其他 Test Libraries 交互操作</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://robotframework.googlecode.com/hg/doc/userguide/RobotFrameworkUserGuide.html?r=2.7.6">Robot Framework User Guide &gt; Extending existing test libraries</a> <sup><a href="https://diigo.com/0x0t0">閱讀</a></sup>
+</p>
+</li>
+<li>
+<p>
+<a href="http://robotframework.googlecode.com/hg/doc/libraries/BuiltIn.html?r=2.7.6">BuiltIn &gt; Get Library Instance</a> <sup><a href="https://diigo.com/0x0sd">閱讀</a></sup>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2013-06-05 06:27:41 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<!--script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script-->
+</body>
+</html>

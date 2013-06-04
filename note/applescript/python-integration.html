@@ -1,0 +1,227 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[AppleScript] Python Integration</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<!--link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" /-->
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <!--div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div-->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <!--a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a--></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="applescript.html">AppleScript</a> / Python Integration</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>AppleScript 可以透過 <a href="osa/osascript.html"><code>osascript</code></a> 從 command line 執行，再加上它接受從 STDIN 餵進 script，因此一個可以考慮的整合方式就是先在 Python "動態拼湊" 出 AppleScript，然後再整個餵給 <code>osascript</code>。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">個人覺得，AppleScript 的語法對工程師而言並不是很友善，所以大原則是儘可能把邏輯擺在 Python，不得已才寫 AppleScript。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>簡單包裝一個 <code>run_applescript()</code>，執行 script 並將 STDOUT 輸出的結果傳回。過程中如果有發生錯誤，則會丟出 <code>RuntimeException</code>。</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">subprocess</span><span class="o">,</span> <span class="nn">traceback</span><span class="o">,</span> <span class="nn">textwrap</span>
+<span class="kn">from</span> <span class="nn">subprocess</span> <span class="kn">import</span> <span class="n">PIPE</span>
+
+<span class="k">def</span> <span class="nf">run_applescript</span><span class="p">(</span><span class="n">script</span><span class="p">):</span>
+    <span class="n">script</span> <span class="o">=</span> <span class="n">textwrap</span><span class="o">.</span><span class="n">dedent</span><span class="p">(</span><span class="n">script</span><span class="p">)</span>
+    <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;osascript&#39;</span><span class="p">,</span> <span class="s">&#39;-&#39;</span><span class="p">]</span>
+    <span class="n">osa</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">stdin</span><span class="o">=</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">PIPE</span><span class="p">)</span>
+    <span class="n">output</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="n">osa</span><span class="o">.</span><span class="n">communicate</span><span class="p">(</span><span class="n">script</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">osa</span><span class="o">.</span><span class="n">returncode</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span> <span class="c"># <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></span>
+            <span class="s">&quot;AppleScript returned non-zero exit status </span><span class="si">%d</span><span class="s">.</span><span class="se">\n\n</span><span class="s">[SCRIPT]:</span><span class="se">\n</span><span class="si">%s</span><span class="se">\n\n</span><span class="s">[ERROR]:</span><span class="se">\n</span><span class="si">%s</span><span class="se">\n\n</span><span class="s">[OUTPUT]:</span><span class="se">\n</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>
+            <span class="p">(</span><span class="n">osa</span><span class="o">.</span><span class="n">returncode</span><span class="p">,</span> <span class="n">script</span><span class="p">,</span> <span class="n">error</span><span class="p">,</span> <span class="n">output</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">output</span>
+</pre></div></div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+這裡不用 <code>subprocess.CalledProcessError</code> 是因為它只會印出 commands 跟 exit status，對 debug 很有幫助的 error messages 反而沒被印出。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>改寫 <a href="programming/hello-world.html">Hello World!</a>：</p></div>
+<div class="listingblock">
+<div class="title"><code>hello-world.py</code></div>
+<div class="content"><div class="highlight"><pre><span class="k">def</span> <span class="nf">say_hello</span><span class="p">(</span><span class="n">who</span><span class="p">):</span>
+    <span class="n">script</span> <span class="o">=</span> <span class="s">&quot;&quot;&quot;\ # <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></span>
+<span class="s">        tell application &quot;Finder&quot;</span>
+<span class="s">            set theGreeting to &quot;Hello, &quot; &amp; &quot;</span><span class="si">%s</span><span class="s">&quot; &amp; &quot;!&quot;</span>
+<span class="s">            display dialog theGreeting</span>
+<span class="s">        end tell&quot;&quot;&quot;</span> <span class="o">%</span> <span class="n">who</span>
+    <span class="k">return</span> <span class="n">run_applescript</span><span class="p">(</span><span class="n">script</span><span class="p">)</span>
+
+<span class="k">print</span> <span class="n">say_hello</span><span class="p">(</span><span class="s">&#39;World&#39;</span><span class="p">)</span>
+</pre></div></div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+把 AppleScript 當做 template 內嵌在 Python 程式碼裡。
+<div class="paragraph"><p>這裡利用一點<a href="../python/programming/multiline-string-literals.html">小技巧</a>，讓 AppleScript 看起來不會很突兀。</p></div>
+</td></tr>
+</table></div>
+<div class="paragraph"><p>發生錯誤時的反應像是：（選擇 Cancel）</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>Traceback (most recent call last):
+  File "hello-world.py", line 23, in &lt;module&gt;
+    print say_hello('World')
+  File "hello-world.py", line 21, in say_hello
+    return run_applescript(script)
+  File "hello-world.py", line 11, in run_applescript
+    (osa.returncode, script, error, output))
+RuntimeError: AppleScript returned non-zero exit status 1.
+
+[SCRIPT]:
+tell application "Finder"
+    set theGreeting to "Hello, " &amp; "World" &amp; "!"
+    display dialog theGreeting
+end tell
+
+[ERROR]:
+80:106: execution error: Finder got an error: User canceled. (-128)
+
+
+[OUTPUT]:</code></pre>
+</div></div>
+<div class="paragraph"><p>結果非常的清楚，除了 exit status 跟 error message 之外，也把最後送往 <code>osascript</code> 執行的 AppleScript 印出來。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_延伸閱讀">延伸閱讀</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="osa/osascript.html"><code>osascript</code></a>
+</p>
+</li>
+<li>
+<p>
+<a href="../python/shell-scripting/shell-scripting.html">Shell Scripting in Python</a>
+</p>
+</li>
+<li>
+<p>
+<a href="../python/programming/multiline-string-literals.html">Multi-line String Literals</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">工具</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="https://pypi.python.org/pypi/py-applescript/">py-applescript</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://appscript.sourceforge.net/">appscript</a> - 已經停止開發。
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.leancrew.com/all-this/2013/03/combining-python-and-applescript/">Combining Python and AppleScript - All this</a> <sup><a href="https://diigo.com/0yqg2">閱讀</a></sup> (2013-03-06)
+</p>
+</li>
+</ul></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/12964766/create-playlist-in-itunes-with-python-and-scripting-bridge">cocoa - Create playlist in iTunes with Python and Scripting Bridge - Stack Overflow</a> <sup><a href="https://diigo.com/0yr3g">閱讀</a></sup> (2012-10-18) - 感覺 bridge 寫起來更為複雜難懂？
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.leancrew.com/all-this/2012/06/the-first-nail-in-the-coffin-of-python-appscript/">The first nail in the coffin of Python appscript - All this</a> <sup><a href="https://diigo.com/0yqgc">閱讀</a></sup> (2012-06-16)
+</p>
+</li>
+</ul></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.leancrew.com/all-this/2012/04/python-doesnt-play-nicely-with-others/">Python doesn’t play nicely with others - All this</a> (2012-04-15)
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.macdevcenter.com/pub/a/mac/2007/05/08/using-python-and-applescript-to-get-the-most-out-of-your-mac.html">MacDevCenter.com</a> (2007-05-10)
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2013-06-04 22:44:00 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<!--script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script-->
+</body>
+</html>

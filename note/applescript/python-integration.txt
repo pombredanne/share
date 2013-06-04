@@ -1,0 +1,109 @@
+= link:applescript.html[AppleScript] / Python Integration =
+:title: [AppleScript] Python Integration
+
+AppleScript 可以透過 link:osa/osascript.html[`osascript`] 從 command line 執行，再加上它接受從 STDIN 餵進 script，因此一個可以考慮的整合方式就是先在 Python "動態拼湊" 出 AppleScript，然後再整個餵給 `osascript`。
+
+TIP: 個人覺得，AppleScript 的語法對工程師而言並不是很友善，所以大原則是儘可能把邏輯擺在 Python，不得已才寫 AppleScript。
+
+簡單包裝一個 `run_applescript()`，執行 script 並將 STDOUT 輸出的結果傳回。過程中如果有發生錯誤，則會丟出 `RuntimeException`。
+
+[source,python]
+--------------------------------------------------------------------------------
+import subprocess, traceback, textwrap
+from subprocess import PIPE
+
+def run_applescript(script):
+    script = textwrap.dedent(script)
+    cmd = ['osascript', '-']
+    osa = subprocess.Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+    output, error = osa.communicate(script)
+    if osa.returncode != 0:
+        raise RuntimeError( # <1>
+            "AppleScript returned non-zero exit status %d.\n\n[SCRIPT]:\n%s\n\n[ERROR]:\n%s\n\n[OUTPUT]:\n%s" %
+            (osa.returncode, script, error, output))
+    return output
+--------------------------------------------------------------------------------
+<1> 這裡不用 `subprocess.CalledProcessError` 是因為它只會印出 commands 跟 exit status，對 debug 很有幫助的 error messages 反而沒被印出。
+
+改寫 link:programming/hello-world.html[Hello World!]：
+
+[source,python]
+.`hello-world.py`
+--------------------------------------------------------------------------------
+def say_hello(who):
+    script = """\ # <1>
+        tell application "Finder"
+            set theGreeting to "Hello, " & "%s" & "!"
+            display dialog theGreeting
+        end tell""" % who
+    return run_applescript(script)
+
+print say_hello('World')
+--------------------------------------------------------------------------------
+<1> 把 AppleScript 當做 template 內嵌在 Python 程式碼裡。
++
+這裡利用一點link:../python/programming/multiline-string-literals.html[小技巧]，讓 AppleScript 看起來不會很突兀。
+
+發生錯誤時的反應像是：（選擇 Cancel）
+
+--------------------------------------------------------------------------------
+Traceback (most recent call last):
+  File "hello-world.py", line 23, in <module>
+    print say_hello('World')
+  File "hello-world.py", line 21, in say_hello
+    return run_applescript(script)
+  File "hello-world.py", line 11, in run_applescript
+    (osa.returncode, script, error, output))
+RuntimeError: AppleScript returned non-zero exit status 1.
+
+[SCRIPT]:
+tell application "Finder"
+    set theGreeting to "Hello, " & "World" & "!"
+    display dialog theGreeting
+end tell
+
+[ERROR]:
+80:106: execution error: Finder got an error: User canceled. (-128)
+
+
+[OUTPUT]:
+--------------------------------------------------------------------------------
+
+結果非常的清楚，除了 exit status 跟 error message 之外，也把最後送往 `osascript` 執行的 AppleScript 印出來。
+
+== 延伸閱讀 ==
+
+ * link:osa/osascript.html[`osascript`]
+ * link:../python/shell-scripting/shell-scripting.html[Shell Scripting in Python]
+ * link:../python/programming/multiline-string-literals.html[Multi-line String Literals]
+
+== 參考資料 ==
+
+.工具
+--
+ * https://pypi.python.org/pypi/py-applescript/[py-applescript]
+ * http://appscript.sourceforge.net/[appscript] - 已經停止開發。
+--
+
+.文件
+--
+ * http://www.leancrew.com/all-this/2013/03/combining-python-and-applescript/[Combining Python and AppleScript - All this] ^https://diigo.com/0yqg2[閱讀]^ (2013-03-06)
+////////////////////////////////////////////////////////////////////////////////
+** eventually I decided that I should just abandon appscript.1 Because Apple has no proprietary interest in appscript, it will almost certainly continue to make changes that undermine it.
+** What I needed was a more general way to run AppleScript code from within my Python scripts. Write an AppleScript as a Python string. Run it from within my Python program. Collect any output it generates. With this, I’ll be able to keep all the code in one script instead of artificially breaking it up into separate AppleScript and Python parts.
+** There are just two functions: asrun, which takes the AppleScript string as its only argument, runs it, and returns the output, if any; and asquote, which reconfigures any string into a string that AppleScript can parse.
+** You’ll note that the Popen in asrun doesn’t change the stderr parameter from its default value of None. That’s because I wanted any AppleScript errors that arise to propagate out into the surrounding script and get handled like any other Python error—shutting the program down unless it’s in a try block.
+** Except for the format placeholders, and the doubled braces that format requires, the AppleScript in Lines 14-17 is exactly as I’d write it in the AppleScript Editor. I know Clark Goble will disagree, but I prefer this to the appscript syntax, which I found awkward because it didn’t feel like real Python.
+////////////////////////////////////////////////////////////////////////////////
+ * http://stackoverflow.com/questions/12964766/create-playlist-in-itunes-with-python-and-scripting-bridge[cocoa - Create playlist in iTunes with Python and Scripting Bridge - Stack Overflow] ^https://diigo.com/0yr3g[閱讀]^ (2012-10-18) - 感覺 bridge 寫起來更為複雜難懂？
+ * http://www.leancrew.com/all-this/2012/06/the-first-nail-in-the-coffin-of-python-appscript/[The first nail in the coffin of Python appscript - All this] ^https://diigo.com/0yqgc[閱讀]^ (2012-06-16)
+////////////////////////////////////////////////////////////////////////////////
+** display the currently playing track down in the lower right corner of my Desktop.
+** my first guess was that the new version had removed the player state property from its AppleScript library. But a quick review of the library in the AppleScript Editor (and a one-line script to test it out) showed that player state is still there—the problem is that appscript can’t access it the way it used to.
+** appscript’s developer, Hamish Sanderson, has stopped developing appscript because Apple is deprecating certain Carbon libraries it depends on and not providing equivalent functionality in Cocoa.
+** Appscript is a dead end; when a script using it breaks, the best solution is to rewrite it in AppleScript or a combination of AppleScript and another language.
+////////////////////////////////////////////////////////////////////////////////
+ * http://www.leancrew.com/all-this/2012/04/python-doesnt-play-nicely-with-others/[Python doesn’t play nicely with others - All this] (2012-04-15)
+ * http://www.macdevcenter.com/pub/a/mac/2007/05/08/using-python-and-applescript-to-get-the-most-out-of-your-mac.html[MacDevCenter.com] (2007-05-10)
+--
+

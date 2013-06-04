@@ -1,0 +1,81 @@
+= link:../bind.html[BIND] / Debian =
+:title: [BIND] Debian
+
+.`/etc/bind/named.conf`
+--------------------------------------------------------------------------------
+// This is the primary configuration file for the BIND DNS server named.
+//
+// Please read /usr/share/doc/bind9/README.Debian.gz for information on the 
+// structure of BIND configuration files in Debian, *BEFORE* you customize 
+// this configuration file.
+//
+// If you are just adding zones, please do that in /etc/bind/named.conf.local
+
+include "/etc/bind/named.conf.options";
+include "/etc/bind/named.conf.local";
+include "/etc/bind/named.conf.default-zones";
+--------------------------------------------------------------------------------
+
+.`/etc/bind/named.conf.local`
+--------------------------------------------------------------------------------
+//
+// Do any local configuration here
+//
+
+// Consider adding the 1918 zones here, if they are not used in your
+// organization
+//include "/etc/bind/zones.rfc1918";
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+        forwarders {
+                168.95.1.1;
+        };
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+zone "tbox.trend.com.tw" {
+        type master;
+        file "/etc/bind/zones/tbox.trend.com.tw.db";
+        };
+--------------------------------------------------------------------------------
+
+./etc/bind/zones/tbox.trend.com.tw.db`
+--------------------------------------------------------------------------------
+tbox.trend.com.tw.      IN      SOA     ns1.tbox.trend.com.tw. admin.tbox.trend.com.tw. (
+                                                        2006081401
+                                                        28800
+                                                        3600
+                                                        604800
+                                                        38400
+ )
+tbox.trend.com.tw.      IN      NS              ns1.tbox.trend.com.tw.
+@              IN      A       211.76.133.201
+www              IN      A       211.76.133.201
+dav              IN      A       211.76.133.201
+soap             IN      A       211.76.133.201
+ns1              IN      A       211.76.133.201
+--------------------------------------------------------------------------------
+
+== 參考資料 ==
+
+.文件
+--
+ * http://wiki.debian.org/Bind9[Bind9 - Debian Wiki]
+--
+
+.其他文件
+--
+ * http://ubuntuforums.org/showthread.php?t=236093[Howto: Setup a DNS server with bind]
+--
+
+////////////////////////////////////////////////////////////////////////////////
+
+ * `apt-get install bind9`
+ * `named.conf`
+ * `/etc/bind/zones/*.db` - zone files
+ * `named.conf.options` 下可以設定 forwarders
+
+////////////////////////////////////////////////////////////////////////////////
+

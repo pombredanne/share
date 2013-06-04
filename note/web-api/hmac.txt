@@ -1,0 +1,106 @@
+= link:authentication.html[Web API / Authentication] / HMAC =
+:title: [Web API] HMAC Authentication
+
+HMAC 被大量應用在 link:../web-api/authentication.html[Web API authentication]，例如：
+
+ * http://oauth.net/core/1.0a/[OAuth]
+ * http://s3.amazonaws.com/doc/s3-developer-guide/RESTAuthentication.html[Amazon S3] ^https://diigo.com/0y0uz[閱讀]^ 
+ * https://developers.google.com/storage/docs/reference/v1/getting-startedv1[Google Cloud Storage API] ^https://diigo.com/0y1vm[閱讀]^
+
+== 延伸閱讀 ==
+
+ * link:../hmac/hmac.html[HMAC (Hash-based Message Authentication Code)]
+
+== 參考資料 ==
+
+.文件
+--
+ * http://www.wolfe.id.au/2012/10/20/what-is-hmac-and-why-is-it-useful/[What is HMAC Authentication and why is it useful? | wolfeidau] ^https://diigo.com/0xysx[閱讀]^ (2012-10-20)
+ * http://www.smartjava.org/content/protect-rest-service-using-hmac-play-20[Protect a REST service using HMAC (Play 2.0) | Smartjava.org] ^https://diigo.com/0y1ut[閱讀]^ (2012-03-26) - 含 client/server 的實作
+ * http://rc3.org/2011/12/02/using-hmac-to-authenticate-web-service-requests/[Using HMAC to authenticate Web service requests | rc3.org] ^https://diigo.com/0y1vj[閱讀]^ (2011-12-02)
+ * http://www.thebuzzmedia.com/designing-a-secure-rest-api-without-oauth-authentication/[Designing a Secure REST (Web) API without OAuth] ^https://diigo.com/0xydz[閱讀]^ (2011-04-26)
+ * http://aws.amazon.com/articles/1928[Making Secure Requests to Amazon Web Services : Articles & Tutorials : Amazon Web Services] ^https://diigo.com/0y1zy[閱讀]^ (2009-07-06)
+ * http://www.daemonology.net/blog/2008-12-18-AWS-signature-version-1-is-insecure.html[AWS signature version 1 is insecure] (2008-12-18)
+ * http://msdn.microsoft.com/en-us/library/dd203052.aspx[A Guide to Designing and Building RESTful Web Services with WCF 3.5] ^https://diigo.com/0y1vg[閱讀]^ (2008-10)
+--
+
+.其他文件
+--
+ * http://stackoverflow.com/questions/14661714/protecting-get-request-within-django-web-application[python - Protecting GET request within Django web application - Stack Overflow] ^https://diigo.com/0y1z0[閱讀]^ (2013-02-02) - JavaScript 也用 HMAC 來解，但如何保護 secret key？
+ * http://stackoverflow.com/questions/7692172/website-api-only-for-my-android-client[web security - Website API only for my android client - Stack Overflow] ^https://diigo.com/0y0zw[閱讀]^ (2011-10-07)
+ * http://bynomial.com/blog/?p=141[Bynomial Code » How to send messages safely to your server] (2011-05-20) - HMAC 在 iOS 上的實作。
+ * http://flascelles.wordpress.com/2011/05/12/using-api-keys-effectively/[Using API keys effectively | Francois Lascelles's Blog] ^https://diigo.com/0y100[閱讀]^ (2011-05-12)
+ * http://stackoverflow.com/questions/5340252/how-can-i-design-a-secure-api-authentication-for-mobile-apps-to-access-a-service[iphone - How can I design a secure API/Authentication for mobile apps to access a service? - Stack Overflow] ^https://diigo.com/0y0zr[閱讀]^ (2011-03-17) - 原來 OAuth 不一定要針對 end-user。
+ * https://firstdata.zendesk.com/entries/22069302-API-Security-HMAC-Hash[API Security - HMAC Hash : First Data Global Gateway e4℠ Knowledge Base] ^https://diigo.com/0y1w0[閱讀]^
+--
+
+////////////////////////////////////////////////////////////////////////////////
+
+ * HMAC based authentication.
+ * Authentication for these type APIs really depends on the type of service, and falls into a couple of general categories:
+   ** Consumer or personal applications, these typically use a simple username and password, OAuth is used in some cases however this is more for identity of an individuals authorisation session within a trusted third party. 發生在應用程式跟 3rd-party 之間。需要取得使用者的授權，讓應用程式在 3rd-party 上可以代為執行一些操作，或是取用使用者在 3rd-party 上的資料。
+   ** Infrastructure applications, these typically use a set of credentials which are different to the owners/admins credentials and provide some sort of automation API for business or devices to enhance the function or control something. 發生在同一個應用程式的 endpoints/backend 之間。讓 server API 可以確認 request 是來自 trusted client，通常會利用 API key 識別出不同的存取來源（單位通常不是操作者本身，而是 business/domain、device 等）。
+ * HMAC Authentication
+   ** Hash-based message authentication code (HMAC) is a mechanism for calculating a "message authentication code" (MAC) involving a hash function in combination with a "secret key" (shared secret = symmetric key). This can be used to verify the integrity and authenticity of a message.
+   ** Any cryptographic hash function, such as MD5 or SHA-1, may be used in the calculation of an HMAC; the resulting MAC algorithm is termed HMAC-MD5 or HMAC-SHA1 accordingly (used within the IPsec and TLS protocols). The cryptographic strength of the HMAC depends upon the cryptographic strength of the underlying hash function, the size of its hash output, and on the size and quality of the key.
+   ** Although the default cryptographic algorithm for hmac is MD5, that is not the most secure method to use. MD5 hashes have some weaknesses, such as collisions (where two different messages produce the same hash). The SHA-1 algorithm is considered to be stronger, and should be used instead.
+   ** No known extensions attacks have been found against the current HMAC specification which is defined as H(key1 ∥ H(key2 ∥ message)) because the outer application of the hash function masks the intermediate result of the internal hash. 看來這個 secret key 也沒什麼特別，只是要拿來跟真正的 message 串接，然後一起做 hash。
+   ** this is the main authentication method used by Amazon Web Services it is very well understood, and there are a number of libraries which implement it. To use this form of authentication you utilise a "key identifier" (相對於 secret key 的 public key，也就是一般常見的 API key 或 access key) and a "secret key", with both of these typically generated in an admin interface.
+   ** Some user-identifiable information like an “API Key”, client ID, user ID or something else it can use to identify who you are. This is the public API key, never the private API key. This is a public value that anyone (even evil masterminds can know and you don’t mind). It is just a way for the system to know WHO is sending the request (or to track the usage of your API for each customer), not if it should trust the sender or not (it will figure that out based on the HMAC).
+   ** one of the BIG difference with this type of authentication is it signs the entire request (instead of encrypting them), if the content-md5 is included, this basically guarantees the authenticity of the action. 不用把整個 message body 丟進 hmac 運算，只要 message body 的 md5 即可。
+   ** a digest is computed using a composite of the URI, request timestamp and some other headers (dependeing on the implementation) using the supplied secret key. The key identifier along with the digest, which is encoded using Base64 is combined and added to the "authorisation header" (the RESTful location for such signatures, tokens). Which results in a HTTP request, with headers which looks like this. It should be noted that the Authorization header is part of the HTTP specification and if you’re going to use it, you should do so in a way that complies with the standard.
+   ** For this approach to work, the service must define an algorithm for the client to follow when signing the requests. For example, it must outline how to "canonicalize" the message and which parts should be included in the HMAC signature along with the secret key. This is important because the client and service must follow the same algorithm for this to work. 所以除了 shared key 之外，要拿哪些資料來串接（authentication attributes）、串接的字元、串接的順序為何，都是 client/server 雙方要保守的秘密。
+   ** To make sure the client and the service calculate the signature over the same content, we need to normalize the request that is to be signed. If we don't do this, the server might interpret whitespace in a different manner as the client did and conclude that the signature is invalid.
++
+--------------------------------------------------------------------------------
+PUT /quotes/nelson HTTP/1.0
+Authorization: AWS 44CF9590006BF252F707:jZNOcbfWmD/A/f3hSvVzXZjM2HU= <1>
+Content-Md5: c8fdb181845a4ca6b8fec737b3581d76
+Content-Type: text/html
+Date: Thu, 17 Nov 2005 18:49:58 GMT
+X-Amz-Meta-Author: foo@bar.com
+X-Amz-Magic: abracadabra
+--------------------------------------------------------------------------------
+<1> The AWS after the colon is sometimes known as the "service label", most services I have seen follow the convention of changing this to an abbreviation of their name or just HMAC.
++
+ * 常見的 HMAC input (authentication attributes) 有：
+   ** HTTP method - A DELETE to a specific URL is handled differently than a GET to that URL.
+   ** URI path - URL encoding is somewhat flexible. For example, you may choose to encode spaces in a query string as %20. I may prefer to use the + character. Furthermore, in most cases browsers and Web applications don’t care about the order of HTTP parameters.
+   ** Content-MD5 (header) - This is an MD5 hash of the body of the request.
+   ** Content-Type (header) - The Content-Type header is an important header when making REST calls. Depending on the media-type the server can respond differently to a request, therefore it should be included in the HMAC.
+   ** Date (header) - We also include the date the request was created to calculate the HMAC. On the server side we can make sure the date wasn’t changed in transit. Besides this we can add message expiration functionality on the server
+ * If we examine the Amazon implementation closely a few advantages become obvious, over normal user names and passwords:
+   ** As mentioned HMAC authentication guarantees the authenticity of the request by signing the headers, this is especially the case if content-md5 is signed and checked by the server AND the client.
+   ** An admin can generate any number of "key pairs" (key identifier / secret key) and utilise them independent of their Amazon credentials.
+   ** As noted before these are computed values and can be optimised to be as large as necessary, Amazon is using 40 character secrets for SHA-1 (指的是 SHA-1 的結果是 20 bytes = 40 hex characters，還是 secret key 的長度是 40??), depending on the hash algorithm used. (HMAC 並沒有規定要用哪個演算法做 hash)
+      *** http://docs.aws.amazon.com/AWSECommerceService/latest/DG/AWSCredentials.html[Your AWS Identifiers - Product Advertising API] - Secret Access Key (a 40-character sequence)
+   ** This form of authentication can be used without the need for SSL as the secret is never actually transmitted, just the MAC. (如果傳輸的內容不敏感的話，或是加密過)
+   ** The best thing you can do to secure your requests is to use SSL (Secure Sockets Layer, e.g., HTTPS). SSL is a protocol for securing communication across the Internet.
+   ** As the key pairs are independent of admin credentials they can be deleted or disabled when systems are compromised therefor disabling their use. (重新發行 secret key 也是一個方式，但 client 要內建重取 secret key 的功能，要不就是定期換掉 secret key) - key rotation, which is a security best practice. If you have developer keys and you want to create new developer keys, we recommend that you first update your code with the new developer keys before you delete the old keys. When you delete developer keys, they become immediately invalid and they are not recoverable.
+ * As far as disadvantages, there are indeed some:
+   ** Not a lot of consistency in the implementations outside of the ones which interface with Amazon.
+   ** Server side implementations are few in number, and also very inconsistent.
+   ** In cases where all headers within a request are signed you need to be VERY careful at the server or client side to avoid headers being injected or modified by your libraries.
+ * One interesting point made was the issue of replay attacks, which is where a valid message is maliciously or fraudulently repeated or delayed. This is either performed by the originator or by a man in the middle who retransmits the message, possibly as a part of a denial of service. 把 date header 內容也一起編進 hmac 應該就可以緩解這個問題。
+   ** The only way to protect against “replay attacks” on your API is to include a timestamp of time kind along with the request so the server can decide if this is an “old” request, and deny it.
+   ** The timestamp must be included into the HMAC generation (effectively stamping a created-on time on the hash) in addition to being checked “within acceptable bounds” on the server. Since you already determined this timestamp was within acceptable bounds to be accepted, you have to re-apply it to the hash calculation to make sure it was the same timestamp sent from the client originally, and not a made-up timestamp from a man-in-the-middle attack.
+ * Amazon S3
+   ** Every non-anonymous request to S3 must contain authentication information to establish the identity of the principal (當事人) making the request. In REST, this is done by first "putting the headers in a canonical format", then signing the headers using your AWS Secret Access Key.
+   ** There are two ways to send your signature with a request. The first is to put your AWS Access Key ID and the signature you computed into the Authorization header:
++
+--------------------------------------------------------------------------------
+"Authorization: AWS " + AWSAccessKeyId + ":"  + base64(hmac-sha1(VERB + "\n" 
+							     + CONTENT-MD5 + "\n" 
+							     + CONTENT-TYPE + "\n" 
+							     + DATE + "\n" 
+							     + CanonicalizedAmzHeaders + "\n" 
+							     + CanonicalizedResource))
+--------------------------------------------------------------------------------
++
+ * There are two oauth use cases: 2-legged and 3-legged
+   ** 2-legged is when you want to protect your API, so that it can be called only from authenticated consumer applications. This is a popular scheme that exists from ages AFAIK - the consumer signs every request with a consumer shared key, and the provider (your API), signs the request also to see if the signature match (否則回 401 Unauthorized). This way you can tell if API usage is ok for that consumer. 原來 OAuth 不一定要納入 user 的概念??
+   ** 3-legged oauth includes the end-user of the consumer 3rd party app. It is very suitable, if you want to protect your API again like in 2-legged, because requests are still signed, but also your API can be protected by the end-user's permission. The provider of the API issues a token and gives it to the consumer application (3rd party app). Then this app saves the token locally and "redirects the user to provider for authorization of the token"??. When the user authorizes it, the provider sends back the user to the consumer application and then consumer can make authenticated (signed) and authorized (by the user - 3rd leg) requests to your API.
+   ** If somebody open your program and disassemble the code and extract the shared key, then he can make application which will authenticate successfully to the provider API. However this is not a very big concern if user authorization is required (3-legged), because the user will still be asked to give permission to this false application - and now it's up to the user to make the proper choice. And besides that - the false app will not be able to steal user's credentials, because with oauth, user credentials are entered only at the provider's site.
+ 
+////////////////////////////////////////////////////////////////////////////////
+

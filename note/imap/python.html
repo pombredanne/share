@@ -1,0 +1,275 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[IMAP] 用 Python + IMAP 讀取信件</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<!--link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" /-->
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <!--div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div-->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <!--a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a--></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="imap.html">IMAP</a> / Python</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p><code>imaplib</code> 實作了 <a href="http://tools.ietf.org/html/rfc2060.html">RFC 2060</a>（而非最新的 RFC 3501），可以用來跟 IMAP4 server 溝通，主要的兩個 class 是 <code>IMAP4</code> 跟 <code>IMAP4_SSL</code>。</p></div>
+<div class="paragraph"><p><code>IMAP4_SSL</code> 繼承自 <code>IMAP4</code>，差別在於 <code>IMAP4_SSL</code> 走 IMAP-over-SSL (TCP 993)，而 <code>IMAP4</code> 則走一般的 TCP 143。</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">imaplib</span><span class="o">,</span> <span class="nn">inspect</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inspect</span><span class="o">.</span><span class="n">getmro</span><span class="p">(</span><span class="n">imaplib</span><span class="o">.</span><span class="n">IMAP4_SSL</span><span class="p">)</span>
+<span class="go">(imaplib.IMAP4_SSL, imaplib.IMAP4)</span>
+</pre></div></div></div>
+<div class="paragraph"><p>首先跟 IMAP4 server 建立連線，並完成登入：</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">imap</span> <span class="o">=</span> <span class="n">imaplib</span><span class="o">.</span><span class="n">IMAP4_SSL</span><span class="p">(</span><span class="s">&#39;imap.gmail.com&#39;</span><span class="p">)</span> <span class="c"># <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">imap</span><span class="o">.</span><span class="n">login</span><span class="p">(</span><span class="s">&#39;username@gmail.com&#39;</span><span class="p">,</span> <span class="s">&#39;password&#39;</span><span class="p">)</span>
+<span class="go">(&#39;OK&#39;, [&#39;username@gmail.com ... authenticated (Success)&#39;])</span>
+</pre></div></div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+constructor 內部會呼叫 <code>open()</code> 跟 server 建立連線。如果無法跟 server 建立連線，這一步就會出錯。
+</td></tr>
+</table></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">所有的 method 都跟 IMAP command 對應，例如 <code>login()</code> 之於 <code>LOGIN</code> command。另外，所有 method 的回傳值都是一個 tuple - <code>(result, [data, ...])</code>，其中 <em>result</em> 可能是 <code>OK</code> 或 <code>NO</code>，而每一個 <em>data</em> 則可能是單純的 string 或另一個 tuple。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>選取要操作的 mailbox：</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">imap</span><span class="o">.</span><span class="n">select</span><span class="p">()</span> <span class="c"># <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></span>
+<span class="go">(&#39;OK&#39;, [&#39;5&#39;])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">imap</span><span class="o">.</span><span class="n">list</span><span class="p">()</span>   <span class="c"># <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></span>
+<span class="go">(&#39;OK&#39;,</span>
+<span class="go"> [&#39;(\\HasNoChildren) &quot;/&quot; &quot;INBOX&quot;&#39;,</span>
+<span class="go">  &#39;(\\Noselect \\HasChildren) &quot;/&quot; &quot;[Gmail]&quot;&#39;,</span>
+<span class="go">  &#39;(\\HasChildren \\HasNoChildren \\All) &quot;/&quot; &quot;[Gmail]/&amp;UWiQ6JD1TvY-&quot;&#39;,</span>
+<span class="go">  &#39;(\\HasChildren \\HasNoChildren \\Trash) &quot;/&quot; &quot;[Gmail]/&amp;V4NXPmh2-&quot;&#39;,</span>
+<span class="gp">...</span>
+</pre></div></div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+<code>select(mailbox='INBOX')</code> 用來選取接下來要操作的 mailbox（預設是 <code>INBOX</code>）。傳回值是該 mailbox 下的 message 數量。
+<div class="paragraph"><p>如果沒做這個動作，接下來的操作可能會遇到 "command xxx illegal in state AUTH, only allowed in states SELECTED" 的錯誤。</p></div>
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+可以用 <code>list()</code> 取得所有 mailbox 的清單。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>CAUTION:</p></div>
+<div class="exampleblock">
+<div class="content">
+<div class="paragraph"><p>某些 method 的執行結果是 <code>NO</code> 時，並不會丟出例外：</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; imap.select('FOOBAR')
+&gt;&gt;&gt; ('NO', ['[NONEXISTENT] Unknown Mailbox: FOOBAR (Failure)'])</code></pre>
+</div></div>
+<div class="paragraph"><p>所以在執行下一個步驟之前，最好先檢查 <code>(result, [data, ...])</code> 中的 <em>result</em> 是不是 <code>OK</code>。</p></div>
+</div></div>
+<div class="paragraph"><p>取得該 mailbox 下的 message 清單：</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">imap</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="s">&quot;UNSEEN&quot;</span><span class="p">)</span> <span class="c"># <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></span>
+<span class="go">(&#39;OK&#39;, [&#39;9&#39;])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">imap</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="s">&quot;ALL&quot;</span><span class="p">)</span>
+<span class="go">(&#39;OK&#39;, [&#39;1 2 3 4 5 6 7 8 9&#39;])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">_</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">last_msgnum</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+</pre></div></div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+<code>search(charset, criterion[, ...])</code> 在目前選定的 mailbox 下符合某些條件的 message。傳回值是符合條件的 message sequence numbers。（按收件時間排序，最後一個號碼最新？）
+<div class="paragraph"><p>其中 <em>charset</em> 可以傳入 <code>None</code>，後面接的則是一或多個 search keys；<code>UNSEEN</code> 表示只取回未閱讀的部份，<code>ALL</code> 則表示不做過濾並取回 mailbox 裡全部的 messages。</p></div>
+</td></tr>
+</table></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">為了避免信件被誤判為垃圾信件，建議把寄件者加到聯絡人裡。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>讀取信件的內容：</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">imap</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="n">last_msgnum</span><span class="p">,</span> <span class="s">&#39;(RFC822)&#39;</span><span class="p">)</span> <span class="c"># <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></span>
+<span class="go">(&#39;OK&#39;,</span>
+<span class="go"> [(&#39;9 (RFC822 {55037}&#39;,</span>
+<span class="go">   &#39;Delivered-To: username@gmail.com\r\n...Date: Sun, 28 Apr 2013 08:53:03 +0800\r\nMessage-ID:  &lt;CAJr-f47iq2Shz8KwFRCGS9O8kUAfGcOVu4t6Sh0e0E74jGGRFQ@mail.gmail.com&gt;\r\nSubject: =?Big5?B?s2+sT6RAq8q0+rjVq0g=?=\r\nFrom: Jeremy Kao &lt;xxx@gmail.com&gt;\r\nTo: username@gmail.com\r\nContent-Type: multipart/mixed; boundary=089e0158a888c7b68404db61309c\r\n\r\n--089e0158a888c7b68404db61309c\r\nContent-Type: multipart/related; boundary=089e0158a888c7b68304db61309b\r\n\r\n--089e0158a888c7b68304db61309b\r\nContent-Type: multipart/alternative; boundary=089e0158a888c7b68104db61309a\r\n\r\n--089e0158a888c7b68104db61309a\r\nContent-Type: text/plain; charset=Big5\r\nContent-Transfer-Encoding: base64\r\n\r\nsXqmbiwgp/OmaLjqsFS90KfkIEdvb2dsZSCkaq+rIDxodHRwOi8vd3d3Lmdvb2dsZS5jb20+Lg0K\r\nDQpbaW1hZ2U6IElubGluZSBpbWFnZSAxXQ0K\r\n--089e0158a888c7b68104db61309a\r\nContent-Type: text/html; charset=Big5\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n&lt;div dir=3D&quot;ltr&quot;&gt;=B1z=A6n, =A7=F3=A6h=B8=EA=B0T=BD=D0=A7=E4 &lt;a href=3D&quot;http=\r\n://www.google.com&quot;&gt;Google =A4j=AF=AB&lt;/a&gt;.&lt;br&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;img src=\r\n=3D&quot;cid:ii_13e4e1d8544657bd&quot; alt=3D&quot;Inline image 1&quot; width=3D&quot;490&quot; height=3D=\r\n&quot;169&quot;&gt;&lt;br&gt;&lt;/div&gt;&lt;/div&gt;\r\n\r\n--089e0158a888c7b68104db61309a--\r\n--089e0158a888c7b68304db61309b\r\nContent-Type: image/png; name=&quot;logo4w.png&quot;\r\nContent-Transfer-Encoding: base64\r\nContent-ID: &lt;ii_13e4e1d8544657bd&gt;\r\nX-Attachment-Id: ii_13e4e1d8544657bd\r\n\r\niVBORw0KGgoAAAA...KJTcNiwAAAABJRU5ErkJggg==\r\n--089e0158a888c7b68304db61309b--\r\n--089e0158a888c7b68404db61309c\r\nContent-Type: image/png; name=&quot;logo4w.png&quot;\r\nContent-Disposition: attachment; filename=&quot;logo4w.png&quot;\r\nContent-Transfer-Encoding: base64\r\nX-Attachment-Id: f_hg1i3o0i1\r\n\r\niVBORw0K...KJTcNiwAAAABJRU5ErkJggg==\r\n--089e0158a888c7b68404db61309c--\r\n&#39;),</span>
+<span class="go">  &#39; FLAGS (\\Seen))&#39;]) # <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">_</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">raw</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s">&#39;/tmp/message.eml&#39;</span><span class="p">,</span> <span class="s">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span> <span class="c"># <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></span>
+<span class="gp">... </span>    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">imap</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="s">&#39;UNSEEN&#39;</span><span class="p">)</span> <span class="c"># <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></span>
+<span class="go">(&#39;OK&#39;, [&#39;&#39;])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">imap</span><span class="o">.</span><span class="n">store</span><span class="p">(</span><span class="n">last_msgnum</span><span class="p">,</span> <span class="s">&#39;+FLAGS&#39;</span><span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">Seen&#39;</span><span class="p">)</span>
+<span class="go">(&#39;OK&#39;, [&#39;9 (FLAGS (\\Seen))&#39;])</span>
+</pre></div></div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+<code>fetch(message_set, message_parts)</code> 可以取回 message 的內容，其中 <em>message_parts</em> 表示要取回 message 的哪些部份，傳入 <code>(RFC822)</code> 可以取得符合 RFC 822 格式的信件內容。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+透過 <code>fetch()</code> 讀取之後，信件就會被標上 <code>\Seen</code>。（所有的 flag 前面都有個反斜線 <code>\</code>）
+<div class="paragraph"><p><code>store(message_set, command, flag_list)</code> 可以調整 message 的 flags。其中 <em>command</em> 可以是 <code>+FLAGS</code>、<code>-FLAGS</code> 等，用來增加或拿掉某些 flags。這裡 <code>'-FLAGS', '\\Seen'</code> 的用法就是 "標示為未讀取"。</p></div>
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+RFC 822 其實就是 <code>.eml</code>，可以用 Thuderbird 或 Outlook (Express) 等郵件程式直接開啟，當然也可以<a href="../email/python.html">用 Python 程式處理</a>。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>基本上，透過 <code>imaplib</code> 操作 IMAP 還是有點鎖碎，而且要對 IMAP 協定有些瞭解才行。從 IMAP 信箱收取信件的動作還滿常見的，值得包裝起來。</p></div>
+<div class="listingblock">
+<div class="title"><a href="python/imaputil.py"><code>imaputil.py</code></a></div>
+<div class="content"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">imaplib</span> <span class="kn">import</span> <span class="n">IMAP4</span><span class="p">,</span> <span class="n">IMAP4_SSL</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;IMAPClient&#39;</span><span class="p">]</span>
+
+<span class="k">class</span> <span class="nc">IMAPClient</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">,</span> <span class="n">imap_server</span><span class="p">,</span> <span class="n">ssl</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_imap</span> <span class="o">=</span> <span class="n">imap</span> <span class="o">=</span> <span class="p">(</span><span class="n">IMAP4_SSL</span> <span class="k">if</span> <span class="n">ssl</span> <span class="k">else</span> <span class="n">IMAP4</span><span class="p">)(</span><span class="n">imap_server</span><span class="p">)</span>
+        <span class="n">imap</span><span class="o">.</span><span class="n">login</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
+        <span class="n">imap</span><span class="o">.</span><span class="n">select</span><span class="p">()</span> <span class="c"># INBOX</span>
+
+    <span class="k">def</span> <span class="nf">mark_all_as_read</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">imap</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_imap</span>
+        <span class="n">imap</span><span class="o">.</span><span class="n">recent</span><span class="p">()</span>
+        <span class="n">result</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">imap</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="s">&#39;UNSEEN&#39;</span><span class="p">)</span>
+        <span class="n">msgnums</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">msgnum</span> <span class="ow">in</span> <span class="n">msgnums</span><span class="p">:</span>
+            <span class="n">imap</span><span class="o">.</span><span class="n">store</span><span class="p">(</span><span class="n">msgnum</span><span class="p">,</span> <span class="s">&#39;+FLAGS&#39;</span><span class="p">,</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">Seen&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">wait_for_an_email</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">120</span><span class="p">):</span>
+        <span class="n">imap</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_imap</span>
+        <span class="n">timeout</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">+</span> <span class="n">timeout</span>
+        <span class="k">while</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">timeout</span><span class="p">:</span>
+            <span class="n">imap</span><span class="o">.</span><span class="n">recent</span><span class="p">()</span>
+            <span class="n">result</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">imap</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="s">&#39;UNSEEN&#39;</span><span class="p">)</span>
+            <span class="n">msgnums</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">msgnums</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+               <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">msgnums</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span> <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="s">&#39;There are more than one messages received.&#39;</span><span class="p">)</span>
+               <span class="n">result</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">imap</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="n">msgnums</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s">&#39;(RFC822)&#39;</span><span class="p">)</span>
+               <span class="k">return</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&#39;Timeout!&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">imap</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_imap</span>
+        <span class="n">imap</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">imap</span><span class="o">.</span><span class="n">logout</span><span class="p">()</span>
+</pre></div></div></div>
+<div class="paragraph"><p>用起來像是：</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">imaputil</span> <span class="kn">import</span> <span class="n">IMAPClient</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">imap</span> <span class="o">=</span> <span class="n">IMAPClient</span><span class="p">(</span><span class="s">&#39;username@gmail.com&#39;</span><span class="p">,</span> <span class="s">&#39;password&#39;</span><span class="p">,</span> <span class="s">&#39;imap.gmail.com&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">imap</span><span class="o">.</span><span class="n">mark_all_as_read</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rfc822</span> <span class="o">=</span> <span class="n">imap</span><span class="o">.</span><span class="n">wait_for_an_email</span><span class="p">()</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">email</span> <span class="kn">import</span> <span class="n">message_from_string</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">message</span> <span class="o">=</span> <span class="n">message_from_string</span><span class="p">(</span><span class="n">rfc822</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">message</span><span class="o">.</span><span class="n">get_content_type</span><span class="p">()</span>
+<span class="go">&#39;multipart/mixed&#39;</span>
+</pre></div></div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_延伸閱讀">延伸閱讀</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="../email/python.html">用 Python 解開信件的內容</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://docs.python.org/2/library/imaplib.html">imaplib — IMAP4 protocol client</a> <sup><a href="https://diigo.com/0y9vu">閱讀</a></sup>
+</p>
+</li>
+<li>
+<p>
+<a href="http://yuji.wordpress.com/2011/06/22/python-imaplib-imap-example-with-gmail/">Python — imaplib IMAP example with Gmail | Useful Stuff.</a> <sup><a href="https://diigo.com/0y9wa">閱讀</a></sup> (2011-06-22)
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2013-06-04 22:38:44 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<!--script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script-->
+</body>
+</html>

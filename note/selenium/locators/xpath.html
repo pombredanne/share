@@ -1,0 +1,289 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>Selenium Locators: XPath</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<!--link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" /-->
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <!--div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div-->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <!--a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a--></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>Selenium Locators: XPath</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../../_asciidoc/images/icons/warning.png" alt="Warning" />
+</td>
+<td class="content">
+<div class="paragraph"><p>XPath 已被證實在 IE 下運作得特別沒有效率，所以 locator 應該儘可能避開 XPath。通常簡單的 XPath 都可以用 CSS selector 取代，會更有效率。而且有時候如果遇到 IE 下突然中斷的錯誤（通常不是很穩定），通常換成 CSS 就可以了。</p></div>
+<div class="paragraph"><p>ERROR: Command execution failure. Please search the user group at <a href="https://groups.google.com/forum/#!forum/selenium-users">https://groups.google.com/forum/#!forum/selenium-users</a> for error details from the log window.  The error message is: Invalid argument.</p></div>
+</td>
+</tr></table>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre><code>[xpath=]&lt;path_expression&gt;</code></pre>
+</div></div>
+<div class="paragraph"><p>Element 沒有 <code>id</code>/<code>name</code> 屬性可供定位時，通常採用 XPath “就近“ 找一個有 <code>id</code>/<code>name</code> 屬性的 element（最好是 parent element）做為 “相對的起點“，然後再依兩者的關係（relationship）用 relative 的表示法（path expression 以 <code>//</code> 開頭）定位到該沒有 <code>id</code>/<code>name</code> 屬性的 element。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">可以用 Firebug + FirePath 來幫忙拼寫 path expression（事實上 Firepath 也支援 CSS selector）。只是 FirePath 提示的 relative path expression 以 <code>.//</code> 開頭（前面多了一個點，表示 current node），記得要把前面換成 <code>//</code> 才能被 Selenium 所接受。</td>
+</tr></table>
+</div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../../_asciidoc/images/icons/important.png" alt="Important" />
+</td>
+<td class="content">
+<div class="paragraph"><p>XPath 當然也支援 absolute 的表示法（path expression 以 <code>/</code> 開頭，而非 <code>//</code>），但這會讓測試變得很脆弱，除非頁面中完全沒有 <code>id</code>/<code>name</code> 屬性可用，也就只好用 absolute 表示法了。當然也別忘了，XPath 也可以比對 <code>id</code>/<code>name</code> 以外的屬性，如果某些屬性值的變動性不大，拿來做為定位的依據，通常會比用相依於頁面結構的 path expression 來得好。</p></div>
+<div class="paragraph"><p>由於 XPath 本質上就是在走 DOM 的內容，所以撰寫 path expression 時也要注意不同瀏覽器在 DOM 上表現的差異。</p></div>
+</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>以上面 Identifier/ID/Name strategy 的例子為例，說明 XPath strategy 相對應的用法：</p></div>
+<div class="listingblock">
+<div class="title"><code>id_name.html</code></div>
+<div class="content">
+<pre><code>&lt;html&gt;
+  &lt;body&gt;
+    &lt;form&gt;
+      Username: &lt;input type="text" name="Username" id="acc" /&gt;                                         <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+      Password: &lt;input type="password" name="Password" id="pwd" /&gt;
+      &lt;input type="radio" name="Trusted" id="Trusted" value="no" /&gt;This is a public or shared computer <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+      &lt;input type="radio" name="Trusted" id="Trusted" value="yes" /&gt;This is a private computer         <img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+      &lt;input type="submit" value="Sign in" /&gt;
+    &lt;/form&gt;
+  &lt;/body&gt;
+&lt;/html&gt;</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+下面這幾種寫法都可以定位到輸入帳號的欄位：
+<div class="ulist"><ul>
+<li>
+<p>
+<code>xpath=//*[@id='acc']</code>（<em>relative</em> 表不法以 <code>//</code> 開頭，<code>xpath=</code> 可以省略）
+</p>
+</li>
+<li>
+<p>
+<code>//*[@name='Username']</code>
+</p>
+</li>
+<li>
+<p>
+<code>xpath=/html/body/form/input</code>（<em>absolute</em> 表示法不是以 <code>//</code> 開頭，<code>xpath=</code> 不可以省略）
+</p>
+</li>
+<li>
+<p>
+<code>//input[@type='radio'][1]</code>（XPath 的索引值是 one-based）
+</p>
+</li>
+</ul></div>
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+下面這幾種寫法都可以定位到選擇 “使用公用電腦“ 的欄位：
+<div class="ulist"><ul>
+<li>
+<p>
+<code>//*[@id='Trusted']</code>（雖然同一份 HTML 文件裡 <code>id</code> 屬性值不該重複）
+</p>
+</li>
+<li>
+<p>
+<code>//*[@name='Trusted']</code> 或 <code>//*[@name='Trusted'][1]</code>（採用第一個 <code>name</code> 屬性符合條件者）
+</p>
+</li>
+<li>
+<p>
+<code>//*[@name='Trusted'][@value='no']</code>
+</p>
+</li>
+</ul></div>
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+下面這幾種寫法都可以定位到選擇 “使用私人電腦“ 的欄位：
+<div class="ulist"><ul>
+<li>
+<p>
+<code>//*[@type='radio'][2]</code>
+</p>
+</li>
+<li>
+<p>
+<code>//*[@name='Trusted'][@value='yes']</code>
+</p>
+</li>
+</ul></div>
+</td></tr>
+</table></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">雖然 path expression 以 <code>//</code> 開頭時，<code>xpath=</code> 可以省略掉，但如果偶而會用到 absolute 的表示法，忘了加 <code>xpath=</code> 就會出錯。糟糕的是這個錯誤並不容易發現（因為 path expression 怎麼看都對），因此建議習慣性地加上 <code>xpath=</code>，才不會不小心掉進這個陷阱裡。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>另外 XPath 還支援 function，可以用來做更為彈性的判斷。常用的 function 有：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>contains(string1,string2)</code> - 判斷 <em>string1</em> 裡是否包含 <em>string2</em>。
+</p>
+</li>
+<li>
+<p>
+<code>starts-with(string1,string2)</code> - 判斷 <em>string1</em> 是否以 <em>string2</em> 開頭。
+</p>
+</li>
+<li>
+<p>
+<code>ends-with(string1,string2)</code> - 判斷 <em>string1</em> 是否以 <em>string2</em> 結尾。
+</p>
+</li>
+</ul></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">
+<div class="paragraph"><p>能夠用 <code>id</code>/<code>name</code> 屬性值來定位當然最好，不過許多 Web framework 採用動態產生 ID 的技術，導致 <code>id</code>/<code>name</code> 屬情值經常變動。</p></div>
+<div class="paragraph"><p>例如 Ajax.NET 產生 <code>ctl00_ctl00_cp_cpTab_txtFirstName</code> 的 ID（前面的 <code>ctl00_ctl00_cp_cpTab_</code> 會一直變），單純用 Identifer/ID/Name strategy 無法定位，但可以改用下面的 XPath strategy 來定位：</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>//input[ends-with(@id, '_txtFirstName')]</code></pre>
+</div></div>
+<div class="paragraph"><p>當然除了 <code>id</code>/<code>name</code> 之外，如果有相對穩定的屬性值可供參考，也是不錯的選擇。</p></div>
+</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>更多關於 XPath 的用法，請參考：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://en.wikipedia.org/wiki/Xpath">XPath - Wikipedia, the free encyclopedia</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.w3schools.com/xpath/default.asp">XPath Tutorial - W3Schools</a>
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.w3schools.com/xpath/xpath_functions.asp">XPath, XQuery, and XSLT Function Reference</a>
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+<a href="http://www.w3.org/TR/xpath/">W3C XPath Recommendation (1.0)</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.w3.org/TR/xpath20/">W3C XPath Recommendation (2.0)</a>
+</p>
+</li>
+</ul></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">
+<div class="title">XPath 1.0 或 2.0</div>
+<div class="paragraph"><p>從各種資料看起來，Selenium 用的是 XPath 1.0，因此像是 <code>upper-case(string)</code>、<code>lower-case(string)</code> 丟 XPath function 都不能用&#8230;</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/554964/selenium-how-do-i-execute-an-xpath-function-or-expression-in-my-test">Selenium: How do I execute an Xpath function or expression in my test? - Stack Overflow</a> (2009-02-16)
+</p>
+</li>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/1936301/can-i-use-xpath-2-0-with-firefox-and-selenium">Can I use xpath 2.0 with firefox and selenium? - Stack Overflow</a> (2009-12-20)
+</p>
+</li>
+<li>
+<p>
+<a href="http://selenium-python.readthedocs.org/en/latest/faq.html#does-selenium-2-supports-xpath-2-0">Does Selenium 2 supports XPath 2.0 ? — Selenium Python Bindings 2.3 documentation</a>
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+<div class="paragraph"><p><a href="http://blogs.atlassian.com/developer/2007/08/selenium_is_the_pain_worth_it.html">也有人提到 Each browser constructs its DOM differently and may evaluate the expressions differently.</a>&#8230;</p></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2013-06-04 22:56:50 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<!--script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script-->
+</body>
+</html>

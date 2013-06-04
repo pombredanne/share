@@ -1,0 +1,36 @@
+= link:networking.html[Debian / Networking] / 反查某個 port 是由哪個 process 綁定 =
+:title: [Debian][Net] 反查某個 port 是由哪個 process 綁定
+
+先用 `netstat` 查出本機在 listen 哪些 ports：
+
+--------------------------------------------------------------------------------
+$ netstat -a | grep LISTEN | grep -v unix
+tcp        0      0 localhost:domain        *:*                     LISTEN     
+tcp        0      0 *:ssh                   *:*                     LISTEN     
+tcp        0      0 localhost:ipp           *:*                     LISTEN     
+tcp        0      0 *:17500                 *:*                     LISTEN     
+tcp6       0      0 [::]:ssh                [::]:*                  LISTEN     
+tcp6       0      0 ip6-localhost:ipp       [::]:*                  LISTEN
+--------------------------------------------------------------------------------
+
+再用 `lsof` (list open files) 反查是哪個 process：
+
+--------------------------------------------------------------------------------
+$ sudo lsof -i :22
+COMMAND PID USER   FD   TYPE DEVICE SIZE/OFF NODE NAME
+sshd    900 root    3r  IPv4   8877      0t0  TCP *:ssh (LISTEN)
+sshd    900 root    4u  IPv6   8879      0t0  TCP *:ssh (LISTEN)
+--------------------------------------------------------------------------------
+
+== 參考資料 ==
+
+ * http://www.debian-administration.org/articles/184[How to find out which process is listening upon a port] ^https://diigo.com/0yy8t[閱讀]^
+////////////////////////////////////////////////////////////////////////////////
+** These don't help you much if you have a service which has had it's default port changed - something some people suggest you do as a means of increasing security. (Personally I believe such misdirection is misguided at best, and counter-productive at worst). 原來這種行為是不被鼓勵的?
+** What you really need to do is to lookup the process which is currently bound to the given network port. Thankfully this is a simple job with use of the `lsof` package.
+** `lsof -i :port`
+** To see all the ports open for listening upon the current host you can use another command `netstat`
+** `netstat -a | grep LISTEN | grep -v unix` (The second grep we used above was to ignore Unix domain sockets)
+** It's often used to see which files are open upon mounted devices, so you can kill the processes and unmount them cleanly??
+////////////////////////////////////////////////////////////////////////////////
+ * http://www.cyberciti.biz/faq/what-process-has-open-linux-port/[Linux: Find Out Which Process Is Listening Upon a Port] (2010-10-31)

@@ -1,0 +1,65 @@
+= link:applescript.html[AppleScript] / Scripting Bridge =
+:title: [AppleScript] Scripting Bridge
+
+--------------------------------------------------------------------------------
+>>> from Foundation import *
+>>> from ScriptingBridge import *
+>>>
+>>> finder = SBApplication.applicationWithBundleIdentifier_("com.apple.Finder")
+>>> finder.activate()
+>>>
+>>> system_events = SBApplication.applicationWithBundleIdentifier_("com.apple.SystemEvents")
+>>> for process in system_events:
+...     print process.name()
+...
+loginwindow
+Dock
+Finder
+System Events
+Python
+>>> processes = dict([(process.name(), process) for process in system_events.processes()])
+>>> finder = processes['Finder']
+>>> # finder = system_events.processes().objectWithName_('Finder')
+>>> finder.windows().count()
+1
+>>> len(finder.windows())
+1
+--------------------------------------------------------------------------------
+
+== 參考資料 ==
+
+.網站
+--
+ * http://www.macosxautomation.com/applescript/features/scriptingbridge.html[AppleScript: Scripting Bridge]
+////////////////////////////////////////////////////////////////////////////////
+** AppleScript scripts, when executed, are translated by the AppleScript frameworks into Apple Events used to query and control "scriptable" applications.
+** Mac OS X v.10.5 includes a new framework called Scripting Bridge that enables common languages, such as Ruby, Python, and Objective-C, to easily send Apple Events to scriptable applications.
+////////////////////////////////////////////////////////////////////////////////
+--
+
+.文件
+--
+ * https://developer.apple.com/library/mac/#documentation/applescript/conceptual/applescriptx/Concepts/scripting_bridge.html[AppleScript Overview: Scripting Bridge]
+ * http://arstechnica.com/apple/2011/09/tutorial-os-x-automation-with-macruby-and-the-scripting-bridge/[Tutorial: OS X automation with MacRuby and the Scripting Bridge | Ars Technica] (2011-09-27) - Safari 跟 Evernote 都可以控制。
+ * http://www.coronalabs.com/blog/2011/08/11/automated-testing-on-mobile-devices-part4/[(Part 4) Automated Testing on the iOS Simulator: Scripting Bridge/LuaCocoa & System Events | Corona Labs] (2011-08-11) - 透過 scripting bridge 控制 iOS simulator。
+ * http://www.macresearch.org/scripting-apps-without-applescript[Scripting Apps Without AppleScript | MacResearch] (2007-12-03) - 用 Python 做說明。
+--
+
+.其他文件
+--
+ * http://www.cocoabuilder.com/archive/cocoa/286306-scripting-bridge-for-gui-scripting.html[Scripting Bridge for GUI scripting? | Cocoabuilder] ^https://diigo.com/0yr3x[閱讀]^ (2010-04-28) - 還是沒提到 System Events 的 bundle identifer
+////////////////////////////////////////////////////////////////////////////////
+** GUI scripting is done by a helper application, "System Events", I think. You probably just have to point the scripting bridge tool at that helper application and you'll get a neat header to call.
+** GUI Scripting is based on the terminology dictionary in the System Events application (the Processes Suite). So you do with System Events what you would do for any Scripting Bridge situation:
+** generate a System Events.h header file using Apple's tools, pursuant to the documentation, and add the header to your project??
+** I'd personally keep that code as compiled AppleScripts (.scpt files) stored within the .app bundle for ease of maintenance.
+////////////////////////////////////////////////////////////////////////////////
+--
+
+////////////////////////////////////////////////////////////////////////////////
+
+ * 找資料時不要限定 python，因為 Ruby/Objective-C 相關的資料好像比較多，還好 API 是一樣的...
+ * 不只在 GUI automation，對 non-GUI automation 也很有幫助。
+
+////////////////////////////////////////////////////////////////////////////////
+

@@ -1,6 +1,60 @@
 = link:concepts.html[JavaFX / Concepts] / Bindings =
 :title: [JavaFX] Bindings
 
+[quote,'http://docs.oracle.com/javafx/2/api/javafx/beans/Observable.html#addListener(javafx.beans.InvalidationListener)[Observable.addListener()]']
+________________________________________________________________________________
+The `Observable` stores a strong reference to the listener which will prevent the listener from being garbage collected and may result in a 'memory leak'. It is recommended to either unregister a listener by calling `removeListener` after use or to use an instance of `WeakInvalidationListener` avoid this situation.
+________________________________________________________________________________
+
+[quote,'http://docs.oracle.com/javafx/2/api/javafx/beans/binding/Binding.html#dispose()[`Binding.dispose()`]']
+________________________________________________________________________________
+Signals to the `Binding` that it will not be used anymore and any references can be removed. A call of this method usually results in the binding stopping to observe its dependencies by unregistering its listener(s). The implementation is optional.
+
+**All bindings in our implementation use instances of `WeakInvalidationListener`, which means usually a binding does not need to be disposed.** But if you plan to use your application in environments that do not support `WeakReference`s you have to dispose unused `Binding`s to avoid memory leaks.
+________________________________________________________________________________
+
+這也就是為什麼 `Binding.dispose()` 的實作都這麼寫著－"A default implementation of `dispose()` that is empty."。
+
 == 參考資料 ==
 
+.手冊
+--
+ * http://docs.oracle.com/javafx/2/api/javafx/beans/binding/Binding.html[`Binding`] ^https://diigo.com/0xn3j[閱讀]^
+ * http://docs.oracle.com/javafx/2/api/javafx/beans/Observable.html[`Observable`] ^https://diigo.com/0xn3d[閱讀]^, http://docs.oracle.com/javafx/2/api/javafx/beans/WeakInvalidationListener.html[`WeakInvalidationListener`]
+ * http://docs.oracle.com/javafx/2/api/javafx/beans/value/ObservableValue.html[`ObservableValue`] ^https://diigo.com/0xn3e[閱讀]^, http://docs.oracle.com/javafx/2/api/javafx/beans/value/WeakChangeListener.html[`WeakChangeListener`]
+ * http://docs.oracle.com/javafx/2/api/javafx/collections/ObservableList.html[`ObservableList`], http://docs.oracle.com/javafx/2/api/javafx/collections/WeakListChangeListener.html[`WeakListChangeListener`]
+ * http://docs.oracle.com/javafx/2/api/javafx/collections/ObservableMap.html[`ObservableMap`], http://docs.oracle.com/javafx/2/api/javafx/collections/WeakMapChangeListener.html[`WeakMapChangeListener`]
+ * http://docs.oracle.com/javafx/2/api/javafx/collections/ObservableSet.html[`ObservableSet`], http://docs.oracle.com/javafx/2/api/javafx/collections/WeakSetChangeListener.html[`WeakSetChangeListener`]
+--
+
  * http://docs.oracle.com/javafx/2/binding/jfxpub-binding.htm[Using JavaFX Properties and Binding]
+
+.其他文件
+--
+ * http://stackoverflow.com/questions/14558266/clean-listeners-and-bindings-in-javafx-memory-leaks[Clean listeners and bindings in javafx (memory leaks) - Stack Overflow] (2013-01-28)
+ * https://forums.oracle.com/forums/thread.jspa?threadID=2394063[OTN Discussion Forums : How to deal with Memory Leaks, that are ...] (2011-11-28)
+--
+
+////////////////////////////////////////////////////////////////////////////////
+
+ * binding 一直讓我想起 LEGO 寫程式的介面，要在 input 跟 output 拉起一條線的畫面...
+ * binding -> memory (leak)
+ * bind 很方便，但畫面切換時沒人去做 unbinding，資源根本沒時間釋放掉造成 memory leak
+ * `Observable`
+   ** `addListener(InvalidationListener listener): void` - notified whenever it becomes invalid, stores a strong reference to the listener
+   ** `removeListener(InvalidationListener listener): void`
+ * `ObservableValue<T>`
+   ** `addListener(ChangeListener<? super T> listener): void`
+   ** `removeListener(ChangeListener<? super T> listener): void`
+ * `Binding<T>`
+   ** `dispose(): void`
+ * `ObjectBinding<T>`
+   ** `bind(Observable... dependencies): void`
+   ** `unbind(Observable... dependencies): void`
+ * `Property<T>`
+   ** `unbind(): void`
+   ** `unbindBidirectional(Property<T> other): void`
+
+
+////////////////////////////////////////////////////////////////////////////////
+

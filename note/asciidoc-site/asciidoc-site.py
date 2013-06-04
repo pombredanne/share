@@ -12,14 +12,15 @@ RENAMES_CSV = '_renames.csv' # with extension, for easy edit
 
 class DocumentSystem(object):
 
-    def __init__(self, site_dir):
+    def __init__(self, site_dir, focus_namepath=''):
         self.site_dir = site_dir
+        self.focus_namepath = focus_namepath.split(NAME_SEP)
+        if self.focus_namepath[-1] == '': del self.focus_namepath[-1]
         self.renames, self.renames_ci = self._init_renames()
         self.docs = self._init_documents()
 
     def _init_renames(self):
         # rename document files or resource directories before parsing
-
         renames = self._load_renames()
         renames_ci = {}
         site_dir = self.site_dir
@@ -60,20 +61,31 @@ class DocumentSystem(object):
                     if name in dirnames: dirnames.remove(name) # accompanying files
         return docs
 
-    def parse(self):
-        for doc in self.docs.itervalues():
-            doc.parse()
+    def _in_focus(self, doc):
+        return doc.namepath[:len(self.focus_namepath)] == self.focus_namepath
 
+    def parse(self):
+        for doc in self.docs.itervalues(): doc.parse()
+        
         for doc in self.docs.itervalues():
+            if not self._in_focus(doc): continue
             doc.fix_broken_links()
 
-        orphans = [doc.fullname for doc in self.docs.itervalues() if doc.is_orphan()]
+        qqdocs = [doc for doc in self.docs.itervalues() if self._in_focus(doc) and doc.has_qqs()]
+        if len(qqdocs) != 0:
+            qqs = []
+            for doc in qqdocs:
+                qqs.extend(["%s #%d: %s" % (doc.fullname, lineno, line) for (lineno, line) in doc.qqs])
+            logger.info('QQs:\n%s', '\n'.join(qqs))
+
+        orphans = [doc.fullname for doc in self.docs.itervalues() if self._in_focus(doc) and doc.is_orphan()]
         if len(orphans) != 0:
             orphans.sort()
-            # logger.warning('Orphan Pages\n%s', '\n'.join(orphans))
+            logger.warning('Orphan Pages:\n%s', '\n'.join(orphans))
 
     def build(self, force=False):
         for doc in self.docs.itervalues():
+            if not self._in_focus(doc): continue
             doc.build(force)
             if doc.build_failure: logger.warning('Build FAILURE; filename = [%s], details =\n%s\n' % 
                                                  (doc.filename, doc.build_failure))
@@ -84,6 +96,7 @@ class Document(object):
     _PATTERN_TITLE_ATTR = re.compile(r'^:title:\s*(.*)$')
     _PATTERN_LITERAL = re.compile(r'^\s+[^-*].*$')
     _PATTERN_LINK = re.compile(r'(?:link|image):{1,2}.+?\[.*?]')
+    _QQ_MARK = '??'
 
     def __init__(self, docsys, filename):
         self.docsys = docsys
@@ -91,6 +104,7 @@ class Document(object):
         self.mtime = path.getmtime(filename)
         self.dirname = path.dirname(filename)
         self.namepath, self.name, self.fullname = self._deduce_docnames(filename)
+        self.qqs = [] # quick questions, (linkno, line)
         self.links = []
         self.back_links = []
         self.build_failure = None
@@ -129,6 +143,8 @@ class Document(object):
 
                 if not self._PATTERN_LITERAL.match(line):
                     self._parse_line(line, lineno)
+                if self._QQ_MARK in line:
+                    self.qqs.append((lineno, line.strip()))
                 lineno += 1
 
     def _parse_line(self, line, lineno):
@@ -282,6 +298,9 @@ class Document(object):
     def is_orphan(self):
         return len(self.back_links) == 0
 
+    def has_qqs(self):
+        return len(self.qqs) > 0
+
 class Link(object):
 
     _PATTERN_LINK = re.compile(r'(?P<prefix>(?:link|image):{1,2})(?P<target>.*?)'
@@ -313,6 +332,7 @@ class Link(object):
             fname = path.join(doc.dirname, target.replace(NAME_SEP, os.sep))
             broken = not path.exists(fname)
         elif target.endswith('.html'):
+            # eliminate '..' and infer the fullname
             names = list(doc.namepath)
             names += target.rsplit('.', 1)[0].split(NAME_SEP)
             while '..' in names:
@@ -322,7 +342,7 @@ class Link(object):
             fullname = NAME_SEP.join(names)
             if (fullname in docs):
                 target = docs[fullname]
-                target.register_back_link(self)
+                if self.lineno != 1: target.register_back_link(self)
                 broken = False
             else: # resource? or renamed?
                 fname = path.join(doc.dirname, target.replace(NAME_SEP, os.sep))
@@ -337,8 +357,9 @@ class Link(object):
 def main():
     logging.basicConfig(level=logging.INFO, format='%(levelname)-6s - %(message)s')
     site_dir = path.abspath(sys.argv[1]) if len(sys.argv) > 1 else '/home/jeremy/data/Dropbox/WIKI'
+    focus_namepath = sys.argv[2] if len(sys.argv) > 2 else ''
 
-    docsys = DocumentSystem(site_dir)
+    docsys = DocumentSystem(site_dir, focus_namepath)
     docsys.parse()
     docsys.build(force=False) # TODO: option -f --force, debug level
 

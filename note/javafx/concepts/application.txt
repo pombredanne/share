@@ -1,0 +1,55 @@
+= link:../javafx.html[JavaFX] / Application =
+:title: [JavaFX] Application
+
+== 延伸閱讀 ==
+
+ * link:lifecycle.html[Lifecycle]
+
+== 參考資料 ==
+
+ * http://docs.oracle.com/javafx/2/api/javafx/application/Application.html[`javafx.application.Application`]
+
+////////////////////////////////////////////////////////////////////////////////
+
+ * entry point for JavaFX applications - application class, extends `javafx.application.Application`
+ * instantiate the application class -> call `init()` -> call `start(javafx.stage.Stage)` -> finish -> call `stop()`.
+   ** finish = call `Platform.exit()`, the last window has been closed and the `implicitExit` attribute on `Platform` is `true`
+ * `start()` is abstract. `init()` and `stop()` have default implementation that do nothing.
+ * `launch(args)` -> retrieved via `getParameters()`
+ * application thread, and launcher thread
+   ** for running the application start method, processing input events, and running animation timelines.
+   ** creation of JavaFX Scene and Stage objects as well as modification of scene graph operations to live objects (those objects already attached to a scene) must be done on the JavaFX application thread.
+   ** The Application constructor and init method are called on the launcher thread, not on the JavaFX Application Thread. This means that an application must not construct a Scene or a Stage in either the constructor or in the init method. An application may construct other JavaFX objects in the init method.
+
+--------------------------------------------------------------------------------
+import javafx.application.Application;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
+
+public class HelloWorld extends Application {
+
+    public static void main(String[] args) {
+        launch(args);
+    }
+
+    @Override
+    public void start(Stage stage) {
+        StackPane root = StackPaneBuilder.create()
+            .children(
+                TextBuilder.create()
+                    .text("Hello, World!")
+                    .fill(Color.rgb(187, 195, 107))
+                    .font(Font.font("SansSerif", FontWeight.BOLD, 24))
+                    .build()
+            )
+            .build();
+        stage.setScene(new Scene(root, 400, 300));
+        stage.setTitle("Hello JavaFX");
+        stage.show();
+    }
+
+}
+--------------------------------------------------------------------------------
+
+////////////////////////////////////////////////////////////////////////////////
+

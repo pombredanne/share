@@ -1,0 +1,51 @@
+= link:java.html[Selenium 2/WebDriver / Java Binding] / Hello, World! =
+:title: [Selenium 2/WebDriver][Java] Hello, World!
+
+建立一個 project：
+
+ $ mvn archetype:create -DgroupId=com.simplbug.selenium.helloworld -DartifactId=selenium-helloworld
+
+在 `pom.xml` 增加 Selenium WebDriver 的 dependency：
+
+[source,xml]
+--------------------------------------------------------------------------------
+<dependency>
+  <groupId>org.seleniumhq.selenium</groupId>
+  <artifactId>selenium-java</artifactId>
+  <version>2.32.0</version>
+</dependency>
+--------------------------------------------------------------------------------
+
+改寫 `src/test/java/com/simplbug/selenium/helloworld/AppTest.java`：
+
+TIP: 可以用 `mvn eclipse:eclipse` 產出 Eclipse Project，方便在 Eclipse 裡直接編輯。
+
+[source,java]
+--------------------------------------------------------------------------------
+package com.simplbug.selenium.helloworld;
+
+import junit.framework.TestCase;
+
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.firefox.FirefoxDriver;
+
+public class AppTest extends TestCase {
+
+    public void testApp() {
+        WebDriver driver = new FirefoxDriver();
+        driver.get("http://www.wikipedia.org/");
+        driver.findElement(By.linkText("English")).click();
+        driver.findElement(By.name("search")).click();
+        driver.findElement(By.name("search")).sendKeys("Hello world\n");
+        assertEquals("Hello world program - Wikipedia, the free encyclopedia", driver.getTitle());
+        driver.quit();
+    }
+
+}
+--------------------------------------------------------------------------------
+
+執行測試：
+
+ $ mvn test
+

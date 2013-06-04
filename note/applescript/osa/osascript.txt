@@ -1,6 +1,48 @@
 = link:../applescript.html[AppleScript] / link:osa.html[OSA] / `osascript` =
 :title: [AppleScript][OSA] `osascript`
 
+ osascript [-l language] [-s flags] [-e statement | programfile] [argument ...]
+
+`osascript` 可以從 command line 執行 OSA scripts；支援 plain text (`.applescript`) 跟 compiled script (`.scpt`)。
+
+以 link:../programming/hello-world.html[Hello World!] 為例：
+
+--------------------------------------------------------------------------------
+$ osascript hello-world.applescript 
+button returned:OK
+$ echo $?
+0
+$ osascript hello-world.applescript 
+hello-world.applescript:100:126: execution error: Finder got an error: User canceled. (-128) <1>
+$ echo $?
+1
+--------------------------------------------------------------------------------
+<1> `osascript` 預設會將 script errors 輸出到 STDERR，透過 `-s o` 可以將錯誤訊息併入 STDOUT（為什麼要這麼做？）。
++
+--
+故意選 Cancel 丟出錯誤：
+
+--------------------------------------------------------------------------------
+$ osascript hello-world.applescript 2> error # <1>
+$ cat /tmp/error
+hello-world.applescript:106:132: execution error: Finder got an error: User canceled. (-128)
+$ osascript -s o hello-world.applescript 2> error # <2>
+hello-world.applescript:106:132: execution error: Finder got an error: User canceled. (-128)
+--------------------------------------------------------------------------------
+<1> 預設（`-s e`）錯誤訊息會寫到 STDERR，所以 message 被 `2>` 導到 error 這個檔案。
+<2> 透過 `-s o` 要求將錯誤訊息併入 STDOUT，所以 message 直接被印出來了。
+--
+
+可以觀察到，當 exit status 為非零值時，表示執行過程中有錯。
+
+除了將檔案交給 `osascript` 執行之外，script 本身也可以從 STDIN 餵進去：
+
+ $ cat hello-world.applescript | osascript
+
+此時若要額外link:../programming/command-line-arguments.html[傳參數]進去的話，'programfile' 則要用 `-` 來表示，後面才接其他的參數：
+
+ $ cat hello-world.applescript | osascript - AppleScript
+
 == 參考資料 ==
 
  * http://developer.apple.com/library/mac/#documentation/Darwin/Reference/ManPages/man1/osascript.1.html[osascript(1) OS X Manual Page]

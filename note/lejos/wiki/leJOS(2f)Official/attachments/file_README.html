@@ -1,0 +1,385 @@
+     * [1]What is leJOS NXJ?
+     * [2]Preliminiaries
+     * [3]Installation and Set Up
+     * [4]Using leJOS NXJ
+     * [5]Compiling and running your first code
+     * [6]leJOS NXJ Tools
+     * [7]Using the debug monitor
+     * [8]Known limitations in leJOS
+     * [9]Known bugs in leJOS
+     * [10]Known bugs and limitations in leJOS NXJ
+     * [11]Documentation
+     * [12]License
+     * [13]Questions and Problems
+
+                               What is leJOS NXJ?
+
+   leJOS (sometimes pronounced like the Spanish word "lejos" for "far") is
+   a tiny Java-based operating system that has been ported to the
+   following platforms:
+     * LEGO Mindstorms NXT
+     * LEGO Mindstorms RCX
+     * Unix (for emulation of leJOS programs only)
+
+   leJOS was originally forked out of the
+   [14]TinyVM project. It contains a VM for Java bytecodes and additional
+   software to load and run Java programs. These are some of the features
+   offered:
+     * Object oriented language (Java)
+     * Preemptive threads (tasks)
+     * Arrays, including multi-dimensional ones
+     * Recursion
+     * Synchronization
+     * Exceptions
+     * Java types including float, double, long and String
+     * Math class
+     * Well-documented Robotics API
+
+   leJOS NXJ is the version of leJOS for the LEGO Mindstorms NXT. It uses
+   the same Java VM as the RCX version, but has new drivers for the NXT
+   hardware.
+
+   leJOS NXJ adds lots of new capability to leJOS including a file system,
+   a menu system, and support for I2C sensors, including those from third
+   parties. The built-in tachometers in the NXT motors have enabled much
+   improved control over speed, steering and navigation.
+
+   Bluetooth and USB communications are a great improvement over the
+   infra-red link used by the RCX.
+
+                                 Preliminaries
+
+     * You need a Java Development Kit (JDK), version 1.5 or later.
+     * Your PATH must contain the JDK's bin directory.
+     * Make sure you have set JAVA_HOME properly to the root directory of
+       the JDK (necessary if you use ant).
+     * On systems other than Microsoft Windows, you will need to build the
+       distribution, so your PATH must contain the ant binary (ant 1.7 or
+       above).
+     * On Microsoft Windows and MAC OS X you will need the LEGO Mindstorms
+       NXT software installed, as its USB drivers are used.
+     * On MAC OS X systems, you will need the OS X developer tools
+       installed.
+
+   libusb must be installed on Linux and can be obtained from
+   [15]http://libusb.sourceforge.net.
+   On Linux systems, if you are running leJOS NXJ from a non-root user,
+   you will need to ensure that you have read and write access the NXT USB
+   device in /dev/bus/usb. If you can identify the device in /dev/bus/usb,
+   you can do this by:
+   sudo chmod a+w /dev/bus/usb/xxx/yyy
+   However, the yyy number will count up each time the NXT is disconnected
+   and reconnected.
+   A better solution is to use udev rules or pamcomsole. How to do this
+   varies with different Linux systems. A pamconsole solution that works
+   on Fedora systems, is to create a file
+   /etc/security/console.perms.d/60-libusb.perms with the two lines:
+   <usbdevices>=/dev/bus/usb/*/*
+   <console> 0600 <usbdevices> 0644 root
+   To use udev rules, set up a file such as
+   /etc/udev/rules.d/70-lego.rules and populate it with the following
+   lines:
+   # Lego NXT
+   BUS=="usb", SYSFS{idVendor}=="03eb", GROUP="lego", MODE="0660"
+   BUS=="usb", SYSFS{idVendor}=="0694", GROUP="lego", MODE="0660"
+   This relies on the username you are using being in the lego group. You
+   can modify the file to your requirements. The two vendors are LEGO and
+   Atmel (for the samba driver used in firmware update mode). You may need
+   to restart udev.
+
+                            Installation and Set Up
+
+    1. Extract the files from the distribution. A lejos_nxj subdirectory
+       will be created.
+    2. Set the environment variable NXJ_HOME to the full path of the
+       lejos_nxj directory.
+    3. Add the lejos_nxj/bin directory to your PATH.
+    4. On Linux and Unix Systems, set LD_LIBRARY_PATH to your
+       lejos_nxj/bin directory. On some systems this is best set in
+       /etc/profile. On MAC OSX systems, you should set DYLD_LIBRARY_PATH
+       instead.
+    5. On Linux and Unix systems, depending on your privilege settings you
+       might need to adjust the execution permissions in the bin
+       directory.
+
+   On Linux and Unix systems, you will have to build the distribution
+   first. To do so, switch to the build folder and run ant. You will need
+   to ensure that the packages that leJOS NXJ is dependent on are on your
+   system. These include libusb-dev, gcj and libbluetooth-dev.
+
+                                Using leJOS NXJ
+
+     * Flash the leJOS NXJ firmware using nxjflash.
+     * Compile using nxjc instead of javac.
+     * Link, upload and run programs using nxj.
+     * Exceptions: Use nxj --verbose to get information on methods and
+       special classes used by your program. Exceptions are shown on the
+       NXT as Method:XXXX, CLASS:YY, where XXXX = method_signature and YY
+       = exception_class_index
+
+   Your NXT must be plugged into the USB, switched on to run nxjflash.
+   Note that the standard LEGO firmware will be overwritten and all
+   existing data lost. You can reinstall the LEGO firmware using the LEGO
+   Mindstorms software.
+
+   If you have an old version of leJOS on your NXT, or another third-party
+   operating system, you may need to be in firmware update mode. To put
+   the next in firmware upload, press the reset button with a paper clip
+   for 4 seconds or more. The NXT brick will start to tick.
+
+   To run nxjflash, open a command window, and type nxjflash
+
+   nxjflash will write the Java VM and the leJOS NXJ start-up menu to the
+   flash memory of your NXT. It will create an empty user flash area. When
+   the flash procedure has finished, leJOS NXJ will start up and an empty
+   menu will be displayed.
+
+   You can switch the NXT off at any time, including when a program is
+   running, by pressing the orange and dark gray buttons (ENTER + ESCAPE)
+   together. To switch it back on just press the orange button. The leJOS
+   NXJ start-up menu will be displayed.
+   If your NXT freezes at any time, remove and re-insert a battery.
+
+                     Compiling and running your first code
+
+   To compile, link and download the Tune sample:
+     * Open a command window
+     * Check that java and lejos_nxj are on your PATH
+     * Check that the NXJ_HOME environment variable is defined
+     * Change to the projects\samples\Tune directory
+     * Type nxjc Tune.java
+     * Check that your USB cable is connected
+     * Check that the NXT is turned on
+     * Type nxj -r Tune
+
+   After a few seconds, you should hear an ascending tone sequence
+   indicating that the program uploaded OK. You will then hear a tune
+   play. When it has finished the leJOS NXJ menu will be displayed.
+
+   When you switch your NXT back on, select "Files" and press ENTER and
+   you will see "Tune.nxj" in the files menu
+
+   You can navigate through the leJOS NXJ menus using the left and right
+   buttons. You select a menu item by pressing ENTER, and exit from a menu
+   by pressing ESCAPE. There are 3 menus: Files, Bluetooth ands System. To
+   select a program, go to the Files menu, scroll down to your program and
+   press the ENTER button. You will then see a sub-menu that lets you
+   execute or delete the program.
+
+                                leJOS NXJ Tools
+
+   The following tools are available with leJOS NXJ:
+     * nxjflash - flashes the firmware and leJOS menu
+     * nxjc - compiles a Java program for leJOS NXJ
+     * nxj - links, uploads and optionally runs a leJOS NXJ program
+     * nxjlink - links a program
+     * nxjupload - uploads and optionally runs a program
+     * nxjbrowse - explorer for NXJ files
+     * nxjflashg - GUI version of nxjflash
+     * nxjmonitor - remote monitoring and tracing over Bluetooth
+     * nxjconsole - remote debugging over USB or Bluetooth
+     * nxjconsoleviewer - GUI version of nxjconsole
+     * nxjdataviewer - remote viewer for Datalogger files
+     * nxjproxyserver - proxy server for Socket and SocketServer
+       connections
+     * nxjcontrol - a GUI tool that combines the functions of nxjbrowse,
+       nxjconsoleviewer, nxjdataviewer and nxjmonitor.
+
+   nxj, nxjupload and nxjbrowse can be used over Bluetooth or USB. By
+   default they try to use USB first, and if this fails, they try
+   Bluetooth
+
+   Use the --usb flag to select usb only, or --bluetooth for Bluetooth
+   only.
+
+   nxjbrowse displays a list of all the NXTs that it finds, and allows you
+   to select one to connect to. nxj and nxjupload, try each NXT they find
+   in turn until they successfully connect to one. To pick a specific NXT
+   to connect to by name, use the --name flag. In this release, --name
+   works for both Bluetooth and USB.
+
+   You can connect to a specific NXT by address, using the --address flag.
+   If you specify the address, a Bluetooth inquiry will not be done, and
+   the connection will be much faster. Use nxjbrowse to list the addresses
+   of your NXT devices. An address is 12 hex digits with optional colons
+   between the hex pairs.
+
+   The leJOS NXJ tools can use different comms driver to connect to the
+   NXT. The default driver for USB on Windows is NXTCommFantom which uses
+   the LEGO fantom API and on other systems is NXTCommLibnxt, which uses
+   David Anderson's libnxt library and the libusb open source library. At
+   this release, all systems use NXTCommBluecove as the Bluetooth comms
+   driver. This uses libraries from the Bluecove open source project.
+
+   The properties file, lejos_nxt/bin/nxj.properties, can be modified to
+   select different comms drivers.
+
+   nxjbrowse lists the files on the NXT and includes their size, and start
+   and end pages. It can be used to delete, upload and download programs
+   and other files. It can also run programs, change the name of the NXT
+   and defrag the files, moving them all to the start of user flash
+   memory.
+
+   nxjmonitor can be used to monitor a running program on the NXT. The
+   program being monitored should run the LCPBTResponder thread and can
+   output trace messages using LCP.messageWrite on message box 0 - see the
+   MonitorTest sample. nxjmonitor produces a graphical display of the
+   current values of sensors, the battery and motor tachometers as the
+   program runs, as well as displaying the trace messages.
+
+   nxjconsole displays messages output by the RConsole class on the NXT.
+   One way to use RConsole is to include a call to RConsole.openUSB(0) at
+   the start of your leJOS program, and RConsole.close() at the end. A
+   stream such as stderr can then be redirected to the remote console by
+   System.setErr(new PrintStream(RConsole.openOutputStream()));.
+   openBluetooth(0) can be used instead of openUSB(0).
+
+   nxjconsoleviewer is a GUI version of nxjconsole
+
+   nxjdataviewer views data log file produced by the Datalogger class -
+   see the DLTest sample.
+
+   nxjproxyserver runs a proxy server that can be used to support Socket
+   and SocketServer connections between programs running on the NXT and
+   Java programs on a PC or across the Internet - see the SocketTest,
+   SocketServer and TimeTest samples.
+
+   nxjcontrol is a GUI tool that allows you to control multiple NXTs. It
+   has all the functions of nxjbrowse, but also allow you to control and
+   monitor your NXT. It includes the function of nxjconsoleviewer and
+   nxjdataviewer.
+
+                            Using the debug monitor
+
+   At this release it is possible to include a debug monitor thread as
+   part of the uploaded binary by specifying the --debug option on nxj or
+   nxjlink.
+
+   The debug monitor is the start of a more fully featured remote
+   debugging capability that will be added in a future release. The debug
+   monitor gives a more details when an untrapped exception occurs
+   including simple stack trace that shows methods called by method
+   number, and allows you to interrupt a running program by pressing
+   ENTER+ESCAPE.
+
+   When an interrupt occurs a thread dump is displayed. It lists the
+   threads in you program in reverse order of priority. The thread number,
+   state and the numbers of the last 3 executed methods is displayed for
+   each thread. The thread states are:-
+   R - the thread is runnable
+   S - the thread is sleeping
+   D - the thread is dead
+   N - the thread is new (not yet started)
+   I - the thread has been started but not yet run
+   E - the thread is waiting for a synchronized section
+   W - the thread is waiiting on a monitor object
+   * this is the running thread (not the debug thread)
+
+   After a user interrupt or exception, ENTER+ESCAPE shuts down the brick,
+   ESCAPE terminates the user program and restarts the menu. Any other key
+   continues the user program.
+
+                               Known limitations
+
+   Due to size constraints, some Java language features have been omitted.
+   Others just haven't been implemented yet. Known limitations with all
+   versions of leJOS are:
+     * The instanceof operation will always be true for interfaces. In
+       bytecode, CHECKCAST succeeds on all interface classes (which is a
+       bit unsafe)
+     * There are no objects of type java.lang.Class, which means that the
+       ".class" construct won't work. Class.forName() throws
+       ClassNotFoundException at all times. As a consequence, reflection
+       is not supported by leJOS
+     * Most JDK APIs are unavailable
+
+                                   Known Bugs
+
+   The following bugs apply to all versions of leJOS:
+     * MONITOREXIT ignores null objects (it assumes MONITORENTER has
+       handled them). Furthermore, it doesn't check monitor validity.
+       Until this bug is fixed (actually, at all times) all monitors
+       should be constants
+     * Initializers (static or otherwise) are not implicitly synchronized.
+       This could lead to access of statics before they are initialized,
+       when multiple threads use a class
+
+                    Known Bugs and Limitations in leJOS NXJ
+
+   The following bugs and limitations apply to the current version of
+   leJOS NXJ:
+     * It is a good idea to restart the brick after flashing leJOS. If not
+       problems with motors can occur.
+     * Only one file can be open at a time.
+     * leJOS NXJ only supports program upload and download, tools such as
+       nxjbrowse, and LEGO communications Protocol commands when the
+       start-up menu is running, not when a user program is running,
+       unless a user program explicitly starts the LCPResponder thread.
+     * The number of files that can be uploaded to lejos NXJ is limited by
+       the fact that the whole file table must fit into two 256-byte
+       pages. If the average filename length is 15 characters,
+       approximately 20 files are supported.
+     * The maximum filename length is 20 characters.
+     * Not all LEGO Communications Protocol command are supported, and the
+       semantics of some of them are different from that of the standard
+       LEGO firmware. In particular only one file can be open at a time
+       and the file handle is always 0.
+     * Support for sound sample files is limited to 8-bit WAV files.
+     * Data aborts occur if there is a failure in the NXJ VM. If a data
+       abort occurs, it is necessary to remove and re-insert a battery.
+     * It is sometimes necessary to pair your NXT using the Operating
+       System before it can be connected to by the leJOS NXJ PC tools and
+       libraries. This depends on what Bluetooth stack you are using.
+     * Discovery of Bluetooth devices is slow, taking at least 10 seconds.
+       It is slower still with Bluez on Linux. However, a cache of NXT
+       names and addresses is now held in the file nxj.cache in the user's
+       home directory, so an inquiry is usually omly necessary one. You
+       can force an inquiry by deleting the file, specifying "*" as the
+       name or using a name that has not been used before.
+
+                                 Documentation
+
+   The API docs for leJOS NXJ is included in the download. You can also
+   access them on the leJOS web site.
+
+                                    License
+
+   We are continuing to release under the Mozilla Public License (see the
+   LICENSE file). The nxjflash utility uses David Anderson's libnxt which
+   is release under a GPL v2 license (see COPYING in the libnxt
+   directory). Bluecove on Linux uses a GPL v3 license. See the LEGAL and
+   ACKNOWLEDGMENTS files for more detail.
+
+                             Questions and Problems
+
+   Please direct feedback to the lejos-discussion mailing list
+   mailto:lejos-discussion@lists.sourceforge.net.
+   To subscribe, see
+   [16]http://lists.sourceforge.net/lists/listinfo/lejos-discussion.
+
+   Feel free to take a look at the [17]leJOS website or its [18]project
+   page.
+
+   There are forums on the web site that can be used to ask questions,
+   share information on projects, etc.
+
+References
+
+   1. file://localhost/home/sardine/dev/lejos_nxj/README.html#what_is_lejos
+   2. file://localhost/home/sardine/dev/lejos_nxj/README.html#preliminiaries
+   3. file://localhost/home/sardine/dev/lejos_nxj/README.html#installation_and_set_up
+   4. file://localhost/home/sardine/dev/lejos_nxj/README.html#using-lejos
+   5. file://localhost/home/sardine/dev/lejos_nxj/README.html#compiling
+   6. file://localhost/home/sardine/dev/lejos_nxj/README.html#tools
+   7. file://localhost/home/sardine/dev/lejos_nxj/README.html#debugmonitor
+   8. file://localhost/home/sardine/dev/lejos_nxj/README.html#limitations
+   9. file://localhost/home/sardine/dev/lejos_nxj/README.html#bugs
+  10. file://localhost/home/sardine/dev/lejos_nxj/README.html#nxjbugs
+  11. file://localhost/home/sardine/dev/lejos_nxj/README.html#documentation
+  12. file://localhost/home/sardine/dev/lejos_nxj/README.html#license
+  13. file://localhost/home/sardine/dev/lejos_nxj/README.html#questions
+  14. http://tinyvm.sourceforge.net/
+  15. http://libusb.sourceforge.net/
+  16. http://lists.sourceforge.net/lists/listinfo/lejos-discussion
+  17. http://www.lejos.org/
+  18. http://sourceforge.net/projects/lejos

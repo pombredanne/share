@@ -143,7 +143,7 @@
 </node>
 </node>
 <node CREATED="1270073878450" ID="ID_190756674" MODIFIED="1270073886929" TEXT="FHS (Filesystem Hierarchy Standard)"/>
-<node CREATED="1269940855902" ID="ID_432468735" MODIFIED="1269940858625" TEXT="Mounting">
+<node CREATED="1269940855902" FOLDED="true" ID="ID_432468735" MODIFIED="1370336785607" TEXT="Mounting">
 <node CREATED="1270021951914" ID="ID_1283566946" MODIFIED="1270042862010" TEXT="&#x8a2d;&#x5099;&#x8981;&#x5b58;&#x53d6;&#x4e4b;&#x524d;&#x8981;&#x5148; Mount (Connect), &#x8981;&#x5378;&#x8f09; (Disconnect) &#x524d;&#x4e5f;&#x8981;&#x5148; Unmount"/>
 <node CREATED="1270013998538" ID="ID_1481166225" MODIFIED="1270028882502" TEXT="&#x975e; Desktop &#x7684;&#x74b0;&#x5883;&#x901a;&#x5e38;&#x4e0d;&#x6703;&#x81ea;&#x52d5; Mount &#x9023;&#x63a5;&#x4e0a;&#x4f86;&#x7684;&#x8a2d;&#x5099;, &#x5fc5;&#x9808;&#x8981;&#x624b;&#x52d5;&#x639b;&#x8f09;&#x624d;&#x884c;"/>
 <node CREATED="1270042848851" ID="ID_570443788" MODIFIED="1270043058473" TEXT="Mounting &#x662f;&#x70ba;&#x4e86;&#x8981;&#x4ee5; &quot;&#x7d50;&#x69cb;&#x5316;&quot; &#x7684;&#x65b9;&#x5f0f;&#x5b58;&#x53d6;&#x8a2d;&#x5099; (&#x900f;&#x904e;&#x6a94;&#x6848;&#x7cfb;&#x7d71;&#x8b80;&#x5beb;&#x8cc7;&#x6599;&#x800c;&#x8a00;), &#x56e0;&#x6b64;&#x56b4;&#x683c;&#x4f86;&#x8aaa;, &#x5b58;&#x53d6;&#x8a2d;&#x5099;&#x4e0d;&#x4e00;&#x5b9a;&#x8981;&#x5148;&#x505a; Mounting, &#x4f46;&#x9762;&#x5c0d;&#x7684;&#x5c31;&#x662f;&#x4e00;&#x5806; Bytes &#x800c;&#x5df2;."/>
@@ -317,53 +317,13 @@
 <node CREATED="1270094208845" ID="ID_804144301" MODIFIED="1270094232602" TEXT="&#x7528; mount device_file &#x6e2c;&#x8a66; /etc/fstab &#x7684;&#x8a2d;&#x5b9a;"/>
 </node>
 </node>
-<node CREATED="1270178314679" FOLDED="true" ID="ID_1202684809" MODIFIED="1270178315978" TEXT="Tools">
+<node CREATED="1270178314679" ID="ID_1202684809" MODIFIED="1370336799550" TEXT="Tools">
 <node CREATED="1270069600299" FOLDED="true" ID="ID_1163515621" MODIFIED="1270178317449" TEXT="dd">
 <node CREATED="1270069601858" ID="ID_52473027" MODIFIED="1270069639459" TEXT="dd if=/dev/cdrom of=output.iso &#x53ef;&#x4ee5;&#x7528;&#x4f86;&#x88fd;&#x4f5c; ISO &#x6a94;"/>
 </node>
 <node CREATED="1270180082334" ID="ID_819993610" MODIFIED="1270180083042" TEXT="df"/>
-<node CREATED="1270178319034" FOLDED="true" ID="ID_919760544" MODIFIED="1270790598166" TEXT="du (Disk Usage)">
-<node CREATED="1270178332804" ID="ID_696487213" MODIFIED="1270790769763" TEXT="Estimate file space usage; Summarize disk usage of each FILE, recursively for directories."/>
-<node CREATED="1270178395470" FOLDED="true" ID="ID_481683045" MODIFIED="1270178398838" TEXT="du [OPTION]... [FILE]...">
-<node CREATED="1270790904992" ID="ID_348023309" MODIFIED="1270790916803" TEXT="FILE &#x9810;&#x8a2d;&#x63a1;&#x7528; Current Directory"/>
-<node CREATED="1270178901058" ID="ID_1899045472" MODIFIED="1270178909450" TEXT="&#x9810;&#x8a2d;&#x4e0d;&#x6703; Follow Symbolic Links, &#x53ef;&#x4ee5;&#x7528; -L &#x555f;&#x7528;&#x9019;&#x9805;&#x529f;&#x80fd;"/>
 </node>
-<node CREATED="1270790775545" FOLDED="true" ID="ID_338193487" MODIFIED="1270790778377" TEXT="Usage">
-<node CREATED="1270790778999" ID="ID_1924699190" MODIFIED="1270790778999" TEXT="&#x7528; tar &#x5099;&#x4efd;&#x4e4b;&#x524d;, &#x53ef;&#x4ee5;&#x5148;&#x4f30;&#x7b97;&#x672a;&#x58d3;&#x7e2e;&#x524d;&#x7684;&#x5927;&#x5c0f;"/>
-<node CREATED="1270711469091" ID="ID_88286136" MODIFIED="1270711487637" TEXT="du -sh # &#x7d71;&#x8a08;&#x6240;&#x5728;&#x76ee;&#x9304;&#x7684;&#x5927;&#x5c0f;"/>
-<node CREATED="1270790811468" ID="ID_1339162729" MODIFIED="1270791222222" TEXT="du -h --max-depth=1 # &#x5217;&#x51fa;&#x6bcf;&#x500b;&#x5b50;&#x76ee;&#x9304;&#x6240;&#x4f54;&#x7528;&#x7684;&#x7a7a;&#x9593; (&#x5e38;&#x7528;, &#x53ef;&#x4ee5;&#x8a2d;&#x5b9a;&#x6210;&#x540d;&#x70ba; overdisk &#x7684; Alias)"/>
-</node>
-<node CREATED="1270178545089" FOLDED="true" ID="ID_10421338" MODIFIED="1270178546509" TEXT="Options">
-<node CREATED="1270178546997" FOLDED="true" ID="ID_1355674786" MODIFIED="1270178554303" TEXT="-s, --summarize">
-<node CREATED="1270178555161" ID="ID_786162176" MODIFIED="1270791042910" TEXT="display only a total for each argument; &#x7b49;&#x540c;&#x65bc; --max-depth=0 &#x7684;&#x6548;&#x679c;"/>
-<node CREATED="1270178560484" ID="ID_1809864702" MODIFIED="1270178641746" TEXT="&#x4f8b;&#x5982; du -sh ~ &#x53ef;&#x4ee5;&#x7b97;&#x51fa;&#x6574;&#x500b;&#x5bb6;&#x76ee;&#x9304;&#x7684;&#x5927;&#x5c0f;"/>
-</node>
-<node CREATED="1270178737407" FOLDED="true" ID="ID_1622302092" MODIFIED="1270178745986" TEXT="-h, --human-readable">
-<node CREATED="1270178746752" ID="ID_47691491" MODIFIED="1270178747493" TEXT="print sizes in human readable format (e.g., 1K 234M 2G)"/>
-</node>
-<node CREATED="1270178879454" FOLDED="true" ID="ID_683863972" MODIFIED="1270178886237" TEXT="-L, --dereference">
-<node CREATED="1270178886746" ID="ID_762896216" MODIFIED="1270179583283" TEXT="dereference all symbolic links (&#x4e0d;&#x6703;&#x8ddf; -D &#x540c;&#x6642;&#x4f7f;&#x7528;)"/>
-</node>
-<node CREATED="1270179164737" FOLDED="true" ID="ID_1892089749" MODIFIED="1270179173830" TEXT="-D, --dereference-args">
-<node CREATED="1270179175205" ID="ID_610383657" MODIFIED="1270179573490" TEXT="dereference only symlinks that are listed on the command line (&#x4e0d;&#x6703;&#x8ddf; -L &#x540c;&#x6642;&#x4f7f;&#x7528;))"/>
-<node CREATED="1270179178654" FOLDED="true" ID="ID_1402649362" MODIFIED="1270179425658" TEXT="&#x4f8b;&#x5982; /cdrom -&gt; /media/cdrom">
-<node CREATED="1270179426494" ID="ID_1908520122" MODIFIED="1270179432204" TEXT="du -sh /cdrom &#x53ef;&#x80fd;&#x50b3;&#x56de; 0, &#x8981;&#x6539;&#x7528; du -sh /cdrom &#x624d;&#x884c;"/>
-<node CREATED="1270179450794" ID="ID_788412934" MODIFIED="1270179518106" TEXT="&#x9664;&#x4e86;&#x660e;&#x78ba;&#x5217;&#x5728; Arguments &#x4e4b;&#x5916;, &#x5f80;&#x4e0b;&#x5c55;&#x958b;&#x7684; Symbolic Links &#x4e26;&#x4e0d;&#x6703; Follow"/>
-</node>
-</node>
-<node CREATED="1270179753486" FOLDED="true" ID="ID_858269557" MODIFIED="1270179771641" TEXT="-X, --exclude-from=FILE">
-<node CREATED="1270179763915" ID="ID_249177741" MODIFIED="1270179764906" TEXT="exclude files that match any pattern in FILE"/>
-</node>
-<node CREATED="1270179773066" FOLDED="true" ID="ID_732275530" MODIFIED="1270179784454" TEXT="--exclude=PATTERN">
-<node CREATED="1270179785211" ID="ID_118409054" MODIFIED="1270179785930" TEXT="exclude files that match PATTERN"/>
-</node>
-<node CREATED="1270790707291" FOLDED="true" ID="ID_1075556939" MODIFIED="1270790708049" TEXT="--max-depth=N">
-<node CREATED="1270790730267" ID="ID_1285006982" MODIFIED="1270790730986" TEXT="print the total for a directory (or file, with --all) only if it is N or fewer levels below the command line argument; --max-depth=0 is the same as --summarize"/>
-</node>
-</node>
-</node>
-</node>
-<node CREATED="1271717602409" FOLDED="true" ID="ID_877487735" MODIFIED="1271717615816" TEXT="LVM (Logical Volume Manager)">
+<node CREATED="1271717602409" FOLDED="true" ID="ID_877487735" MODIFIED="1370336799545" TEXT="LVM (Logical Volume Manager)">
 <node CREATED="1271717644583" ID="ID_1902609407" MODIFIED="1271717644583" TEXT="LVM allows you to easily adjust or create a virtual/logical partition combined from physical partitions from several hard disks. It is the easiest way of allocating more disk space to a partition while it is still being used."/>
 <node CREATED="1271729966333" ID="ID_1597062810" MODIFIED="1271730141972" TEXT="&#x4f8b;&#x5982; CentOS 5.4 &#x5c07; Hard Drive &#x5207;&#x6210; /dev/sda1 (101MB, ext3, /boot) &#x8207; /dev/sda2 (8087MB, LVM PV, VolGroup00). &#x771f;&#x6b63;&#x639b;&#x5230; / &#x8207; swap &#x7684;&#x5176;&#x5be6;&#x662f;&#x5f9e; VolGroup00 &#x5206;&#x51fa;&#x4f86;&#x7684; Volumns: LogVol00 (/, ext3) &#x8207; LogVol01 (swap)"/>
 </node>
