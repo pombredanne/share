@@ -1,0 +1,45 @@
+= link:uiautomator.html[UIAutomator] / or Robotium? =
+:title: [UIAutomator] or Robotium?
+
+[quote,zest,'http://stackoverflow.com/questions/13221788/android-robotium-vs-android-test-framework[Android: Robotium vs android test framework - Stack Overflow]']
+________________________________________________________________________________
+I think both these tools are good ones, definitely possibility to switch between applications during test is awesome. You should select tool depending from your needs. I suggest Robotium for tests where you don't need to switch between applications because it have simple methods and opportunity to use Android API for writing flexible and smart tests in short code which can cover even testing of a web page inside webview and milti-process applications are very unusual.
+________________________________________________________________________________
+
+== 參考資料 ==
+
+ * http://stackoverflow.com/questions/13971417/android-integration-testing-robotium-or-uiautomator[ui automation - Android integration testing: Robotium or UIAutomator? - Stack Overflow] ^https://diigo.com/0zm7k[閱讀]^ (2012-12-20)
+////////////////////////////////////////////////////////////////////////////////
+** I had previous experience using Robotium and this framework is really awesome for integration testing. But recently introduced uiautomator looks nice also.
+** no compatibility (works only on 4.1+) - 這是它最大的問題...
+** On the other side, this tool allows you to get rid of application-under-test sandboxing and it is package independent so several applications can be tested together. 這麼說來跟 Sikuli + monkeyrunner API 的做法有得拼！
+////////////////////////////////////////////////////////////////////////////////
+ * http://blog.apkudo.com/2012/12/18/instrumentation-101-must-have-tips-for-android-developers/[Instrumentation 101 – Must have tips for Android developers | apkudo] ^https://diigo.com/0zmiy[閱讀]^ (2012-12-18) - 一次比較了 Monkey, monkeyrunner, Robotium 跟 UIAutomator。
+////////////////////////////////////////////////////////////////////////////////
+** Robotium
+   *** Robotium is more in depth and more robust than the tools mentioned above.
+   *** On the downside, Robotuim requires some boilerplate. You’re going to have to create an APK, build with the Robotium JAR, and in general, be aware of the internals of the app you wish to test. You’re going to need to know your APK’s package name and signature, though, you should have both if you are developing the app you wish to test.
+** UIAutomator
+   *** It is part of the Android SDK revision 21 and up and requires your test device to have Android API version 16 or higher.
+   *** A command-line tool found on the device??
+   *** A Java library (uiautomator.jar found in the sdk/tools/) which you use in your tests。看似有機會跟 monkeyrunner API 結合在一起??
+   *** The Android SDK tool UIAutomatorViewer which comes in handy for writing your tests
+   *** The ability to reference UI Objects by name UIAutomator comes with the UIAutomatorViewer tool that captures screenshot of the device and lists all the UI objects (great for identifying which components you want to test). 這聽起來滿不錯的啊，幾乎什麼都測得到了。
+** So far the tools we’ve seen, with the exception of Robotium, have done black box testing of the UI. However white box testing, whereby you test units internally, is just as important (there are a whole host of other tools that fill this role that we’ll cover in a future blog). 這句話真是衷肯，我從來都不認為 Robotium 是一種 block-box testing!!
+////////////////////////////////////////////////////////////////////////////////
+ * http://stackoverflow.com/questions/13221788/android-robotium-vs-android-test-framework[Android: Robotium vs android test framework - Stack Overflow] ^https://diigo.com/0zmip[閱讀]^ (2012-11-04)
+////////////////////////////////////////////////////////////////////////////////
+** Robotium can be used as black box testing, so I do not need to know about application resources. 真的是這樣嗎？至少要取得 `R` 不是嗎??
+** with Robotium is really simple to write a test. It's basically point and click, from the Solo instance object.
+** If you have any code in a web view these are especially helpful as this is where robotium really lets itself down.
+** Robotium
+   *** you can bound your test to unique IDs of tested application whenever with UIatomator to write complicated test cases will need great amount of work from you 其中 unique ID 指的是 `getActivity().findViewById()` 的用法，但 UIAutomation 是怎麼做定位的??
+   *** in UIatomator is used UiAutomatorTestCase Instrumentation which doesn't give you possibilities to call current activity and check that loaded appropriate one, you can't call connectivity- or audio- managers for wi-fi or sound tests. In Robotium you can easily call such gems and that is greatly improve efficiency of your tests 某種程度上來說，這才是 black-box testing 不是嗎？
+   *** No possibility to tests multi-process application where android:process tag used for different activities. 跨多個 app 是一種情況，但一次要把整個測試送進 device 跑完也是一種限制。
+** UIAutomator
+   *** Test case is independent from the process at which tested application works. So it can be used in places where are used additional libraries or activity is run in other process also useful if for test needed switching between several applications. 顯然 UIAutomator 可以支援跨多個 apps 的用法。
+   *** You can't use source IDs when you get ui-object instances. That mean if an application structure changed on one layout you need to refactor your test (this problem can be solved by using tags for each ui-element) 聽起來 UIAutomator 是用 UI hierarchy 來定位??
+   *** You can't get current activity or Instrumentation. That mean you are limited in development of your tests and not used many of android's api methods for your tests.
+** I think both these tools are good ones, definitely possibility to switch between applications during test is awesome. You should select tool depending from your needs. I suggest Robotium for tests where you don't need to switch between applications because it have simple methods and opportunity to use Android API for writing flexible and smart tests in short code which can cover even testing of a web page inside webview and milti-process applications are very unusual.
+////////////////////////////////////////////////////////////////////////////////
+

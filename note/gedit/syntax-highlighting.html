@@ -1,0 +1,164 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[gedit] Syntax Highlighting</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<!--link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" /-->
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <!--div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div-->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <!--a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a--></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="gedit.html">gedit</a> / Syntax Highlighting</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>觀察 gedit 相依於 libgtksourceview 套件：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ apt-cache depends gedit | grep sourceview
+  Depends: libgtksourceview-3.0-0</code></pre>
+</div></div>
+<div class="paragraph"><p>事實上 gedit 下 highlight 的功能就是由 <a href="http://projects.gnome.org/gtksourceview/">GtkSourceView</a> 來實作的。因此只要自訂 <code>.lang</code> 檔放入 <code>/usr/share/gtksourceview-3.0/language-specs</code> 即可。在 <code>language-specs</code> 目錄底下有許多範例可以參考，另外 <code>language2.rng</code> 是用來規範 <code>.lang</code> 檔的寫法（針對開頭 version="2.0" 的檔案，而 version='1.0" 的 <code>.lang</code> 檔則由 <code>language.rng</code> 來規範），而 <code>styles.rng</code> 則用來規範 <code>/usr/share/gtksourceview-3.0/styles</code> 下 <code>.xml</code> 檔 (color schema) 的寫法。</p></div>
+<div class="paragraph"><p>製定 <code>.lang</code> 的過程中，如果語法有錯誤的話，就會導致所有的 highlight 失效，原因可以查看 <code>~/.xsession-errors</code>。</p></div>
+<div class="paragraph"><p>gedit 將 "語法的解析" 與 "呈現方式" 分開維護，在 <code>.lang</code> 檔裡頭只能定義特定的語法要使用哪個 style，而 style 則由 color schema 來定義。因此相同的語法會因套用不同的 color schema 而有不同的表現。將兩者拆離的做法，可以避開黑底黑字的問題（呈現方式與 color schema 沒有搭配好），但終究造成 color schema 必須顧及所有的 style，尤其是 <code>.lang</code> 必須用到原先不支援的 style 時（因此衍生出 "<code>diff:added-line</code>"、"<code>latex:command</code>" 等特殊的定義）。</p></div>
+<div class="paragraph"><p>下面是自行製作的 ｀moin.lang｀，可以用來高亮度顯示 MoinMoin 的 Wiki 語法:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&lt;language id="moin" _name="MoinMoin" version="2.0" _section="Wiki"&gt;
+  &lt;metadata&gt;
+    &lt;property name="mimetypes"&gt;text/moin-wiki&lt;/property&gt;
+    &lt;property name="globs"&gt;00000001&lt;/property&gt;
+  &lt;/metadata&gt;
+
+  &lt;styles&gt;
+    &lt;!-- 這裡的 style id 是定義給下面 context 的 style-ref 引用，等於是一個邏輯名稱，藉由 map-to 再指向實質的名稱 --&gt;
+    &lt;style id="underline" name="Underline Format" map-to="def:wiki-underline"/&gt;
+    &lt;style id="emphasis" name="Underline Format (Emphasis)" map-to="def:wiki-emphasis"/&gt;
+    ...
+  &lt;/styles&gt;
+
+  &lt;definitions&gt;
+    &lt;context id="underline" style-ref="underline" end-at-line-end="true"&gt;
+      &lt;start&gt;__&lt;/start&gt;
+      &lt;end&gt;__&lt;/end&gt;
+      &lt;!-- 定義有哪些 context 可以 "直接" 用在這個 context 底下 --&gt;
+      &lt;include&gt;
+        &lt;context ref="emphasis"/&gt;
+        ...
+      &lt;/include&gt;
+    &lt;/context&gt;
+
+    ...
+
+    &lt;context id="emphasis" style-ref="emphasis" extend-parent="true" end-at-line-end="true"&gt;
+      &lt;start&gt;'''&lt;/start&gt;
+      &lt;end&gt;'''&lt;/end&gt;
+      &lt;include&gt;
+        &lt;context ref="code"/&gt;
+        &lt;context ref="italic"/&gt;
+        &lt;context ref="question"/&gt;
+        &lt;context ref="link"/&gt;
+        &lt;context ref="url"/&gt;
+      &lt;/include&gt;
+    &lt;/context&gt;
+
+    &lt;context id="moin"&gt; &lt;!-- 必須與 &lt;language id="moin"...&gt; 一致，才會被解析到 --&gt;
+      &lt;include&gt;
+        &lt;context ref="headline"/&gt;
+        &lt;context ref="code"/&gt;
+        &lt;context ref="code-block"/&gt;
+        &lt;context ref="underline"/&gt;
+        &lt;context ref="emphasis"/&gt;
+        &lt;context ref="italic"/&gt;
+        &lt;context ref="link"/&gt;
+        &lt;context ref="url"/&gt;
+        &lt;context ref="question"/&gt;
+      &lt;/include&gt;
+    &lt;/context&gt;
+  &lt;/definitions&gt;
+&lt;/language&gt;</code></pre>
+</div></div>
+<div class="paragraph"><p>自訂的 style (color schema) 可以放到 <code>~/.gnome2/gedit/styles</code> 下 (<code>id</code> 不能含有 "." 符號)</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&lt;!-- 其中 "moin:" 必須與 &lt;language id="moin"...&gt; 一致，它會覆寫 "def:" 的設定?? --&gt;
+&lt;style name="def:error" foreground="aluminium1" background="scarletred2" bold="true"/&gt;
+&lt;style name="moin:error" foreground="#red" bold="true"/&gt;</code></pre>
+</div></div>
+<div class="paragraph"><p>如果要達成自動選取，則要組態 MIME 才行 (例如 <code>text/moin-wiki</code>，要在 <code>/usr/share/mime/packages</code> 下新增一個 <code>moin.xml</code>，然後再用 <code>sudo update-mime-database /usr/share/mime</code> 更新)</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;mime-info xmlns='http://www.freedesktop.org/standards/shared-mime-info'&gt;
+  &lt;mime-type type="text/moin-wiki"&gt;
+    &lt;sub-class-of type="text/plain" /&gt;
+    &lt;comment&gt;MoinMoin Wiki&lt;/comment&gt;
+    &lt;glob pattern="00000001" /&gt; &lt;!-- 可以有多個，只支援萬用字元 "*" --&gt;
+    &lt;glob pattern="00000002" /&gt;
+    &lt;glob pattern="00000003" /&gt;
+    &lt;glob pattern="00000004" /&gt;
+    &lt;glob pattern="00000005" /&gt;
+  &lt;/mime-type&gt;
+&lt;/mime-info&gt;</code></pre>
+</div></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2013-06-13 22:49:09 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<!--script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script-->
+</body>
+</html>

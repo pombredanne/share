@@ -1,0 +1,56 @@
+= link:batch.html[Batch] / Parameters =
+:title: [BAT] Parameters
+
+`cmd.exe` 提供了一些 batch parameter，用以展開 command line 輸入的 batch file name 跟 argument：（跟一般變數不同，結尾不用再加 `%`）
+
+ * `%0` - 批次檔的檔案名稱。
+ * `%1` ~ `%9` - 依次對應批次檔名稱後面的多個 argument。
+ * `%*` - 所有 argument 的內容；不含 `%0`，方便將參數往另一個 executable 帶。
+
+TIP: 如果表現單一個百分比字元（`%`），可以用 `%%` 來表示；例如 `%%1 = %1`。
+
+如果 batch parameter 內含的是檔名或路徑的資訊，可以搭配一或多個 modifier（表示法 `%~<modifiers>[0-9*]`），展開檔案或路徑的相關資訊（參考 current drive/directive），例如磁碟機代號、副檔名、檔案所在路徑、檔案大小等。以 `%1` 為例：
+
+ * `%~p1` - 展開 `%1` 所在的路徑全名（但不含磁碟代號），例如 `\tmp\`（包含最後的路徑分隔字元）。
+ * `%~d1` - 展開 `%1` 所在的磁碟代號，例如 `C:`。
+ * ...
+
+假設 `params.bat` 的內容如下：
+
+--------------------------------------------------------------------------------
+@echo off
+echo %%0 = %0
+echo %%1 = "%1", %%2 = "%2", %%3 = "%3", %%4 = "%4", %%5 = "%5" %%6 = "%6", ...
+echo %%* = %*
+echo %%~d0 = %~d0
+echo %%~p0 = %~p0
+echo %%~dp0 = %~dp0
+--------------------------------------------------------------------------------
+
+進行一些測試：
+
+--------------------------------------------------------------------------------
+C:\tmp>params
+%0 = params
+%1 = "", %2 = "", %3 = "", %4 = "", %5 = "" %6 = "", ... <1>
+%* =
+%~d0 = C:
+%~p0 = \tmp\
+%~dp0 = C:\tmp\
+
+C:\>params.bat one two three four five
+%0 = params.bat
+%1 = "one", %2 = "two", %3 = "three", %4 = "four", %5 = "five" %6 = "", ...
+%* = one two three four five
+%~d0 = C:
+%~p0 = \tmp\
+%~dp0 = C:\tmp\
+--------------------------------------------------------------------------------
+<1> 沒有給足的參數，用 `%n` 去存取只會拿到空字串而已，並不會出錯。
+
+== 參考資料 ==
+
+ * http://www.microsoft.com/resources/documentation/windows/xp/all/proddocs/en-us/percent.mspx?mfr=true[Using batch parameters]
+ * http://www.robvanderwoude.com/escapechars.php[Batch files - Escape Characters]
+ * http://www.robvanderwoude.com/parameters.php[Batch files - Command line parameters]
+ * http://www.cnblogs.com/smwikipedia/archive/2009/03/30/1424749.html[Windows腳本 - %~dp0的含義 - smwikipedia - 博客園] (2009-03-30)

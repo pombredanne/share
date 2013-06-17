@@ -1,0 +1,48 @@
+= link:recipes.html[Unix-like / Recipes] / Counting Files =
+:title: [Unix-like] Counting Files
+
+ ls -1 [path-to-dir] | wc -l
+
+或
+
+ find [path-to-dir] -maxdepth 1 -type f | wc -l
+
+[source,sh]
+--------------------------------------------------------------------------------
+$ ls -l
+total 0 <1>
+-rw-rw-r-- 1 jeremy jeremy 0 Jun  7 10:41 file1
+-rw-rw-r-- 1 jeremy jeremy 0 Jun  7 10:25 file2
+$ ls -1
+file1
+file2
+$ ls -1 | wc -l <2>
+2
+$ mkdir subdir; touch subdir/file1; touch subdir/file2 <3>
+$ ls -1 | wc -l
+3
+$ find -maxdepth 1 -type f | wc -l
+2
+--------------------------------------------------------------------------------
+<1> `ls -l` 第一行印出的 "total nnnn" 不是檔案數量，而是底下檔案所佔用的空間（blocks）。
+<2> 改用 `ls -1` 再搭配 `wc -l` 計算行數，就可以正確算出檔案的數量。
+<3> 但加進另一個子資料夾之後，`ls -1 | wc -l` 就出狀況了（如果不想把子資料夾也算進來的話），這時候得搬出 link:../commands/find.html[`find`] 才行。
+<4> 其中 `-type f` 只找檔案，而 `-maxdepth 1` 控制不要遶進子資料夾。
+
+== 參考資料 ==
+
+.文件
+--
+ * http://www.tldp.org/HOWTO/Bash-Prompt-HOWTO/x700.html[Counting Files in the Current Directory]
+ * http://linuxcommando.blogspot.tw/2008/07/how-to-count-number-of-files-in.html[Linux Commando: How to count number of files in a directory] ^https://diigo.com/0zj9d[閱讀]^ (2008-07-18)
+--
+
+.其他文件
+--
+ * http://stackoverflow.com/questions/7401704/what-is-that-total-in-the-very-first-line-after-ls-l[linux - What is that "total" in the very first line after ls -l? - Stack Overflow] ^https://diigo.com/0zj9w[閱讀]^ (2011-09-13)
+////////////////////////////////////////////////////////////////////////////////
+** For each directory that is listed, preface the files with a line `total BLOCKS', where BLOCKS is the total disk allocation for all files in that directory.
+** That is the total number of file system blocks, including indirect blocks, used by the listed files. If you run ls -s on the same files and sum the reported numbers you'll get that same number. 原來如此!!
+////////////////////////////////////////////////////////////////////////////////
+--
+

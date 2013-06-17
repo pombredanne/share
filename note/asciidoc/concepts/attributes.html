@@ -1,0 +1,191 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[AsciiDoc] Document Attributes</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<!--link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" /-->
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <!--div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div-->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <!--a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a--></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="concepts.html">AsciiDoc / Concepts</a> / Document Attributes</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>document attribute 是 texual name-value pair，大量被用在組態檔內做條件式輸出（conditional markup generation）或文字置換（textual substitution），當然也可以用在一般的文件裡。例如要<a href="../output/icons.html">讓文件出現小圖示</a>，可以在文件裡頭宣告 <code>:icons:</code> 或是從命令列指定 <code>-a icons</code>，就是 document attribute 的一種應用。</p></div>
+<div class="paragraph"><p>attribute name 不分大小寫，只能由英數字、減號（<code>-</code>）跟底線（<code>_</code>）組成。無論 attribute value 為何，attribute 至少有 defined 跟 undefined 兩種區別，就算 attribute value 是空字串，也算是 defined。</p></div>
+<div class="paragraph"><p>document attribute 可以從幾個不同的地方定義（define），分別具有不同的優先權：（由高至低）</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+<a href="../cli.html#attribute">命令列（command line）</a>。
+</p>
+</li>
+<li>
+<p>
+文件內的 <a href="#attribute-entry">attribute entry</a>、<a href="#attribute-list">attribute list</a>、<a href="blocks.html#block-id">block ID</a>。
+</p>
+</li>
+<li>
+<p>
+組態檔內的 <code>[attributes]</code>。
+</p>
+</li>
+</ol></div>
+<div class="paragraph"><p>同一個 attribute 如果被 define 多次，以優先權（precedence）較高者為主，如果優先權相同，則以最後 define 者為主。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ echo -e ":who: World\nHello, {who}" | asciidoc -s - <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+&lt;div class="paragraph"&gt;&lt;p&gt;Hello, World&lt;/p&gt;&lt;/div&gt;
+$
+$ echo -e ":who: World\nHello, {who}" | asciidoc -s -a who=AsciiDoc - <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+&lt;div class="paragraph"&gt;&lt;p&gt;Hello, AsciiDoc&lt;/p&gt;&lt;/div&gt;</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+<code>:who: World</code> 是在文件內定義 attribute 的寫法，<a href="#attribute-entry">下面</a>有更完整說明。至於 <code>{who}</code> 的表示法可以做文字代換。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+從 command line 提供的 attribute value 會覆寫在文件內的定義，所以輸出 "Hello, AsciiDoc"。
+</td></tr>
+</table></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="attribute-entry">Attribute Entries</h2>
+<div class="sectionbody">
+<div class="literalblock">
+<div class="content">
+<pre><code>:&lt;name&gt;: &lt;value&gt;
+:&lt;name&gt;!:</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="attribute-list">Attribute List</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>&#8230;</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.methods.co.nz/asciidoc/userguide.html">AsciiDoc User Guide</a>
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.methods.co.nz/asciidoc/userguide.html#X79">AttributeList Element</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.methods.co.nz/asciidoc/userguide.html#_attributes_section">Configuration Files &gt; Attributes section</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.methods.co.nz/asciidoc/userguide.html#_document_attributes">Document Attributes</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.methods.co.nz/asciidoc/userguide.html#X18">Attribute Entries</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.methods.co.nz/asciidoc/userguide.html#X21">Attribute Lists</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.methods.co.nz/asciidoc/userguide.html#X60">Intrinsic Attributes</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.methods.co.nz/asciidoc/userguide.html#_attribute_references">Attribute References</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.methods.co.nz/asciidoc/userguide.html#X74">Appendix F: Attribute Options</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.methods.co.nz/asciidoc/userguide.html#X88">Appendix H: Backend Attributes</a>
+</p>
+</li>
+</ul></div>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2013-06-12 22:52:25 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<!--script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script-->
+</body>
+</html>

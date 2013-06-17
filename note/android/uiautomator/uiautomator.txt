@@ -5,12 +5,144 @@
 Google Alerts: android ("ui automator" OR uiautomator)
 ////////////////////////////////////////////////////////////////////////////////
 
+ * uiautomator 既是個 API，也是個 Testing Framework
+ * `uiautomatorviewer`
+ * NAF (Not Accessibility Friendly) nodes
+ * depends on accessibility -> accessible?
+
+ adb shell uiautomator runtest /path/YourJar.jar -c yourtestpackage.YourTest
+
+[quote,'Russell Collins','http://everybodytests.blogspot.tw/2012/11/uiautomatorjar-what-happened-when.html[Everybody Tests: UiAutomator.jar: What happened when Android's JUnit and MonkeyRunner got drunk and hooked up]']
+________________________________________________________________________________
+This tool only works on devices and emulators graced with Android 4.1 (or higher). This is because the tests are run via an app included with the OS on the device. Over the next few years this will allow you to begin getting wider device coverage with tests written using this tool but until then you can't use the UIAutomator for compatibility tests.
+________________________________________________________________________________
+
 == 參考資料 ==
 
 .文件
 --
  * http://developer.android.com/tools/testing/testing_ui.html[UI Testing | Android Developers]
+
+////////////////////////////////////////////////////////////////////////////////
+** Functional or black-box UI testing does not require testers to know the internal implementation details of the app, only its expected output when a user performs a specific action or enters a specific input. This approach allows for better separation of development and testing roles in your organization.
+** uiautomatorviewer - A GUI tool to scan and analyze the UI components of an Android application. uiautomator - A Java library containing APIs to create customized functional UI tests, and an execution engine to automate and run the tests. 為何說是 execution engine??
+** Android SDK Tools, Revision 21 or higher Android SDK Platform, API 16 or higher
+** ensuring that your application is accessible by the test automation framework.
+** Compile your test cases into a JAR file and install it on your test device along with your app. 注意是 JAR 而非 APK!!
+** The uiautomatorviewer tool provides a convenient visual interface to inspect the layout hierarchy and view the properties of the individual UI components that are displayed on the test device. Using this information, you can later create uiautomator tests with selector objects that target specific UI components to test.
+** To capture a screen for analysis, click the Device Screenshot button in the GUI of the uiautomatorviewer tool. Note: If you have more than one device connected, specify the device for screen capture by setting the ANDROID_SERIAL environment variable:
+** Hover over the snapshot in the left-hand panel to see the UI components identified by the uiautomatorviewer tool. You can view the component’s properties listed in the lower right-hand panel, and the layout hierarchy in the upper right-hand panel. 跟 Firebug 的操作經驗很像。
+** Optionally, click on the Toggle NAF Nodes button to see UI components that are not accessible to the uiautomator testing framework. Only limited information may be available for these components. NAF == Not Accessibility Friendly
+** Typically, good candidates for testing are UI components that are visible and that users can interact with. The UI components should also have visible text labels, android:contentDescription values, or both.
+** This step is required because the uiautomator tool depends on the accessibility features of the Android framework to execute your functional UI tests.
+** Use the uiautomatorviewer tool to ensure that the UI component is accessible to the testing framework. You can also test the application by turning on accessibility services like TalkBack and Explore by Touch, and try using your application using only directional controls.
+** Generally, Android application developers get accessibility support for free, courtesy of the View and ViewGroup classes. However, some applications use custom view components to provide a richer user experience. Such custom components won't get the accessibility support that is provided by the standard Android UI components. If this applies to your application, ensure that the application developer exposes the custom drawn UI components to Android accessibility services, by implementing the AccessibilityNodeProvider class.
+** In order to set up Eclipse to assist you, you need to create a project that includes the uiautomator client library, along with the Android SDK library.
+** Click Add Library > JUnit then select JUnit3 to add JUnit support. Click Add External JARs... and navigate to the SDK directory. Under the platforms directory, select the latest SDK version and add both the uiautomator.jar and android.jar files.
+** To build a test that runs in the uiautomator framework, create a test case that extends the UiAutomatorTestCase class.
+** Later, you will build the test case as a JAR file, then copy this file to the test device. The test JAR file is not an APK file and resides separately from the application that you want to test on the device.
+** It’s also good practice to start the test from the Home screen of the device. From the Home screen (or some other starting location you’ve chosen in the target app), you can use the classes provided by the uiautomator API to simulate user actions and to test specific UI components.
+** The uiautomator API is bundled in the uiautomator.jar file under the <android-sdk>/platforms/ directory. The API includes these key classes that allow you to capture and manipulate UI components on the target app:
+** Represents the device state. In your tests, you can call methods on the UiDevice instance to check for the state of various properties, such as current orientation or display size. Your tests also can use the UiDevice instance to perform device level actions, such as forcing the device into a specific rotation, pressing the d-pad hardware button, or pressing the Home and Menu buttons.
+** getUiDevice().pressHome();
+** Represents a search criteria to query and get a handle on specific elements in the currently displayed UI. If more than one matching element is found, the first matching element in the layout hierarchy is returned as the target UiObject. When constructing a UiSelector, you can chain together multiple properties to refine your search. If no matching UI element is found, a UiAutomatorObjectNotFoundException is thrown. You can use the childSelector() method to nest multiple UiSelector instances.
+** new UiObject(new UiSelector()   .className("android.widget.ListView").instance(1)   .childSelector(new UiSelector().text("Apps")))
+** Represents a UI element. To create a UiObject instance, use a UiSelector that describes how to search for, or select, the UI element.
+** You can reuse the UiObject instances that you have created in other parts of your app testing, as needed. Note that the uiautomator test framework searches the current display for a match every time your test uses a UiObject instance to click on a UI element or query a property.
+** if(okButton.exists() && okButton.isEnabled())
+** Represents a collection of items, for example songs in a music album or a list of emails in an inbox. Similar to a UiObject, you construct a UiCollection instance by specifying a UiSelector. The UiSelector for a UiCollection should search for a UI element that is a container or wrapper of other child UI elements (such as a layout view that contains child UI elements).
+** videos.getChildCount(new UiSelector()   .className("android.widget.LinearLayout"))
+** videos.getChildByText(new UiSelector()   .className("android.widget.LinearLayout"), "Cute Baby Laughing")
+** if(!checkBox.isSelected()) checkbox.click();
+** Represents a scrollable collection of UI elements. You can use the UiScrollable class to simulate vertical or horizontal scrolling across a display. This technique is helpful when a UI element is positioned off-screen and you need to scroll to bring it into view.
+** For example, the following code shows how to simulate scrolling down the Settings menu and clicking on an About tablet option:
+** UiScrollable settingsItem = new UiScrollable(new UiSelector()   .className("android.widget.ListView"));UiObject about = settingsItem.getChildByText(new UiSelector()   .className("android.widget.LinearLayout"), "About  tablet");
+** The following code example shows a simple test case which simulates a user bringing up the Settings app in a stock Android device. The test case mimics all the steps that a user would typically take to perform this task, including opening the Home screen, launching the All Apps screen, scrolling to the Settings app icon, and clicking on the icon to enter the Settings app.
+** the All Apps button’s       // content-description property has the value “Apps”.
+** .description("Apps")
+** allAppsButton.clickAndWaitForNewWindow();
+** In the All Apps screen, the Settings app is located in       // the Apps tab.
+** Next, in the apps tabs, we can simulate a user swiping until      // they come to the Settings app icon.  Since the container view       // is scrollable, we can use a UiScrollable object.
+** .scrollable(true)
+** appViews.setAsHorizontalList();
+** .className(android.widget.TextView.class.getName())
+** .packageName("com.android.settings"));      assertTrue("Unable to detect Settings",          settingsValidation.exists());
+** android create uitest-project -n <name> -t 1 -p <path>
+** Deploy your generated test JAR file to the test device by using the adb push command: adb push <path_to_output_jar> /data/local/tmp/
+** adb shell uiautomator runtest LaunchSettings.jar -c com.uia.example.my.LaunchSettings
+** You should also test your UI against common scenarios such as in-coming phone calls, network interruptions, and user-initiated switching to other applications on the device.
+////////////////////////////////////////////////////////////////////////////////
+
  * http://developer.android.com/tools/help/uiautomator/index.html[uiautomator | Android Developers]
+ * http://www.vogella.com/articles/AndroidTesting/article.html[Android application testing with the Android test framework] ^https://diigo.com/0zmr3[閱讀]^ (2013-04-30)
+
+////////////////////////////////////////////////////////////////////////////////
+** uiautomator test project are standalone Java projects which the JUnit3 library and the uiautomator.jar and android.jar files from the android-sdk/platforms/api-version directory added to the build path.
+** uiautomator provides the UiDevice class to communicate with the device, the UiSelector class to search for elements on the screen and the UiObject which presents an user interface elements and is created based on the UiSelector class. The UiCollection class allows to select a number of user interface elements at the same time and UiScrollable allows to scroll in a view to find an element.
+** import com.android.uiautomator.testrunner.UiAutomatorTestCase; 還是得繼承特定 test case
+** `android create uitest-project -n <name> -t 1 -p <path>`
+** `adb shell uiautomator runtest LaunchSettings.jar -c com.uia.example.my.LaunchSettings`
+** Android provides the uiautomatorviewer tool, which allows you to analyze the user interface of an application. You can use this tool to find the index, text or attribute of the application.
+////////////////////////////////////////////////////////////////////////////////
+
  * http://android-developers.blogspot.tw/2012/11/android-sdk-tools-revision-21.html[Android Developers Blog: Android SDK Tools, Revision 21] (2012-11-14) - Android SDK Tools, Revision 21 首度提到 UI Automator Test Framework，只能跑在 Android 4.1(API Level 16)+
 --
+
+.其他文件
+--
+ * http://www.youtube.com/watch?v=uA54T6R8nhs[Google's UI Automator Viewer Tutorial - YouTube] (2013-03-21)
+
+////////////////////////////////////////////////////////////////////////////////
+** UI Automator Viewer (`uiautomatorviewer`)
+** not live, 在左側 screenshot 可以做 identify 的動作。
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://www.mobileautomation.blogspot.tw/2012/11/android-uiutomater-sample-test-case.html[Mobile and Web Automation: Android uiautomater sample test case with assert verification] ^https://diigo.com/0zmqt[閱讀]^ (2012-11-24)
+
+////////////////////////////////////////////////////////////////////////////////
+** You don’t need to do any pre-setup like package boundaries and configuring manifest file permissions. 
+** But here you don’t need to do anything. You can just create a normal Java project with default folder structure and build the test.jar file with project dependency UIAutomater.jar file 不用繼承任何特定的 test case??
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://everybodytests.blogspot.tw/2012/11/uiautomatorjar-what-happened-when.html[Everybody Tests: UiAutomator.jar: What happened when Android's JUnit and MonkeyRunner got drunk and hooked up] ^https://diigo.com/0zmky[閱讀]^ (2012-11-16)
+
+////////////////////////////////////////////////////////////////////////////////
+** Moreover the limitation of only being able to test the associated product app prevents testers from fully exploring the interactions between applications and systems elsewhere on the device. 很多工具都侷限在 application-under-test-sandboxing 裡。
+** Conversely Android's MonkeyRunner is based in a Java adaptation of Python (Jython, no kidding) and it has access to a whole host of interfaces outside of the particular application you're trying to test. It can be used for mobile web testing, capturing screenshots of any app interaction, and since it is based in Python, is fairly quick to script. Its shortcomings are pretty severe when it comes to deep integration with application architecture so you are left clicking sometimes blindly in order to generate events (sendkeys, x/y coordinates, d-pad actions, oh my!). 所以搭配 Sikuli 找出 x/y 坐標的做法雖然可行，但事先要準備很多的圖像確實很花時間，而且用圖像來驗證非常地受限。
+** Deep application integration with simpler scripting and full-device access, not just sandboxed inside a single app's context could be really powerful. 這裡的 "deep application integration" 是 UI Automator 相對比較弱的地方，但應該可以用 Unit test 來補足才對。
+** Of special importance are UiWatchers which are like async police whom you can configure to lurk outside of test cases to catch common difficulties affecting tests (such as dialogs and alerts) or embedded within tests themselves for more specific triggers??
+** The XML hierarchy dump tool in Monitor/DDMS is amazingly fast by comparison to the old Hierarchy Viewer, and gets you everything you need as a tester to identify the specific UI elements your test will need. 沒錯，之前的 hierarchy viewer 就是因為慢到不行，否則還是很有機會的。
+** The tests compile as a separate JAR which you push to the device/emulator in shared filespace so that the application-under-test-sandboxing of former JUnit test projects will be a thing of the past. Even better, the JAR still executes on the device allowing for massive parallelization just like before. 這裡的 "parallelization" 指的是什麼??
+** Use of Accessibility labels enforces good coding practices. Just like iOS's UI Automation, this tool takes advantage of some oft-overlooked aspects of complete code and so testers get convenient UI hooks. 之前的文章都沒有特別提到 accessibility，看似 UI Automator 不一定要 app 有特別支援 accessibility??
+** Just like the former JUnit, this one lacks portable XML test results output which means it is just feels like Google don't like good, thorough reporting.
+** timing of events in the UI 所謂的 think time，UI Automator 會怎麼處理??
+** This tool only works on devices and emulators graced with Android 4.1 (or higher). This is because the tests are run via an app included with the OS on the device. Over the next few years this will allow you to begin getting wider device coverage with tests written using this tool but until then you can't use the UIAutomator for compatibility tests. 由於是 OS 直接支援，必須隨著 OS 更新也是它的缺點。
+** I'd say while UIAutomator won't revolutionize the way I write UI test automation overnight, it shows tremendous promise. When this little code baby matures over the next year or two, with some more support from the Open Source community, I can see this going way beyond tools like Robotium. 需要時間，會逐漸取代 Robotium 的位置
+** with its ability to break out of the sandbox, you'll be getting more creative with what you're willing to test.
+** One of the huge advantages to this tool however is its ability to test anything the device can do. I imagine if you've got a 4.1 phone or tablet, you can even test other people's apps without access to their source code like you'd need with regular JUnit. 這就對了!!
+** The big win over Robotium is that it supports crossing package boundaries. Robotium can only test the Activities that live in the package under test. UI Automator works across the whole system.
+** The biggest downside for me is that it's tied so closely to the system, therefore updates and bug fixes seem likely to be released infrequently, i.e. once per Android OS update. 這代表舊 OS 的問題必須要昇級 OS 才能解決。
+** We use Robotium already and get our JUnit XML output from Polidea's XML test runner JAR.
+** It depends on your device. Since this is a new tool and it depends on the software deployed to the device in the device OS, you might find that unless you're running 4.2 on your device, you don't have all the updated methods in the tool. This was something I noticed as well and made comment towards in my main post. For now, try running your code in an emulator running rev 17 of the SDK and proving whether or not it works at all under the best case scenario. Once that's established, double-check the OS on your device. If it isn't 4.2, you may need to be satisfied with running your tests on the emulator for now. 馬上，4.2 跟 4.1 就有差別了...
+////////////////////////////////////////////////////////////////////////////////
+
+ * https://plus.google.com/103712615773524578393/posts/dzqtF7BYyG4[Christopher Orr - Google+ - The new Android UI Automator looks quite nice: similar to…] ^https://diigo.com/0zmk9[閱讀]^ (2012-11-15)
+
+////////////////////////////////////////////////////////////////////////////////
+** The new Android UI Automator looks quite nice: similar to Robotium, but directly integrated into the system, with the ability to wake up the device, rotate and lock the screen orientation, take screenshots and, importantly, it can cross package boundaries. 聽起來跟 monkeyrunner API 也有點像...
+** Though taking screenshots locally is a bit slow (~800ms on a Nexus 7), the setup process isn't yet totally intuitive, and there's no JUnit XML output (but the ability to use a custom test runner exists??).
+** it compiles to a plain old JUnit JAR — without connection to your app project — I guess you have to hardcode strings, for a single locale. 名符其實的 black-box testing
+** I've written methods to turn on and unlock device using a PIN, start Chrome from the apps list, close all existing tabs, navigate to Google Maps site and swipe around. Then reset orientation and lock the device again as teardown.Pretty straightforward, and powerful. 很明顯地，連系統頁面都可以操作...
+** I also tried switching users after waking up the device, but the uiautomator process gets killed when you switch, which is reasonable.﻿
+** I don't think you can use UI Automator to "slide-to-unlock" the screen (or it's probably more effort than it's worth). Either  disable the screen lock, or enable a PIN lock, which you can enter using UI Automator (I tried this and it works).﻿
+** One minute seems like a long time, but you can just use a regular Java/Android sleep, like     `android.os.SystemClock.sleep(ms)`. 程式也是包成 .jar 送到 device 內執行，這是跟 mokeyrunner API 最大的不同；或許這兩者是有機會搭在一起？
+////////////////////////////////////////////////////////////////////////////////
+
+--
+
+////////////////////////////////////////////////////////////////////////////////
+
+ * 不過它沒有結束時關閉 app 的問題，所以可以拆成很多段... 又不是 APK，或許也沒有存取外界資源的限制??
+
+////////////////////////////////////////////////////////////////////////////////
 

@@ -1,0 +1,176 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[AsciiDoc] gedit</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<!--link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" /-->
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <!--div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div-->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <!--a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a--></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="editors.html">AsciiDoc / Editor Support</a> / gedit</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>gedit 的文字編輯器是包裝 <a href="../../gtksourceview/gtksourceview.html">GtkSourceView</a> 而來，要自訂 syntax highlighting 的話，只要將 <code>.lang</code> 放到 <code>/usr/share/gtksourceview-[2.0|3.0]/language-specs</code> 即可。</p></div>
+<div class="paragraph"><p>其中 <code>gtksourceview-[2.0|3.0]</code> 會視 gedit 相依的版本而定：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ apt-cache depends gedit | grep sourceview
+  Depends: libgtksourceview-3.0-0</code></pre>
+</div></div>
+<div class="paragraph"><p>雖然 AsciiDoc 並沒有提供 <code>.lang</code> 給 gedit 使用，但 <a href="https://launchpad.net/asciidoc-gtk-highlight">asciidoc-gtk-highlight</a> 已經幫忙寫好了一個 <code>asciidoc.lang</code>。安裝方式很簡單：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>mkdir -p ~/.local/share/gtksourceview-2.0/language-specs/
+mkdir -p ~/.local/share/gtksourceview-3.0/language-specs/
+wget http://launchpad.net/asciidoc-gtk-highlight/trunk/0.1/+download/asciidoc-gtk-highlight.tar.gz
+tar -xzf asciidoc-gtk-highlight.tar.gz asciidoc.lang
+cp asciidoc.lang ~/.local/share/gtksourceview-2.0/language-specs/
+cp asciidoc.lang ~/.local/share/gtksourceview-3.0/language-specs/
+rm asciidoc.lang</code></pre>
+</div></div>
+<div class="paragraph"><p><code>asciidoc.lang</code> 的內容如下：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>...
+&lt;language id="asciidoc" _name="AsciiDoc" version="2.0" _section="Markup"&gt;
+  &lt;metadata&gt;
+    &lt;property name="mimetypes"&gt;text/asciidoc&lt;/property&gt;
+    &lt;property name="globs"&gt;*.asciidoc&lt;/property&gt;
+  &lt;/metadata&gt;
+...</code></pre>
+</div></div>
+<div class="paragraph"><p>裡頭有一些寫法不適用於link:../chinese.html[中文環境]，需要做一些調整：</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span class="gd">--- asciidoc.lang       2009-11-28 21:50:58.000000000 +0800</span>
+<span class="gi">+++ asciidoc-chinese.lang       2013-06-14 00:24:24.616062060 +0800</span>
+<span class="gu">@@ -199 +199 @@</span>
+<span class="gd">-            &lt;context id=&quot;MonospacePlus&quot; style-ref=&quot;markup-monospace&quot; extend-parent=&quot;false&quot;&gt;</span>
+<span class="gi">+            &lt;!--context id=&quot;MonospacePlus&quot; style-ref=&quot;markup-monospace&quot; extend-parent=&quot;false&quot;&gt;</span>
+<span class="gu">@@ -202 +202 @@</span>
+<span class="gd">-            &lt;/context&gt;</span>
+<span class="gi">+            &lt;/context--&gt;</span>
+<span class="gu">@@ -205 +205 @@</span>
+<span class="gd">-                &lt;end&gt;(`(?=[ \t\(\)\],.?!;:\-]|$)|$(?=^$))&lt;/end&gt;</span>
+<span class="gi">+                &lt;end&gt;(`(?=[ \t\(\)\],.?!;:\-。，、！？：）]|$)|$(?=^$))&lt;/end&gt;</span>
+<span class="gu">@@ -215 +215 @@</span>
+<span class="gd">-                &lt;end&gt;(&#39;(?=[ \t\(\)\],.?!;:\-]|$)|$(?=^$))&lt;/end&gt;</span>
+<span class="gi">+                &lt;end&gt;(&#39;(?=[ \t\(\)\],.?!;:\-。，、！？：）]|$)|$(?=^$))&lt;/end&gt;</span>
+<span class="gu">@@ -382,0 +383 @@</span>
+<span class="gi">+                    &lt;context ref=&quot;commentBlock&quot; /&gt;</span>
+</pre></div></div></div>
+<div class="paragraph"><p>如果要讓 gedit 開啟 <code>.txt</code> 時自動啟用 AsciiDoc 的 highlighting，必須要修改系統的 MIME 設定才行。首先在 <code>/usr/share/mime/packages/</code> 新建一支 <code>asciidoc.xml</code>：</p></div>
+<div class="listingblock">
+<div class="title"><code>asciidoc.xml</code></div>
+<div class="content"><div class="highlight"><pre><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;</span>
+<span class="nt">&lt;mime-info</span> <span class="na">xmlns=</span><span class="s">&quot;http://www.freedesktop.org/standards/shared-mime-info&quot;</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;mime-type</span> <span class="na">type=</span><span class="s">&quot;text/asciidoc&quot;</span><span class="nt">&gt;</span> <span class="nt"><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></span>
+          <span class="nt">&lt;glob</span> <span class="na">pattern=</span><span class="s">&quot;*.txt&quot;</span> <span class="nt">/&gt;</span>
+          <span class="nt">&lt;sub-class-of</span> <span class="na">type=</span><span class="s">&quot;text/plain&quot;</span> <span class="nt">/&gt;</span>
+  <span class="nt">&lt;/mime-type&gt;</span>
+<span class="nt">&lt;/mime-info&gt;</span>
+</pre></div></div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+注意這裡的 <code>type="text/asciidoc"</code> 的設定要跟 <code>asciidoc.lang</code> 裡的 <code>&lt;property name="mimetypes"&gt;</code> 一致。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>更新 MIME 資料庫後即可生效：</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>sudo update-mime-database /usr/share/mime</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">工具</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="https://launchpad.net/asciidoc-gtk-highlight">asciidoc-gtk-highlight in Launchpad</a> (2009-11-28)
+</p>
+</li>
+<li>
+<p>
+<a href="https://github.com/edusantana/asciidoc-highlight">edusantana/asciidoc-highlight · GitHub</a> - 目前支援 Notepad++，未來會支援 gedit。
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://kenjiru.ro/blog/2011/10/asciidoc-highlight-for-gedit">AsciiDoc highlight for gedit | kenjiru</a> <sup><a href="https://diigo.com/0zmva">閱讀</a></sup> (2011-10-16)
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2013-06-14 00:30:15 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<!--script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script-->
+</body>
+</html>

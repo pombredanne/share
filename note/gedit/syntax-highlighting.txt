@@ -1,0 +1,99 @@
+= link:gedit.html[gedit] / Syntax Highlighting =
+:title: [gedit] Syntax Highlighting
+
+觀察 gedit 相依於 libgtksourceview 套件：
+
+--------------------------------------------------------------------------------
+$ apt-cache depends gedit | grep sourceview
+  Depends: libgtksourceview-3.0-0
+--------------------------------------------------------------------------------
+
+事實上 gedit 下 highlight 的功能就是由 http://projects.gnome.org/gtksourceview/[GtkSourceView] 來實作的。因此只要自訂 `.lang` 檔放入 `/usr/share/gtksourceview-3.0/language-specs` 即可。在 `language-specs` 目錄底下有許多範例可以參考，另外 `language2.rng` 是用來規範 `.lang` 檔的寫法（針對開頭 version="2.0" 的檔案，而 version='1.0" 的 `.lang` 檔則由 `language.rng` 來規範），而 `styles.rng` 則用來規範 `/usr/share/gtksourceview-3.0/styles` 下 `.xml` 檔 (color schema) 的寫法。
+
+製定 `.lang` 的過程中，如果語法有錯誤的話，就會導致所有的 highlight 失效，原因可以查看 `~/.xsession-errors`。
+
+gedit 將 "語法的解析" 與 "呈現方式" 分開維護，在 `.lang` 檔裡頭只能定義特定的語法要使用哪個 style，而 style 則由 color schema 來定義。因此相同的語法會因套用不同的 color schema 而有不同的表現。將兩者拆離的做法，可以避開黑底黑字的問題（呈現方式與 color schema 沒有搭配好），但終究造成 color schema 必須顧及所有的 style，尤其是 `.lang` 必須用到原先不支援的 style 時（因此衍生出 "`diff:added-line`"、"`latex:command`" 等特殊的定義）。
+
+下面是自行製作的 ｀moin.lang｀，可以用來高亮度顯示 MoinMoin 的 Wiki 語法:
+
+--------------------------------------------------------------------------------
+<language id="moin" _name="MoinMoin" version="2.0" _section="Wiki">
+  <metadata>
+    <property name="mimetypes">text/moin-wiki</property>
+    <property name="globs">00000001</property>
+  </metadata>
+
+  <styles>
+    <!-- 這裡的 style id 是定義給下面 context 的 style-ref 引用，等於是一個邏輯名稱，藉由 map-to 再指向實質的名稱 -->
+    <style id="underline" name="Underline Format" map-to="def:wiki-underline"/>
+    <style id="emphasis" name="Underline Format (Emphasis)" map-to="def:wiki-emphasis"/>
+    ...
+  </styles>
+
+  <definitions>
+    <context id="underline" style-ref="underline" end-at-line-end="true">
+      <start>__</start>
+      <end>__</end>
+      <!-- 定義有哪些 context 可以 "直接" 用在這個 context 底下 -->
+      <include>
+        <context ref="emphasis"/>
+        ...
+      </include>
+    </context>
+    
+    ...
+    
+    <context id="emphasis" style-ref="emphasis" extend-parent="true" end-at-line-end="true">
+      <start>'''</start>
+      <end>'''</end>
+      <include>
+        <context ref="code"/>
+        <context ref="italic"/>
+        <context ref="question"/>
+        <context ref="link"/>
+        <context ref="url"/>
+      </include>
+    </context>
+    
+    <context id="moin"> <!-- 必須與 <language id="moin"...> 一致，才會被解析到 -->
+      <include>
+        <context ref="headline"/>
+        <context ref="code"/>
+        <context ref="code-block"/>
+        <context ref="underline"/>
+        <context ref="emphasis"/>
+        <context ref="italic"/>
+        <context ref="link"/>
+        <context ref="url"/>
+        <context ref="question"/>
+      </include>
+    </context>
+  </definitions>
+</language>
+--------------------------------------------------------------------------------
+
+自訂的 style (color schema) 可以放到 `~/.gnome2/gedit/styles` 下 (`id` 不能含有 "." 符號)
+
+--------------------------------------------------------------------------------
+<!-- 其中 "moin:" 必須與 <language id="moin"...> 一致，它會覆寫 "def:" 的設定?? -->
+<style name="def:error" foreground="aluminium1" background="scarletred2" bold="true"/>
+<style name="moin:error" foreground="#red" bold="true"/>
+--------------------------------------------------------------------------------
+
+如果要達成自動選取，則要組態 MIME 才行 (例如 `text/moin-wiki`，要在 `/usr/share/mime/packages` 下新增一個 `moin.xml`，然後再用 `sudo update-mime-database /usr/share/mime` 更新)
+
+--------------------------------------------------------------------------------
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns='http://www.freedesktop.org/standards/shared-mime-info'>
+  <mime-type type="text/moin-wiki">
+    <sub-class-of type="text/plain" />
+    <comment>MoinMoin Wiki</comment>
+    <glob pattern="00000001" /> <!-- 可以有多個，只支援萬用字元 "*" -->
+    <glob pattern="00000002" />
+    <glob pattern="00000003" />
+    <glob pattern="00000004" />
+    <glob pattern="00000005" />
+  </mime-type>
+</mime-info>
+--------------------------------------------------------------------------------
+

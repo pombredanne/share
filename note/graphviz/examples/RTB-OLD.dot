@@ -1,0 +1,74 @@
+digraph "RTB 舊版畫面流程" {
+  node [ shape = ellipse, fillcolor = gray, style = filled ]
+  { rank = same; 供應商 採購人員 }
+  供應商; 系統; 採購人員
+
+  node [ shape = box, color = gray, style = rounded ]
+  edge [ color = gray ]
+
+  首頁 [ label = "市開/管理部首頁 (Home)" ]
+  "RTB 首頁" [ label = "\N (rtb/Home)\n列出寄發三天後仍未確認的下單通知" ]
+  我要下單 [ label = "\N (PlaceOrders)\n列出未核的採購單" ]
+  採購購物車 [ label = "\N (PurchasingCart)\n列出購物車內容", color = red ] // 增加狀態、採購單版次
+  已發採購單 [ label = "\N (NotifiesNotClosed)", color = red ] // 增加品牌分類與問題燈號
+  異議採購單重新下單 [ label = "\N (ReviseOrders)", color = red ]
+  採購錯誤重新下單 [ label = "\N (ReplaceOrders)", color = red ]
+  採購單明細 [ label = "\N (PurchaseOrderForm)", color = red ] // 由 Sonja 提供新版內容
+  系統寄出下單通知 [ style = dashed ]
+  信件寄出確認 [ label = "\N (SentConfirmation)" ]
+  下單通知信 [ label = "\N (rtb_order)" ]
+  三天內未收件提醒 [ label = "\N (rtb_order_remind)" ]
+  確認內容提醒 [ label = "\N (rtb_xxx)" ]
+  確認收件 [ label = "\N (ReceiveNotify)" ] // ReceivedRtbNotify.htm
+  確認內容 [ label = "\N (ConfirmContents)" ]
+  確認採購單內容 [ label = "\N (ConfirmFormContent)\n直接修改有問題的地方", color = red ]
+  採購單內容沒問題 [ label = "\N (ContentCorrect)", color = red ]
+  採購單內容有問題 [ label = "\N (ContentIncorrect)\n逐項說明異動的原因", color = red ]
+
+  系統 -> 下單通知信 [ label = "首發下單通知", style = dashed ]
+  系統 -> 三天內未收件提醒 [ label = "三天內未確認收件,\n每天寄信提醒", style = dashed ]
+  系統 -> 確認內容提醒 [ label = "確認收件後,\n每天寄信提醒未確認內容", style = dashed ]
+
+  採購人員 -> 首頁
+  首頁 -> "RTB 首頁" [ label = "按上方選單 [RTB]" ]
+  "RTB 首頁" -> 我要下單 [ label = "按上方選單 [我要下單]" ]
+  我要下單 -> 採購購物車 [ label = "按上方選單 [採購購物車]" ]
+  我要下單 -> 已發採購單 [ label = "按上方選單 [已發採購單]" ]
+  我要下單 -> 採購單明細 [ label = "按 \"採購單號\" 的連結 (開窗)" ]
+  我要下單 -> 異議採購單重新下單 [ label = "按上方選單 [異議採購單重新下單]" ]
+  採購購物車 -> 採購單明細 [ label = "按 \"採購單號\" 的連結 (開窗)" ]
+  我要下單 -> 採購購物車 [ label= "按 [我要加入採購購物車],\n將勾選的採購單加到購物車" ]
+  採購購物車 -> 系統寄出下單通知 [ label = "按 [確定發出]" ]
+  系統寄出下單通知 -> 信件寄出確認
+  系統寄出下單通知 -> 下單通知信 [ style = dashed, arrowhead = none ]
+  採購購物車 -> 我要下單 [ label = "按 [退回],\n將勾選的採購單從購物車移除" ]
+  已發採購單 -> 已發採購單 [ label = "按 [重新排序]" ]
+  已發採購單 -> 已發採購單 [ label = "按品牌的連結" ]
+  異議採購單重新下單 -> 採購錯誤重新下單 [ label = "按 [我方採購錯誤要重新下單請按這裡]" ]
+  異議採購單重新下單 -> 採購購物車 [ label = "按 [與原廠協調OK，原訂單重新發出]" ]
+  異議採購單重新下單 -> 採購購物車 [ label = "按 [已經修改訂單，重新下單]" ]
+  異議採購單重新下單 -> 採購購物車 [ label = "按 [取消訂單]" ]
+  採購錯誤重新下單 -> 採購購物車 [ label = "按 [我要重新下單]" ]
+  採購錯誤重新下單 -> 採購錯誤重新下單 [ label = "按 [搜尋]" ]
+
+  供應商 -> 下單通知信 [ label = "收到" ]
+  供應商 -> 三天內未收件提醒 [ label = "收到" ]
+  下單通知信 -> 確認收件 [ label = "按通知信裡的連結" ]
+  三天內未收件提醒 -> 確認收件 [ label = "按通知信裡的連結" ]
+  確認內容提醒 -> 確認內容 [ label = "按通知信裡的連結" ]
+  確認收件 -> "下載採購單的 PDF 檔"
+  確認收件 -> 確認內容 [ label = "按 [確認收件]" ]
+  確認內容 -> 確認採購單內容 [ label = "按採購單連結 (開窗)" ]
+  確認採購單內容 -> 採購單內容沒問題 [ label = "按 [確認送出]\n(是的, 我已經確認無誤)" ]
+  確認採購單內容 -> 採購單內容有問題 [ label = "按 [確認送出]\n(我的 OC 有問題, 等修改好後再確認一次)" ]
+  採購單內容沒問題 -> "採購單內容沒問題 -> ???" [ label = "按 [Confirmed & Send]", color = red ]
+  採購單內容有問題 -> "採購單內容有問題 -> ???" [ label = "按 [Confirmed]", color = red ]
+  採購單內容有問題 -> "確認採購單內容" [ label = "按 [No！Back to last page]" ]
+
+  subgraph 下單通知循環 {
+    label = "\N"
+    通知 -> 收件
+  }
+
+}
+

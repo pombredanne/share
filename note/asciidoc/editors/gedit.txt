@@ -1,0 +1,90 @@
+= link:editors.html[AsciiDoc / Editor Support] / gedit =
+:title: [AsciiDoc] gedit
+
+gedit 的文字編輯器是包裝 link:../../gtksourceview/gtksourceview.html[GtkSourceView] 而來，要自訂 syntax highlighting 的話，只要將 `.lang` 放到 `/usr/share/gtksourceview-[2.0|3.0]/language-specs` 即可。
+
+其中 `gtksourceview-[2.0|3.0]` 會視 gedit 相依的版本而定：
+
+--------------------------------------------------------------------------------
+$ apt-cache depends gedit | grep sourceview
+  Depends: libgtksourceview-3.0-0
+--------------------------------------------------------------------------------
+
+雖然 AsciiDoc 並沒有提供 `.lang` 給 gedit 使用，但 https://launchpad.net/asciidoc-gtk-highlight[asciidoc-gtk-highlight] 已經幫忙寫好了一個 `asciidoc.lang`。安裝方式很簡單：
+
+--------------------------------------------------------------------------------
+mkdir -p ~/.local/share/gtksourceview-2.0/language-specs/
+mkdir -p ~/.local/share/gtksourceview-3.0/language-specs/
+wget http://launchpad.net/asciidoc-gtk-highlight/trunk/0.1/+download/asciidoc-gtk-highlight.tar.gz
+tar -xzf asciidoc-gtk-highlight.tar.gz asciidoc.lang
+cp asciidoc.lang ~/.local/share/gtksourceview-2.0/language-specs/
+cp asciidoc.lang ~/.local/share/gtksourceview-3.0/language-specs/
+rm asciidoc.lang
+--------------------------------------------------------------------------------
+
+`asciidoc.lang` 的內容如下：
+
+--------------------------------------------------------------------------------
+...
+<language id="asciidoc" _name="AsciiDoc" version="2.0" _section="Markup">
+  <metadata>
+    <property name="mimetypes">text/asciidoc</property>
+    <property name="globs">*.asciidoc</property>
+  </metadata>
+...
+--------------------------------------------------------------------------------
+
+裡頭有一些寫法不適用於link:../chinese.html[中文環境]，需要做一些調整：
+
+[source,diff]
+--------------------------------------------------------------------------------
+--- asciidoc.lang	2009-11-28 21:50:58.000000000 +0800
++++ asciidoc-chinese.lang	2013-06-14 00:24:24.616062060 +0800
+@@ -199 +199 @@
+-            <context id="MonospacePlus" style-ref="markup-monospace" extend-parent="false">
++            <!--context id="MonospacePlus" style-ref="markup-monospace" extend-parent="false">
+@@ -202 +202 @@
+-            </context>
++            </context-->
+@@ -205 +205 @@
+-                <end>(`(?=[ \t\(\)\],.?!;:\-]|$)|$(?=^$))</end>
++                <end>(`(?=[ \t\(\)\],.?!;:\-。，、！？：）]|$)|$(?=^$))</end>
+@@ -215 +215 @@
+-                <end>('(?=[ \t\(\)\],.?!;:\-]|$)|$(?=^$))</end>
++                <end>('(?=[ \t\(\)\],.?!;:\-。，、！？：）]|$)|$(?=^$))</end>
+@@ -382,0 +383 @@
++                    <context ref="commentBlock" />
+--------------------------------------------------------------------------------
+
+如果要讓 gedit 開啟 `.txt` 時自動啟用 AsciiDoc 的 highlighting，必須要修改系統的 MIME 設定才行。首先在 `/usr/share/mime/packages/` 新建一支 `asciidoc.xml`：
+
+[source,xml]
+.`asciidoc.xml`
+--------------------------------------------------------------------------------
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="text/asciidoc"> <1>
+	  <glob pattern="*.txt" />
+	  <sub-class-of type="text/plain" />
+  </mime-type>
+</mime-info>
+--------------------------------------------------------------------------------
+<1> 注意這裡的 `type="text/asciidoc"` 的設定要跟 `asciidoc.lang` 裡的 `<property name="mimetypes">` 一致。
+
+更新 MIME 資料庫後即可生效：
+
+ sudo update-mime-database /usr/share/mime
+
+== 參考資料 ==
+
+.工具
+--
+ * https://launchpad.net/asciidoc-gtk-highlight[asciidoc-gtk-highlight in Launchpad] (2009-11-28)
+ * https://github.com/edusantana/asciidoc-highlight[edusantana/asciidoc-highlight · GitHub] - 目前支援 Notepad++，未來會支援 gedit。
+--
+
+.文件
+--
+ * http://kenjiru.ro/blog/2011/10/asciidoc-highlight-for-gedit[AsciiDoc highlight for gedit | kenjiru] ^https://diigo.com/0zmva[閱讀]^ (2011-10-16)
+--
+

@@ -1,0 +1,30 @@
+= link:juniper-networks.html[Juniper Networks] / Network Connect =
+:title: Juniper Network Connect
+
+<input type="hidden" name="realm" value="Trend Radius">
+
+== 參考資料 ==
+
+ * http://mad-scientist.us/juniper.html[MadScientist JNC Session Manager] ^https://diigo.com/0zi3y[閱讀]^
+////////////////////////////////////////////////////////////////////////////////
+** Network Connect is a software package from Juniper Networks that interfaces with its Secure Access hardware and provides a Virtual Private Network (VPN) solution. There are two software products that connect to Secure Access servers: Windows Secure Application Manager which, as you might guess, runs on Microsoft Windows; and Network Connect which runs on other platforms, in particular GNU/Linux.
+** So, GNU/Linux is supported! Great! Well, sort of. Juniper has fallen into the common trap of supporting Red Hat Enterprise Linux and calling it good enough.
+** Equally frustrating, even on RHEL the provided user interface utility has a number of missing features. Finally, it's written in (32bit only) Java, and does not work well with non-Sun/Oracle versions of Java
+** This utility (written in Perl/GTK2) attempts to provide a more functional, better-supported interface to Juniper Network Connect session management.
+** Since the Network Connect software is 32bit you must have 32bit C runtime support libraries installed on your system.
+** `sudo apt-get install libgtk2-perl libwww-perl`
+** A critical aspect of the VPN is that your DNS resolution information is reset to point to the DNS server of the VPN; this allows you to resolve internal hostnames that aren't registered outside the VPN. Usually, when you exit the VPN tool it will restore your original DNS settings. I recommend making a copy of the /etc/resolv.conf file on your system so you can copy it back later if necessary. 通常 disconnect 時會回復原來的設定
+** `wget -q -O /tmp/msjnc https://raw.github.com/madscientist/msjnc/master/msjnc; chmod 755 /tmp/msjnc; sudo cp /tmp/msjnc /usr/bin`
+** The Network Connect software is installed automatically when you first connect to the server. Although this install will fail on Ubuntu due to the fairly stupid scripting Juniper provides, it's still necessary to go through this step to obtain the software. 拿到程式後，再用 msjnc 改寫...
+** Of course, on Ubuntu root doesn't have a password and the script is not smart enough to consider using sudo. So ignore this: hit ENTER and when it asks if you'd like to try again, hit ENTER again. You will get an error message about SSL; click OK. This will cause the startup to fail, but that's fine because it's left behind the downloaded software which we can then use with a more portable installer. 難怪之前怎麼裝都裝不起來
+** To complete the installation, you should invoke msjnc. To do this, open a terminal window (Applications -> Accessories -> Terminal) and type msjnc.
+** Running msjnc will create a new menu item in your desktop called Network Connect, under the Internet or Networking menu. You can use this in the future to start or stop the VPN.
+** Use the "Profiles" menu and select the "New" option to create a new profile. Enter values for your Juniper Network Connect VPN server. 其中 VPN server 有 Server/URL 跟 Realm 要設定，前者可以用 Windows 下的 Network Connect 取得，至於 Realm 則可以從 VPN 登入頁面的原始碼取得。
+////////////////////////////////////////////////////////////////////////////////
+ * http://holyarmy.org/2009/06/vpn-on-ubuntu-linux-with-juniper-network-connect/[Benjamin Sherman » VPN on Ubuntu Linux with Juniper Network Connect] (2009-06-15)
+////////////////////////////////////////////////////////////////////////////////
+** There’s one standard document on HOWTO get Network Connect working on Ubuntu Linux. It’s mad scientist’s doc: http://mad-scientist.us/juniper.html . However, there are a few things not covered.
+** Finding your realm is fairly straight forward if you don’t mind diving into some HTML. Point your web browser to your company’s VPN website: https://vpn.mycompany.com or https://connect.mycompany.com .   View the source of that page and look for a line like: <input type="hidden" name="realm" value="REALMNAME"> The value of REALMNAME is what you’ll need to enter when prompted.
+** If you don’t know your “PIN + SecureID Code”, it’s simply the password you type along with your username on the VPN website to gain access. As mad scientist says, some companies use “SecurID so [they] enter a personal PIN plus the value provided by the SecurID fob,” which explains why he coded that as the prompt for the password input.
+////////////////////////////////////////////////////////////////////////////////
+

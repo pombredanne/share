@@ -1,0 +1,47 @@
+= link:commands.html[Unix-like / Commands] / `screen` =
+:title: [Unix-like] screen
+
+`screen` - screen manager with VT100/ANSI terminal emulation
+
+常用的 options 有：（其中 `pid.tty.host` 用來識別 screen session，只有一個 session 時可以省略）
+
+ * `-d [pid.tty.host]` - 卸載特定 screen session 的 controlling terminals。
+ * `-r [-d] [pid.tty.host]` - 重新掛載（reattach） screen session。搭配 `-d` 可以在 reattach 前先做 detach 的動作。
+
+`screen -ls` 可以用來列出所有的 screen sessions：
+
+--------------------------------------------------------------------------------
+$ screen -ls
+No Sockets found in /var/run/screen/S-jeremy.
+$ screen <1>
+$ screen -ls
+There is a screen on:
+        4440.pts-3.jeremy-aspire-1810t  (06/13/2013 06:08:56 PM)        (Attached) <2>
+1 Socket in /var/run/screen/S-jeremy.
+$ screen -d <3>
+[remote detached from 4440.pts-3.jeremy-aspire-1810t]
+$ screen -ls
+There is a screen on:
+	4440.pts-3.jeremy-aspire-1810t	(06/13/2013 06:08:56 PM)	(Detached) <4>
+1 Socket in /var/run/screen/S-jeremy.
+--------------------------------------------------------------------------------
+<1> 單獨執行 `screen` 會建立一個新的 screen session 並直接 attach。
+<2> '(Attached)' 表示這個 screen session 有 controlling terminal 掛載。
++
+其中 "4440.pts-3.jeremy-aspire-1810t" 的表示法是 'pid.tty.host'，後面跟著的則是 session 建立的 timestamp。
++
+<3> `screen -d` 表示卸載目前的 session，效果同組合鍵 `C-a d`。
+<4> '(Detached)' 表示這個 screen session 沒有任何 controlling terminal 掛載。
+
+常用的組合鍵有：
+
+ * Ctrl-a + d - 中斷 screen/terminal 的連結。 
+
+pid.tty.host 還有建立時間的 timestamp
+
+== 參考資料 ==
+
+ * http://en.wikipedia.org/wiki/GNU_Screen[GNU Screen - Wikipedia, the free encyclopedia]
+ * http://www.computerhope.com/unix/screen.htm[Linux and UNIX screen command help and examples]
+ * http://manpages.debian.net/cgi-bin/man.cgi?query=screen[screen - Debian Hypertext Man Pages]
+
