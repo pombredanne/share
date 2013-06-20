@@ -1,0 +1,185 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Gson] Parser API</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<!--link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" /-->
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <!--div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div-->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <!--a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a--></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="gson.html">Gson</a> / Parser API</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>雖然 Gson 的重點是 Java Object 跟 JSON 兩者之間的 mapping，而不是單純做為 JSON 的 parser。不過 parsing 這項工作還是可以利用 Gson 來做，雖然有點大材小用&#8230;</p></div>
+<div class="paragraph"><p>過程中會用到的 API 有：(<code>com.google.gson</code>)</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>JsonParser</code> - 用來將 JSON 解析成樹狀的 <code>JsonElement</code>。
+</p>
+</li>
+<li>
+<p>
+<code>JsonElement</code> - abstract class，衍生出下面 4 種資料型態：
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>JsonObject</code> - 表示 JSON 的 object 結構，也就是 name/value pairs。
+</p>
+</li>
+<li>
+<p>
+<code>JsonArray</code> - 表示 JSON 的 array 結構。
+</p>
+</li>
+<li>
+<p>
+<code>JsonPrimitive</code>
+</p>
+</li>
+<li>
+<p>
+<code>JsonNull</code> - 表示 JSON 裡的 <code>null</code>。
+</p>
+</li>
+</ul></div>
+</li>
+</ul></div>
+<div class="paragraph"><p>下面用 <a href="../beanshell/beanshell.html">BeanShell</a> 做示範：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ java -cp bsh-2.0b4.jar:gson-2.2.4.jar bsh.Console
+
+bsh % show();
+bsh %
+bsh % import com.google.gson.*;
+bsh % root = new JsonParser().parse("{ \"object\": { \"name\": \"value\" }, array: [ 1, 2, 3 ] }").getAsJsonObject();
+&lt;{"object":{"name":"value"},"array":[1,2,3]}&gt;
+bsh %
+bsh % object = root.getAsJsonObject("object");
+&lt;{"name":"value"}&gt;
+bsh % print(object.get("name").getAsString());
+value
+bsh %
+bsh % array = root.getAsJsonArray("array");
+&lt;[1,2,3]&gt;
+bsh % print(array.get(0).getAsInt());
+1
+bsh % print(array.get(1).getAsInt());
+2
+print(array.get(2).getAsInt());
+3</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">手冊</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://google-gson.googlecode.com/svn/trunk/gson/docs/javadocs/com/google/gson/JsonParser.html"><code>com.google.gson.JsonParser</code></a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://google-gson.googlecode.com/svn/trunk/gson/docs/javadocs/com/google/gson/JsonElement.html"><code>com.google.gson.JsonElement</code></a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://google-gson.googlecode.com/svn/trunk/gson/docs/javadocs/com/google/gson/JsonObject.html"><code>com.google.gson.JsonObject</code></a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://google-gson.googlecode.com/svn/trunk/gson/docs/javadocs/com/google/gson/JsonArray.html"><code>com.google.gson.JsonArray</code></a>
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="https://sites.google.com/site/gson/gson-user-guide">Gson User Guide - gson</a>
+</p>
+</li>
+</ul></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="https://code.google.com/p/google-gson/source/browse/trunk/extras/src/main/java/com/google/gson/extras/examples/rawcollections/RawCollectionsExample.java">RawCollectionsExample.java</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2013-06-20 19:47:33 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<!--script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script-->
+</body>
+</html>

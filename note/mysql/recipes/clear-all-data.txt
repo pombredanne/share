@@ -1,0 +1,16 @@
+= link:recipes.html[MySQL / Recipes] / 清掉所有的資料（但保留資料結構） =
+:title: [MySQL] 清掉所有的資料（但保留資料結構）
+
+== 參考資料 ==
+
+ * http://dev.mysql.com/doc/refman/5.0/en/truncate-table.html[MySQL :: MySQL 5.0 Reference Manual :: 13.1.21 TRUNCATE TABLE Syntax]
+
+////////////////////////////////////////////////////////////////////////////////
+** TRUNCATE TABLE empties a table completely. Logically, this is equivalent to a DELETE statement that deletes all rows, but there are practical differences under some circumstances. 不等同於 DELETE 將所有 rows 刪掉的做法，最大的差別是 AUTO_INCREMENT 會被歸零。也就是說 Delete ALL 跟 Truncate 兩者語意上是不同的。
+** For an InnoDB table before version 5.0.3, InnoDB processes TRUNCATE TABLE by deleting rows one by one. As of MySQL 5.0.3, row by row deletion is used only if there are any FOREIGN KEY constraints that reference the table. If there are no FOREIGN KEY constraints, InnoDB performs fast truncation by dropping the original table and creating an empty one with the same definition, which is much faster than deleting rows one by one. (When fast truncation is used, it resets any AUTO_INCREMENT counter to zero. From MySQL 5.0.13 on, the AUTO_INCREMENT counter is reset to zero by TRUNCATE TABLE, regardless of whether there is a foreign key constraint. 5.0.13 固定將 AUTO_INCREMENT 歸零的做法比較符合預期，因為底層是怎麼清掉資料的並不重要)
+** In the case that FOREIGN KEY constraints reference the table, InnoDB deletes rows one by one and processes the constraints on each one. If the FOREIGN KEY constraint specifies DELETE CASCADE, rows from the child (referenced) table are deleted, and the truncated table becomes empty. If the FOREIGN KEY constraint does not specify CASCADE, the TRUNCATE TABLE statement deletes rows one by one and stops if it encounters a parent row that is referenced by the child
+** This is the same as a DELETE statement with no WHERE clause.
+** Truncation operations do not return a meaningful value for the number of deleted rows. The usual result is “0 rows affected,” which should be interpreted as “no information.”
+** The table handler does not remember the last used AUTO_INCREMENT value, but starts counting from the beginning. This is true even for MyISAM and InnoDB, which normally do not reuse sequence values.
+////////////////////////////////////////////////////////////////////////////////
+

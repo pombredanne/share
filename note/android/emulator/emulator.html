@@ -4,7 +4,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <meta name="generator" content="AsciiDoc 8.6.8" />
-<title>[Android] Emulator]</title>
+<title>[Android] Emulator</title>
 <link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
 <link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
 <link rel="stylesheet" href="../../../_asciidoc/stylesheets/pygments.css" type="text/css" />
@@ -45,9 +45,9 @@ asciidoc.install();
 <div id="content">
 <div id="preamble">
 <div class="sectionbody">
-<div class="paragraph"><p>每個 <a href="avd.html">AVD</a> 啟動之後，emulator 固定會 LISTEN 兩個 port，埠號範圍落在 5554 到 5585 之間：</p></div>
+<div class="paragraph"><p>每個 <a href="avd.html">AVD</a> 啟動之後，emulator 固定會 listen 兩個 port，埠號範圍落在 5554 到 5585 之間：</p></div>
 <div class="listingblock">
-<div class="content"><div class="highlight"><pre><span class="gp">$</span> netstat -na | grep 555
+<div class="content"><div class="highlight"><pre><span class="gp">$</span> netstat -na | grepgrep :55
 <span class="go">tcp        0      0 127.0.0.1:5554          0.0.0.0:*               LISTEN # <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></span>
 <span class="go">tcp        0      0 127.0.0.1:5555          0.0.0.0:*               LISTEN</span>
 <span class="go">tcp        0      0 127.0.0.1:5556          0.0.0.0:*               LISTEN</span>
@@ -73,7 +73,7 @@ asciidoc.install();
 <td class="icon">
 <img src="../../../_asciidoc/images/icons/note.png" alt="Note" />
 </td>
-<td class="content">官方 <a href="http://developer.android.com/guide/developing/tools/adb.html">ADB</a> 文件提到 "It locates emulator/device instances by scanning odd-numbered ports in the range 5555 to 5585"，但實驗發現只有 emulator 才會有 port listening 的行為，顯然這裡 "emulator/device" 指的就是 emulator instance 而已？</td>
+<td class="content">官方 <a href="http://developer.android.com/tools/help/adb.html">ADB</a> 文件提到 "It locates emulator/device instances by scanning odd-numbered ports in the range 5555 to 5585"，但實驗發現只有 emulator 才會有 port listening 的行為，顯然這裡 "emulator/device" 指的就是 emulator instance 而已？</td>
 </tr></table>
 </div>
 <div class="paragraph"><p>如果可以拿 emulator 來做測試當然很方便，但也有一些問題只會在 emulator 上才會發生：</p></div>
@@ -84,6 +84,58 @@ asciidoc.install();
 </p>
 </li>
 </ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_疑難排解">疑難排解</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_failed_to_load_libgl_so_error_libgl_so_cannot_open_shared_object_file_no_such_file_or_directory">Failed to load libGL.so error libGL.so: cannot open shared object file: No such file or directory</h3>
+<div class="listingblock">
+<div class="content">
+<pre><code>Failed to load libGL.so
+error libGL.so: cannot open shared object file: No such file or directory</code></pre>
+</div></div>
+<div class="paragraph"><p>在 Ubuntu 12.04 LTS 64-bit 上啟動 emulator 時會出現上面的錯誤。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ locate libGL.so
+/usr/lib/i386-linux-gnu/mesa/libGL.so.1
+/usr/lib/i386-linux-gnu/mesa/libGL.so.1.2
+/usr/lib/x86_64-linux-gnu/mesa/libGL.so.1
+/usr/lib/x86_64-linux-gnu/mesa/libGL.so.1.2
+$
+$ sudo ln -s /usr/lib/x86_64-linux-gnu/mesa/libGL.so.1.2 /usr/lib/libGL.so <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+$
+$ dpkg -S /usr/lib/x86_64-linux-gnu/mesa/libGL.so.1.2
+libgl1-mesa-glx: /usr/lib/x86_64-linux-gnu/mesa/libGL.so.1.2 <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+只要將 <code>/usr/lib/libGL.so</code> 指向 <code>/usr/lib/x86_64-linux-gnu/mesa/libGL.so.1.2</code> 即可。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+<code>libGL.so.1.2</code> 來自 <code>libgl1-mesa-glx</code> 套件。
+</td></tr>
+</table></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">
+<div class="title">參考資料</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/11332817/failed-to-load-libgl-so-in-android">Failed to load libGL.so in android - Stack Overflow</a> <sup><a href="https://diigo.com/0zpyw">閱讀</a></sup> (2012-07-04)
+</p>
+</li>
+</ul></div>
+</td>
+</tr></table>
+</div>
+</div>
 </div>
 </div>
 <div class="sect1">
@@ -143,7 +195,7 @@ dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
 <div id="footnotes"><hr /></div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2013-06-04 22:42:04 CST
+Last updated 2013-06-20 19:45:56 CST
 </div>
 </div>
 </div>

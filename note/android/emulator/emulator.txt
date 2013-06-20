@@ -1,11 +1,11 @@
 = link:../android.html[Android] / Emulator =
-:title: [Android] Emulator]
+:title: [Android] Emulator
 
-每個 link:avd.html[AVD] 啟動之後，emulator 固定會 LISTEN 兩個 port，埠號範圍落在 5554 到 5585 之間：
+每個 link:avd.html[AVD] 啟動之後，emulator 固定會 listen 兩個 port，埠號範圍落在 5554 到 5585 之間：
 
 [source,console]
 --------------------------------------------------------------------------------
-$ netstat -na | grep 555
+$ netstat -na | grepgrep :55 
 tcp        0      0 127.0.0.1:5554          0.0.0.0:*               LISTEN # <1>
 tcp        0      0 127.0.0.1:5555          0.0.0.0:*               LISTEN
 tcp        0      0 127.0.0.1:5556          0.0.0.0:*               LISTEN
@@ -21,7 +21,7 @@ emulator-5556	device
 <1> 單數 port 用於 link:console.html[console connection]，雙數 port 則用於 link:../adb/adb.html[adb connection]。
 <2> 由此可知，啟動 AVD 並不會自動帶出 ADB server。
 
-NOTE: 官方 http://developer.android.com/guide/developing/tools/adb.html[ADB] 文件提到 "It locates emulator/device instances by scanning odd-numbered ports in the range 5555 to 5585"，但實驗發現只有 emulator 才會有 port listening 的行為，顯然這裡 "emulator/device" 指的就是 emulator instance 而已？
+NOTE: 官方 http://developer.android.com/tools/help/adb.html[ADB] 文件提到 "It locates emulator/device instances by scanning odd-numbered ports in the range 5555 to 5585"，但實驗發現只有 emulator 才會有 port listening 的行為，顯然這裡 "emulator/device" 指的就是 emulator instance 而已？
 
 如果可以拿 emulator 來做測試當然很方便，但也有一些問題只會在 emulator 上才會發生：
 
@@ -36,6 +36,38 @@ NOTE: 官方 http://developer.android.com/guide/developing/tools/adb.html[ADB] �
 這個問題好像不只出現在 emulator 上。
 
 ////////////////////////////////////////////////////////////////////////////////
+
+== 疑難排解 ==
+
+=== Failed to load libGL.so error libGL.so: cannot open shared object file: No such file or directory ===
+
+--------------------------------------------------------------------------------
+Failed to load libGL.so
+error libGL.so: cannot open shared object file: No such file or directory
+--------------------------------------------------------------------------------
+
+在 Ubuntu 12.04 LTS 64-bit 上啟動 emulator 時會出現上面的錯誤。
+
+--------------------------------------------------------------------------------
+$ locate libGL.so
+/usr/lib/i386-linux-gnu/mesa/libGL.so.1
+/usr/lib/i386-linux-gnu/mesa/libGL.so.1.2
+/usr/lib/x86_64-linux-gnu/mesa/libGL.so.1
+/usr/lib/x86_64-linux-gnu/mesa/libGL.so.1.2
+$
+$ sudo ln -s /usr/lib/x86_64-linux-gnu/mesa/libGL.so.1.2 /usr/lib/libGL.so <1>
+$
+$ dpkg -S /usr/lib/x86_64-linux-gnu/mesa/libGL.so.1.2
+libgl1-mesa-glx: /usr/lib/x86_64-linux-gnu/mesa/libGL.so.1.2 <2>
+--------------------------------------------------------------------------------
+<1> 只要將 `/usr/lib/libGL.so` 指向 `/usr/lib/x86_64-linux-gnu/mesa/libGL.so.1.2` 即可。
+<2> `libGL.so.1.2` 來自 `libgl1-mesa-glx` 套件。
+
+[NOTE]
+.參考資料
+================================================================================
+ * http://stackoverflow.com/questions/11332817/failed-to-load-libgl-so-in-android[Failed to load libGL.so in android - Stack Overflow] ^https://diigo.com/0zpyw[閱讀]^ (2012-07-04)
+================================================================================
 
 == 參考資料 ==
 

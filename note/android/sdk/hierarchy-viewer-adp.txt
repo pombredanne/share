@@ -1,0 +1,43 @@
+= Android: 讓 Hierarchy Viewer 搭配 ADP 運作 =
+
+Hierarchy Viewer link:hierarchy-viewer.html#developer-version-only[只能搭配特定版本的 Android 系統運作]。
+
+[quote,'Android Developers','http://developer.android.com/tools/debugging/debugging-ui.html[Optimizing Your UI]']
+________________________________________________________________________________
+Connect your device or launch an emulator.
+
+To preserve security, Hierarchy Viewer can only connect to devices running a developer version of the Android system.
+________________________________________________________________________________
+
+按 "Connect your device or..." 跟 "... devices running a developer version of the Android system" 的說法，link:../devices/adp.html[ADP] 看似可以直接搭配 Hierarchy Viewer 運作，但事情並不如想像中的簡單...
+
+用 Hierarchy Viewer 連接 Galaxy Nexus 遇到跟一般非開發用手機一樣的錯誤 "Unable to debug device..."：
+
+--------------------------------------------------------------------------------
+$ hierarchyviewer 
+10:08:15 E/hierarchyviewer: Unable to get view server version from device 0149A3A40701C009
+10:08:15 E/hierarchyviewer: Unable to get view server protocol version from device 0149A3A40701C009
+10:08:17 E/hierarchyviewer: Unable to debug device 0149A3A40701C009
+--------------------------------------------------------------------------------
+
+原因出在 ADP 預設搭載的並非 "developer version of the Android system"。用 link:../adb/shell.html[ADB shell] 查看 build type，竟然是 user 而非 eng：
+
+--------------------------------------------------------------------------------
+$ adb shell getprop ro.product.model; adb shell getprop ro.build.type
+Galaxy Nexus
+user
+--------------------------------------------------------------------------------
+
+有人提到最主要原因是 `ro.secure` 這個 property 為 1 時，Hierarchy Viewer 就無法運作（試過 emulator 的 `ro.secure` 真的是 0）。
+
+== 參考資料 ==
+
+ * http://stackoverflow.com/questions/9308049/is-there-any-android-developer-os-version-available[operating system - Is there any Android developer OS version available? - Stack Overflow] (2012-02-16) - 要拿到 "developer version of the Android system" 的方法，就是自己 build 過...
+ * http://forum.xda-developers.com/showthread.php?t=1023866[[Q] How can I run hierarchy viewer on Nexus One - xda-developers] (2011-04-05) - you can't run the hierarchyviewer on stock phones
+ * http://huenlil.pixnet.net/blog/post/23271843[Android adb tool 功能整理 @ H's 手札 :: 痞客邦 PIXNET ::] (2011-03-22) - Android 預設可編譯成三種模式：eng, userdebug, user。一般使用者拿到的機器多是 user 版，當然如果是開發人員，可能會使用 eng 或 userdebug 版進行debug。
+ * http://stackoverflow.com/questions/3711348/how-can-i-run-hierarchy-view-with-nexus-one[android - How can I run hierarchy view with Nexus One - Stack Overflow] (2010-09-14) - 有人提到內嵌 ViewServer 的做法。Note that you cannot use HierarchyViewer with a production Android device (e.g., T-Mobile G1)
+ * http://code.google.com/p/android/issues/detail?id=10447[Issue 10447 - android - Hierarchy Viewer Crashes on Nexus One - Android - An Open Handset Alliance Project - Google Project Hosting] (2010-08-15) - 從回報的錯誤前有印出 protocol 跟 version 看來，Nexus One 上面確認執行著 view server。有一則回覆很耐人尋味 - "If you are using an unmodified NexusOne..."，所以要做什麼調整嗎？
+ * https://groups.google.com/group/android-developers/browse_thread/thread/b0b0af7a316ca768[About using Hierarchy Viewer - Android Developers | Google Groups] (2010-03-07) - Romain Guy 提到，Hierarchy Viewer 不能運作在 user build 上，否則其他程式有機會藉此存取到其他應用程式（呈現在畫面上的）敏感資料。
+ * https://groups.google.com/group/android-developers/browse_thread/thread/c2b2c3f6b99f194c[Hierarchy Viewer is not working on 1.5 sdk - Android Developers | Google Groups] (2009-06-08) - 作者（極加強調）之前在 ADP 可以跑 Hierarchy Viewer，但換到 1.5 之後就不行了。有人回說 `ro.secure` 如果是 1 的話，Hierarchy Viewer 就不能用。
+ * http://www.curious-creature.org/2009/03/01/android-layout-tricks-3-optimize-part-1/[Android Layout Tricks #3: Optimize, Part 1 – Romain Guy] (2009-03-01) - Romain Guy 又跳出來講說 HierarchyViewer cannot work with production G1s. You need an engineering or custom build to make it work. This is for security reasons (otherwise HierarchyViewer would let you inspect all the UI data, including passwords, of any app of any phone.) ... 重點是要怎麼拿到 engineering build??
+

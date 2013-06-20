@@ -1,31 +1,82 @@
 = link:distribution.html[iOS / Distribution] / IPA Files =
 :title: [iOS][Dist] IPA Files
 
-IPA (iOS App Store Package) 是一種壓縮過的檔案（compressed archive），內含 iOS app (ARM binary) 及其他。更正確地說應說是 'zipped archive'。
+IPA (iOS App Store Package) 是一種壓縮過的檔案（compressed archive），內含 iOS app，方便佈署給 beta testers 或公司內部的使用者。
+
+NOTE: 由於 `.ipa` 內含的 iOS app 是 ARM binary，因此只能執行在 link:../../idevice/idevice.html[iDevice] 上，不能執行在 x86 iOS simulator 上。
+
+更正確地說應說是 'zipped archive'，把副檔名改成 `.zip` 就可以解壓縮看到內部的結構：
+
+--------------------------------------------------------------------------------
+Application.ipa
+`- Payload/
+   |- iTunesArtwork
+   |- iTunesMetadata.plist
+   `- Application.app/ <1>
+--------------------------------------------------------------------------------
+<1> 內部結構跟 `.app` 是一樣的？
+
+== Installation ==
+
+至於 `.ipa` 要怎麼安裝到 iDevice？有幾個方法可供選擇：
+
+ * link:../../xcode/organizer.html[Xcode Organizer]
++
+把 `.ipa` 直接拖進 DEVICES > Your Device > Applications 即可，拖進不同版本會直接更新（不論版本新舊）。
++
+ * link:../tools/icpu.html#ipa-install[iPhone Configuration Utility (iCPU)]
++
+把 `.ipa` 先加到 LIBRARY > Applications，然後再到 DEVICES > Your Device > Application 按 Install 即可。
++
+ * link:../../itunes/itunes.html#ipa-install[iTunes]
++
+把 `.ipa` 先加到 LIBRARY > Apps，然後再到 DEVICES > Your Device > Apps 按 Install > Apply 即可。如果 LIBRARY > Apps 有更版的話，DEVICES > Your Devices > Apps 的按鈕就會變成 Update。
+
+就測試的方便性而言，Xcode Organizer 優於 iTunes 跟 iPCU，其中 iPCU 只支援 Uninstall/Insatll 而不能直接 Update 是比較可惜的地方。
 
 == 參考資料 ==
 
 .文件
 --
- * http://en.wikipedia.org/wiki/.ipa_(file_extension)[.ipa (file extension) - Wikipedia, the free encyclopedia] - `.ipa` 內含 iOS app，但只能安裝到 real device，因為裡面不含 x86 binary。
+ * http://en.wikipedia.org/wiki/.ipa_(file_extension)[.ipa (file extension) - Wikipedia, the free encyclopedia]
+
 ////////////////////////////////////////////////////////////////////////////////
 ** An .ipa file is an iPhone application archive file which stores an iPhone app. It is usually encrypted with Apple's FairPlay DRM technology. Each .ipa file is compressed with a binary for the ARM architecture and can only be installed on an iPhone, iPod Touch, or iPad. Files with the .ipa extension can be uncompressed by changing the extension to .zip and unzipping.
 ** .ipa files cannot be installed on the iPhone Simulator because they do not contain a binary for the x86 architecture. To run applications on the simulator, original project files which can be opened using the Xcode SDK are required.
 ** An IPA has a built-in structure for iTunes and AppStore to recognize. the Payload folder is what contains all the app data. The iTunes Artwork file is a 512×512 pixel PNG image, containing the app's icon for showing in iTunes and the App Store app on the iPad. The iTunesMetadata.plist contains various bits of information
 ////////////////////////////////////////////////////////////////////////////////
+
  * http://justsolve.archiveteam.org/wiki/IPA[IPA - Just Solve the File Format Problem]
+
 ////////////////////////////////////////////////////////////////////////////////
 ** An IPA file is an "archived" iOS app, a format used to distribute and install such apps for devices such as the iPhone, iPod, and iPad. In contrast to the .app files which are actually subdirectories (folders) containing the files comprising the app, an IPA file (.ipa) is a compressed archive of the app files, in ZIP format.
 ** In the Xcode development environment, a developer has the option to compile the app into a .app file (which includes an Intel-chip executable so the app can be run on the iOS simulator on the Mac) or an .ipa file (which doesn't include that version of the executable, so it is only runnable on real iOS devices). 為什麼 `.app` 反而可以執行在 simulator 裡，該不會發行到 App Store 的也是 `.ipa`??
-** In order to install an app from an IPA file, the user also needs a Mobile Provision file, set up through the Apple developer website and cryptographically keyed to grant ability to install the app to specified users. 要拿到原始碼才能做這件事??
+** In order to install an app from an IPA file, the user also needs a Mobile Provision file, set up through the Apple developer website and cryptographically keyed to grant ability to install the app to specified users. 要拿到原始碼才能做這件事?? 要怎麼指定 specified users??
 ** In this manner, an app can be distributed by the developer to beta testers, friends, or internal users at a company, but wider public release can only be done through Apple's App Store. 很明顯地，`.ipa` 主要就是做為測試用途
 ** Renaming an IPA file from .ipa to .zip allows any ZIP utility to look inside it. Its structure includes a directory named Payload which contains the app itself (there's a .app file/directory beneath this), and a few more files in the root directory: iTunesArtwork (a 512 x 512 icon in PNG format), and iTunesMetadata.plist (a Property List with various information about the app).
 ////////////////////////////////////////////////////////////////////////////////
+
  * http://www.ehow.com/how_8035320_customize-ipa.html[How to Customize IPA | eHow]
+ * http://help.testflightapp.com/customer/portal/articles/494413-how-to-create-an-ipa-xcode-4-3-[TestFlight | How to create an IPA (Xcode 4.3)] (2013-02-15)
 --
 
 .其他文件
 --
- * http://apple.stackexchange.com/questions/26550/what-does-ipa-stand-for[iphone - What does .ipa stand for? - Ask Different] (2011-10-02)
+ * http://stackoverflow.com/questions/14127576/install-ipa-with-itunes-11[ios - Install IPA with iTunes 11 - Stack Overflow] ^https://diigo.com/0zqgz[閱讀]^ (2013-01-02)
+
+////////////////////////////////////////////////////////////////////////////////
+** I can install it fine with Xcode Organizer by dragging it to the device. It also worked with iTunes <=10 by dragging onto the device name.
+** In iTunes 11 you can go to the view menu, and "Show Sidebar", this will give you the sidebar, that you can drag 'n drop to.
+** I was used to directly dragging the IPA from Finder to the device name in iTunes. Now it's a little bit more complicated, but it works.
+** I always use the iPhone configuration utility for this. Allows much more control and is faster - you don't have to sync the whole device.
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://apple.stackexchange.com/questions/26550/what-does-ipa-stand-for[iphone - What does .ipa stand for? - Ask Different] ^https://diigo.com/0zqg8[閱讀]^ (2011-10-02) - iOS App Store Package
+ * http://stackoverflow.com/questions/517463/how-can-i-install-a-ipa-file-to-my-iphone-simulator[osx - How can I install a .ipa file to my iPhone simulator - Stack Overflow] ^https://diigo.com/0zqfv[閱讀]^ (2009-02-05)
+
+////////////////////////////////////////////////////////////////////////////////
+** I would add that the only way to launch an iPhone app in the simulator is to compile it from XCode yourself with the Simulator being the active target.
+** The iPhone simulator is not an emulator -- it cannot run ARM code.
+////////////////////////////////////////////////////////////////////////////////
 --
 

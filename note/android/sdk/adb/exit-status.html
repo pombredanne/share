@@ -1,0 +1,213 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>Android: 取得 ADB Shell Command 的 Exit Status</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<!--link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" /-->
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="../../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <!--div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div-->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <!--a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a--></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>Android: 取得 ADB Shell Command 的 Exit Status</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>透過非零值的 exit status，可以讓 caller 知道過程中是否發生錯誤：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ adb pull /system/etc/hosts
+0 KB/s (25 bytes in 0.076s)
+$ echo $?
+0
+$ adb pull /system/etc/hosts-xxx
+remote object '/system/etc/hosts-xxx' does not exist
+$ echo $?
+1</code></pre>
+</div></div>
+<div class="paragraph"><p>但是執行 shell commands 時，exit status 卻固定傳回 0：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ adb shell cat /system/etc/hosts
+127.0.0.1                   localhost
+$ echo $?
+0
+$ adb shell cat /system/etc/hosts-xxx
+/system/etc/hosts-xxx: No such file or directory
+$ echo $?
+0</code></pre>
+</div></div>
+<div class="paragraph"><p>這個問題還存在最新的 Android SDK Platform-tools r11，導致自動化過程中已經發生錯誤了還不知道，網路上有不少人在提這個問題：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://stackoverflow.com/questions/9379400/adb-error-codes">android - ADB Error codes - Stack Overflow</a> (2012-02-21)
+</p>
+</li>
+<li>
+<p>
+<a href="https://bugzilla.mozilla.org/show_bug.cgi?id=544884">544884 – android shell exit code is always 0</a> (2010-02-08)
+</p>
+</li>
+<li>
+<p>
+<a href="http://code.google.com/p/android/issues/detail?id=3254">Issue 3254 - android - adb shell doesn&#8217;t return exit code of program - Android - An Open Handset Alliance Project - Google Project Hosting</a> (2009-07-13)
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>所有的解法都回歸到在 shell commands 後面加上 <code>echo $?</code>，然後 caller 再從 output 去解析出 exit status。這個過程很容易出錯，值得包裝成 helper：</p></div>
+<div class="listingblock">
+<div class="title"><code>adbshell.py</code></div>
+<div class="content">
+<pre><code>import subprocess
+
+def adb_shell(shell_cmds):
+    shell_cmds += '; echo $?'
+    cmds = ['adb', 'shell', shell_cmds]
+    stdout = subprocess.Popen(cmds, stdout=subprocess.PIPE).communicate()[0]
+
+    lines = stdout.splitlines()
+    print repr(stdout), lines
+    retcode = int(lines[-1])
+    if retcode !=0:
+        errmsg = 'failed to execute ADB shell commands (%i)' % retcode
+        if len(lines) &gt; 1: errmsg += '\n' + '\n'.join(lines[:-1])
+        raise RuntimeError(errmsg)
+    return stdout</code></pre>
+</div></div>
+<div class="paragraph"><p>在 Linux 下做了一下簡單的測試：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ adb kill-server <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+$ python
+&gt;&gt;&gt; from adbshell import adb_shell
+&gt;&gt;&gt; print adb_shell('cat /system/etc/hosts')
+'* daemon not running. starting it now on port 5037 *\n* daemon started successfully *\n127.0.0.1\t\t    localhost\r\n0\r\n' ['* daemon not running. starting it now on port 5037 *', '* daemon started successfully *', '127.0.0.1\t\t    localhost', '0']
+* daemon not running. starting it now on port 5037 *
+* daemon started successfully *
+127.0.0.1                   localhost
+0
+
+&gt;&gt;&gt; print adb_shell('cat /system/etc/hosts')
+'127.0.0.1\t\t    localhost\r\n0\r\n' ['127.0.0.1\t\t    localhost', '0']
+127.0.0.1                   localhost
+0
+
+&gt;&gt;&gt; print adb_shell('cat /system/etc/hosts-xxx')
+'/system/etc/hosts-xxx: No such file or directory\r\n1\r\n' ['/system/etc/hosts-xxx: No such file or directory', '1']
+Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+  File "adbshell.py", line 14, in adb_shell
+    raise RuntimeError(errmsg)
+RuntimeError: failed to execute ADB shell commands (1)
+/system/etc/hosts-xxx: No such file or directory</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+刻意先將 ADB server 停掉（然後重新接上設備），觀察第一次連接上設備時會有什麼狀況。結果只是多輸出 ADB server 啟動時的兩行訊息而已。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>不過在 Windows 下測試，第一個動作就爆了：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>C:\&gt; adb kill-server
+C:\&gt; python
+&gt;&gt;&gt; from adbshell import adb_shell
+&gt;&gt;&gt; print adb_shell('cat /system/etc/hosts')
+'127.0.0.1\t\t    localhost\r\r\n0\r\r\n' ['127.0.0.1\t\t    localhost', '', '0'
+, '']
+Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+  File "adbshell.py", line 10, in adb_shell
+    retcode = int(lines[-1])
+ValueError: invalid literal for int() with base 10: ''</code></pre>
+</div></div>
+<div class="paragraph"><p>不知道為何會有 <code>localhost\r\n0\r\n</code> (Linux) 與 <code>localhost\r\r\n0\r\r\n</code> (Windows) 的差別？不過這個問題可以暫時將 output 尾部的空白截掉：</p></div>
+<div class="listingblock">
+<div class="title"><code>adbshell.py</code></div>
+<div class="content">
+<pre><code>import subprocess
+
+def adb_shell(shell_cmds):
+    shell_cmds += '; echo $?'
+    cmds = ['adb', 'shell', shell_cmds]
+    stdout = subprocess.Popen(cmds, stdout=subprocess.PIPE).communicate()[0].rstrip()
+
+    lines = stdout.splitlines()
+    print repr(stdout), lines
+    retcode = int(lines[-1])
+    if retcode !=0:
+        errmsg = 'failed to execute ADB shell commands (%i)' % retcode
+        if len(lines) &gt; 1: errmsg += '\n' + '\n'.join(lines[:-1])
+        raise RuntimeError(errmsg)
+    return stdout</code></pre>
+</div></div>
+<div class="paragraph"><p>在 Windows 下再測試一遍:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; from adbshell import adb_shell
+&gt;&gt;&gt; print adb_shell('cat /system/etc/hosts')
+'127.0.0.1\t\t    localhost\r\r\n0' ['127.0.0.1\t\t    localhost', '', '0']
+127.0.0.1                   localhost
+0</code></pre>
+</div></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2013-06-04 22:51:29 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<!--script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script-->
+</body>
+</html>

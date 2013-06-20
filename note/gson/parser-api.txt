@@ -1,0 +1,62 @@
+= link:gson.html[Gson] / Parser API =
+:title: [Gson] Parser API
+
+雖然 Gson 的重點是 Java Object 跟 JSON 兩者之間的 mapping，而不是單純做為 JSON 的 parser。不過 parsing 這項工作還是可以利用 Gson 來做，雖然有點大材小用...
+
+過程中會用到的 API 有：(`com.google.gson`)
+
+ * `JsonParser` - 用來將 JSON 解析成樹狀的 `JsonElement`。
+ * `JsonElement` - abstract class，衍生出下面 4 種資料型態：
+   ** `JsonObject` - 表示 JSON 的 object 結構，也就是 name/value pairs。
+   ** `JsonArray` - 表示 JSON 的 array 結構。
+   ** `JsonPrimitive`
+   ** `JsonNull` - 表示 JSON 裡的 `null`。
+
+下面用 link:../beanshell/beanshell.html[BeanShell] 做示範：
+
+--------------------------------------------------------------------------------
+$ java -cp bsh-2.0b4.jar:gson-2.2.4.jar bsh.Console
+
+bsh % show();
+bsh %
+bsh % import com.google.gson.*;
+bsh % root = new JsonParser().parse("{ \"object\": { \"name\": \"value\" }, array: [ 1, 2, 3 ] }").getAsJsonObject();
+<{"object":{"name":"value"},"array":[1,2,3]}>
+bsh %
+bsh % object = root.getAsJsonObject("object");
+<{"name":"value"}>
+bsh % print(object.get("name").getAsString());
+value
+bsh %
+bsh % array = root.getAsJsonArray("array");
+<[1,2,3]>
+bsh % print(array.get(0).getAsInt());
+1
+bsh % print(array.get(1).getAsInt());
+2
+print(array.get(2).getAsInt());
+3
+--------------------------------------------------------------------------------
+
+== 參考資料 ==
+
+.手冊
+--
+ * http://google-gson.googlecode.com/svn/trunk/gson/docs/javadocs/com/google/gson/JsonParser.html[`com.google.gson.JsonParser`]
+ * http://google-gson.googlecode.com/svn/trunk/gson/docs/javadocs/com/google/gson/JsonElement.html[`com.google.gson.JsonElement`]
+ * http://google-gson.googlecode.com/svn/trunk/gson/docs/javadocs/com/google/gson/JsonObject.html[`com.google.gson.JsonObject`]
+ * http://google-gson.googlecode.com/svn/trunk/gson/docs/javadocs/com/google/gson/JsonArray.html[`com.google.gson.JsonArray`]
+--
+
+.文件
+--
+ * https://sites.google.com/site/gson/gson-user-guide[Gson User Guide - gson]
+
+////////////////////////////////////////////////////////////////////////////////
+** You can serialize the collection with Gson without doing anything specific: toJson(collection) would write out the desired output.However, deserialization with fromJson(json, Collection.class) will not work since Gson has no way of knowing how to map the input to the types.
+** Use Gson's parser API (low-level streaming parser or the DOM parser JsonParser) to parse the array elements and then  use Gson.fromJson() on each of the array elements.This is the preferred approach.
+////////////////////////////////////////////////////////////////////////////////
+
+ * https://code.google.com/p/google-gson/source/browse/trunk/extras/src/main/java/com/google/gson/extras/examples/rawcollections/RawCollectionsExample.java[RawCollectionsExample.java]
+--
+
