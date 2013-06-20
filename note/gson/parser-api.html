@@ -45,7 +45,7 @@ asciidoc.install();
 <div id="content">
 <div id="preamble">
 <div class="sectionbody">
-<div class="paragraph"><p>雖然 Gson 的重點是 Java Object 跟 JSON 兩者之間的 mapping，而不是單純做為 JSON 的 parser。不過 parsing 這項工作還是可以利用 Gson 來做，雖然有點大材小用&#8230;</p></div>
+<div class="paragraph"><p>雖然 Gson 的重點是 <a href="../json/java/ojm.html">OJM data binding</a>，而不是單純做為 JSON 的 parser。不過 parsing 這項工作還是可以利用 Gson 來做，雖然有點大材小用&#8230;</p></div>
 <div class="paragraph"><p>過程中會用到的 API 有：(<code>com.google.gson</code>)</p></div>
 <div class="ulist"><ul>
 <li>
@@ -70,17 +70,25 @@ asciidoc.install();
 </li>
 <li>
 <p>
-<code>JsonPrimitive</code>
+<code>JsonNull</code> - 表示 JSON 裡的 null 這個特殊的 value。
 </p>
 </li>
 <li>
 <p>
-<code>JsonNull</code> - 表示 JSON 裡的 <code>null</code>。
+<code>JsonPrimitive</code> - 表示除了 object、array、null 以外的 value。
 </p>
 </li>
 </ul></div>
 </li>
 </ul></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">這裡 element、object、array、null 的用語都跟 JSON 一致。</td>
+</tr></table>
+</div>
 <div class="paragraph"><p>下面用 <a href="../beanshell/beanshell.html">BeanShell</a> 做示範：</p></div>
 <div class="listingblock">
 <div class="content">
@@ -89,23 +97,35 @@ asciidoc.install();
 bsh % show();
 bsh %
 bsh % import com.google.gson.*;
-bsh % root = new JsonParser().parse("{ \"object\": { \"name\": \"value\" }, array: [ 1, 2, 3 ] }").getAsJsonObject();
+bsh % root = new JsonParser().parse("{ \"object\": { \"name\": \"value\" }, array: [ 1, 2, 3 ] }").getAsJsonObject(); # <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
 &lt;{"object":{"name":"value"},"array":[1,2,3]}&gt;
 bsh %
-bsh % object = root.getAsJsonObject("object");
+bsh % object = root.getAsJsonObject("object"); # <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" />
 &lt;{"name":"value"}&gt;
 bsh % print(object.get("name").getAsString());
 value
 bsh %
 bsh % array = root.getAsJsonArray("array");
 &lt;[1,2,3]&gt;
-bsh % print(array.get(0).getAsInt());
+bsh % print(array.get(0).getAsInt()); # <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" />
 1
 bsh % print(array.get(1).getAsInt());
 2
 print(array.get(2).getAsInt());
 3</code></pre>
 </div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+<code>JsonParser.parse()</code> 跟其他許多操作一樣會得到一個 <code>JsonElement</code>。
+<div class="paragraph"><p><code>JsonElement</code> 提供了一系列的 <code>getAsXXX()</code>，常用的有 <code>getAsJsonObject()</code>、<code>getAsJsonArray()</code>、<code>getAsJsonNull()</code>、<code>getAsString()</code>、<code>getAsBoolean()</code>、<code>getAsInt()</code>。</p></div>
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+<code>JsonObject</code> 提供了幾個 <code>getXXX(memberName)</code>，可以取得 name 對應 value。常用的有 <code>get(memberName)</code>、<code>getAsJsonObject(memberName)</code> 跟 <code>getAsJsonArray(member)</code>。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+<code>JsonArray</code> 提供了 <code>get(index)</code>，可以取得特定 index (0-based) 的 value。
+</td></tr>
+</table></div>
 </div>
 </div>
 <div class="sect1">
@@ -172,7 +192,7 @@ dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
 <div id="footnotes"><hr /></div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2013-06-20 19:47:33 CST
+Last updated 2013-06-20 23:02:35 CST
 </div>
 </div>
 </div>

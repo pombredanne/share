@@ -1,7 +1,7 @@
 = link:gson.html[Gson] / Parser API =
 :title: [Gson] Parser API
 
-雖然 Gson 的重點是 Java Object 跟 JSON 兩者之間的 mapping，而不是單純做為 JSON 的 parser。不過 parsing 這項工作還是可以利用 Gson 來做，雖然有點大材小用...
+雖然 Gson 的重點是 link:../json/java/ojm.html[OJM data binding]，而不是單純做為 JSON 的 parser。不過 parsing 這項工作還是可以利用 Gson 來做，雖然有點大材小用...
 
 過程中會用到的 API 有：(`com.google.gson`)
 
@@ -9,8 +9,10 @@
  * `JsonElement` - abstract class，衍生出下面 4 種資料型態：
    ** `JsonObject` - 表示 JSON 的 object 結構，也就是 name/value pairs。
    ** `JsonArray` - 表示 JSON 的 array 結構。
-   ** `JsonPrimitive`
-   ** `JsonNull` - 表示 JSON 裡的 `null`。
+   ** `JsonNull` - 表示 JSON 裡的 null 這個特殊的 value。
+   ** `JsonPrimitive` - 表示除了 object、array、null 以外的 value。
+
+TIP: 這裡 element、object、array、null 的用語都跟 JSON 一致。
 
 下面用 link:../beanshell/beanshell.html[BeanShell] 做示範：
 
@@ -20,23 +22,29 @@ $ java -cp bsh-2.0b4.jar:gson-2.2.4.jar bsh.Console
 bsh % show();
 bsh %
 bsh % import com.google.gson.*;
-bsh % root = new JsonParser().parse("{ \"object\": { \"name\": \"value\" }, array: [ 1, 2, 3 ] }").getAsJsonObject();
+bsh % root = new JsonParser().parse("{ \"object\": { \"name\": \"value\" }, array: [ 1, 2, 3 ] }").getAsJsonObject(); # <1>
 <{"object":{"name":"value"},"array":[1,2,3]}>
 bsh %
-bsh % object = root.getAsJsonObject("object");
+bsh % object = root.getAsJsonObject("object"); # <2>
 <{"name":"value"}>
 bsh % print(object.get("name").getAsString());
 value
 bsh %
 bsh % array = root.getAsJsonArray("array");
 <[1,2,3]>
-bsh % print(array.get(0).getAsInt());
+bsh % print(array.get(0).getAsInt()); # <3>
 1
 bsh % print(array.get(1).getAsInt());
 2
 print(array.get(2).getAsInt());
 3
 --------------------------------------------------------------------------------
+<1> `JsonParser.parse()` 跟其他許多操作一樣會得到一個 `JsonElement`。
++
+`JsonElement` 提供了一系列的 `getAsXXX()`，常用的有 `getAsJsonObject()`、`getAsJsonArray()`、`getAsJsonNull()`、`getAsString()`、`getAsBoolean()`、`getAsInt()`。
++
+<2> `JsonObject` 提供了幾個 `getXXX(memberName)`，可以取得 name 對應 value。常用的有 `get(memberName)`、`getAsJsonObject(memberName)` 跟 `getAsJsonArray(member)`。
+<3> `JsonArray` 提供了 `get(index)`，可以取得特定 index (0-based) 的 value。
 
 == 參考資料 ==
 
