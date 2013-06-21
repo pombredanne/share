@@ -1,0 +1,35 @@
+= link:jmemter.html[JMeter] / Performance Tips =
+:title: [JMeter] Performance Tips
+
+== 參考資料 ==
+
+ * http://jmeter.apache.org/usermanual/best-practices.html[Apache JMeter - User's Manual: Best Practices > Reducing resource requirements] ^https://diigo.com/0zsft[閱讀]^
+
+////////////////////////////////////////////////////////////////////////////////
+** Use non-GUI mode: jmeter -n -t test.jmx -l test.jtl
+** Use as few Listeners as possible; if using the -l flag as above they can all be deleted or disabled.
+** Use CSV output rather than XML
+** Only save the data that you need
+** Use as few Assertions as possible
+** If your test needs large amounts of data - particularly if it needs to be randomised - create the test data in a file that can be read with CSV Dataset. This avoids wasting resources at run-time.
+** When using JSR 223 elements, prefer script file to inline script as JMeter will compile script (if underlying language supports it) which will avoid parsing it each time it is executed and will highly improve performances of Test Plan.
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://www.ubik-ingenierie.com/blog/jmeter_performance_tuning_tips/[JMeter Performance and Tuning Tips | UBIK LOAD PACK Blog] ^https://diigo.com/0zsfs[閱讀]^ (2012-12-26) - 基本上跟官方 Best Practices 的說法是一致的
+
+////////////////////////////////////////////////////////////////////////////////
+** and partly in my opinion to some default configuration parameters that lead to these issues misuse of elements that are to be used during scripting and never during Load Test
+** Listeners receive Sample Results and do some processing with it, this takes resources (memory, CPU) so during Load Testing, a very simple rule is to REMOVE ALL LISTENERS ! , you will ask How can I use my results then ? , the answer is, you will do it after the run. So NEVER EVER have one of these listeners in your Test Plan during a Load Test. 儘可能事後再做分析
+** JMeter performances and memory usage have been highly improved in last 3 versions and upcoming 2.9 version will bring new set of improvements regarding memory and CPU:
+** GUI mode is for creating the test plan, checking it, debuging it BUT NOT FOR MASSIVE LOAD TEST . AWT Event Thread will disrupt your Load Test. NON-GUI mode is for massive load testing
+** Default JMeter java configuration comes with 512 Mo and very little GC tuning. First ensure you set -Xmx option value to a reasonable value regarding your test requirements.
+** XML is verbose, it takes resources to be written (CPU and memory) and for analysis, CSV is great so forget about XML. Furthermore, for massive load tests there are many result data you don’t need.
+** jmeter.save.saveservice.output_format=csv
+** Post-Processor and Assertions have a cost. Ensure you use them when required and use the ones that consume the less memory and CPU:
+** XPath builds a DOM tree so it consumes CPU and memory, prefer Regular Expression extractor
+** Use the most efficient option, which is JSR223 + Groovy + Caching (supported since JMeter 2.8 in external script and in next upcoming JMeter 2.9 also supported with embedded scripts). 沒想到 Groovy 在這裡出頭了，沒人再提 BeanShell
+** But of course ensure your script is necessary and efficiently written, DON’T OVERSCRIPT 好一個 overscript!!
+** Always generate Graphs and Reports AFTER the Load Test and NEVER EVER DURING IT
+** Once you reach the limits of one machine, you can switch to distributed or remote testing.
+////////////////////////////////////////////////////////////////////////////////
+
