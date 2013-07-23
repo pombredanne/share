@@ -1,0 +1,30 @@
+= Perforce =
+
+== 參考資料 ==
+
+.網站
+--
+ * http://www.perforce.com/[Perforce]
+ * http://answers.perforce.com/[Perforce Public Knowledge Base]
+--
+
+.文件
+--
+ * http://en.wikipedia.org/wiki/Perforce[Perforce - Wikipedia, the free encyclopedia]
+
+////////////////////////////////////////////////////////////////////////////////
+** The Perforce server manages a central database and a master repository of file versions. 前者放 metadata，但真正的檔案內容則是直接存放在檔案系統裡。
+** Perforce supports both Git clients and clients that use Perforce's own protocol. A Git client can communicate with the Perforce server over SSH, and other Perforce clients communicate with the server via TCP/IP using a proprietary RPC and streaming protocol. 沒想到 Perforce 跟 Git 整合得這麼緊密!!
+** Users submit changed files together in changelists, which are applied as Atomic commits.
+** File content itself is not stored in the database. Versioned file content is stored in a master directory hierarchy whose top levels are called "depots". Text file revisions are stored as RCS deltas and binary file revisions are stored in their entirety. 這聽起來很像 Subversion 的做法?
+** Finally, Perforce can be replicated to Git repositories, using the standard Git protocol and commands.
+** As with similar systems, users do not have to lock files in order to work on them and are required to resolve concurrent, committed changes before submitting their work. Users may optionally lock files to ensure that they won't have to resolve concurrent changes.
+** However, the Perforce model is slightly different from those of similar systems in that users are expected to let the system know in advance which files they intend to change, even if they don't mean to lock them. Giving advance notice puts files in a pending changelist that can be submitted to the server. It also enables the system to alert other users working on the same files. Thus users can tell when they are working in parallel and can take the opportunity to coordinate with one another before making changes that could otherwise be difficult to merge. 用 readonly 來 "暗示" 其他人可能要修改，這個做法還滿直覺的。
+** Perforce enforces this advanced notification requirement loosely by setting read-only permission on workspace files as it fetches them from the repository.
+** Repository paths are typically designated as containers for branched sets of files. For example, files in the `//depot/trunk` path may be branched as a set into a new `//depot/rel1.0` path, resulting in two sets of files evolving independently and between which changes can be merged.
+** In Perforce, the operation that merges changes from one branch to another is called integration. Integration propagates changes from a set of donor files into a set of corresponding target files; 這跟 RD 常說 INT build 有關嗎??
+** Free downloads of Perforce server, client, and plugin software are available from Perforce Software's website. Use of the Perforce server is unrestricted for up to twenty users and twenty workspaces, or unlimited users and up to 1,000 files, without a license. A license must be purchased for more users or workspaces; 原來 Perforce Server 也可以免費試用，但 "最多 1000 個檔案" 就卡住了。
+** Free licenses are available for open-source software development, school or classroom projects, and trial/evaluation periods. Use of Perforce client and plugin software is unrestricted, as is online access to Perforce technical documentation.
+////////////////////////////////////////////////////////////////////////////////
+--
+

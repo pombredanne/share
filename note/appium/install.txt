@@ -1,0 +1,133 @@
+= link:appium.html[Appium] / Installation =
+:title: [Appium] Installation
+
+首先確認有沒有安裝 link:../nodejs/nodejs.html[Node.js]，因為 Appium 是用它開發的。
+
+接著安裝 https://npmjs.org/package/appium[`appium`] 套件，官方首頁這麼寫著：
+
+[source,console]
+--------------------------------------------------------------------------------
+> sudo npm install -g appium # <1>
+> npm install wd             # <2>
+> appium &
+> node your-appium-test.js
+--------------------------------------------------------------------------------
+<1> 安裝 `appium` 套件（`-g`, global installation），之後方便調用 `appium` 來啟動 link:server.html[Appium server]。
+<2> 安裝 https://npmjs.org/package/wd[`wd`] (WebDriver/Selenium 2 node.js client) 套件。
++
+其實這個動作並非必要，除非你要用 Node.js 來寫 Appium 的測試。如果要用其他語言來寫測試的話，就要安裝不同的 link:../selenium2/selenium2.html#language-bindings[language bindings]。
+
+以下是安裝兩個套件的過程：（假設 `--prefix=~/local`）
+
+[source,console]
+--------------------------------------------------------------------------------
+$ npm install -g appium # <1>
+npm http GET https://registry.npmjs.org/appium
+...
+~/local/bin/appium -> ~/local/lib/node_modules/appium/app/bin.js
+~/local/bin/instruments_client -> ~/local/lib/node_modules/appium/instruments/client_bin.js
+~/local/bin/authorize_ios -> ~/local/lib/node_modules/appium/app/authorize.js
+...
+appium@0.7.3 ~/local/lib/node_modules/appium
+├── path@0.4.9
+...
+└── socket.io@0.9.16 (base64id@0.1.0, policyfile@0.0.4, redis@0.7.3, socket.io-client@0.9.16)
+
+$ npm install wd
+...
+wd@0.0.32 node_modules/wd
+├── vargs@0.1.0
+...
+└── request@2.21.0 (json-stringify-safe@4.0.0, aws-sign@0.3.0, forever-agent@0.5.0...)
+--------------------------------------------------------------------------------
+<1> 安裝過後多了 link:server.html[`appium`]、`instruments_client`、`authorize_ios` 三個 commands 可用。
+
+試著啟動 link:server.html[Appium server]，確認安裝沒有問題：
+
+[source,console]
+--------------------------------------------------------------------------------
+$ appium
+info: Welcome to Appium v0.7.3 (REV 120bb6813272efc128276bd212202e2cda0dea14)
+info: Appium REST http interface listener started on 0.0.0.0:4723
+   info  - socket.io started
+--------------------------------------------------------------------------------
+
+另外，https://github.com/appium/appium/blob/master/docs/running-on-linux.md[Running Appium on Linux] 系列文件（另外還有 Mac OS X 跟 Windows 的版本）提到另一種從 source code 安裝的方式。
+
+[source,console]
+--------------------------------------------------------------------------------
+$ cd /tmp
+$ git clone https://github.com/appium/appium.git <1>
+$ cd appium
+
+$ ./reset.sh --android --dev <2>
+---- Resetting / Initializing Appium ----
+* Dev mode is on, will download/build test apps
+RESETTING NPM
+* Installing new or updated NPM modules (including devDeps) <3>
+* Setting git revision data
+RESETTING ANDROID
+* Configuring Android bootstrap
+* Building Android bootstrap <4>
+* Configuring and cleaning/building Android test app: ApiDemos <2>
+* Attempting to uninstall android app com.example.android.apis
+* No devices found, skipping
+* Downloading gps demo                                         <2>
+* Setting Android config to Appium's version
+CLEANING UP
+* Cleaning any temp files
+---- reset.sh completed successfully ----
+
+$ tree sample-code/ -L 2
+sample-code/
+├── apps
+│   ├── ApiDemos -> /tmp/appium/submodules/ApiDemos <2>
+│   ├── ContactManager
+│   ├── gps-demo                                    <2>
+│   ├── gps-demo.zip                                <2>
+│   ├── RobotCalibration
+│   ├── TestApp
+│   └── WebViewApp
+└── examples
+    ├── dotnet
+    ├── java
+    ├── node
+    ├── php
+    ├── python
+    └── ruby
+--------------------------------------------------------------------------------
+<1> 從 GitHub 直接取出 Appium 的 source code。
+<2> [[example-tests]]透過 `./reset.sh` 完成 `appium` 套件的安裝，另外加上 `--dev` 才會產生 ApiDemos 跟 gps-demo 這兩個 example tests 會用到的 apps。
+<3> 從 source code 安裝 Appium (local installation)。
+<4> Android bootstrap 是做什麼用的??
+
+看起來這種安裝方式比較適合 Appium 的開發人員？
+
+== 參考資料 ==
+
+ * http://appium.io/[Appium: Mobile App Automation Made Awesome.]
+ * https://github.com/appium/appium/blob/master/docs/running-on-linux.md[Running Appium on Linux]
+
+////////////////////////////////////////////////////////////////////////////////
+** If you are running Appium on Linux, you cannot use the prebuilt '.app', which is built for OS X only. Additionally, you will not be able to test iOS apps because Appium relies on OS X-only libraries to support iOS testing.
+** You will also need Ant to build the bootstrap jar that Appium uses for testing Android.
+** Now that you're setup to run Appium, run `./reset.sh --android` from your Appium checkout to install all the dependencies.
+** run Appium on the command line using node.js: `node server.js`
+** There exists a hardware accelerated emulator for android, it has it's own limitations. For more information you can check out this page. Make sure that `hw.battery=yes` in your AVD's `config.ini`.
+////////////////////////////////////////////////////////////////////////////////
+
+ * https://github.com/appium/appium/blob/master/docs/running-on-osx.md[Running Appium on Mac OS X]
+
+////////////////////////////////////////////////////////////////////////////////
+** Appium requires Mac OS X 10.7, but 10.8 is recommended. Make sure you have XCode and the iOS SDK(s) installed. You might also want to install additional versions of the iOS SDKs if you want to test on older or multiple versions.
+** You need to authorize use of the iOS Simulator. If you are running Appium from NPM, you'll do this by running `sudo authorize_ios` (`authorize_ios` is a binary made available by the Appium npm package). If you're running Appium from source, simply run `sudo grunt authorize` to do the same thing. 為什機 simulator 要多這個步驟?? 又 grunt 是什麼??
+////////////////////////////////////////////////////////////////////////////////
+
+ * https://github.com/appium/appium/blob/master/docs/running-on-windows.md[Running Appium on Windows]
+
+////////////////////////////////////////////////////////////////////////////////
+** Now that you're setup to run Appium, run `npm install .` from your Appium checkout to install all the dependencies. Then run: `reset.bat`
+** Then run Appium on the command line using node.js: `node server.js`
+** you must supply the `--no-reset` and `--full-reset` flags currently for android to work on Windows.
+////////////////////////////////////////////////////////////////////////////////
+

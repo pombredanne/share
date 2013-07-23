@@ -1,0 +1,48 @@
+= link:nodejs.html[Node.js] / Installation (Ubuntu) =
+:title: [Node.js] Installation (Ubuntu)
+
+系統內建的版本通常比較舊，建議手動下載 source 自行編譯安裝。
+
+[source,console]
+--------------------------------------------------------------------------------
+$ sudo apt-get install build-essential libssl-dev
+$ mkdir -p ~/local/src/node; cd ~/local/src/node
+$ curl http://nodejs.org/dist/node-latest.tar.gz | tar xz --strip-components=1
+$ ./configure --prefix=~/local
+$ make install
+make -C out BUILDTYPE=Release V=1
+...
+/usr/bin/python tools/install.py install
+installing ~/local/bin/node
+...
+installing ~/local/lib/node_modules/npm/man/man1/stars.1
+symlinking ../lib/node_modules/npm/bin/npm-cli.js -> ~/local/bin/npm
+updating shebang of ~/local/bin/npm to ~/local/bin/node
+
+$ export PATH=$PATH:~/local/bin <1>
+$ node -v
+v0.10.12
+$ npm -v
+1.2.32
+--------------------------------------------------------------------------------
+<1> 結果 `node` 跟 `npm` 都安裝在 `~/local/bin`，把它加到 `PATH` 環境變數方便調用。
+
+== 參考資料 ==
+
+ * https://github.com/joyent/node/wiki/Installing-Node.js-via-package-manager[Installing Node.js via package manager · joyent/node Wiki]
+ * https://gist.github.com/dwayne/2983873[Installing node and npm on Ubuntu 12.04 LTS and 64-bit Ubuntu 13.04.] (2013-05-19)
+ * http://davidtsadler.com/archives/2012/05/06/installing-node-js-on-ubuntu/[Installing Node.js on Ubuntu - davidtsadler.com] ^https://diigo.com/0zt5b[閱讀]^ (2012-05-06)
+
+////////////////////////////////////////////////////////////////////////////////
+** Firstly we need a compiler which can be got by installing the `build-essential` package.
+** Node.js itself requires very little in the way of dependencies. `python` - Version 2.6 or 2.7. `libssl-dev` - You will need this if you plan to use SSL/TLS encryption.
+** We will create this directory in `/usr/local/src`.
+** The configure script checks your system to see if the required dependencies are present.
+** Note that by default the configure script will ensure that Node.js is installed globally for the whole system. If you wish to install it for use by a single user you can follow the extra instructions here.
+** This will result in the commands node and npm been installed into the `/usr/local/bin` directory.
+** To upgrade Node.js from source simply download the latest tar archive and repeat the above installation process. The updated version will overwrite the previous version.
+** The idea is that we create a custom directory located in the user's home directory and configure Node.js to install itself there by using the `--prefix` option.
+** `./configure --prefix=~/local`
+** The install process will create several new directories under the `~/local` directory. One of them is the `bin` directory that contains the `node` and `npm` commands. Since the system will not look in this directory when searching for commands entered by the user, we will need to update the `PATH` environment variable.
+////////////////////////////////////////////////////////////////////////////////
+

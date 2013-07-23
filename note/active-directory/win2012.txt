@@ -1,0 +1,27 @@
+= link:active-directory.html[AD] / Windows Server 2012 =
+:title: [AD] Windows Server 2012
+
+== 參考資料 ==
+
+ * http://sharepointgeorge.com/2012/configuring-active-directory-ad-ds-in-windows-server-2012/[Configuring Active Directory (AD DS) in Windows Server 2012] (2012-07-12)
+
+////////////////////////////////////////////////////////////////////////////////
+** This post will focus on Installing a Windows 2012 Server and then promoting it as the first domain controller in a new Forest.
+** I have selected Windows Server 2012 Release Candidate Server with a GUI.  The other option is server core which was first introduced in Windows 2008 and is a minimal install with no GUI but provides remote management through Windows PowerShell and other tools.
+** Our main goal for this article is to configure Active Directory and its related services such as DNS.
+** First thing I want to do is change the computer name.  Windows goes ahead and provides a default unique name in the form of WIN-<random characters> To do so, from the Server Manager > Dashboard screen, click on Local Server and then click on the computer name hyperlink. 這個動作很關鍵嗎？
+** From the Dashboard click on “Add roles and features”.  You will be presented with the “Before you begin screen.  Click Next.  In the “Installation Type” screen click on “Role-base or feature-based installation”.
+** You will be presented with the following screen asking you to select a destination server.  This is a new feature of Windows 2012 where you have the ability to deploy roles and features to remote servers and even offline virtual hard disks. In our case, we are selecting the current server from the server pool.
+** we will select the “Active Directory Domain Services” and DNS Server if it hasn’t already been provisioned.
+** You will notice that DNS is a MUST and has always been the case. 但是 DNS 這個項目還是沒有被選取
+** Back in Server Manager, you will notice that AD DS has been added to the left navigation tree.  Click on it and then click on More on the right navigation pane where it states that Configuration is required for Active Directory Domain Services. AD 只是裝完而已，還要完成一些設定。Specify domain controller capabilities 裡預選了 Domain Name System (DNS) server
+** You will now be presented with the All Servers Task Details, in which you will click on Promote this server to a domain controller under Action.
+** The Deployment Configuration screen appears and we will select “Add a new forest” as this is the first domain controller.
+** Enter your Root domain name and then click Next. 例如 `ad.simplbug.com`
+** The NetBIOS domain name will then be inputted automatically.  In the event of a conflict, it will suggest an alternative by appending the original name with a 0. 慣稱的 domain name，例如 DOMAIN\。重開後就要用 domain account `DOMAIN\Administrator` 登入了
+** Upon restart, you should be able to login using your domain credentials for the user administrator.
+** Once Server Manager has launched, click on Tools > Active Directory Administrative Center (或 Active Directory Users and Computers)
+** Click on your domain on the left navigation pane, in my instance it is corp (local).
+** Let’s begin by creating our first Organizational Unit that will house our corporate users (I am not a fan of using the default Users).  On the right navigation pane under Taks > <domain name> click on New and then select “Organizational Unit”.
+////////////////////////////////////////////////////////////////////////////////
+

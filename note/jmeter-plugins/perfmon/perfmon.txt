@@ -1,0 +1,82 @@
+= link:../jmeter-plugins.html[JMeter Plugins] / PerfMon =
+:title: [JMeter Plugins] PerfMon
+
+必須搭配 JMeter 2.4+ 跟 JRE 1.6+。安裝相當簡單，只要從 `JMeterPlugins-VERSION.zip` 解開取得 `JMeterPlugins.jar`，然後把它放到 `JMETER_HOME/lib/ext` 即可。重新啟動 JMeter GUI 就可以在選單裡看到 PerfMon 專有的項目。
+
+--------------------------------------------------------------------------------
+.
+|-- cmd/
+|   `-- JMeterPluginsCMD.*
+|-- examples/
+|   `-- *.jmx
+|-- JMeterPlugins.jar
+|-- LICENSE
+|-- README
+`-- serverAgent
+    |-- COPYING
+    |-- EXCEPTIONS
+    |-- *.so <1>
+    |-- LICENSES
+    |-- README
+    |-- ServerAgent.jar
+    |-- sigar-amd64-winnt.dll
+    |-- sigar.jar
+    |-- sigar-x86-winnt.dll
+    |-- sigar-x86-winnt.lib
+    |-- startAgent.bat
+    `-- startAgent.sh
+--------------------------------------------------------------------------------
+<1> 各種平台的 native library，例如 `libsigar-amd64-freebsd-6.so`、`libsigar-x86-linux.so` 等。
+
+PerfMon 有自己的 agent，理論上可以跑在所有的平台（利用 SIGAR 來蒐集系統資訊，必須要有 JRE 1.4+ 的執行環境）。
+
+將 `serverAgent/` 複製到受測的伺服器上，執行 `startAgent.sh <port>` 即可，預設採用 4444 埠（注意 firewall 的問題，不需要系統管理者的權限）。可以先單獨測試 SIGAR：
+
+--------------------------------------------------------------------------------
+$ java -jar sigar.jar 
+sigar> uptime
+  3:31 PM  up 5:37, load average: 0.25, 0.12, 0.07
+sigar> quit
+
+$ ./startAgent.sh 
+JMeterPlugins Agent version 1.3.2
+No port specified, the default value is used: 4444
+------ File Systems init: ------
+File System detected: /dev/sda6
+File System detected: /dev/sda5
+...
+--- Network Interfaces init: ---
+Network interface detected: lo
+Network interface detected: eth0
+...
+Waiting for incoming connections...
+--------------------------------------------------------------------------------
+
+TIP: 搭配 `nohup` 可以讓它在背景執行，也不會因使用者離線而中斷。`nohup ./startAgent.sh &`
+
+新增 PerfMon listener (jp@gc - Servers Performance Monitoring) 並連結到一或多個 agent 即可。每個 listener 可以合併多個 agent 的資訊（會自動用 hostname 來識別），但是一個 listener 只能選定一種 matrics：
+
+ * CPU - CPU 的利用率（%）；支援多 processor/core，但這個值是統合後的結果。
+ * Memory - 記憶體的使用量（MB）。
+   ** 注意 Y 軸的最大值會隨著用量增加而改變，不要誤以為 SIGAR 抓到的總記憶體量不對。
+   ** 記憶體快要用盡時，通常會伴隨著 Swap 的活動突然增加，可能是 memory-bound。
+ * Swap - 單位時內 page in/out 的 page 數量。
+ * Disks I/O - 單位時間內對所有磁碟的讀／寫次數。
+ * Networks I/O - 單位時間內所有網卡收到／送出的資料量（KB）。
+
+TIP: 雖然某些資訊的呈現方式不夠詳細（例如 CPU load average，CPU time 是花在 user 或 system？），但至少它可以看出來一個大方向，把問題縮小到少數幾台可能的伺服器上。之後再重跑一次 test plan，直接觀察那少數幾台機器的細部資訊即可。
+
+在 non-GUI mode 下跑時，蒐集到的資訊會存成 `.jppm`（類似 CSV 的格式；定期取樣，跟 sampler 無關），事後可以從 JMeter GUI 裡用 Load PerfMon File... 打開來看。反之，在 GUI mode 下跑時，結果只是一張可以另存的圖形，沒有對應的 `.jppm`，但仍然可以 Export to CSV...。
+
+ jmeter -n -t test.jmx -l result.jtl -Jjppmfile=result.jppm
+
+如果沒有給定 `-Jjppmfile`，預設會寫到目前所在目錄 `perfmon_yyyymmdd_HHMMSS.jppm`。
+
+== 參考資料 ==
+
+ * http://code.google.com/p/jmeter-plugins/wiki/PerfMon[PerfMon - jmeter-plugins]
+   ** http://code.google.com/p/jmeter-plugins/wiki/PluginInstall[Installation]
+   ** http://code.google.com/p/jmeter-plugins/wiki/PerfMon#Installation[PerfMon: Installation]
+ * http://support.hyperic.com/display/SIGAR/Home[SIGAR]
+ * http://en.wikipedia.org/wiki/Paging[Paging - Wikipedia, the free encyclopedia] - 解釋 page in/out。
+

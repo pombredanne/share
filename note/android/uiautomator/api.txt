@@ -1,0 +1,87 @@
+= link:uiautomator.html[Android / UI Automator] / API =
+:title: [Android][UI Automator] API
+
+UI Automator API 集中在 `com.android.uiautomator` 底下：
+
+ * `UiDevice` - 提供
+ * `UiSelector`
+ * `UiObject`
+ * `UiCollection`
+ * `UiScrollable`
+
+[[ui-device]]
+== `UiDevice` ==
+
+ * 實體鍵操作
+   ** `boolean pressBack()`
+   ** `boolean pressDPadXXX()`
+   ** `boolean pressDelete()`
+   ** `boolean pressEnter()`
+   ** `boolean pressHome()`
+
+...
+
+[[ui-selector]]
+== `UiSelector` ==
+
+...
+
+[[ui-object]]
+== `UiObject` ==
+
+...
+
+[[ui-collection]]
+== `UiCollection` ==
+
+...
+
+[[ui-scrollable]]
+== `UiScrollable` ==
+
+...
+
+== 參考資料 ==
+
+.手冊
+--
+ * http://developer.android.com/tools/help/uiautomator/UiDevice.html[`UiDevice`]
+ * http://developer.android.com/tools/help/uiautomator/UiSelector.html[`UiSelector`]
+ * http://developer.android.com/tools/help/uiautomator/UiObject.html[`UiObject`]
+ * http://developer.android.com/tools/help/uiautomator/UiCollection.html[`UICollection`]
+ * http://developer.android.com/tools/help/uiautomator/UiScrollable.html[`UIScrollable`]
+--
+
+.文件
+--
+ * http://developer.android.com/tools/help/uiautomator/index.html[uiautomator | Android Developers]
+
+////////////////////////////////////////////////////////////////////////////////
+** UiDevice - Represents the device state. In your tests, you can call methods on the UiDevice instance to check for the state of various properties, such as current orientation or display size. Your tests also can use the UiDevice instance to perform device level actions, such as forcing the device into a specific rotation, pressing the d-pad hardware button, or pressing the Home and Menu buttons. `getUiDevice().pressHome();`
+** UiSelector - Represents a search criteria to query and get a handle on specific elements in the currently displayed UI. If more than one matching element is found, the first matching element in the layout hierarchy is returned as the target UiObject. (多個可以改用 UiCollection) When constructing a UiSelector, you can chain together multiple properties to refine your search. If no matching UI element is found, a UiAutomatorObjectNotFoundException is thrown. You can use the childSelector() method to nest multiple UiSelector instances. 透過 `childSelector()` 搭配另一個 UiSelector 繼續往下 narrow down
+** new UiObject(new UiSelector().className("android.widget.ListView").instance(1).childSelector(new UiSelector().text("Apps")))
+** UiObject - Represents a UI element. To create a UiObject instance, use a UiSelector that describes how to search for, or select, the UI element.
+** You can reuse the UiObject instances that you have created in other parts of your app testing, as needed. Note that the uiautomator test framework searches the current display for a match every time your test uses a UiObject instance to click on a UI element or query a property. 這會讓操作變慢嗎??
+** if(okButton.exists() && okButton.isEnabled())
+** UiCollection - Represents a collection of items, for example songs in a music album or a list of emails in an inbox. Similar to a UiObject, you construct a UiCollection instance by specifying a UiSelector. The UiSelector for a UiCollection should search for a UI element that is a container or wrapper of other child UI elements (such as a layout view that contains child UI elements). 定位在外層，這樣成員有變動時才會反應出來，合理!!
+** videos = new UiCollection(new UiSelector().className("android.widget.FrameLayout"));
+** videos.getChildCount(new UiSelector().className("android.widget.LinearLayout")) 查底下有多少個 LinearLayout 嗎??
+** videos.getChildByText(new UiSelector().className("android.widget.LinearLayout"), "Cute Baby Laughing")
+** if(!checkBox.isSelected()) checkbox.click();
+** UiScrollable - Represents a scrollable collection of UI elements. You can use the UiScrollable class to simulate vertical or horizontal scrolling across a display. This technique is helpful when a UI element is positioned off-screen and you need to scroll to bring it into view.
+** For example, the following code shows how to simulate scrolling down the Settings menu and clicking on an About tablet option:
+** UiScrollable settingsItem = new UiScrollable(new UiSelector().className("android.widget.ListView"));
+   UiObject about = settingsItem.getChildByText(new UiSelector().className("android.widget.LinearLayout"), "About  tablet"); 也就是說 getChild 的動作就會讓它出現在螢幕上
+** The following code example shows a simple test case which simulates a user bringing up the Settings app in a stock Android device. The test case mimics all the steps that a user would typically take to perform this task, including opening the Home screen, launching the All Apps screen, scrolling to the Settings app icon, and clicking on the icon to enter the Settings app.
+** the All Apps button’s       // content-description property has the value “Apps”.
+** UiObject allAppsButton = new UiObject(new UiSelector().description("Apps"));
+** allAppsButton.clickAndWaitForNewWindow(); 有 clickAndWait 的支援還滿方便的；支援 swipe 及其他手勢嗎??
+** In the All Apps screen, the Settings app is located in the Apps tab.
+** Next, in the apps tabs, we can simulate a user swiping until they come to the Settings app icon.  Since the container view is scrollable, we can use a UiScrollable object. 這個動作還滿炫的!!
+** UiScrollable appViews = new UiScrollable(new UiSelector().scrollable(true)); 直接找畫面上可以捲動的元件
+** appViews.setAsHorizontalList(); 直接改變 attribute??
+** .className(android.widget.TextView.class.getName()) 直接引用 Android Library，比較不會寫錯。
+** .packageName("com.android.settings")); assertTrue("Unable to detect Settings", settingsValidation.exists());
+////////////////////////////////////////////////////////////////////////////////
+--
+

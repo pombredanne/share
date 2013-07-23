@@ -1,0 +1,146 @@
+= GNU Screen =
+
+// 從 `screen -ls` 跟 `C-a "` 的結果看來，感覺 terminal 可以分出許多 sessions，而每個 sessions 才會往下展開 windows??
+// 通常只會用到一個 session，可以 local 跟 remote 分開成兩個 session。
+
+`screen` - screen manager with VT100/ANSI terminal emulation
+
+常用的 options 有：
+
+ * `-S <session_name>` - 需要建立新 session 時，預設會採用 'tty.host' 為名（因此才會有 'pid.tty.host' 的說法）。透過 `-S` 可以自訂一個比較有意義的名稱 'session_name'，例如 `-S diagnostic`。
+ * `-r [pid.tty.host]` - 掛載到特定的 detached session。如果只有一個 detached session 時，'pid.tty.host' 可以省略。
++
+--
+根據官方文件的說法 "an optional prefix of [pid.]tty.host may be needed to distinguish between multiple detached screen sessions"，其實 'pid.tty.host' 只要提供 "足以識別不同 session 的 prefix" 即可。
+
+例如 `screen -ls` 有兩個 detached session - `5197.workspace` 跟 `5138.diagnose`。下面這幾個用法都可以掛載 `5138.diagnose`，不一定要完整輸入 'pid.tty.host' － `-r 513`、`-r diag` 或 `-r d`。
+--
++
+ * `-d [pid.tty.host]` - 從特定的 detached session 卸載，如果已經在某個 session 裡，'pid.tty.host' 可以省略。
+ * `-m` - 強制開啟一個新 session，即便目前已經在某個 session 裡。
++
+--
+WARNING: 在 session 裡強制再建另一個 session 會讓事情變得複雜。
+--
++
+ * `-d -m` - 強制開啟一個 detached session，可以用來將 system startup scripts 執行在背景。
+ * `-h <num>` - 將 link:scrollback-copy-mode.html[scrollback] buffer 的行數設成 'num'，預設是 100。
+ * `-c <screenrc_file>` - 一個 screen session 新建立起來時，改執行 'screenrc_file' 裡面的 link:commands.html[screen commands]，而非預設的 `~/.screenrc`。
+ * `-R` - 重新掛載到特定的 detached session，如果不存在的話再依其他參數將 session 建立起來。
+
+常見的用法有：
+
+ * `screen` - 如果不在 screen session 裡，會建立一個新的 screen session 並 attach 上去，但如果已經在 screen session 裡，則單純新開一個 window。
+ * `screen -ls` - 列出目前可用的 sessions。
+ * `screen -dmS <session_name> <shell_command> [<args>]` - 建立一個名叫 'session_name' 的 screen session，並開一個 window 執行 'shell_command'。
+ * `screen -S <session_name> -X screen [-t <title>] <shell_command> [<args>]` - 在名叫 'session_name' 的 screen session 裡開一個新 window 執行 'shell_command'，並將 window title 改為 'title'。
+
+--------------------------------------------------------------------------------
+$ screen -ls
+No Sockets found in /var/run/screen/S-jeremy.
+$ screen <1>
+$ screen -ls
+There is a screen on:
+        4440.pts-3.jeremy-laptop  (06/13/2013 06:08:56 PM)        (Attached) <2>
+1 Socket in /var/run/screen/S-jeremy.
+$ screen -d <3>
+[remote detached from 4440.pts-3.jeremy-laptop]
+$ screen -ls
+There is a screen on:
+	4440.pts-3.jeremy-laptop	(06/13/2013 06:08:56 PM)	(Detached) <4>
+1 Socket in /var/run/screen/S-jeremy.
+--------------------------------------------------------------------------------
+<1> 單獨執行 `screen` 會建立一個新的 screen session 並直接 attach。
+<2> '(Attached)' 表示這個 screen session 有 controlling terminal 掛載。
++
+其中 "4440.pts-3.jeremy-laptop" 的表示法是 'pid.tty.host'，後面跟著的則是 session 建立的 timestamp。
++
+<3> `screen -d` 表示卸載目前的 session，效果同組合鍵 `C-a d`。
+<4> '(Detached)' 表示這個 screen session 沒有任何 controlling terminal 掛載。
+
+常用的組合鍵有：（大小寫有別）
+
+ * `C-a N` - 顯示目前 window 的 number 跟 title。
+ * `C-a A` - 修改目前 window 的 title。
+ * `C-a "` - 用上下鍵選取並切換到其他 window，目前的 window 會預先被選取。
+ * `C-a '` - 輸入 window number 切換到其他 window。
+ * `C-a i` - 顯示目前 window 的設定，例如 "`(31,25)/(135,25)+100 +flow UTF-8 6(bash)`"。
+ * `C-a c` - 建立一個新的 window 並直接切換過去。
+ * `C-a d` - 從目前的 session 卸載（detach），回到上層的 shell。不要跟常用的 `Ctrl-D` 搞混了。 
+ * `C-a w` - 在螢幕下方列出所有 window 的 number 跟 title。
+ * `C-a k` - 關閉目前的 window，會被提示 "Really kill this window [y/n]"。
+ * `C-a p/n` - 切換到上／下一個 window。
+ * `C-a H` - 開始記錄目前 window 的輸出到外部檔案（`screenlog.n`），其中 'n' 是 window number；再按一次相同的組合鍵可以停止記錄。
+ * `C-a h` - 將目前 window 的內容截取到外部檔案（`hardcopy.n`），其中 'n' 是 window number。
+ * `C-a M` - 開始監測目前 window 有新的輸出，再按一次相同的組合鍵可以停止監測。
+ * `C-a _` (`silence`) - 開始監測目前 window 在一段時間內沒有動靜（silence），再按一次相同的組合鍵可以停止監測。畫面要持續多久沒變化才叫沒動靜（inactivity/silence）由 link:commands.html#silencewait[`silencewait`] 設定，預設是 30 秒。
+ * `C-a t` - 顯示系統資訊。例如 "`12:35:38 Jul 20 your-hostname 0.73 0.78 0.68`"，依序是系統時間、主機名稱跟 link:../unix-like/performance/load-average.html[load average]。
+ * `C-a :` - 輸入 link:commands.html[screen commands]。
+
+== 延伸閱讀 ==
+
+ * link:searching.html[Searching]
+ * link:scrollback-copy-mode.html[Scrollback/Copy Mode]
+ * link:commands.html[Screen Commands]
+ * link:status-bar.html[Status Bar]
+ * link:new-cmd-window-existing-session.html[在現有的 Session 裡開新 Window 執行 Command]
+
+== 參考資料 ==
+
+.網站
+--
+ * http://www.gnu.org/software/screen/[GNU Screen]
+--
+
+.文件
+--
+ * http://en.wikipedia.org/wiki/GNU_Screen[GNU Screen - Wikipedia, the free encyclopedia]
+ * http://manpages.debian.net/cgi-bin/man.cgi?query=screen[screen - Debian Hypertext Man Pages] - key combination 右邊括號表示對應的 screen command。
+ * http://www.computerhope.com/unix/screen.htm[Linux and UNIX screen command help and examples]
+--
+
+.其他文件
+--
+ * http://www.rackaid.com/resources/linux-screen-tutorial-and-how-to/[Linux Screen Tutorial and How To - rackAID] (2008-01-01)
+
+////////////////////////////////////////////////////////////////////////////////
+** Lost your shell connection? Need multiple shell sessions? 切中問題!!
+** You are logged into your remote server via SSH and happily plucking along at your keyboard and then it happens. Suddenly, the characters stop moving and then you get the dreaded “Connection Closed” message. You have just lost your session. You were halfway through some task and now you have to start over. 真有畫面!!
+** The Linux screen tool can not only save you from disconnection disasters, but it also can increase your productivity by using multiple windows within one SSH session.
+** You may or may not get a text message about screen. If you do not, then you probably think nothing has happened, but it has. You are now inside of a window within screen. (正確的說法應該是 "a window within a screen session") This functions just like a normal shell except for a few special characters. Screen uses the command “Ctrl-A” as a signal to send commands to screen instead of the shell.
+** The power of screen will become obvious, especially if you need to bounce around to different file system locations and leave processes running. 沒錯，最根本的問題是要在不同的位置來回切換。
+** To open a new window, you just use “Ctrl-A” “c”. This will create a new window for you with your default prompt. (由於是採用 default prompt，所以感覺不太出來跟 "進另一層 shell" 有什麼差別) For example, I can be running top and then open a new window to do other things. Top stays running! It is still there.
+** You can create several windows and toggle through them with “Ctrl-A” “n” for the next window or “Ctrl-A” “p” for the previous window.
+** There are two ways to get out of screen. The first is just like logging out of a shell. You kill the window with “Ctrl-A” “K” or “exit” will work on some systems. This will kill the current windows. If you have other windows, you will drop into one of those. If this is the last window, then you will exit screen.
+** The second way to leave screen is to detach from a windows. This method leaves the process running and simple closes the window. If you have really long processes, you need to close your SSH program, you can detach from the window using “Ctrl-A” “d”. This will drop you into your shell. All screen windows are still there and you can re-attach to them later. 可以看到一個畫面 shell 底下展開多個 "平行" 的 windows/sessions，可以在 windows 之間切換，也可以 detach 回到上一層的 shell。
+** Login to your system and use the screen listing tool to see what sessions are running: `screen -ls`
+** To re-attach to a session, use the re-attach command: `screen -r 31619.ttyp2.gigan`
+** A nice thing about this, is you can re-attach from anywhere. If you are at work or a clients office, you can use screen to start a job and then logout. When you get back to your office or home, you can login and get back to work.
+** As a consultant, I find it important to keep track of what I do to someone’s server. Fortunately, screen makes this easy. Using “Ctrl-A” “H”, creates a running log of the session. Screen will keep appending data to the file through multiple sessions. Using the log function is very useful for capturing what you have done, especially if you are making a lot of changes. If something goes awry, you can look back through your logs. 沒錯，發現問題時可以循原路回去找答案。
+** Screen can monitor a window for activity or lack thereof. This is great if you are downloading large files, compiling, or watching for output. If you are downloading something or compiling, you can watch for silence. To start the monitor, go to the screen you want to monitor and use “Ctrl-A” “M” to look for activity or “Ctrl-A” “_” to monitor for silence. Then open or switch to a new window. When the monitor detects activity or silence, you will get an alert at the bottom with the window number. To quickly go to that window, use “Ctrl-A” “ (thats a quote mark, ctrl-a then a “). After you do this, just type in the number of the window and enter. To stop monitoring, go to that window and undo the monitor with the same command.
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://www.cyberciti.biz/tips/how-to-use-screen-command-under-linux.html[Linux screen command tutorial / how to] (2007-09-27)
+
+////////////////////////////////////////////////////////////////////////////////
+** If there is no screen command, you need to open multiple ssh session with remote host. 重複登入真的很煩，用 job controls 切換也不是很方便。
+** Screen is a full-screen window manager that multiplexes a physical terminal between several processes (typically interactive shells).
+** Instead of opening up several terminal instances on your desktop or using those ugly GNOME/KDE-based tabs, Screen can do it better and simpler.
+** Not only that, with GNU Screen, you can share sessions with others and detach/attach terminal sessions. It is a great tool for people who have to share working environments between work and home. 也就是 sessions 不會因連線中斷就不見。
+** By adding a status bar to your screen environment, you are able to name your shell instances on the fly or via a configuration file called `.screenrc` that can be created on the user’s home directory.
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://www.cyberciti.biz/tips/linux-screen-command-howto.html[How do I Use Multiple Screens on One Terminal over ssh session?] (2005-12-07)
+
+////////////////////////////////////////////////////////////////////////////////
+** FreeBSD user can use ports to install screen 很難想像為什麼 FreeBSD 沒這玩意兒
+** Start screen session. You can name your window/session (1 is name of session): `$ screen -S 1`
+** You need to create another screen window by pressing special key combination. Press `CTRL + a` followed by `c` key (first hit `CTRL+a`, releases both keys and press `c`). As soon as you hit 'c' you will get new shell prompt at console.
+** to switch between pine and wget window (or session) press `CTRL+a` followed by `n` key (first hit `CTRL+a`, releases both keys and press `n`). To list all windows use the command `CTRL+a` followed by `"` key (first hit `CTRL+a`, releases both keys and press `"` ). To switch to window by number use the command `CTRL+a` followed by `'` (first hit `CTRL+a`, releases both keys and press `'` it will prompt for window number). 注意 window/session 的說法是互通的。
+** `Ctrl+a w` - List all windows
+** `Ctrl+a 0-9` Go to a window numbered 0 9, use `Ctrl+a w` to see number
+** `Ctrl+a Ctrl+a` Toggle / switch between the current and previous window
+** `Ctrl-a ?` Display help screen i.e. display a list of commands
+////////////////////////////////////////////////////////////////////////////////
+--
+

@@ -1,0 +1,226 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Unix-like] Permissions - 在電梯裡遇見雙胞胎 | 傑洛米 Jeremy</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<!--link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" /-->
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="https://www.facebook.com/jeremy.kao.92" target="_blank">Jeremy Kao - 傑洛米·高</a></div>
+  <div><a href="../../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <!--div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div-->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <!--a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a--></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="filesystem.html">Unix-like / Filesystem</a> / Permissions</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span class="gp">$</span> <span class="nb">cd</span> /tmp
+<span class="gp">$</span> mkdir -p perms/dir/subdir
+<span class="gp">$</span> <span class="nb">echo</span> <span class="s1">&#39;dir/file&#39;</span> &gt; perms/dir/file
+<span class="gp">$</span> <span class="nb">echo</span> <span class="s1">&#39;subdir/file&#39;</span> &gt; perms/dir/subdir/file
+<span class="gp">$</span> tree -p perms
+<span class="go">perms</span>
+<span class="go">└── [drwxrwxr-x]  dir</span>
+<span class="go">    ├── [-rw-rw-r--]  file</span>
+<span class="go">    └── [drwxrwxr-x]  subdir</span>
+<span class="go">        └── [-rw-rw-r--]  file</span>
+
+<span class="go">2 directories, 2 files</span>
+
+<span class="gp">$</span> <span class="nb">cd </span>perms
+<span class="gp">$</span> cat dir/file
+<span class="go">dir/file</span>
+<span class="gp">$</span> cat dir/subdir/file
+<span class="go">dir/subdir/file</span>
+</pre></div></div></div>
+<div class="paragraph"><p>做幾個實驗：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ sudo chmod a-r dir
+$ ls dir        <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+ls: cannot open directory dir: Permission denied
+$ cat dir/file  <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+dir/file
+
+$ ls dir/subdir <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+file
+$ cat dir/subdir/file
+dir/subdir/file
+
+$ sudo chmod a-x dir         <img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+$ sudo chmod a+r dir
+$ sudo tree -p
+.
+└── [drw-rw-r--]  dir
+    ├── [-rw-rw-r--]  file
+    └── [drwxrwxr-x]  subdir <img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+        └── [-rw-rw-r--]  file
+
+2 directories, 2 files
+
+$ cd dir
+bash: cd: dir: Permission denied
+$ ls dir        <img src="../../../_asciidoc/images/icons/callouts/4.png" alt="4" />
+ls: cannot access dir/subdir: Permission denied
+ls: cannot access dir/file: Permission denied
+file  subdir
+$ cat dir/file
+cat: dir/file: Permission denied        <img src="../../../_asciidoc/images/icons/callouts/5.png" alt="5" />
+
+$ cd dir/subdir
+bash: cd: dir/subdir: Permission denied <img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+$ ls dir/subdir <img src="../../../_asciidoc/images/icons/callouts/4.png" alt="4" />
+ls: cannot access dir/subdir: Permission denied
+$ cat dir/subdir/file
+cat: dir/subdir/file: Permission denied <img src="../../../_asciidoc/images/icons/callouts/5.png" alt="5" />
+
+$ sudo chmod a+x dir <img src="../../../_asciidoc/images/icons/callouts/6.png" alt="6" />
+$ sudo chmod a-w dir
+$ mv dir/file dir/file2
+mv: cannot move `dir/file' to `dir/file2': Permission denied
+$ touch dir/file
+
+$ mv dir/subdir/file dir/subdir/file2
+$</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+把目錄的 read 權限拿掉後，只會影響該目錄自己 list 的功能，子目錄不受影響。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+雖然對目錄沒有 list 的權限，但還是存取底下的檔案（如果知道檔名的話）。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+把上層目錄的 execute 權限拿掉，但子目錄維持不變。從結果來看，子目錄也受到影響了，行為上跟 read/write 權限很不一樣。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/4.png" alt="4" /></td><td>
+拿掉 execute 權限後，上層的目錄還看得到清單，但子目錄就完全看不到東西，為什麼??
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/5.png" alt="5" /></td><td>
+就算對檔案本身有存取的權限，只要無法切換到該目錄，結果就是無法存取。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/6.png" alt="6" /></td><td>
+把 write 權限拿掉後，只會影響該目錄下能否新增／刪除／更名檔案，子目錄則不受影響。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/7.png" alt="7" /></td><td>
+雖然不能異動檔案的內容，但修改檔案的 timestamp 是可以的？
+</td></tr>
+</table></div>
+<div class="paragraph"><p>目錄的 read/write 權限只會作用在該目錄本身，但 execute 權限則跟 "目錄之間的上下關係" 有交互作用。簡單地說，要存取特定目錄的檔案，除了檔案本身的權限之外，對所有父層目錄也都要有 execute 的權限才行。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>ls -ld /
+drwxr-xr-x 29 root root 4096 Jun 18 06:50 /</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">工具</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://permissions-calculator.org/">Unix Permissions Calculator</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://en.wikipedia.org/wiki/Filesystem_permissions">Filesystem permissions - Wikipedia, the free encyclopedia</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://linuxcommand.org/lts0070.php">Learning the shell - Lesson 7: Permissions</a>
+</p>
+</li>
+</ul></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.tuxfiles.org/linuxhelp/filepermissions.html">Linux file permissions</a> (2005-10-05)
+</p>
+</li>
+</ul></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.library.yale.edu/wsg/docs/permissions/">Understanding Unix Permissions</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.linuxnix.com/2011/12/suid-set-suid-linuxunix.html">What is SUID and how to set SUID in Linux/Unix?</a> (2011-12-29)
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2013-07-22 10:31:13 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<!--script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script-->
+</body>
+</html>

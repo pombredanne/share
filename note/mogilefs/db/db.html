@@ -1,0 +1,464 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[MogileFS] Database - 在電梯裡遇見雙胞胎 | 傑洛米 Jeremy</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<!--link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" /-->
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="https://www.facebook.com/jeremy.kao.92" target="_blank">Jeremy Kao - 傑洛米·高</a></div>
+  <div><a href="../../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <!--div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div-->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <!--a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a--></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="../mogilefs.html">MogileFS</a> / Database</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="class.html"><code>class</code></a> - 不同檔案型態的處理方式。
+</p>
+</li>
+<li>
+<p>
+<a href="device.html"><code>device</code></a> - 目前 MogileFS 管理的 storage devices。
+</p>
+</li>
+<li>
+<p>
+<code>domain</code>
+</p>
+</li>
+<li>
+<p>
+<a href="file.html"><code>file</code></a> - 所有的檔案，用 <code>fid</code> 來識別。
+</p>
+</li>
+<li>
+<p>
+<code>file_on</code> - 特定 file 出現在哪幾個 devices。（只有 <code>fid</code> 跟 <code>devid</code> 兩個欄位）
+</p>
+</li>
+<li>
+<p>
+<code>file_on_corrupt</code>
+</p>
+</li>
+<li>
+<p>
+<code>file_to_delete</code>
+</p>
+</li>
+<li>
+<p>
+<code>file_to_delete2</code>
+</p>
+</li>
+<li>
+<p>
+<code>file_to_delete_later</code>
+</p>
+</li>
+<li>
+<p>
+<code>file_to_queue</code>
+</p>
+</li>
+<li>
+<p>
+<code>file_to_replicate</code>
+</p>
+</li>
+<li>
+<p>
+<code>fsck_log</code>
+</p>
+</li>
+<li>
+<p>
+<code>host</code>
+</p>
+</li>
+<li>
+<p>
+<code>server_settings</code>
+</p>
+</li>
+<li>
+<p>
+<code>tempfile</code>
+</p>
+</li>
+<li>
+<p>
+<code>unreachable_fids</code>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_schema">Schema</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre><code>-- MySQL dump 10.13  Distrib 5.1.66, for debian-linux-gnu (x86_64)
+--
+-- Host: localhost    Database: mogilefs
+-- ------------------------------------------------------
+-- Server version       5.1.62-rel13.2-log
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Table structure for table `class`
+--
+
+DROP TABLE IF EXISTS `class`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `class` (
+  `dmid` smallint(5) unsigned NOT NULL,
+  `classid` tinyint(3) unsigned NOT NULL,
+  `classname` varchar(50) DEFAULT NULL,
+  `mindevcount` tinyint(3) unsigned NOT NULL,
+  `replpolicy` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`dmid`,`classid`),
+  UNIQUE KEY `dmid` (`dmid`,`classname`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `device`
+--
+
+DROP TABLE IF EXISTS `device`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `device` (
+  `devid` mediumint(8) unsigned NOT NULL,
+  `hostid` mediumint(8) unsigned NOT NULL,
+  `status` enum('alive','dead','down','readonly','drain') DEFAULT NULL,
+  `weight` mediumint(9) DEFAULT '100',
+  `mb_total` mediumint(8) unsigned DEFAULT NULL,
+  `mb_used` mediumint(8) unsigned DEFAULT NULL,
+  `mb_asof` int(10) unsigned DEFAULT NULL,
+  PRIMARY KEY (`devid`),
+  KEY `status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `domain`
+--
+
+DROP TABLE IF EXISTS `domain`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `domain` (
+  `dmid` smallint(5) unsigned NOT NULL,
+  `namespace` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`dmid`),
+  UNIQUE KEY `namespace` (`namespace`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `file`
+--
+
+DROP TABLE IF EXISTS `file`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `file` (
+  `fid` bigint(20) unsigned NOT NULL,
+  `dmid` smallint(5) unsigned NOT NULL,
+  `dkey` varchar(255) DEFAULT NULL,
+  `length` bigint(20) unsigned DEFAULT NULL,
+  `classid` tinyint(3) unsigned NOT NULL,
+  `devcount` tinyint(3) unsigned NOT NULL,
+  PRIMARY KEY (`fid`),
+  UNIQUE KEY `dkey` (`dmid`,`dkey`),
+  KEY `devcount` (`dmid`,`classid`,`devcount`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `file_on`
+--
+
+DROP TABLE IF EXISTS `file_on`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `file_on` (
+  `fid` bigint(20) unsigned NOT NULL,
+  `devid` mediumint(8) unsigned NOT NULL,
+  PRIMARY KEY (`fid`,`devid`),
+  KEY `devid` (`devid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `file_on_corrupt`
+--
+
+DROP TABLE IF EXISTS `file_on_corrupt`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `file_on_corrupt` (
+  `fid` bigint(20) unsigned NOT NULL,
+  `devid` mediumint(8) unsigned NOT NULL,
+  PRIMARY KEY (`fid`,`devid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `file_to_delete`
+--
+
+DROP TABLE IF EXISTS `file_to_delete`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `file_to_delete` (
+  `fid` bigint(20) unsigned NOT NULL,
+  PRIMARY KEY (`fid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `file_to_delete2`
+--
+
+DROP TABLE IF EXISTS `file_to_delete2`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `file_to_delete2` (
+  `fid` bigint(20) unsigned NOT NULL,
+  `nexttry` int(10) unsigned NOT NULL,
+  `failcount` tinyint(3) unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`fid`),
+  KEY `nexttry` (`nexttry`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `file_to_delete_later`
+--
+
+DROP TABLE IF EXISTS `file_to_delete_later`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `file_to_delete_later` (
+  `fid` bigint(20) unsigned NOT NULL,
+  `delafter` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`fid`),
+  KEY `delafter` (`delafter`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `file_to_queue`
+--
+
+DROP TABLE IF EXISTS `file_to_queue`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `file_to_queue` (
+  `fid` bigint(20) unsigned NOT NULL,
+  `devid` int(10) unsigned DEFAULT NULL,
+  `type` tinyint(3) unsigned NOT NULL,
+  `nexttry` int(10) unsigned NOT NULL,
+  `failcount` tinyint(3) unsigned NOT NULL DEFAULT '0',
+  `flags` smallint(5) unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`fid`,`type`),
+  KEY `type_nexttry` (`type`,`nexttry`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `file_to_replicate`
+--
+
+DROP TABLE IF EXISTS `file_to_replicate`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `file_to_replicate` (
+  `fid` bigint(20) unsigned NOT NULL,
+  `nexttry` int(10) unsigned NOT NULL,
+  `fromdevid` int(10) unsigned DEFAULT NULL,
+  `failcount` tinyint(3) unsigned NOT NULL DEFAULT '0',
+  `flags` smallint(5) unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`fid`),
+  KEY `nexttry` (`nexttry`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `fsck_log`
+--
+
+DROP TABLE IF EXISTS `fsck_log`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `fsck_log` (
+  `logid` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `utime` int(10) unsigned NOT NULL,
+  `fid` bigint(20) unsigned DEFAULT NULL,
+  `evcode` char(4) DEFAULT NULL,
+  `devid` mediumint(8) unsigned DEFAULT NULL,
+  PRIMARY KEY (`logid`),
+  KEY `utime` (`utime`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `host`
+--
+
+DROP TABLE IF EXISTS `host`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `host` (
+  `hostid` mediumint(8) unsigned NOT NULL,
+  `status` enum('alive','dead','down') DEFAULT NULL,
+  `http_port` mediumint(8) unsigned DEFAULT '7500',
+  `http_get_port` mediumint(8) unsigned DEFAULT NULL,
+  `hostname` varchar(40) DEFAULT NULL,
+  `hostip` varchar(15) DEFAULT NULL,
+  `altip` varchar(15) DEFAULT NULL,
+  `altmask` varchar(18) DEFAULT NULL,
+  PRIMARY KEY (`hostid`),
+  UNIQUE KEY `hostname` (`hostname`),
+  UNIQUE KEY `hostip` (`hostip`),
+  UNIQUE KEY `altip` (`altip`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `server_settings`
+--
+
+DROP TABLE IF EXISTS `server_settings`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `server_settings` (
+  `field` varchar(50) NOT NULL,
+  `value` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`field`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tempfile`
+--
+
+DROP TABLE IF EXISTS `tempfile`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `tempfile` (
+  `fid` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `createtime` int(10) unsigned NOT NULL,
+  `classid` tinyint(3) unsigned NOT NULL,
+  `dmid` smallint(5) unsigned NOT NULL,
+  `dkey` varchar(255) DEFAULT NULL,
+  `devids` varchar(60) DEFAULT NULL,
+  PRIMARY KEY (`fid`)
+) ENGINE=InnoDB AUTO_INCREMENT=61 DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `unreachable_fids`
+--
+
+DROP TABLE IF EXISTS `unreachable_fids`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `unreachable_fids` (
+  `fid` bigint(20) unsigned NOT NULL,
+  `lastupdate` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`fid`),
+  KEY `lastupdate` (`lastupdate`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2013-07-17  5:54:56</code></pre>
+</div></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2013-07-22 10:31:12 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<!--script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script-->
+</body>
+</html>

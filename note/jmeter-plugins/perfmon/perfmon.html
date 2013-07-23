@@ -1,0 +1,224 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[JMeter Plugins] PerfMon - 在電梯裡遇見雙胞胎 | 傑洛米 Jeremy</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<!--link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" /-->
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="https://www.facebook.com/jeremy.kao.92" target="_blank">Jeremy Kao - 傑洛米·高</a></div>
+  <div><a href="../../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <!--div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div-->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <!--a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a--></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="../jmeter-plugins.html">JMeter Plugins</a> / PerfMon</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>必須搭配 JMeter 2.4+ 跟 JRE 1.6+。安裝相當簡單，只要從 <code>JMeterPlugins-VERSION.zip</code> 解開取得 <code>JMeterPlugins.jar</code>，然後把它放到 <code>JMETER_HOME/lib/ext</code> 即可。重新啟動 JMeter GUI 就可以在選單裡看到 PerfMon 專有的項目。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>.
+|-- cmd/
+|   `-- JMeterPluginsCMD.*
+|-- examples/
+|   `-- *.jmx
+|-- JMeterPlugins.jar
+|-- LICENSE
+|-- README
+`-- serverAgent
+    |-- COPYING
+    |-- EXCEPTIONS
+    |-- *.so <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+    |-- LICENSES
+    |-- README
+    |-- ServerAgent.jar
+    |-- sigar-amd64-winnt.dll
+    |-- sigar.jar
+    |-- sigar-x86-winnt.dll
+    |-- sigar-x86-winnt.lib
+    |-- startAgent.bat
+    `-- startAgent.sh</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+各種平台的 native library，例如 <code>libsigar-amd64-freebsd-6.so</code>、<code>libsigar-x86-linux.so</code> 等。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>PerfMon 有自己的 agent，理論上可以跑在所有的平台（利用 SIGAR 來蒐集系統資訊，必須要有 JRE 1.4+ 的執行環境）。</p></div>
+<div class="paragraph"><p>將 <code>serverAgent/</code> 複製到受測的伺服器上，執行 <code>startAgent.sh &lt;port&gt;</code> 即可，預設採用 4444 埠（注意 firewall 的問題，不需要系統管理者的權限）。可以先單獨測試 SIGAR：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ java -jar sigar.jar
+sigar&gt; uptime
+  3:31 PM  up 5:37, load average: 0.25, 0.12, 0.07
+sigar&gt; quit
+
+$ ./startAgent.sh
+JMeterPlugins Agent version 1.3.2
+No port specified, the default value is used: 4444
+------ File Systems init: ------
+File System detected: /dev/sda6
+File System detected: /dev/sda5
+...
+--- Network Interfaces init: ---
+Network interface detected: lo
+Network interface detected: eth0
+...
+Waiting for incoming connections...</code></pre>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">搭配 <code>nohup</code> 可以讓它在背景執行，也不會因使用者離線而中斷。<code>nohup ./startAgent.sh &amp;</code></td>
+</tr></table>
+</div>
+<div class="paragraph"><p>新增 PerfMon listener (<a href="mailto:jp@gc">jp@gc</a> - Servers Performance Monitoring) 並連結到一或多個 agent 即可。每個 listener 可以合併多個 agent 的資訊（會自動用 hostname 來識別），但是一個 listener 只能選定一種 matrics：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+CPU - CPU 的利用率（%）；支援多 processor/core，但這個值是統合後的結果。
+</p>
+</li>
+<li>
+<p>
+Memory - 記憶體的使用量（MB）。
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+注意 Y 軸的最大值會隨著用量增加而改變，不要誤以為 SIGAR 抓到的總記憶體量不對。
+</p>
+</li>
+<li>
+<p>
+記憶體快要用盡時，通常會伴隨著 Swap 的活動突然增加，可能是 memory-bound。
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+Swap - 單位時內 page in/out 的 page 數量。
+</p>
+</li>
+<li>
+<p>
+Disks I/O - 單位時間內對所有磁碟的讀／寫次數。
+</p>
+</li>
+<li>
+<p>
+Networks I/O - 單位時間內所有網卡收到／送出的資料量（KB）。
+</p>
+</li>
+</ul></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">雖然某些資訊的呈現方式不夠詳細（例如 CPU load average，CPU time 是花在 user 或 system？），但至少它可以看出來一個大方向，把問題縮小到少數幾台可能的伺服器上。之後再重跑一次 test plan，直接觀察那少數幾台機器的細部資訊即可。</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>在 non-GUI mode 下跑時，蒐集到的資訊會存成 <code>.jppm</code>（類似 CSV 的格式；定期取樣，跟 sampler 無關），事後可以從 JMeter GUI 裡用 Load PerfMon File&#8230; 打開來看。反之，在 GUI mode 下跑時，結果只是一張可以另存的圖形，沒有對應的 <code>.jppm</code>，但仍然可以 Export to CSV&#8230;。</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>jmeter -n -t test.jmx -l result.jtl -Jjppmfile=result.jppm</code></pre>
+</div></div>
+<div class="paragraph"><p>如果沒有給定 <code>-Jjppmfile</code>，預設會寫到目前所在目錄 <code>perfmon_yyyymmdd_HHMMSS.jppm</code>。</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://code.google.com/p/jmeter-plugins/wiki/PerfMon">PerfMon - jmeter-plugins</a>
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://code.google.com/p/jmeter-plugins/wiki/PluginInstall">Installation</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://code.google.com/p/jmeter-plugins/wiki/PerfMon#Installation">PerfMon: Installation</a>
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+<a href="http://support.hyperic.com/display/SIGAR/Home">SIGAR</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://en.wikipedia.org/wiki/Paging">Paging - Wikipedia, the free encyclopedia</a> - 解釋 page in/out。
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2013-06-22 08:15:40 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<!--script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script-->
+</body>
+</html>

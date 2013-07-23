@@ -1,0 +1,37 @@
+= link:recipes.html[ESXi / Recipes] / Mounting USB Devices =
+
+== 參考資料 ==
+
+ * http://serverfault.com/questions/461435/how-to-mount-usb-on-esxi-4-1[How to mount USB on ESXi 4.1? - Server Fault] ^https://diigo.com/0zuf8[閱讀]^ (2012-12-28)
+
+////////////////////////////////////////////////////////////////////////////////
+** Looking at this blog post the drive would need to be FAT16, Which would make sense to me as VMware made ESXi as small footprint they can which would mean not including unneeded things in the kernel such as file system drivers.
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://kb.vmware.com/selfservice/microsites/search.do?language=en_US&cmd=displayKC&externalId=1023976[VMware KB: Accessing USB storage and other USB devices from the service console] ^https://diigo.com/0zuel[閱讀]^ (2012-12-09)
+
+////////////////////////////////////////////////////////////////////////////////
+** The technology that supports USB device passthrough from an ESX/ESXi host to a virtual machine does not support simultaneous USB device connections from USB passthrough and from the service console.
+** To access USB storage and other devices from the console, disable USB passthrough. To check the status of the USB arbitrator, run the following command: `chkconfig --list | grep -i usb`
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://kb.vmware.com/selfservice/microsites/search.do?language=en_US&cmd=displayKC&externalId=1036340[VMware KB: Cannot mount a USB key or disk device media to an ESX/ESXi host] ^https://diigo.com/0zue9[閱讀]^ (2012-03-21)
+
+////////////////////////////////////////////////////////////////////////////////
+** The USB key or disk device media is formatted with a FAT16 partition and is of maximum size 2GB 真的有這個限制嗎??
+** This issue occurs because the usbarbitrator service has claimed the device to make it available for passthrough to virtual machines.
+** Run this command to stop the usbarbitrator service: `/etc/init.d/usbarbitrator stop`
+** Disconnect and reconnect the USB key or disk device media. The device is automatically mounted under `/vmfs/volumes/NO NAME/`.
+** After using the device, run this command to start the usbarbitrator service: `/etc/init.d/usbarbitrator start`
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://www.virtuallyghetto.com/2012/03/how-to-access-usb-storage-in-esxi-shell.html[virtuallyGhetto: How to Access USB Storage in ESXi Shell] ^https://diigo.com/0zueo[閱讀]^ (2012-03-12)
+
+////////////////////////////////////////////////////////////////////////////////
+** I needed to access a USB storage key directly on my ESXi host (not pass-through to VMs)
+** you should know that only USB storage devices formatted with FAT16 can be accessed in the ESXi shell and is applicable to both ESXi 4.1 and 5.0.
+** Login to ESXi Shell via SSH and disable the USB Arbitrator service (this is automatically enabled by default to allow pass-through of USB devices to your VMs) using the following command: `/etc/init.d/usbarbitrator stop`
+** Plug-in your USB device to your ESXi host and you can verify by using the two ESXCLI commands: verifying the storage device using the command: `esxcli storage core device list | grep -i usb` or viewing the mounted filesystems using the command: `esxcli storage filesystem list`
+** Lastly, after you verify the USB device can be seen by the ESXi host, you can of course browse and access your USB device by looking under `/vmfs/volumes/`
+////////////////////////////////////////////////////////////////////////////////
+

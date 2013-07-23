@@ -1,0 +1,40 @@
+= link:gnu-screen.html[Screen] / Scrollback/Copy Mode =
+:title: [Screen] Scrolling
+
+`C-a [` - 進入 scrollback mode，按 Esc 可以離開。在這個模式下，除了一般的方向鍵、PgUp、PgDn、Home、End 可以用來翻頁之外，還有：
+
+ * `/<keyword>`
+ * `? <keyword>`
+ * `<space>` - 選取複製的範圍。
+ * `C-a ]` - 貼上（並離開 scrollback mode）。
+ * `h/j/k/l` - 跟 Vi 一樣
+ * `G` - 移動到 buffer 結尾處。
+ * `g` - 移動到 buffer 開始處。
+
+TIP: 由於進入 scrollback mode 後可以 copy/past，所以也稱做 copy mode。
+
+== 參考資料 ==
+
+ * http://www.cyberciti.biz/faq/scroll-up-down-look-at-data-in-gnuscreen-using-pageup-pagedown-keys/[Linux: GNU/Screen Scroll Up and Down Look At Data] (2012-12-01)
+ * http://unix.stackexchange.com/questions/40242/scroll-inside-screen-or-pause-output[terminal - Scroll inside Screen, or Pause Output - Unix & Linux Stack Exchange] (2012-06-07)
+ * http://www.linuxscrew.com/2008/11/14/faq-how-to-scrollback-in-gnu-screen/[FAQ: How to scrollback in GNU SCREEN? - LinuxScrew: Linux Blog] (2008-11-14)
+
+ * http://www.samsarin.com/blog/2007/03/11/gnu-screen-working-with-the-scrollback-buffer/[GNU Screen: Working with the Scrollback Buffer : Samsarin] (2007-03-11)
+
+////////////////////////////////////////////////////////////////////////////////
+** GNU Screen is a UNIX tool that allows multiple console applications to be run, each in its own “window”, from the same terminal. 再次確認 terminal/shell 展開多個 screen/window 的概念。
+** You can even split up the Screen display so that multiple Screen windows can be viewed at the same time.
+** In this article I share my experience with one of my favorite screen features: its scrollback buffer. As you interact with a Screen window, Screen stores a configurable number of lines of history in its scrollback buffer. The scrollback buffer makes it easy to browse or even search through the history of your windows. In addition, it makes it easy to copy and paste any section of text from the history.
+** By default, the scrollback buffer only keeps the last 100 lines of text, which is not enough for my typical interaction with Screen. I’ve found a setting of 5000 lines to be more than adequate for my usage. The number of scrollback lines can be configured in your `$HOME/.screenrc` file, by adding the following line: `defscrollback 5000` 這個設定確實很需要寫到 `~/.screenrc`。
+** You can also override this default value when starting screen using the `-h [num]` option, where num is the number of scrollback lines.
+** Finally, if you want to change the number of lines of scrollback for a single window, using the “scrollback” command. Hit `C-a` (Ctrl-A) : to go to the Screen command line and type `scrollback num`, where num is the number of scrollback lines.
+** You can check the number of scrollback lines in your window. Hit `C-a i` to display window information.
+** To enter scrollback hit `C-a [`. A status line will indicate that you've entered copy mode. To exit scrollback mode, hit the escape button.
+** Navigating in scrollback mode will be pretty familiar to VI users.
+** `$` - Move to the end of the current line. `G` - Moves to the specified line (defaults to the end of the buffer).
+** I often use the page up and page down commands to quickly scroll back through the window's history.
+** In addition to traditional navigation, Screen allows you to search the scrollback buffer using the following commands: `/` - Search forward `?` - Search backward
+** Scrollback mode is also know as copy mode and it allows you to copy any section of text into a copy buffer. To copy text, move the cursor to the start of the text you want to copy, hit spacebar, move the cursor to the end of the text you want to copy (Screen will highlight the text to be copied as you move), and again hit spacebar. Screen will indicate the number of characters copied into the copy buffer. To paste text, simply hit `C-a ]`.
+** `bind b eval "writebuf" "exec sh -c 'pbcopy < /tmp/screen-exchange'"` This line tells Screen to write its copy buffer to a temporary file (defaults to `/tmp/screen-exchange`), and then sends that file to pbcopy, a Mac OSX utility that copies text into the Mac clipboard. In this case, I’ve bound the command to `C-a b`, but you can change to best suit your own environment.
+////////////////////////////////////////////////////////////////////////////////
+

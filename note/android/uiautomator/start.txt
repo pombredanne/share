@@ -1,0 +1,262 @@
+= link:uiautomator.html[Android / UI Automator] / Getting Started =
+:title: [Android][UI Automator] Getting Started
+
+[TBD] 測試流程：寫 JUnit 測試 -> 包裝成 JAR 檔送進 device -> 在 device 上跑測試
+
+首先將 link:../sdk/sdk.html[Android SDK] 昇級到最新版，然後安裝一個 API 16 以上的 platform：
+
+ * Android SDK Tools, Rev 21+ - 需用到新版的 `adb`、`android`。
+ * Android SDK Platform, API 16+ - 需用到 SDK library (`android.api`) 跟 UI Automation 的 client library (`uiautomator.jar`)，都位在 `$ANDROID_HOME/platforms/android-<level>` 底下。
+
+另外，手邊如果有 Android 4.1 以上的實體機最好，沒有的話用 link:../emulator/emulator.html[emulator] 也可以。
+
+ 1. 建立一個 UI Test 專案：
++
+--
+[source,console]
+--------------------------------------------------------------------------------
+$ mkdir /tmp/uitest; cd /tmp/uitest
+$ android create uitest-project -name LaunchSettings --target android-16 --path . # <1>
+Added file ./build.xml
+$ tree
+.
+├── build.xml <2>
+├── local.properties
+├── project.properties
+└── src
+
+1 directory, 3 files
+
+$ ant
+Buildfile: /tmp/uitest/build.xml
+
+help:
+     [echo] Android Ant Build. Available targets: <3>
+     [echo]    help:      Displays this help.
+     [echo]    clean:     Removes output files created by other targets.
+     [echo]    build:     Builds the test library.
+     [echo]    install:   Installs the library on a connected device or
+     [echo]               emulator.
+     [echo]    test:      Runs the tests.
+     [echo] 
+     [echo] It is possible to mix targets. For instance:
+     [echo]    ant build install test
+     [echo] This will build, install and run the test in a single command.
+
+BUILD SUCCESSFUL
+Total time: 1 second
+--------------------------------------------------------------------------------
+<1> `android create uitest-project --name <project_name> --target <target_id> --path <project_dir>`
++
+--
+其中 `--target` 用來指定 link:../sdk/targets.html[deployment target]（當然，至少要是 API 16 以上）。詳細的用法可以參考 `android --help create` 的輸出：
+
+--------------------------------------------------------------------------------
+$ android --help create
+...
+                                Action "create uitest-project":
+  Creates a new UI test project.
+Options:
+  -p --path    : The new project's directory. [required]
+  -n --name    : Project name.
+  -t --target  : Target ID of the new project. [required]
+--------------------------------------------------------------------------------
+--
++
+<2> 自動產生 build file，接下來要寫的測試程式就是放在 `src/` 底下。
+<3> 內建的 targets 有 `help`、`clean`、`build`、`install` 及 `test`。
++
+--
+包裝成 JAR 檔以及複製到 device 上（`/data/local/tmp`）的動作分別由 `build` 跟 `install` 來完成，而 `test` 則是從 device 上執行測試，不過目前（2013-06）尚未完成，使用時會丟出下面的錯誤：
+
+--------------------------------------------------------------------------------
+$ ant test
+Buildfile: /tmp/uitest/build.xml
+
+test:
+
+BUILD FAILED
+$ANDROID_HOME/tools/ant/uibuild.xml:230: Launching tests from Ant not supported yet
+
+Total time: 1 second
+--------------------------------------------------------------------------------
+
+在這之前，必須直接叫用 link:uiautomator-shell.html[`uiautomator`] 這個 link:../sdk/adb/shell-commands.html[shell command]。
+--
+--
++
+ 2. 直接拿官方的範例 http://developer.android.com/tools/testing/testing_ui.html[`LaunchSettings.java`] 來做測試。
++
+--
+[source,java]
+.`src/com/uia/example/my/LaunchSettings.java`
+--------------------------------------------------------------------------------
+package com.uia.example.my;
+
+// Import the uiautomator libraries
+import com.android.uiautomator.core.UiObject;
+import com.android.uiautomator.core.UiObjectNotFoundException;
+import com.android.uiautomator.core.UiScrollable;
+import com.android.uiautomator.core.UiSelector;
+import com.android.uiautomator.testrunner.UiAutomatorTestCase;
+
+public class LaunchSettings extends UiAutomatorTestCase {   
+
+   public void testDemo() throws UiObjectNotFoundException {   
+      
+      // Simulate a short press on the HOME button.
+      getUiDevice().pressHome(); // <1>
+      
+      // We’re now in the home screen. Next, we want to simulate 
+      // a user bringing up the All Apps screen.
+      // If you use the uiautomatorviewer tool to capture a snapshot 
+      // of the Home screen, notice that the All Apps button’s 
+      // content-description property has the value “Apps”.  We can 
+      // use this property to create a UiSelector to find the button. 
+      UiObject allAppsButton = new UiObject(new UiSelector()
+         .description("Apps"));
+      
+      // Simulate a click to bring up the All Apps screen.
+      allAppsButton.clickAndWaitForNewWindow();
+      
+      // In the All Apps screen, the Settings app is located in 
+      // the Apps tab. To simulate the user bringing up the Apps tab,
+      // we create a UiSelector to find a tab with the text 
+      // label “Apps”.
+      UiObject appsTab = new UiObject(new UiSelector()
+         .text("Apps"));
+      
+      // Simulate a click to enter the Apps tab.
+      appsTab.click();
+
+      // Next, in the apps tabs, we can simulate a user swiping until
+      // they come to the Settings app icon.  Since the container view 
+      // is scrollable, we can use a UiScrollable object.
+      UiScrollable appViews = new UiScrollable(new UiSelector()
+         .scrollable(true));
+      
+      // Set the swiping mode to horizontal (the default is vertical)
+      appViews.setAsHorizontalList();
+      
+      // Create a UiSelector to find the Settings app and simulate      
+      // a user click to launch the app. 
+      UiObject settingsApp = appViews.getChildByText(new UiSelector()
+         .className(android.widget.TextView.class.getName()), 
+         "設定");
+      settingsApp.clickAndWaitForNewWindow();
+      
+      // Validate that the package name is the expected one
+      UiObject settingsValidation = new UiObject(new UiSelector()
+         .packageName("com.android.settings"));
+      assertTrue("Unable to detect Settings", 
+         settingsValidation.exists());   
+  }   
+}
+--------------------------------------------------------------------------------
+<1> 先回到 home screen，接下來的操作才可預期。
++
+--
+________________________________________________________________________________
+It’s also good practice to start the test from the Home screen of the device. From the Home screen (or some other starting location you’ve chosen in the target app), you can use the classes provided by the uiautomator API to simulate user actions and to test specific UI components.
+________________________________________________________________________________
+
+`getUiDevice()` 可以取得 `UiDevice`（`跟 UiDevice.getInstance()` 有什麼不同??）
+--
+--
++
+ 3. 3333
+
+--------------------------------------------------------------------------------
+$ tree
+.
+├── build.xml
+├── local.properties
+├── project.properties
+└── src
+    └── com
+        └── uia
+            └── example
+                └── com
+                    └── LaunchSettings.java
+
+5 directories, 4 files
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+$ ant build
+Buildfile: /tmp/uitest/build.xml
+
+-check-env:
+ [checkenv] Android SDK Tools Revision 22.0.1
+ [checkenv] Installed at /home/jeremy/dev/android
+
+-build-setup:
+[getbuildtools] Using latest Build Tools: 17.0.0
+     [echo] Resolving Build Target for uitest...
+[getuitarget] Project Target:   Android 4.1.2
+[getuitarget] API level:        16
+     [echo] ----------
+     [echo] Creating output directories if needed...
+    [mkdir] Created dir: /tmp/uitest/bin
+    [mkdir] Created dir: /tmp/uitest/bin/classes
+
+-pre-compile:
+
+compile:
+    [javac] Compiling 1 source file to /tmp/uitest/bin/classes
+
+-post-compile:
+
+-dex:
+      [dex] input: /tmp/uitest/bin/classes
+      [dex] Converting compiled files and external libraries into /tmp/uitest/bin/classes.dex...
+
+-post-dex:
+
+-jar:
+      [jar] Building jar: /tmp/uitest/bin/uitest.jar
+
+-post-jar:
+
+build:
+
+BUILD SUCCESSFUL
+Total time: 8 seconds
+
+
+
+$ ant install # 也是把檔案送到 /data/local/tmp 底下
+Buildfile: /tmp/uitest/build.xml
+
+install:
+     [exec] 36 KB/s (1543 bytes in 0.040s)
+
+BUILD SUCCESSFUL
+Total time: 2 seconds
+
+
+
+
+adb shell uiautomator runtest LaunchSettings.jar -c com.uia.example.my.LaunchSettings
+--------------------------------------------------------------------------------
+
+== 參考資料 ==
+
+ * http://developer.android.com/tools/testing/testing_ui.html[UI Testing | Android Developers]
+
+////////////////////////////////////////////////////////////////////////////////
+** Android SDK Tools, Revision 21 or higher Android SDK Platform, API 16 or higher
+** It’s also good practice to start the test from the Home screen of the device. From the Home screen (or some other starting location you’ve chosen in the target app), you can use the classes provided by the uiautomator API to simulate user actions and to test specific UI components.
+** The uiautomator API is bundled in the uiautomator.jar file under the <android-sdk>/platforms/ directory. The API includes these key classes that allow you to capture and manipulate UI components on the target app:
+** Compile your test cases into a JAR file and install it on your test device along with your app. 注意是 JAR 而非 APK!!
+** In order to set up Eclipse to assist you, you need to create a project that includes the uiautomator client library, along with the Android SDK library.
+** Click Add Library > JUnit then select JUnit3 to add JUnit support. Click Add External JARs... and navigate to the SDK directory. Under the platforms directory, select the latest SDK version and add both the uiautomator.jar and android.jar files.
+** To build a test that runs in the uiautomator framework, create a test case that extends the UiAutomatorTestCase class. 不用 JUnit 可以嗎??
+** Later, you will build the test case as a JAR file, then copy this file to the test device. The test JAR file is not an APK file and resides separately from the application that you want to test on the device.
+** android create uitest-project -n <name> -t 1 -p <path>
+** Deploy your generated test JAR file to the test device by using the adb push command: adb push <path_to_output_jar> /data/local/tmp/
+** adb shell uiautomator runtest LaunchSettings.jar -c com.uia.example.my.LaunchSettings
+** You should also test your UI against common scenarios such as in-coming phone calls, network interruptions, and user-initiated switching to other applications on the device.
+////////////////////////////////////////////////////////////////////////////////
+

@@ -1,0 +1,43 @@
+= link:syslog.html[Syslog] / Ubuntu =
+:title: [Ubuntu] Syslog
+
+--------------------------------------------------------------------------------
+$ service rsyslog status
+rsyslog start/running, process 954
+$ sudo vi /etc/rsyslogd.conf # uncomment
+$ netstat -na | grep 514
+udp        0      0 0.0.0.0:514             0.0.0.0:*                          
+udp6       0      0 :::514                  :::* 
+--------------------------------------------------------------------------------
+
+== 參考資料 ==
+
+.網站
+--
+ * http://www.rsyslog.com/[RSyslog]
+--
+
+.文件
+--
+ * http://techtots.blogspot.tw/2011/12/rsyslog-enabling-remote-logging-service.html[Tech Tots: rsyslog: Enabling remote logging service in Ubuntu] (2011-12-12)
+
+////////////////////////////////////////////////////////////////////////////////
+** Newer versions of Ubuntu (since 9.10 according to rsyslog wiki: http://wiki.rsyslog.com/index.php/Ubuntu) comes with rsyslog instead of sysklogd. 
+** What you'll need to do is just uncomment 2 lines in the `/etc/rsyslog.conf` file: `$ModLoad imudp $UDPServerRun 514`
+** That's if you want to provide UDP syslog service.  Uncomment the following 2 lines if you want to provide TCP syslog service: `$ModLoad imtcp $InputTCPServerRun 514`
+** Once you've made the changes, either reload or restart the rsyslogd service:
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://ubuntu-garage.blogspot.tw/2010/09/ubuntu-syslog-server.html[Ubuntu Garage: Ubuntu Syslog Server] (2010-09-19)
+
+////////////////////////////////////////////////////////////////////////////////
+** TCP or UDP protocols (port=514)
+** Ubuntu uses RSYSLOG service to do that.
+** `/etc/default/rsyslog` add '-r' switch as shown below
+** `RSYSLOGD_OPTIONS="-c4 -r"`
+** Edit rsyslog configuration file and add local7 facility to accept system messages from client devices and log them in the file created in step 2
+** In order to prevent the log file from growing too much, enable log rotation. `/etc/logrotate.d/cisco.log`
+** Restart the service for those changes to take effect (here CLI is used). `sudo service rsyslog restart`
+////////////////////////////////////////////////////////////////////////////////
+--
+

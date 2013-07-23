@@ -1,0 +1,56 @@
+= link:bash.html[Bash] / Initialization Files =
+:title: [Bash] Initialization Files
+
+通常而言：
+
+ * `~/.bash_profile` - login shell；在登入時會執行一次。
+ * `~/.bashrc` - non-login shell；登入時跟之後開 shell 時都會被執行一次。
+
+把設定寫在 `~/.bashrc` 的好處是，改完設定之後重開一個新的 shell 即可，而不用重新登入。由於登入時 `~/.bashrc` 也會被執行，所以把自訂環境的設定寫在 `~/.bashrc` 會比寫在 `~/.bash_profile` 方便。
+
+不過在 Mac OS X 下的行為不太一樣（包括內建的 `Terminal.app` 跟其他 3-party 終端機程式都一樣），無論是登入或登入後開其他 shell 都只會執行 `~/.bash_profile`。要讓 Mac OS X 的行為跟其他 Unix-like 類似的話，可以在 `~/.bash_profile` 後加上這一段：
+
+--------------------------------------------------------------------------------
+if [ -f ~/.bashrc ]; then
+   source ~/.bashrc
+fi
+--------------------------------------------------------------------------------
+
+== 參考資料 ==
+
+.文件
+--
+ * http://manpages.debian.net/cgi-bin/man.cgi?query=bash[bash - Debian Man Pages]
+ * http://www.joshstaiger.org/archives/2005/07/bash_profile_vs.html[.bash_profile vs .bashrc] ^https://diigo.com/010ddu[閱讀]^ (2005-07)
+
+////////////////////////////////////////////////////////////////////////////////
+** When working with Linux, Unix, and Mac OS X, I always forget which bash config file to edit when I want to set my `PATH` and other environmental variables for my shell. Should you edit `.bash_profile` or `.bashrc` in your home directory? 原來大家都有這個問題!!
+** According to the bash man page, `.bash_profile` is executed for login shells, while `.bashrc` is executed for interactive non-login shells.
+** When you login (type username and password) via console, either sitting at the machine, or remotely via ssh: `.bash_profile` is executed to configure your shell before the initial command prompt. But, if you’ve already logged into your machine and open a new terminal window (xterm) inside Gnome or KDE, then `.bashrc` is executed before the window command prompt. `.bashrc` is also run when you start a new bash instance by typing `/bin/bash` in a terminal. 這樣解釋就懂了!! 可以這樣記 - 一個新的身份進到系統，所以要調出 profile。
+** An exception to the terminal window guidelines is Mac OS X’s `Terminal.app`, which runs a login shell by default for each new terminal window, calling `.bash_profile` instead of `.bashrc`. Other GUI terminal emulators may do the same, but most tend not to.
+** Most of the time you don’t want to maintain two separate config files for login and non-login shells — when you set a `PATH`, you want it to apply to both. You can fix this by sourcing `.bashrc` from your `.bash_profile` file, then putting `PATH` and common settings in `.bashrc`. 設定儘可能寫在 `.bashrc`，這樣衍生其他 shell 時才會套用到設定。
+** `if [ -f ~/.bashrc ]; then source ~/.bashrc fi`
+////////////////////////////////////////////////////////////////////////////////
+--
+
+.其他文件
+--
+ * http://stackoverflow.com/questions/415403/whats-the-difference-between-bashrc-bash-profile-and-environment[shell - What's the difference between .bashrc, .bash_profile, and .environment? - Stack Overflow] ^https://diigo.com/010df9[閱讀]^ (2009-01-06)
+
+////////////////////////////////////////////////////////////////////////////////
+** I've used a number of different *nix-based systems of the years, and it seems like every flavor of Bash I use has a different algorithm for deciding which startup scripts to run.
+** What are the differences in which ones get run when logging in physically, logging in remotely via ssh, and opening a new terminal window? Are there any significant differences across platforms (including Mac OS X (and its Terminal.app) and Cygwin Bash)?
+** The main difference with shell config files is that some are only read by "login" shells (eg. when you login from another host, or login at the text console of a local unix machine). these are the ones called, say, `.login` or `.profile` or `.zlogin` (depending on which shell you're using). Then you have config files that are read by "interactive" shells (as in, ones connected to a terminal (or pseudo-terminal in the case of, say, a terminal emulator running under a windowing system). these are the ones with names like `.bashrc`, `.tcshrc`, `.zshrc`, etc.
+** bash complicates this in that `.bashrc` is only read by a shell that's both interactive and non-login, so you'll find most people end up telling their `.bash_profile` to also read `.bashrc` with something like `[[ -r ~/.bashrc ]] && . ~/.bashrc` 這種做法確實很常見!!
+** The manual page for bash explains the circumstances under which each file is read. Yes, behaviour is generally consistent between machines. `.profile` is simply the login script filename originally used by `/bin/sh`. bash, being generally backwards-compatible with `/bin/sh`, will read `.profile` if one exists. 原來 `.profile` 是源自 SH，那麼 Bash 採用 `.bash_profile` 就沒什麼奇怪了。
+** That's simple. It's explained in `man bash`. Also read the INVOCATION chapter in the manual. It says "The following paragraphs describe how bash executes its startup files.", i think that's a spot-on :) It explains what an "interactive" shell is too. 原來答案都在 man page 裡
+** Classically, `~/.profile` is used by Bourne Shell, and is probably supported by Bash as a legacy measure. Again, `~/.login` and `~/.cshrc` were used by C Shell - I'm not sure that Bash uses them at all. The `~/.bash_profile` would be used once, at login. The `~/.bashrc` script is read every time a shell is started. This is analogous to `/.cshrc` for C Shell.
+** One consequence is that stuff in `~/.bashrc` should be as lightweight (minimal) as possible to reduce the overhead when starting a non-login shell. 這個標準還滿適用的...
+** These are probably even distro.-dependant, not all distros choose to have each configuraton with them and some have even more. But when they have the same name, they usualy include the same content.
+** According to Josh Staiger, Mac OS X's `Terminal.app` actually runs a login shell rather than a non-login shell by default for each new terminal window, calling `.bash_profile` instead of `.bashrc`.
+** Most of the time you don’t want to maintain two separate config files for login and non-login shells — when you set a `PATH`, you want it to apply to both. You can fix this by sourcing `.bashrc` from your `.bash_profile` file, then putting `PATH` and common settings in `.bashrc`. To do this, add the following lines to `.bash_profile`: `if [ -f ~/.bashrc ]; then source ~/.bashrc fi` Now when you login to your machine from a console `.bashrc` will be called.
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://www.thegeekstuff.com/2008/10/execution-sequence-for-bash_profile-bashrc-bash_login-profile-and-bash_logout/[Execution sequence for .bash_profile, .bashrc, .bash_login, .profile and .bash_logout] (2008-12-06)
+--
+

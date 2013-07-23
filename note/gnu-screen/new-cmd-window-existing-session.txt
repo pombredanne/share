@@ -1,0 +1,40 @@
+= link:gnu-screen.html[Screen] / 在現有的 Session 裡開新 Window 執行 Command =
+:title: [Screen] 在現有的 Session 裡開新 Window 執行 Command
+
+ screen -S <session_name> -X screen [-t <title>] <external_command> [<args>]
+
+在名叫 'session_name' 的 screen session 裡開一個新 window 執行 'external_command'，並將 window title 改為 'title'。
+
+== 參考資料 ==
+
+ * http://stackoverflow.com/questions/7049252/how-to-create-a-screen-executing-given-command[How to create a screen, executing given command? - Stack Overflow] ^https://diigo.com/010act[閱讀]^ (2011-08-13)
+
+////////////////////////////////////////////////////////////////////////////////
+** The problem is that using the 'exec' screen command does not start a shell. 'cd' is a shell builtin, so you need a shell for it. Also, you need a shell that remains running so that screen does not terminate. 這一點非常重要!!
+** You can use the `-X` option to screen to send commands to a running screen session, and the `'stuff'` command to send keystrokes to the current window. Try this:
++
+--------------------------------------------------------------------------------
+screen -dmS new_screen sh
+screen -S new_screen -X stuff "cd /dir
+"
+screen -S new_screen -X stuff "java -version
+"
+--------------------------------------------------------------------------------
++
+** Yes, you need to put the quotes on the next line in order for the commands to be executed. 原來 stuff 就像使用者在輸入一樣，最後那個 Enter 好 tricky!!
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://superuser.com/questions/116743/send-command-to-an-already-running-screen-session[send command to an already running screen session - Super User] ^https://diigo.com/010acu[閱讀]^ (2010-03-05)
+
+////////////////////////////////////////////////////////////////////////////////
+** The reason why I am doing this is, because I have a program, which does not come as a daemon, and I wish to start it in a screen session, so I can later on see what is going on.
+** Yes, `-X` sends screen commands, not shell commands, but screen has a command 'screen' which can open new screen windows.
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://stackoverflow.com/questions/543737/how-do-you-start-unix-screen-command-with-a-command[bash - How do you start Unix screen command with a command? - Stack Overflow] ^https://diigo.com/010acy[閱讀]^ (2009-02-12)
+
+////////////////////////////////////////////////////////////////////////////////
+** Your program is being run (well, except the cd), it's just that it's being run without a parent shell, so as soon as it completes, it exits and you're done.
+** You can also "stuff" characters into the screen as if you had typed them. 
+////////////////////////////////////////////////////////////////////////////////
+

@@ -1,0 +1,62 @@
+= link:ftp.html[FTP] / Python =
+:title: [FTP] Python
+
+假設要下載
+
+ ftp://archive.mozilla.org/pub/mozilla.org/firefox/releases/3.6.28/win32/en-US/Firefox%20Setup%203.6.28.exe
+
+從 Python 可以這麼做：
+
+--------------------------------------------------------------------------------
+>>> from ftplib import FTP
+>>> ftp = FTP('archive.mozilla.org')
+>>> ftp.login()
+'230-\n230-   ftp.mozilla.org / archive.mozilla.org - files are in /pub/mozilla.org\n230-\n230-   Notice: This server is the only place to obtain nightly builds and needs to\n230-   remain available to developers and testers. High bandwidth servers that\n230-   contain the public release files are available at ftp://releases.mozilla.org/\n230-   If you need to link to a public release, please link to the release server,\n230-   not here. Thanks!\n230-\n230-   Attempts to download high traffic release files from this server will get a\n230-   "550 Permission denied." response.\n230 Login successful.'
+>>> ftp.cwd('pub/mozilla.org/firefox/releases/3.6.28/win32/en-US')
+'250 Directory successfully changed.'
+>>> print ftp.pwd()
+/pub/firefox/releases/3.6.28/win32/en-US
+>>>
+>>>
+>>> file = open('/tmp/firefox-installer.exe', 'wb')
+>>> ftp.retrbinary('RETR Firefox Setup 3.6.28.exe', file.write)
+'226 Transfer complete.'
+--------------------------------------------------------------------------------
+
+== 參考資料 ==
+
+.文件
+--
+ * http://docs.python.org/2/library/ftplib.html[ftplib — FTP protocol client]
+
+////////////////////////////////////////////////////////////////////////////////
+** This module defines the class `FTP` and a few related items. The `FTP` class implements the client side of the FTP protocol. You can use this to write Python programs that perform a variety of automated FTP jobs, such as mirroring other ftp servers.
+** It is also used by the module `urllib` to handle URLs that use FTP. 如果只是要取用檔案，用 `urllib` 就夠了。需要登入的話可以把密碼帶在 URL 裡，`ftp://user:password@ftpserver/path`，但如果 password 裡含有 `@` 就不適用了??
+** `class ftplib.FTP([host[, user[, passwd[, acct[, timeout]]]]])` Return a new instance of the `FTP` class. When `host` is given, the method call `connect(host)` is made. When `user` is given, additionally the method call `login(user, passwd, acct)` is made (where `passwd` and `acct` default to the empty string when not given).
+** Several methods are available in two flavors: one for handling text files and another for binary files. These are named for the command which is used followed by `lines` for the text version or `binary` for the binary version. 例如 `retrbinary()` 跟 `retrlines()`
+** `FTP.connect(host[, port[, timeout]])` Connect to the given host and port. The default port number is 21, as specified by the FTP protocol specification. All other methods can only be used after a connection has been made.
+** `FTP.getwelcome()` Return the welcome message sent by the server in reply to the initial connection. (This message sometimes contains disclaimers or help information that may be relevant to the user.)
+** `FTP.login([user[, passwd[, acct]]])` Log in as the given user. The `passwd` and `acct` parameters are optional and default to the empty string. If no user is specified, it defaults to 'anonymous'. If user is `'anonymous'`, the default passwd is `'anonymous@'`.
+** `FTP.retrbinary(command, callback[, maxblocksize[, rest]])` Retrieve a file in binary transfer mode. `command` should be an appropriate `RETR` command: `'RETR filename'`. The `callback` function is called for each block of data received, with a single string argument giving the data block. 事先取得檔案大小，`callback` 裡就可以算出進度。
+** `FTP.retrlines(command[, callback])` Retrieve a file or directory listing in ASCII transfer mode. `command` should be an appropriate `RETR` command or a command such as `LIST`, `NLST` or `MLSD` (usually just the string `'LIST'`). The `callback` function is called for each line with a string argument containing the line with the trailing CRLF stripped. The default callback prints the line to `sys.stdout`.
+** `FTP.cwd(pathname)` Set the current directory on the server.
+** `FTP.pwd()` Return the pathname of the current directory on the server.
+** `FTP.quit()` Send a `QUIT` command to the server and close the connection. This is the “polite” way to close a connection, but it may raise an exception if the server responds with an error to the `QUIT` command.
+** `FTP.close()` Close the connection unilaterally. This should not be applied to an already closed connection such as after a successful call to `quit()`. After this call the FTP instance should not be used any more (after a call to `close()` or `quit()` you cannot reopen the connection by issuing another `login()` method). 也就是說 `FTP` instance 不能被重複使用。
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://docs.python.org/2/library/urllib.html[urllib — Open arbitrary resources by URL]
+--
+
+.其他文件
+--
+ * http://stackoverflow.com/questions/11573817/how-to-download-a-file-via-ftp-with-python-ftplib[How to download a file via FTP with Python ftplib - Stack Overflow] (2012-07-20)
+
+////////////////////////////////////////////////////////////////////////////////
+** I suggest the use of with here which takes care of closing the file handle when done: `with open(filename, "wb") as file: ftp.retrbinary("RETR " + filename, file.write)`
+** `ftp.retrbinary('RETR %s' % filename, file.write)`
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://stackoverflow.com/questions/5230966/python-ftp-download-all-files-in-directory[Python-FTP download all files in directory - Stack Overflow] (2011-03-08)
+--
+

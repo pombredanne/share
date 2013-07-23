@@ -1,0 +1,143 @@
+= link:filesystem.html[Unix-like / Filesystem] / Permissions =
+:title: [Unix-like] Permissions
+
+[source,console]
+--------------------------------------------------------------------------------
+$ cd /tmp
+$ mkdir -p perms/dir/subdir
+$ echo 'dir/file' > perms/dir/file
+$ echo 'subdir/file' > perms/dir/subdir/file
+$ tree -p perms
+perms
+└── [drwxrwxr-x]  dir
+    ├── [-rw-rw-r--]  file
+    └── [drwxrwxr-x]  subdir
+        └── [-rw-rw-r--]  file
+
+2 directories, 2 files
+
+$ cd perms
+$ cat dir/file
+dir/file
+$ cat dir/subdir/file
+dir/subdir/file
+--------------------------------------------------------------------------------
+
+做幾個實驗：
+
+--------------------------------------------------------------------------------
+$ sudo chmod a-r dir
+$ ls dir        <1>
+ls: cannot open directory dir: Permission denied
+$ cat dir/file  <2>
+dir/file
+
+$ ls dir/subdir <1>
+file
+$ cat dir/subdir/file
+dir/subdir/file
+
+$ sudo chmod a-x dir         <3>
+$ sudo chmod a+r dir
+$ sudo tree -p
+.
+└── [drw-rw-r--]  dir
+    ├── [-rw-rw-r--]  file
+    └── [drwxrwxr-x]  subdir <3>
+        └── [-rw-rw-r--]  file
+
+2 directories, 2 files
+
+$ cd dir
+bash: cd: dir: Permission denied
+$ ls dir        <4>
+ls: cannot access dir/subdir: Permission denied
+ls: cannot access dir/file: Permission denied
+file  subdir
+$ cat dir/file
+cat: dir/file: Permission denied        <5>
+
+$ cd dir/subdir
+bash: cd: dir/subdir: Permission denied <3>
+$ ls dir/subdir <4>
+ls: cannot access dir/subdir: Permission denied
+$ cat dir/subdir/file
+cat: dir/subdir/file: Permission denied <5>
+
+$ sudo chmod a+x dir <6>
+$ sudo chmod a-w dir
+$ mv dir/file dir/file2
+mv: cannot move `dir/file' to `dir/file2': Permission denied
+$ touch dir/file
+
+$ mv dir/subdir/file dir/subdir/file2
+$
+--------------------------------------------------------------------------------
+<1> 把目錄的 read 權限拿掉後，只會影響該目錄自己 list 的功能，子目錄不受影響。
+<2> 雖然對目錄沒有 list 的權限，但還是存取底下的檔案（如果知道檔名的話）。
+<3> 把上層目錄的 execute 權限拿掉，但子目錄維持不變。從結果來看，子目錄也受到影響了，行為上跟 read/write 權限很不一樣。
+<4> 拿掉 execute 權限後，上層的目錄還看得到清單，但子目錄就完全看不到東西，為什麼??
+<5> 就算對檔案本身有存取的權限，只要無法切換到該目錄，結果就是無法存取。
+<6> 把 write 權限拿掉後，只會影響該目錄下能否新增／刪除／更名檔案，子目錄則不受影響。
+<7> 雖然不能異動檔案的內容，但修改檔案的 timestamp 是可以的？
+
+目錄的 read/write 權限只會作用在該目錄本身，但 execute 權限則跟 "目錄之間的上下關係" 有交互作用。簡單地說，要存取特定目錄的檔案，除了檔案本身的權限之外，對所有父層目錄也都要有 execute 的權限才行。
+
+--------------------------------------------------------------------------------
+ls -ld /
+drwxr-xr-x 29 root root 4096 Jun 18 06:50 /
+--------------------------------------------------------------------------------
+
+== 參考資料 ==
+
+.工具
+--
+ * http://permissions-calculator.org/[Unix Permissions Calculator]
+--
+
+.文件
+--
+ * http://en.wikipedia.org/wiki/Filesystem_permissions[Filesystem permissions - Wikipedia, the free encyclopedia]
+
+ * http://linuxcommand.org/lts0070.php[Learning the shell - Lesson 7: Permissions]
+
+////////////////////////////////////////////////////////////////////////////////
+** In fact, remote users can execute X applications and have the graphical output displayed on a remote computer. The X Windows system supports this.
+** Years ago before computers were "personal," they were large, expensive, and centralized. A typical university computer system consisted of a large mainframe computer located in some building on campus and terminals were located throughout the campus, each connected to the large central computer. The computer would support many users at the same time.
+** Linux uses the same permissions scheme as Unix. Each file and directory on your system is assigned access rights for the owner of the file, the members of a group of related users, and everybody else.
+** The `chmod` command is used to change the permissions of a file or directory. To use it, you specify the desired permission settings and the file or files that you wish to modify.
+** In most ways, the permissions scheme for directories works the same way as they do with files. However, the execution permission is used in a different way. It provides control for access to file listing and other things.
+** You can change the owner of a file by using the `chown` command. Notice that in order to change the owner of a file, you must be the superuser.
+** The group ownership of a file or directory may be changed with `chgrp`. You must be the owner of the file or directory to perform a `chgrp`. 為什麼 `chown` 跟 `chgrp` 存在這種差別，前者要是 superuser 才能做??
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://www.tuxfiles.org/linuxhelp/filepermissions.html[Linux file permissions] (2005-10-05)
+
+////////////////////////////////////////////////////////////////////////////////
+** Even if you're the only user on an ordinary desktop system, file permissions help keeping your important files safe, both from outsiders and your own mistakes. :)
+** Every file on your Linux system, including directories, is owned by a specific user and group. Therefore, file permissions are defined separately for users, groups, and others.
+** User: The username of the person who owns the file. By default, the user who creates the file will become its owner. 雖然是 owner，但它的代號是 u 不是 o。
+** Group: The usergroup that owns the file. All users who belong into the group that owns the file will have the same access permissions to the file.
+** Other: A user who isn't the owner of the file and doesn't belong in the same group the file does. In other words, if you set a permission for the "other" category, it will affect everyone else by default. For this reason, people often talk about setting the "world" permission bit when they mean setting the permissions for "other."
+** There are three types of access permissions on Linux: read, write, and execute. These permissions are defined separately for the file's owner, group and all other users.
+** Read permission. On a regular file, the read permission bit means the file can be opened and read. On a directory, the read permission means you can list the contents of the directory.
+** Write permission. On a regular file, this means you can modify the file, aka write new data to the file. In the case of a directory, the write permission means you can add, remove, and rename files in the directory. This means that if a file has the write permission bit, you are allowed to modify the file's contents, but you're allowed to rename or delete the file only if the permissions of the file's directory allow you to do so.
+** Execute permission. In the case of a regular file, this means you can execute the file as a program or a shell script. On a directory, the execute permission (also called the "search bit") allows you to access files in the directory and enter it, with the `cd` command, for example. However, note that although the execute bit lets you enter the directory, you're not allowed to list its contents, unless you also have the read permissions to that directory. 注意這裡 "allows you to access files in the directory and enter it" 的說法，實驗確認 execute 要所有父層目錄都拿到 execute 才會生效。
+** You can view the access permissions of a file by doing the long directory listing with the `ls -l` command.
+** The very first column, the one that looks like a bunch of mumbo jumbo, shows the file type and permissions. The second column shows the number of links (directory entries that refer to the file; 有人說是 hardlink 的數量??), the third one shows the owner of the file, and the fourth one shows the group the file belongs to. The other columns show the file's size in bytes, date and time of last modification, and the filename.
+** The first column, the one that shows the file's permissions and looks like mumbo jumbo, is organized into four separate groups, although it certainly doesn't look very organized.
+** The first group consists of only one character, and it shows the file's type. For example, `d` means a directory and `-` means a normal file
+** The next nine characters show the file's permissions, divided into three groups, each consisting of three characters. In each group, the first character means the read permission, the second one write permission, and the third one execute permission.
+** You can set file permissions with the `chmod` command. Both the root user and the file's owner can set file permissions.
+** `chmod` has two modes, symbolic and numeric. The symbolic mode is pretty easy to remember. First, you decide if you set permissions for the user (u), the group (g), others (o), or all of the three (a). Then, you either add a permission (+), remove it (-), or wipe out the previous permissions and add a new one (=). Next, you decide if you set the read permission (r), write permission (w), or execute permission (x).
+** In the numeric mode, the file permissions aren't represented by characters. Instead, they are represented by a three-digit octal number.
+** To get the permission bits you want, you add up the numbers accordingly.
+** Because you set separate permissions for the owner, group, and others, you'll need a three-digit number representing the permissions of all these groups.
+** The numeric mode may not be as straightforward as the symbolic mode, but with the numeric mode, you can more quickly and efficiently set the file permissions.
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://www.library.yale.edu/wsg/docs/permissions/[Understanding Unix Permissions]
+
+ * http://www.linuxnix.com/2011/12/suid-set-suid-linuxunix.html[What is SUID and how to set SUID in Linux/Unix?] (2011-12-29)
+--
+

@@ -1,0 +1,59 @@
+= link:gnu-screen.html[Screen] / Commands =
+:title: [Screen] Commands
+
+// 怎麼有種 screen 也可以拿來寫程式的感覺...
+
+`defscrollback <num>`:: [[defscrollback]] 設定新 window 的 scrollback buffer 大小為 'num' 行，預設是 100 行。
+
+`eval <command1> [<command2>]`:: [[eval]] 執行一或多個 screen commands，但 arguments 要怎麼帶進去??
+
+`ignorecase [on|off]`:: [[ignorecase]] 設定link:searching.html[搜尋字串]時要不要忽略大小寫，預設是會區分大小寫。沒有給 `on` 或 `off` 時，會在兩者間切換。
++
+--
+比較可惜的是沒有 `defignorecase` 來設定新 window 的行為。
+--
+
+`screen [<opts>] [<window_number>] [<external_command> [<args>]|//group]`:: [[screen]] 開新 window 執行外部指令 'external_command'。
++
+--
+其中 'opts' 可以用來設定新 window 的屬性或行為：
+
+ * `-t <title>` - 將 window title 設成 'title'。
+ * `-h <num>` - 將 scrollback buffer 設成 'num' 行。
+ * ...
+--
+
+`scrollback <num>`:: [[scrollback]] 設定目前 window 的 link:scrollback-copy-mode.html[scrollback] buffer 大小為 'num' 行，預設值由 <<defscrollback,`defscrollback`>> 決定。
+
+`select [<window_id>]`:: [[select]] 選取特定 window。
+
+`silencewait <sec>`:: [[silencewait]] 設定畫面要持續 'sec' 秒沒變化才叫沒動靜（inactivity/silence），預設是 30 秒。
+
+`sleep <sec>`:: [[sleep]] 休息 'sec' 秒鐘。
+
+`stuff <string>`:: [[stuff]] 模擬使用者輸入 'string'。
++
+--
+要模擬使用者按下 Enter，可以用 `stuff \015`。例如下面這幾個 screen commands 可以登入 GNU Project Archives：
+
+--------------------------------------------------------------------------------
+screen -t 'GNU Project Archives' ftp ftp.gnu.org
+sleep 5
+stuff anonymous\015
+--------------------------------------------------------------------------------
+
+更多的 control character 可以參考 http://manpages.debian.net/cgi-bin/man.cgi?query=screen[man page] 裡 INPUT TRANSLATION 一節。
+--
+
+`windowlist [-b] [-m]`:: [[windowlist]] 把所有 windows 條列出來，可以用方向鍵或其他方式直接選取。
++
+--
+這個清單預設會以 window numbers 的大小排列，但加上 `-m` 就會自動依使用頻率調整順序。而 `-b` 則可以讓目前的 window 也顯示在清單裡（會被預先選取起來），跟 `C-a "` 的效果是一樣的。
+
+NOTE: 這個 command 只作用在 attached session。例如用 `screen -dm -c <screenrc>` 來啟用一個 detatched session 的話，在 link:screenrc.html[`.srceenrc`] 裡的 `windowlist -b` 是不會有作用的（就算做為最後一個 screen command 也沒有用）。
+--
+
+== 參考資料 ==
+
+ * http://manpages.debian.net/cgi-bin/man.cgi?query=screen[screen - Debian Hypertext Man Pages]
+
