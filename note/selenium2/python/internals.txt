@@ -1,0 +1,140 @@
+= link:python.html[Selenium 2/WebDriver / API / Python] / Internals =
+:title: [Selenium 2/WebDriver] Python Binding 的內部實作
+
+.`selenium/__init__.py`
+--------------------------------------------------------------------------------
+from selenium import selenium
+--------------------------------------------------------------------------------
+
+Selenium 1/RC 所用的 `selenium.selenium`。
+
+[source,python]
+.`selenium/webdriver/__init__.py`
+--------------------------------------------------------------------------------
+from .firefox.webdriver import WebDriver as Firefox
+from .firefox.firefox_profile import FirefoxProfile
+from .chrome.webdriver import WebDriver as Chrome
+from .chrome.options import Options as ChromeOptions
+from .ie.webdriver import WebDriver as Ie
+from .opera.webdriver import WebDriver as Opera
+from .phantomjs.webdriver import WebDriver as PhantomJS
+from .remote.webdriver import WebDriver as Remote
+from .common.desired_capabilities import DesiredCapabilities
+from .common.action_chains import ActionChains
+from .common.touch_actions import TouchActions
+from .common.proxy import Proxy
+--------------------------------------------------------------------------------
+
+很有趣的結構，所有的 driver 都是從 `<browser>/webdriver.py` 拉出來的。接下來以 Firefox 為例...
+
+[source,python]
+.`selenium/webdriver/firefox/webdriver.py`
+--------------------------------------------------------------------------------
+class WebDriver(RemoteWebDriver): # <1>
+
+    # There is no native event support on Mac
+    NATIVE_EVENTS_ALLOWED = sys.platform != "darwin"
+
+    def __init__(self, firefox_profile=None, firefox_binary=None, timeout=30,
+                 capabilities=None, proxy=None):
+
+        self.binary = firefox_binary
+        self.profile = firefox_profile
+
+        if self.profile is None:
+            self.profile = FirefoxProfile()
+       
+        self.profile.native_events_enabled = self.NATIVE_EVENTS_ALLOWED and self.profile.native_events_enabled
+
+        if self.binary is None:
+            self.binary = FirefoxBinary()
+
+        if capabilities is None:
+            capabilities = DesiredCapabilities.FIREFOX
+
+        if proxy is not None:
+            proxy.add_to_capabilities(capabilities)
+
+
+        RemoteWebDriver.__init__(self,
+            command_executor=ExtensionConnection("127.0.0.1", self.profile, # <2>
+            self.binary, timeout),
+            desired_capabilities=capabilities)
+        self._is_remote = False
+
+    def create_web_element(self, element_id):
+        """Override from RemoteWebDriver to use firefox.WebElement."""
+        return WebElement(self, element_id)
+
+    def quit(self):
+        """Quits the driver and close every associated window."""
+        try:
+            RemoteWebDriver.quit(self)
+        except http_client.BadStatusLine:
+            # Happens if Firefox shutsdown before we've read the response from
+            # the socket.
+            pass
+        self.binary.kill()
+        try:
+            shutil.rmtree(self.profile.path)
+            if self.profile.tempfolder is not None:
+                shutil.rmtree(self.profile.tempfolder)
+        except Exception as e:
+            print(str(e))
+
+    @property
+    def firefox_profile(self):
+        return self.profile
+--------------------------------------------------------------------------------
+<1> 不只是 Firefox，所有 browser 的實作都是繼承 `RemoteWebDriver`。這意謂著就算是直接操控本機上的 browser，中間也會涉及 HTTP/JSON requests。
+<2> `ExtensionConnection` 會負責將 Firefox 帶出來（固定掛上 `webdriver.xpi`），並將該 extension 設定在 `http://127.0.0.1:<port>/hub` 接收 HTTP/JSON requests。
+
+[source,python]
+.`selenium/webdriver/firefox/extension_connection.py`
+--------------------------------------------------------------------------------
+class ExtensionConnection(RemoteConnection):
+
+    def __init__(self, host, firefox_profile, firefox_binary=None, timeout=30):
+        self.profile = firefox_profile
+        self.binary = firefox_binary
+        HOST = host
+        if self.binary is None:
+            self.binary = FirefoxBinary()
+
+        if HOST is None:                     # <1>
+            HOST = "127.0.0.1"
+
+        PORT = utils.free_port()             # <1>
+        self.profile.port = PORT                 # <2>
+        self.profile.update_preferences()
+        
+        self.profile.add_extension()             # <2>
+
+        self.binary.launch_browser(self.profile) # <2>
+        _URL = "http://%s:%d/hub" % (HOST, PORT)
+        RemoteConnection.__init__(
+            self, _URL)
+--------------------------------------------------------------------------------
+<1> 預設在 `http://127.0.0.1:<port>` 服務，其中 'port' 是動態決定的。
+<2> 把 Firefox 叫起來，透過 profile 加載 `webdriver.xpi`，並約定好在 `http://127.0.0.1:<port>/hub` 接收 HTTP/JSON requests。
+
+簡單做個實驗：
+
+[source,console]
+--------------------------------------------------------------------------------
+$ python
+>>> from selenium import webdriver
+>>> driver = webdriver.Firefox()
+>>> driver.profile.port <1>
+42336
+
+$ sudo lsof -i :42336
+COMMAND  PID   USER   FD   TYPE DEVICE SIZE/OFF NODE NAME
+firefox 3508 jeremy   40u  IPv4 177902      0t0  TCP localhost:42336 (LISTEN) <1>
+
+$ curl http://localhost:42336/hub/status <2>
+{"name":"getStatus","sessionId":{},"status":0,"value":{"os":{"arch":"x86_64","name":"Linux","version":"unknown"},"build":{"revision":"unknown","time":"unknown","version":"unknown"}}}
+--------------------------------------------------------------------------------
+<1> 得知動態決定的 port 是 42336，反查之後確實是 Firefox 本身在 listen。
+<2> 利用 link:../api/json-wire-protocol.html[JSON Wire Protocol] 所定義的 `GET /status` 做測試，果真有回應。
+

@@ -1,0 +1,47 @@
+= link:master-agent.html[Puppet / Master/Agent] / SSL Certificate Negotiation =
+:title: [Puppet] Master/Agent SSL Certificate Negotiation
+
+在 `/etc/puppet/puppet.conf` 裡跟 SSL 相關的設定有：`certname`、`autosign` 等。
+
+ * `/home/tester/.puppet/ssl/certs/ubuntu.client.tw.trendnet.org.pem` - client
+
+$ sudo puppet cert clean puppet-agent.yourdomain.com
+Notice: Revoked certificate with serial 3
+Notice: Removing file Puppet::SSL::Certificate puppet-agent.yourdomain.com at '/var/lib/puppet/ssl/ca/signed/puppet-agent.yourdomain.com.pem'
+Notice: Removing file Puppet::SSL::Certificate puppet-agent.yourdomain.com at '/var/lib/puppet/ssl/certs/puppet-agent.yourdomain.com.pem'
+
+$ sudo puppet cert sign puppet-agent.yourdomain.com
+Notice: Signed certificate request for puppet-agent.yourdomain.com
+Notice: Removing file Puppet::SSL::CertificateRequest puppet-agent.yourdomain.com at '/var/lib/puppet/ssl/ca/requests/puppet-agent.yourdomain.com.pem'
+
+ * `/var/lib/puppet/ssl/ca/requests/puppet-agent.yourdomain.com.pem` - server
+
+--------------------------------------------------------------------------------
+#!/bin/bash
+CERT_PATH=` puppet agent --configprint certdir`
+KEY_PATH=` puppet agent --configprint privatekeydir`
+hostname=`hostname --fqdn`
+CERT=$hostname.pem
+openssl s_client -connect puppet:8140 -verify 10  -cert $CERT_PATH/$CERT  -key $KEY_PATH/$CERT
+--------------------------------------------------------------------------------
+
+# puppet master --configprint certname,certdnsnames
+certdnsnames = 
+certname = ops-buildmonitor1.tdc1
+
+啟動 puppet master 並不會出現 `/etc/puppet/ssl` 或 `/var/lib/puppet/ssl`?? Amos 說 client 上來要 config 時才會產生
+
+== 參考資料 ==
+
+.手冊
+--
+ * http://docs.puppetlabs.com/man/cert.html[puppet cert Manual Page — Documentation — Puppet Labs]
+--
+
+.文件
+--
+ * http://docs.puppetlabs.com/guides/troubleshooting.html[Troubleshooting — Documentation — Puppet Labs]
+ * http://projects.puppetlabs.com/projects/1/wiki/certificates_and_security[Certificates And Security - Puppet - Puppet Labs]
+ * https://ask.puppetlabs.com/question/25/how-can-i-troubleshoot-problems-with-puppets-ssl-layer/[How can I troubleshoot problems with Puppet's SSL layer? - Ask PuppetLabs: Puppet DevOps Q&A Community] (2012-11-15)
+--
+

@@ -1,0 +1,41 @@
+= Espresso =
+
+// 看起來很讚，但好像沒有對外公開??
+
+== 參考資料 ==
+
+ * https://developers.google.com/google-test-automation-conference/ (2013-05-07)
+ * http://www.youtube.com/watch?v=T7ugmCuNxDU[GTAC 2013: Espresso: Fresh Start to Android UI Testing - YouTube] (http://goo.gl/ieunS[Slides]) (2013-04-29) - 目前 Google 內部越來越多人採用，之後會釋出讓大家用。
+
+////////////////////////////////////////////////////////////////////////////////
+** (01:23) one of the recurring themes that we've seen all over GTAC this time is that developers need to write the tests. 但 RD 要寫的不是 UT 嗎？
+** (01:44) the benefits of testing have to outweight the costs.
+** (02:36) the majority of users are actually still on Gingerbread (2.3) and still on ICS (4.0, Ice Cream Sandwich). And as the next 5 billion people come in, you know, to join us in the mobile revolution, you know what? There's actually a high likeihood that they will be running low-end Gingerbread devices. So, I mean, are we going to just kind of like leave those people behind? No, we can't do that. And at Google, a lot of our apps actually run as far back as Froyo and Eclair. There are still a significant amount of users there.
+** (03:07) whatever solutions we come up and with whatever test our developers are going to write, they need to work across all of these platforms. 但就算只能測特定版本以上的平台就不值得做了嗎？
+** (03:35) when you make it easy for developers, they're going to do it. And so with Espresso, we wanted to maintian that. And I think most of the Android developers out there, they're familiar with instrumentation. And we wanted it to be the same exact setup. So Espresso is just a thin layer, just 600 lines of code on top of instrumentation. 只能寫 JUnit，這種做法跟 test frameworks 很難整合。
+** (04:26) what does the tester, in this case the developer who is writing the test, what do they want to do? And they want to do what the user does, right? We're talking about UI, user interface. And the user really just wants to do three things. They want to find an element. they want to doing is whith it like click and type. And then they want to - maybe not all users, but manual testers, they want to check some state. And I think users actually implicitly check state. You know, if something crashes, they're unhappy. 這裡 IMPLICITLY check state 說得真好!!
+** (05:06) But just as important as what the API does is actually what it does not do. We want to do the right thing and we want to prevent you from doing the wrong thing.
+   *** What would a device user NOT do? get activities, get views... you know, in our experience getting these internal objects is kind of dangerous because the state of the application is constantly chaning and if you're holding onto this object, it may get stale. In fact, it will get stale. So we left out this API that some of the other frameworks include, and so far we have not seen the use case actually where we need it.
+   *** What would a test author NOT WANT to do? waitUntil(timeout), write boilerplate... the first thing is we kind of talked about flaky tests and how we solve that, and a lot of the frameworks out there, almost all of them that I've seen, provide this nice method called wait until some timeout... I'm not the operating system and I have no idea what's happening on the UI thread right now, so I'm not qualified to make it. So why we asking test authors to make that decision. That's just unfair. So we left that out of Espresso also.
+** (07:15) Easy: API for Test Authors `onView(withId(R.id.greeting)).perform(click());`, `onView(withText("Hello Steve!")).check(matches(isDisplayed()))`.
+   *** it's a static method and you pass us a matcher for the view. UIAutomator actually has kind of a similar pattern, you have recognized it. What we did also is that we decided not to write our own stuff and we reused the wonderful Hamcrest matcher library. Hamcrest allows you to write all sorts of crazy stuff.
+   *** Find -> Do stuff -> Check
+** (08:15) extensibility points
+   *** onView method takes a Hamcrest matcher. some precanned matchers for you - withId, withText, withContentDescription, isDisplayed, hasFocus, hasSibling...
+   *** view actions - click, longClick, doubleClick, typeText, scrollTo, ...
+   *** view assertions - matches, doesNotExist, ...
+** there is this assumption out there that UI tests are flaky. (需要用 sleep 解決的問題)
+** (10:20) we started out by synchronizing with a UI thread and all of the UI events and the choreographer in the new APIs and all of the stuff you guys don't want to hear about, and all of that is actually isolated in a level that neither the framework authors nor the test authors will have to worry about.
+** (10:43) real applications, they do things like talk to the internet and they write to disk, and the primary way of doing this is to background you tasks and use async tasks. So we went ahead and we added synchronization with a default async task thread pool. So you get that for free.
+** (11:20) we add an interface where we allow you to actually register with Espresso a resource, and then, you know. you can actually tell us when your application or your resource is going idle and Espresso will wait to run the next test operation.
+** (11:42) Directions: take each test action. 1. Wait until app is idle, 2. Run on the UI thread, 3. Wait until completion 4. Check result
+** (11:47) we get on the UI thread. Why do we do that? Because while we are on the UI thread, just like I am on stage, nobody else can be on the UI thread. And then we find the view using the matcher you provided to us. We run your action or your assertion or whatever you provided to use. 少了 sleep 或 wait until，結果就是測試跑得異常地快
+** (12:09) the click action result in multiple events being placed on the UI thread. So we actually wait until those events get processed and only at that time we get off (動身).
+** (12:30) we catch all of the exceptions and we propagate these in a user-friendly format to the test author.
+** (14:10) the nice thing about instrumentation tests is they are actually compiled in with you application. So there is this connection that you can maintain. So you can actually refer to elements by resource IDs versus just content descriptions.
+** (14:47) a lot of the Google teams out there are already using Espresso.
+** (15:34) we're just working out through some technical details right now, and hopefully in the near future it will be possible.
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://www.youtube.com/watch?v=qtKx1WxK7cw[Espresso for Android - a Demo - YouTube] (2013-04-24)
+

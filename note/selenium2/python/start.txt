@@ -1,0 +1,67 @@
+= link:python.html[Selenium 2/WebDriver / API / Python] / Getting Started =
+:title: [Selenium][WebDriver][Python] Getting Started
+
+用 link:../../pip/pip.html[`pip`] 安裝 `selenium` 套件：
+
+ $ pip install selenium
+
+[source,pycon]
+--------------------------------------------------------------------------------
+>>> from selenium import webdriver
+>>> dir(webdriver)
+['ActionChains', 'Chrome', 'ChromeOptions', 'DesiredCapabilities', 'Firefox', 'FirefoxProfile', 'Ie', 'Opera', 'PhantomJS', 'Proxy', 'Remote', 'TouchActions', '__builtins__', '__doc__', '__file__', '__name__', '__package__', '__path__', '__version__', 'chrome', 'common', 'firefox', 'ie', 'opera', 'phantomjs', 'remote']
+--------------------------------------------------------------------------------
+
+這裡拿 link:../drivers/firefox.html[Firefox Driver] 簡單做個測試：
+
+[source,pycon]
+--------------------------------------------------------------------------------
+>>> from selenium import webdriver
+>>> from selenium.webdriver.common.keys import Keys
+>>> driver = webdriver.Firefox() # <1>
+>>> type(driver)
+<class 'selenium.webdriver.firefox.webdriver.WebDriver'>
+>>>
+>>> driver.get('http://en.wikipedia.org') # <2>
+>>> search_element = driver.find_element_by_name('search')          # <3>
+>>> type(search_element) 
+<class 'selenium.webdriver.remote.webelement.WebElement'>
+>>> search_element.click() # <4>
+>>> search_element.send_keys('selenium' + Keys.ENTER)
+>>> assert driver.current_url.endswith('/wiki/Selenium')            # <5>
+>>>
+>>> driver.find_element_by_link_text('Selenium (software)').click() # <3>
+>>> assert driver.current_url.endswith('wiki/Selenium_(software)')  # <5>
+>>> driver.close() # <6>
+--------------------------------------------------------------------------------
+<1> 產生 link:webdriver.html[`WebDriver`]，Firefox 的視窗會在這個時候被帶出來。
+<2> `get()` 開啟特定網址。
+<3> 要對特定 element 進行操作前，必須先用 `find_element*()` 找出來並取得對應的 link:webelement.html[`WebElement`]。
+<4> Element 直接支援 `click()`、`send_keys()` 等操作。
+<5> 直接用 link:../../python/programming/assertions.html[`assert`] 做驗證。
+<6> `close()` 會關閉目前的視窗；如果要關閉所有的視窗，可以改用 `quit()`。
+
+過程中，除了link:open-browsers.html[開啟／關閉瀏覽器]之外，可以觀察到測試主要有 3 個步驟：
+
+ 1. link:locating-ui-elements.html[找出特定的 Element]。
+ 2. link:action.html[對 Element 進行操作]。
+ 3. link:verify.html[驗證網頁或 Element 的狀態]。
+
+== 參考資料 ==
+
+.網站
+--
+ * https://pypi.python.org/pypi/selenium[selenium - PyPI]
+--
+
+.文件
+--
+ * http://selenium-python.readthedocs.org/en/latest/installation.html[1. Installation — Selenium Python Bindings 2 documentation]
+
+////////////////////////////////////////////////////////////////////////////////
+** You may consider using virtualenv to create isolated Python environments.
+** `C:\Python27\python.exe virtualenv.py selenv` This step will create a folder named `C:\seltests\selenv` which contains a "virtual Python"??
+** Now you can run your test scripts using the virtual Python. For example, if you have created a Selenium based script and saved it inside `C:\seltests\my_selenium_script.py`, you can run it like this. `C:\seltests\selenv\Scripts\python.exe C:\seltests\my_selenium_script.py`
+////////////////////////////////////////////////////////////////////////////////
+--
+

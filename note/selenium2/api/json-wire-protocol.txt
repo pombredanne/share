@@ -1,0 +1,33 @@
+= link:api.html[Selenium 2/WebDriver / API] / JSON Wire Protocol =
+:title: [Selenium][WebDriver] JSON Wire Protocol
+
+[quote,'https://code.google.com/p/selenium/wiki/JsonWireProtocol[JsonWireProtocol - selenium]']
+________________________________________________________________________________
+The protocol will assume that the WebDriver API has been "flattened", but there is an expectation that client implementations will take a more Object-Oriented approach, as demonstrated in the existing Java API.
+________________________________________________________________________________
+
+== 參考資料 ==
+
+ * https://code.google.com/p/selenium/wiki/JsonWireProtocol[JsonWireProtocol - selenium - A description of the protocol used by WebDriver to communicate with remote instances] - 雖然這份文件是寫給需要實作 WebDriver API 的人，但仍有助於瞭解 client library 跟 driver implementation 之間的關係。
+
+////////////////////////////////////////////////////////////////////////////////
+** All implementations of WebDriver that communicate with the browser, or a `RemoteWebDriver` server shall use a common wire protocol. This wire protocol defines a RESTful web service using JSON over HTTP. 即便是沒有透過 selenium server 操控本機的 browser，還是會有這層 JSON/HTTP 存在。
+** The protocol will assume that the WebDriver API has been "flattened", but there is an expectation that client implementations will take a more Object-Oriented approach, as demonstrated in the existing Java API. 將 flattened protocol 重新包裝成 object-oriented API。
+** The wire protocol is implemented in request/response pairs of "commands" and "responses".
+** Client - The machine on which the WebDriver API is being used.
+** Server - The machine running the `RemoteWebDriver`. This term may also refer to a specific browser that implements the wire protocol directly, such as the `FirefoxDriver` or `IPhoneDriver`. 如果 HTTP/JSON 的中間層必定存在，那麼 server 也可以是轉到另一個 server 的 adapter。例如透過 selenium server 操控 Firefox 時，selenium server 只是將 request 繼續轉給 Firefox 裡的 `webdriver.xpi`。如此看來，Selenium 2/WebDriver 的架構還滿有彈性的!!
+** The server should maintain one browser per session. Commands sent to a session will be directed to the corresponding browser. 這種 multiple session 應該只有透過 selenium server 才有??
+** `WebElement` - An object in the WebDriver API that represents a DOM element on the page.
+** ELEMENT string The opaque ID assigned to the element by the server. This ID should be used in all subsequent commands issued against the element. 這裡的 "opaque ID" 跟 HTML 的 id attribute 沒有直接關聯??
+** Capabilities JSON Object - Not all server implementations will support every WebDriver feature. Therefore, the client and server should use JSON objects with the properties listed below when describing which features a session supports. 建立一個 session 時，要提供希望的 desired capabilities，接著 server 會回覆能支援的 actual capabilities。
+   *** Desired Capabilities - A Capabilities JSON Object sent by the client describing the capabilities a new session created by the server should possess. Any omitted keys implicitly indicate the corresponding capability is "irrelevant".
+   *** Actual Capabilities A Capabilities JSON Object returned by the server describing what features a session actually supports. Any omitted keys implicitly indicate the corresponding capability is "not supported".
+** WebDriver command messages should conform to the HTTP/1.1 request specification. Although the server may be extended to respond to other content-types, the wire protocol dictates that all commands accept a content-type of `application/json;charset=UTF-8`. Likewise, the message bodies for POST and PUT request must use an `application/json;charset=UTF-8` content-type.
+** Each command in the WebDriver service will be mapped to an HTTP method at a specific path. Path segments prefixed with a colon (:) indicate that segment is a variable used to further identify the underlying resource. 認識這一點，才有辦法看懂這份文件
+   *** GET `/favorite/color/:nameGiven` this mapping, the server should respond to GET requests sent to "/favorite/color/Jack" and "/favorite/color/Jill", with the variable :name set to "Jack" and "Jill", respectively.
+** If the remote server must return a 4xx response, the response body shall have a Content-Type of `text/plain` and the message body shall be a descriptive message of the bad request. For all other cases, if a response includes a message body, it must have a Content-Type of `application/json;charset=UTF-8`
+** Resources in the WebDriver REST service are mapped to individual URL patterns. Each resource may respond to one or more HTTP request methods. If a resource responds to a GET request, then it should also respond to HEAD requests. All resources should respond to OPTIONS requests with an Allow header field, whose value is a list of all methods that resource responds to.
+** If a resource is mapped to a URL containing a variable path segment name, that path segment should be used to further route the request. Variable path segments are indicated in the resource mapping by a colon-prefix. For example, consider the following: `/favorite/color/:person`
+** Two resources may only be mapped to the same URL pattern if one of those resources' patterns contains variable path segments, and the other does not. In these cases, the server should always route requests to the resource whose path is the best match for the request. Consider the following two resource paths: `/session/:sessionId/element/active` `/session/:sessionId/element/:id` Given these mappings, the server should always route requests whose final path segment is `active` to the first resource. All other requests should be routed to second.
+////////////////////////////////////////////////////////////////////////////////
+

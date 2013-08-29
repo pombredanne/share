@@ -1,0 +1,41 @@
+= [Plist] 用 Python 讀寫 Plist =
+
+在 Python 裡可以利用 `plistlib` 這個 module 讀寫 `.plist` 檔，不過在 Python 2.6 之前，只會出現在 Mac OS X 上。
+
+--------------------------------------------------------------------------------
+>>> import plistlib
+>>> root = dict(name='Jeremy Kao', height=176, weight=65)
+>>> print plistlib.writePlistToString(root) <1>
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>height</key>
+	<integer>176</integer>
+	<key>name</key>
+	<string>Jeremy Kao</string>
+	<key>weight</key>
+	<integer>65</integer>
+</dict>
+</plist>
+
+>>> 
+>>> with open('/tmp/root.plist', 'w') as f:
+...     plistlib.writePlist(root, f) <2>
+... 
+>>> with open('/tmp/root.plist', 'rU') as f:
+...     print plistlib.readPlistFromString(f.read()) <3>
+... 
+{'name': 'Jeremy Kao', 'weight': 65, 'height': 176}
+--------------------------------------------------------------------------------
+<1> `writePlistToString()` 可以將 Python 的資料結構（root object）轉成 plist-formatted string。
+<2> 用 `writePlist()` 可以將 Python 的資料結構寫出成 `.plist`。
+<3> 除了 `readPlist()` 可以將 `.plist` 讀出成 Python 的資料結構外，改用 `readPlistFromString()` 則可以用字串做為輸入。
+
+== 參考資料 ==
+
+.文件
+--
+ * http://docs.python.org/library/plistlib.html[plistlib — Generate and parse Mac OS X .plist files]
+--
+

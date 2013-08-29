@@ -1,0 +1,48 @@
+= link:networking.html[Debian / Networking] / Hostname and FQDN =
+:title: [Debian][Net] Hostname and FQDN
+
+[quote,'http://movealong.org/hostname.html[Setting Your System's Hostname]']
+________________________________________________________________________________
+On my system, `/etc/hosts` contains this line:
+
+ 69.56.173.86	dorothy.movealong.org dorothy
+
+The `hostname` command first asks the resolver for the address of 'dorothy', the unqualified hostname, and the response is '69.56.173.86'. The `hostname` command then asks the resolver for the name of '69.56.173.86', and the response is 'dorothy.movealong.org'. This is how the `hostname` command is able to determine the FQDN on my system. All of the information that the resolver needs to answer these two requests is contained in the `/etc/hosts` file.
+________________________________________________________________________________
+
+== 參考資料 ==
+
+.文件
+--
+ * http://www.debian.org/doc/manuals/debian-reference/ch03.en.html[Chapter 3. The system initialization]
+ * http://www.debian.org/doc/manuals/debian-reference/ch05.en.html[Chapter 5. Network setup]
+
+ * http://movealong.org/hostname.html[Setting Your System's Hostname] - 詳細說明了 `hostname` 如何透過 resolver 找到 hostname 對應的 IP，再從 IP 反推出 FQDN 的過程。
+
+////////////////////////////////////////////////////////////////////////////////
+** Every GNU/Linux system has a hostname, whether you like it or not. A system's hostname usually has a corresponding entry in the domain name system (DNS), but it doesn't necessarily have to.
+** The only limitations are: It cannot be longer than 64 characters It can only contain letters, numbers, and dashes
+** see what your system's hostname is currently set to by running the `hostname` command.
+** The name "dorothy" is my system's unqualified hostname. There is another form, called the fully-qualified domain name, or FQDN. The FQDN is your system's hostname combined with its domain, and you can use the `hostname` command to see the FQDN by giving it the `-f` option. 原來相對於 FQDN 還有 unqualified hostname 的說法。
+** You can also use the `hostname` command to set the hostname, either by specifying the hostname as a parameter, or by specifying the name of a file which contains the hostname.
+** There should be a script included in your GNU/Linux distribution which runs when your system boots and sets the hostname. Its exact location and operation varies from one distribution to another, but in all cases, it will use the `hostname` command in one of the two forms I've described to set the hostname.
+** In particular, find out from where the script obtains the hostname that it sets. On many systems, the script uses `hostname -F` to read `/etc/hostname`, just like my second example. Once you have determined the mechanism that your distribution uses to set the hostname when the system starts up, you can permanently change the system's hostname by putting the new one at that location.
+** In general, though, there are two sources of data that it might use. One is `/etc/hosts`, and the other is the Domain Name System (DNS).
+** Once a system's unqualified hostname is set, it is stored in the system's running kernel. It is normally set when the system boots, so for most purposes, it is always available via a simple system call. When you use the `hostname` command to get the FQDN, it uses this system call to retrieve the unqualifed hostname, and then uses a facility called the resolver to resolve the unqualified hostname into a fully-qualified domain name (FQDN). It is the resolver that then tries the different data sources that are at its disposal. 從 running kernel 得知 hostname 後再從 TWO SOURCES 反推 FQDN。
+** `/etc/hosts` is a simple text database of addresses and names. Each line in this file starts with an IP address, which is followed by one or more names. The first name listed is the FQDN associated with the address, and the rest are aliases. The first component of the FQDN should always be the unqualified hostname. 原來同一行的多個 hostname 是有順序之分的
+** The `hostname` command first asks the resolver for the address of 'dorothy', the unqualified hostname, and the response is '69.56.173.86'. The `hostname` command then asks the resolver for the name of '69.56.173.86', and the response is 'dorothy.movealong.org'. This is how the `hostname` command is able to determine the FQDN on my system. All of the information that the resolver needs to answer these two requests is contained in the `/etc/hosts` file. 原來推導 FQDN 的過程中會連續用到 `/etc/hosts` 的 unqualified hostname 跟 qualified hostname!!
+** There are some very good reasons why the information might not be in that file. For example, the system might have a dynamic IP address, and so it would have to somehow update the `/etc/hosts` file every time the address changes. In some cases, this is exactly what happens. Many DHCP clients can update the file if they are configured to do so, but there are better options.
+** One of them is to forego the `/etc/hosts` file and have the resolver get the information from the DNS. This method will allow the resolver to determine the FQDN of your system only if two conditions are met. First, that the resolver is configured to search for unqualified names by appending a specific domain, and second, that the FQDN of your system is present in that domain. 指的是 `resolv.conf` 有 `domain` 跟 `search` 的設定?? 這個時候 `/etc/hosts` 有扮演什麼角色??
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://jblevins.org/log/hostname[Linux Hostname Configuration] (2008-03-05)
+--
+
+.其他文件
+--
+ * http://tanguy.ortolo.eu/blog/article5/fq-hostnames[About system host names - Tanguy Ortolo] (2011-05-19)
+ * http://linuxgazette.net/165/misc/lg/how_to_set_domain_name_in_debian.html[how to set domain name in debian ?] (2009-07-26)
+ * http://www.rooot.net/en/geek-stuff/linux/13-change-hostname-fqdn-debian.html[Change hostname and fqdn on debian] (2008-06-09)
+ * http://lists.debian.org/debian-user/2007/09/msg00003.html[Re: Should /etc/hostname contain the whole FQDN?] (2007-08-31)
+--
+

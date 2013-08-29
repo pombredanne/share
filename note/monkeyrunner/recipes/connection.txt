@@ -1,0 +1,51 @@
+= link:recipes.html[monkeyrunner / Recipes] / 跟手機建立連線 =
+:title: [monkeyrunner] 跟手機建立連線
+
+ MonkeyDevice waitForConnection(float timeout, string deviceId)
+
+其中：
+
+ * 'timeout' - 如果一直沒有符合條件的 emulator/device 出現，要等多少秒才放棄？預設會一直等下去。
+ * 'deviceId' - 用 regular expression 來描述 emulator/device 的 serial number 要符合的 pattern。
+
+例如：
+
+--------------------------------------------------------------------------------
+$ adb devices
+List of devices attached 
+emulator-5554	device
+
+$ monkeyrunner
+>>> from com.android.monkeyrunner import MonkeyRunner, MonkeyDevice
+>>> emulator = MonkeyRunner.waitForConnection(5, r'^emulator-\d+')
+>>> emulator.getProperty('build.model')
+u'sdk'
+>>>
+>>> device = MonkeyRunner.waitForConnection(5, r'foobar') <1>
+>>> device <2>
+<com.android.monkeyrunner.MonkeyDevice object at 0x1>
+>>> device.getProperty('build.model')
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+	at com.android.monkeyrunner.MonkeyDevice.getProperty(MonkeyDevice.java:103)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:616)
+
+java.lang.NullPointerException: java.lang.NullPointerException
+--------------------------------------------------------------------------------
+<1> 時間內等不到符合條件的連線，並不會丟出例外。
+<2> 雖然不是拿到 `None`，但後續對它的操作會發生錯誤。目前只能在拿到 device 之後，簡單做個存取看是否會丟出 exception 來確認連線是沒有問題的。
+
+取得 `MonkeyDevice` 後，就可以透過它對 device/emulator 做一連串的操作。
+
+TIP: monkeyrunner 可以同時連結多個 device/emulator。雖然它沒有能力直接啟動 emulator instances，但可以透過外部程式 `emulator` 啟動，並視情況套用不同的 configuration。
+
+== 參考資料 ==
+
+.文件
+--
+ * http://developer.android.com/tools/help/MonkeyRunner.html[MonkeyRunner | Android Developers]
+--
+

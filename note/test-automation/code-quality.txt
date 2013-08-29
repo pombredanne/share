@@ -1,0 +1,184 @@
+= Automation: Code Quality =
+
+Test code 是用來測試 production code 的程式碼，最後並不會交付到客戶手上，因此有人認為 test code 的 quality 並不用像 production code 那樣特別要求。
+
+沒錯，客戶是沒有機會發現 test code 的問題，但如果 test code 本身有問題，進而導致某個 production code 的 bug 被意外放行，這時候 test code 的 quality 就變得有關係了。從這一點就可以說明，為什麼 test automation 的 "質" 會比 "量" 來得重要。
+
+////////////////////////////////////////////////////////////////////////////////
+ * Many people argue that since test automation is not shipping code, the code quality level is unimportant.
+ * Sure, the code doesn’t ship to the customers. Therefore, yes, customers won’t be discovering bugs in it. However, we’re talking about the code that is used to test the code that is shipping to the customer. If the test code has a bug in it then how do we know that it didn’t miss a bug that was in the shipping code? The bottom line is we don’t.
+////////////////////////////////////////////////////////////////////////////////
+
+尤其軟體漸漸走向敏捷式 (Agile) 開發流程，在裡面 test automation 扮演著更為重要的角色。當我們越來越依重 test automation 的測試結果，確保 test automation 能夠提供 "可靠的" 測試結果，會是最起碼的要求。
+
+////////////////////////////////////////////////////////////////////////////////
+ * Test code has a high maintenance cost associated with it. The better the quality, the lower the cost.
+ * If the results of test automation are not stable, there are usually false positives or false negatives; as a result, test engineers aren't confident of test automation, so they may spend lots of time double checking issues in automation reports, or they may give up test automation and test manually because of the tight project schedule. In the end, the goal, saving regression testing effort, of test automation is not achieved, but also precious resources are not utilized efficiently. Bad automation is worse than no automation.
+////////////////////////////////////////////////////////////////////////////////
+
+所謂 "可靠的" 測試結果，指的是要避免下面兩種 "誤判情勢" 的狀況：
+
+ * False Positive - SUT 沒有問題，但相對應的測試卻回報說有問題；也就是一般所說的 "狼來了" 或 "false alarm"。
+ * False Negative - SUT 有問題，但相對應的測試卻回報說沒有問題。
+
+所謂 code quality 指的是容易 maintain，而 maintain 指的是增加功能或修改
+
+
+ * False Positive
+ 因為 test code 有錯而失敗，找問題很煩。
+   ** 人們預期 test automation 可以找到一些問題，尤其是 change 帶來的 side effect，如果誤報錯誤的情形多了，因為 “狼來了“ 就會失去對 test fail 的敏感度。
+   ** 花時間做 double check，甚至放棄 test automation 而回頭改採 manual test。
+   ** http://msdn.microsoft.com/en-us/magazine/cc163665.aspx[Unit Testing: Writing Maintainable Unit Tests Save Time And Tears] - What happens if you have bugs in your unit tests? You'll suddenly start getting a lot of false positives—essentially, a bug will be found, but the problem won't be in your code under test. Your test's logic has a bug and therefore the test fails. These bugs are the most annoying and hardest to find because you're usually looking in the wrong place, checking your application instead of checking your tests. In Section I, I'll show you how to ensure that having a lot of unit tests does in fact make tracking bugs easier.
+ * False Negative
+   ** 不要用特殊值
+   ** 別以特殊的回傳值來反應內部不正常的狀況, 因為 caller 通常都會檢查這個狀況, 然後再做特殊的處理或直接拋出例外; 況且如果 caller 沒有注意到要去檢查回傳值, 可能發生錯誤了也永遠不會知道, 只是覺得怪怪的... 因此日後在 Javadoc 出現 "如果....就傳回..." 時, 要特別小心是不是已經犯了這個錯....
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+視為 production code 的一部份：
+
+////////////////////////////////////////////////////////////////////////////////
+ * The quality of test automation is critical to validating the quality of shipping code. Furthermore, just like the code that is shipped, test code has a maintenance life of its own. Good design, use of design patterns, and refactoring is just as valuable on test code as it is for shipping code since someone is going to be modifying or enhancing it somewhere down the line.
+////////////////////////////////////////////////////////////////////////////////
+
+ test code 跟 test automation 的測試結果有直接的關係。
+
+但仔細想想，production code 的
+
+跟產品的功能沒有直接的關係，
+
+寫得好不好不是重點，好維護才是重點。
+
+越來越依賴 test automation 時，test code 的 quality 就變得越來越重要。
+
+Code Review 有很多好處：
+
+////////////////////////////////////////////////////////////////////////////////
+ * Test code reviews help ensure that quality and standards are shared across the project team.
+////////////////////////////////////////////////////////////////////////////////
+
+從流程來解決
+
+////////////////////////////////////////////////////////////////////////////////
+ * If so, then your team should have some sort of process that ensures test automation is written well.
+ * the team’s first priority was to develop a test automation review process that would facilitate the way we create test automation code.
+ * Increase awareness of test automation code that is available and reusable
+////////////////////////////////////////////////////////////////////////////////
+
+最後一道防線，誰來確保 test code 的質量，除了 process 來解決之外，就靠 unit test 了，甚至可以導入 TDD：
+
+////////////////////////////////////////////////////////////////////////////////
+ * The objective of test automation is to make sure the quality of the product. However, when production code is verified by test automation, who is responsible for making sure the quality of test program itself? I bet nobody tells his/her boss. "Hey boss, we need more test engineers to test our testing code."
+////////////////////////////////////////////////////////////////////////////////
+
+感覺所有 Unit Test 的 principle 都可以套用在 automation，只是單位不同而已。
+
+重點擺在 unit test 要怎麼寫才能避開 false positive 跟 false negative
+
+從 code level 來看待這些問題，提升 code quality 除了降低維護的成本，也避免修改所引發的
+
+當沒有人敢去動舊的 code, 程式就會變得越來越難維護，潛藏的問題就會越來越多...
+
+有時候 "寫一段 code 來測試另一段 code" 的風險其實是很高的...
+
+== 為什麼要 Test Automation 也要講求 Code Quality？ ==
+
+[quote,Linda Hayes,The Automated Testing Handbook]
+________________________________________________________________________________
+It is important to realize that test automation tools are really just specialized programming languages, and developing a test library is a development project requiring commensurate skills.
+________________________________________________________________________________
+
+throw-away
+
+Clarity, Comprehension
+
+一切都是為了好維護，成本都來自於維護... 讓人容易理解
+
+改, 改壞了
+
+設計是慢慢成形的，所以需要 refactor，而 refactor 需要 unit test 的支撐。
+
+quality 要要求到什麼程度？
+
+code convention, comment
+
+“Always code as if the guy who ends up 
+maintaining your code will be a violent 
+psychopath who knows where you live.”  -- Martin Golding
+
+internal/external characteristics: 
+
+不用考量 i18n，但要考量 L10N ??
+
+意識到這些問題，用 unit testing 來防。
+
+Embrace Changes
+
+ * A great design is not born, it is grown over time
+ * SUT 會變
+ * 儘量保護 QA 寫的 test script 不受 SUT 變動的影響 isolate changes
+ * 在 SUT 有 change 時，如何不讓 test automation 誤判情勢
+
+automation 是長期的投資，所以不能像 throw-away script 來看待它... 它甚至需要被 design
+
+ * comprehension -- 是重點...
+ * modularity
+ * code conventions 
+ * voiding “magic values”
+
+automation code quality .... 還是一樣回歸到單純的 code quality, 要求不會比較少... 不 work 就算了，但絕不能產生
+
+ * code review
+ * refactoring
+ * unit test
+
+ * 從 process 來解決
+   ** code review/introspetion
+   ** code convention, comments
+   ** design pattern
+   ** bug tracking
+   ** source control
+ * 從 code level 來解決
+   ** unit test
+   ** 
+
+
+== 參考資料 ==
+
+ * http://www.computerweekly.com/feature/Automate-testing-for-agile-quality[Automate testing for agile quality] - 未來沒有測試工程師 (SET) 這種專門的職位了，因為 SET 就是 developer。一開始提到 automation，但後面大多在陳述 crowd-sourcing 的趨勢。
+ * http://fall2011.stpcon.com/Item/1022/[Focus on Automation Code Quality | Software Test Professionals Conference]
+ * http://hp.usersummit.org/nashville/events/20110831/[08/31/2011: “Improving Automation Code Quality, Clarity, and Comprehension” and "Agile or Fragile?" | UserSUMMIT | Nashville, TN] (2011-08-31) - 一開始提到寫 test code 跟 product code 的要求並無不同，之後在講的東西就比較偏 programming 了。
+ * http://technobeans.wordpress.com/2011/07/20/better-software-improved-test-automation/[Better Software: Improved Test Automation « TechnoBeans] (2011-07-20) - product 跟 test automation 的 quality 應連結在一起
+ * http://julian-chu.blogspot.tw/2011/02/key-to-successful-automation-iii.html[No Reservations: Key to Successful Automation III - Quality] (2011-02-24) - 開頭就問 "automation 確保 product 的品質，但 automation 的品質由誰來確保？"
+ * http://msdn.microsoft.com/en-us/library/ff519670.aspx[Test Automation Code Review Guidelines] - 跟 VSTS (Visual Studio Team System) 比較有關，看不是很懂...
+ * http://msdn.microsoft.com/en-us/library/ff521647.aspx[Quality in the Test Automation Review Process and Design Review Template] - 為什麼 test automation 的 quality 重要；當我們越來越依賴 test automation 時，如何確保 test automation 不會意外放行某個 bug 相形重要。
+ * http://www.lucasward.net/2010/05/test-code-quality.html[Lucas Ward's Blog: Test code quality] (2010-05-24)
+ * http://xunitpatterns.com/false%20negative.html[false negative at XUnitPatterns.com]
+ * http://xunitpatterns.com/false%20positive.html[false positive at XUnitPatterns.com]
+ * http://en.wikipedia.org/wiki/Type_I_and_type_II_errors[Type I and type II errors - Wikipedia, the free encyclopedia]
+
+////////////////////////////////////////////////////////////////////////////////
+ * "test code" quality
+ * automation "test code" quality
+ * test automation code quality
+////////////////////////////////////////////////////////////////////////////////
+
+== 雜記 ==
+
+ * sleep is evil.
+ * quality 要同時從 test script 跟 test library 兩個地方來要求。
+ * 別依賴 QA 回報錯誤時才去修，久而久之會失去對 automation 的信心
+

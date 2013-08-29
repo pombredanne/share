@@ -1,0 +1,26 @@
+= link:recipes.html[monkeyrunner / Recipes] / 調用 ADB Shell =
+:title: [monkeyrunner] 調用 ADB Shell
+
+`MonkeyDevice` 提供了 `shell(cmd)` 可以用來執行 link:../../android/sdk/adb/shell-commands.html[ADB shell command]，並回傳結果（也就是 console 的輸出）。
+
+--------------------------------------------------------------------------------
+>>> from com.android.monkeyrunner import MonkeyRunner, MonkeyDevice
+>>> device = MonkeyRunner.waitForConnection()
+>>> device.shell('am start market://details?id=org.jtb.alogcat')
+u'Starting: Intent { act=android.intent.action.VIEW dat=market://details?id=org.jtb.alogcat }\r\n' <1>
+>>>
+>>> device.shell('foobar') <2>
+u'foobar: permission denied\r\n'
+--------------------------------------------------------------------------------
+<1> `shell()` 會忠實地傳回 console 的輸出，包括結尾的換行字元。
+<2> 執行的過程中有錯，並不會丟出 exception。
+
+NOTE: 實驗發現 shell command 輸出的換行字元，好像固定都會採用 `\r\n`，即便是在 Linux 下也是如此。
+
+== 參考資料 ==
+
+.文件
+--
+ * http://developer.android.com/tools/help/MonkeyDevice.html[MonkeyDevice | Android Developers]
+--
+

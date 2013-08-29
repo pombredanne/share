@@ -1,0 +1,44 @@
+= link:api.html[Appium / API] / Locating UI Elements =
+:title: [Appium] Locating UI Elements
+
+https://github.com/appium/appium/wiki/Finding-and-interacting-with-elements[官方文件]提到，Appium 目前只支援 3 種 locator strategies：
+
+ * Tag Name - UI components 的 type name，例如 iOS 的 `UIAButton`、`UIATextView` 或 Android 的 `android.widget.Button`、`android.widget.TextView` 等。
++
+--
+除了標準的 component type name 之外，內部實作也各自定義了一些 alias 或 shortcut（link:../android/locating-ui-elements.html#shortcuts[Android]/link:../ios/locating-ui-elements.html#shortcuts[iOS]），例如 `UIAButton` 跟 `android.widget.Button` 都可以用 `button` 來表示。
+
+NOTE: 使用 alias/shortcut 可以簡化 locator，尤其是在 XPath expression 裡描述不同 tag names 之間的階層關係時。不過它對 "Android/iOS 兩者共用一份 test code" 這件事的幫助實在有限，除了兩邊相同的 alias/shortcut 沒幾個之外，最主要還是因為 Android 跟 iOS 兩者的 UI 跟 UX (user experience) 差異很大，兩邊的操作流程可能完全不同，實務上能夠共用一份 test code 的狀況並不常見。
+
+// 另外，alias/shortcut 也不適用在 selendroid mode。
+--
++
+ * Name - UI component 的文字 "或" accessibility label。（也就是 Android 的 link:../../android/accessibility/accessibility.html#content-description[content description]）
++
+--
+CAUTION: 雖然 name strategy 看似不錯的選擇，但 accessibility label 或 content description 通常會被 localize，所以如果 automation 有考量 L10N 的話，name strategy 就不是一個好的選擇。
+--
++
+ * XPath - 把 tag name 當成是 element name。用起來不太穩定??
+
+// 意外發現，也支援 Class Name 這個 locator strategy，輸入完整的 component type name 即可... 糟的是 selendroid mode 跟 non-selendroid mode 兩者對 name locator strategy 有不同的解釋，而偏偏 non-selendroid mode 又不支援 link text strategy... 如果要讓相同的測試可以跑在新舊的 Android 平台，就要在 locator (strategies) 這一段花一點功夫?? ...
+
+== 參考資料 ==
+
+ * https://github.com/appium/appium/wiki/Finding-and-interacting-with-elements[Finding and interacting with elements · appium/appium Wiki]
+
+////////////////////////////////////////////////////////////////////////////////
+** Appium supports a subset of the WebDriver locator strategies:
+   *** find by "tag name" (i.e., ui component type)
+   *** find by "name" (i.e., the text, label, or developer-generated ID a.k.a 'accessibilityIdentifier' of an element)  這裡的 "developer-generated ID" 指的是什麼??
+   *** find by "xpath" (i.e., an abstract representation of a path to an element, with certain constraints)
+** You can use the direct UIAutomation component type name for the tag name, or use the simplified mapping (used in some examples below) found here: https://github.com/appium/appium/blob/master/app/uiauto/lib/mechanic.js#L29 用 component type name 對 developer 很直覺，但無法通用於 Android/iOS
+** There's a known issue with table cell elements becoming invalidated before there's time to interact with them. We're working on a fix??
+** `driver.find_elements_by_tag_name('button')`
+** `driver.find_element_by_name('Go').click()`
+** `//navigationBar/text[contains(@value, "Hi, ")]`
+** `driver.find_elements_by_tag_name('tableCell')[5].click()`
+** `js_snippet = "mobile: swipe"; args = {'startX':0.5, 'startY':0.2, 'startX':0.5, 'startY':0.95, 'tapCount':1, 'duration':10}; driver.execute_script(js_snippet, args)` - Python 的用法
+** `driver.execute_script()` is explained in Automating Mobile Gestures: Alternative access method)
+////////////////////////////////////////////////////////////////////////////////
+

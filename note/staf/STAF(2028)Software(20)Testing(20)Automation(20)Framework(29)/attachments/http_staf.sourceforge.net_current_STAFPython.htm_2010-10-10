@@ -1,0 +1,3064 @@
+                     Python User's Guide for STAF Version 3
+
+   Last Updated: September 16, 2010
+     __________________________________________________________________
+
+Table of Contents
+
+   1.0 Introduction
+
+   2.0 Supported Platforms and Python Versions
+   2.1 Windows (Intel 32-bit)
+       2.2 Windows (Intel 64-bit)
+       2.3 Windows (AMD64/Opteron)
+       2.4 Linux (Intel 32-bit, aka i386 or x86-32)
+       2.5 Linux (AMD64/Opteron)
+       2.6 Linux (PPC64-32)
+       2.7 Linux (PPC64-64)
+       2.8 Linux (IA64)
+       2.9 Solaris (Sparc 32-bit)
+       2.10 Solaris (Sparc 64-bit)
+       2.11 Solaris (AMD64/Opteron x64, aka solaris-x64)
+       2.12 Solaris (AMD64/Opteron x64, aka solaris-x64-64)
+       2.13 Solaris (x86 32-bit)
+       2.14 FreeBSD 7.3+ (i386)
+       2.15 Mac OS X 10.4+ (i386)
+       2.16 Mac OS X 10.4+ (PPC)
+       2.17 Mac OS X 10.6+ (Universal binary with support for i386,
+       x86_64, and ppc)
+
+   3.0 Installation
+
+   4.0 Modules PySTAF, PySTAFv3
+   4.1 Primary STAF APIs
+
+   4.1.1 Class STAFHandle
+       4.1.2 Class STAFResult
+       4.1.3 Class STAFException
+       4.1.4 Function wrapData
+
+   4.2 Marshalling APIs
+   4.2.1 Class STAFMapClassDefinition
+       4.2.2 Class STAFMarshallingContext
+       4.2.3 Function isMarshalledData
+       4.2.4 Function marshall
+       4.2.5 Function unmarshall
+       4.2.6 Function formatObject
+
+   4.3 Private Data Manipulation APIs
+   4.3.1 Function addPrivacyDelimiters
+       4.3.2 Function escapePrivacyDelimiters
+       4.3.3 Function removePrivacyDelimiters
+       4.3.4 Function maskPrivateData
+
+   4.4 Constants 5.0 Module PySTAFMon
+   5.1 Class STAFMonitor
+
+   6.0 Module PySTAFLog
+   6.1 Class STAFLog
+
+   7.0 Python Program Examples
+   7.1 Example 1
+     __________________________________________________________________
+
+                                1.0 Introduction
+
+   This document describes STAF's V3 support for the Python language.  It
+   includes information on the core STAF Python APIs as well as the
+   wrappers provided for the Monitor and Log services.
+
+   STAF Python support must be installed in order to submit requests to
+   STAF via a Python program.
+
+   The version of Python used to build the STAF Python libraries is
+   usually the only Python version that will work with those STAF Python
+   libraries.
+
+   STAF currently provides STAF Python support on the following platforms:
+     * Windows (Intel 32-bit)
+     * Windows (Intel 64-bit)
+     * Windows (AMD64/Opteron)
+     * Linux (Intel 32-bit, aka i386 or x86-32)
+     * Linux (AMD64/Opteron)
+     * Linux (PPC64-32)
+     * Linux (PPC64-64)
+     * Linux (IA64)
+     * Solaris (Sparc 32-bit)
+     * Solaris (Sparc 64-bit)
+     * Solaris (AMD64/Opteron x64, aka solaris-x64)
+     * Solaris (AMD64/Opteron x64, aka solaris-x64-64)
+     * Solaris (x86 32-bit)
+     * FreeBSD 6.1 (i386)
+     * FreeBSD 4.10 (i386)
+     * Mac OS X (i386)
+     * Mac OS X (PPC)
+
+   Section 2.0 provides details about the STAF Python support by platform.
+
+   If you want to use a different version of Python or if you want STAF
+   Python support for a different operating system, you can either:
+
+     * Build STAF Python support yourself. See the STAF Developer's Guide
+       for more information on how to build the STAF python project.
+       If you build STAF Python support for a different operating system
+       and/or different Python version, please contribute it to the STAF
+       project. To contribute it, browse the STAF Support Requests to see
+       if someone else has already provided STAF Python support for this
+       operating system and Python version combination. If not, open a
+       STAF Support Request with the "Summary" containing "STAF V3 Support
+       for Python x.x.x (Platform)", replacing x.x.x with the Python
+       version and replacing Platform with the operating system on which
+       you built the support. Attach the necessary files (e.g. PYSTAF.pyd
+       for Windows or PYSTAF.so for Unix) to the Support Request.
+     * Or, you can submit a Support Request via the STAF SourceForge
+       website for us to build it for you (but it may take a while until
+       we get a chance to implement your request). Be sure to check the
+       existing STAF Support Requests as we may have already provided STAF
+       Python support for the Python version and operating system that you
+       want and attached it to an existing STAF Support Request.
+
+   Note: In STAF V3.2.1+, the extension of the PYSTAF extension module for
+   Windows is now .pyd (instead of .dll) because starting in Python 2.5,
+   the .dll extension is no longer supported as a filename extension for
+   Python extension modules on Windows. If you have both PYSTAF.pyd and
+   PYSTAF.dll on your system (e.g. because you had an earlier version of
+   STAF installed or because you downloaded it from a support request),
+   Python finds PYSTAF.pyd before PYSTAF.dll so make sure that the STAF
+   Python extension module you want to use is PYSTAF.pyd.
+     __________________________________________________________________
+
+                  2.0 Supported Platforms and Python Versions
+
+   2.1 Windows (Intel 32-bit)
+
+   Supported Python Version Built with     PYSTAF library
+   2.2.x (default)          2.2.1      bin/python22/PYSTAF.pyd
+   2.3.x                    2.3.5      bin/python23/PYSTAF.pyd
+   2.4.x                    2.4.4      bin/python24/PYSTAF.pyd
+   2.5.x                    2.5.4      bin/python25/PYSTAF.pyd
+   2.6.x                    2.6.2      bin/python26/PYSTAF.pyd
+   2.7.x                    2.7.0      bin/python27/PYSTAF.pyd
+   3.0.x                    3.0.1      bin/python30/PYSTAF.pyd
+   3.1.x                    3.1.2      bin/python31/PYSTAF.pyd
+
+   2.2 Windows (Intel 64-bit)
+
+   Supported Python Version Built with     PYSTAF library
+   2.4.x (default)          2.4.4      bin/python24/PYSTAF.pyd
+   2.5.x                    2.5.4      bin/python25/PYSTAF.pyd
+
+   2.3 Windows (AMD64/Opteron)
+
+   Supported Python Version Built with     PYSTAF library
+   2.5.x (default)          2.5.4      bin/python25/PYSTAF.pyd
+   2.6.x                    2.6.2      bin/python26/PYSTAF.pyd
+   2.7.x                    2.7.0      bin/python27/PYSTAF.pyd
+   3.0.x                    3.0.1      bin/python30/PYSTAF.pyd
+   3.1.x                    3.1.2      bin/python31/PYSTAF.pyd
+
+   2.4 Linux (Intel 32-bit, aka i386 or x86-32)
+
+   Supported Python Version Built with     PYSTAF library
+   2.2.x (default)          2.2.2      lib/python22/PYSTAF.so
+   2.3.x                    2.3.5      lib/python23/PYSTAF.so
+   2.4.x                    2.4.4      lib/python24/PYSTAF.so
+   2.5.x                    2.5.4      lib/python25/PYSTAF.so
+   2.6.x                    2.6.2      lib/python26/PYSTAF.so
+   2.7.x                    2.7.0      lib/python27/PYSTAF.so
+   3.0.x                    3.0.1      lib/python30/PYSTAF.so
+   3.1.x                    3.1.2      lib/python31/PYSTAF.so
+
+   2.5 Linux (AMD64/Opteron)
+
+   Supported Python Version Built with     PYSTAF library
+   2.2.x (default)          2.2.3      lib/python22/PYSTAF.so
+   2.3.x                    2.3.5      lib/python23/PYSTAF.so
+   2.4.x                    2.4.4      lib/python24/PYSTAF.so
+   2.5.x                    2.5.4      lib/python25/PYSTAF.so
+   2.6.x                    2.6.2      lib/python26/PYSTAF.so
+   2.7.x                    2.7.0      lib/python27/PYSTAF.so
+   3.0.x                    3.0.1      lib/python30/PYSTAF.so
+   3.1.x                    3.1.2      lib/python31/PYSTAF.so
+
+   2.6 Linux (PPC64-32)
+
+   Supported Python Version Built with     PYSTAF library
+   2.2.x (default)          2.2.3      lib/python22/PYSTAF.so
+   2.3.x                    2.3.5      lib/python23/PYSTAF.so
+   2.4.x                    2.4.4      lib/python24/PYSTAF.so
+   2.5.x                    2.5.4      lib/python25/PYSTAF.so
+   2.6.x                    2.6.2      lib/python26/PYSTAF.so
+   2.7.x                    2.7.0      lib/python27/PYSTAF.so
+   3.0.x                    3.0.1      lib/python30/PYSTAF.so
+   3.1.x                    3.1.2      lib/python31/PYSTAF.so
+
+   2.7 Linux (PPC64-64)
+
+   Supported Python Version Built with     PYSTAF library
+   2.2.x (default)          2.2.3      lib/python22/PYSTAF.so
+   2.3.x                    2.3.5      lib/python23/PYSTAF.so
+   2.4.x                    2.4.4      lib/python24/PYSTAF.so
+   2.5.x                    2.5.4      lib/python25/PYSTAF.so
+   2.6.x                    2.6.2      lib/python26/PYSTAF.so
+   2.7.x                    2.7.0      lib/python27/PYSTAF.so
+   3.0.x                    3.0.1      lib/python30/PYSTAF.so
+   3.1.x                    3.1.2      lib/python31/PYSTAF.so
+
+   2.8 Linux (IA64)
+
+   Supported Python Version Built with     PYSTAF library
+   2.2.x (default)          2.2.3      lib/python22/PYSTAF.so
+   2.3.x                    2.3.5      lib/python23/PYSTAF.so
+   2.4.x                    2.4.4      lib/python24/PYSTAF.so
+   2.5.x                    2.5.4      lib/python25/PYSTAF.so
+   2.6.x                    2.6.2      lib/python26/PYSTAF.so
+
+   2.9 Solaris (Sparc 32-bit)
+
+   Supported Python Version Built with     PYSTAF library
+   2.2.x (default)          2.2.3      lib/python22/PYSTAF.so
+   2.3.x                    2.3.5      lib/python23/PYSTAF.so
+   2.4.x                    2.4.4      lib/python24/PYSTAF.so
+   2.5.x                    2.5.4      lib/python25/PYSTAF.so
+   2.6.x                    2.6.2      lib/python26/PYSTAF.so
+   2.7.x                    2.7.0      lib/python27/PYSTAF.so
+   3.0.x                    3.0.1      lib/python30/PYSTAF.so
+   3.1.x                    3.1.2      lib/python31/PYSTAF.so
+
+   2.10 Solaris (Sparc 64-bit)
+
+   Supported Python Version Built with     PYSTAF library
+   2.2.x (default)          2.2.3      lib/python22/PYSTAF.so
+   2.3.x                    2.3.5      lib/python23/PYSTAF.so
+   2.4.x                    2.4.4      lib/python24/PYSTAF.so
+   2.5.x                    2.5.4      lib/python25/PYSTAF.so
+   2.6.x                    2.6.2      lib/python26/PYSTAF.so
+   2.7.x                    2.7.0      lib/python27/PYSTAF.so
+   3.0.x                    3.0.1      lib/python30/PYSTAF.so
+   3.1.x                    3.1.2      lib/python31/PYSTAF.so
+
+   2.11 Solaris (AMD64/Opteron x64, aka solaris-x64)
+
+   Supported Python Version Built with     PYSTAF library
+   2.2.x (default)          2.2.3      lib/python22/PYSTAF.so
+   2.3.x                    2.3.5      lib/python23/PYSTAF.so
+   2.4.x                    2.4.4      lib/python24/PYSTAF.so
+   2.5.x                    2.5.4      lib/python25/PYSTAF.so
+   2.6.x                    2.6.2      lib/python26/PYSTAF.so
+   2.7.x                    2.7.0      lib/python27/PYSTAF.so
+   3.0.x                    3.0.1      lib/python30/PYSTAF.so
+   3.1.x                    3.1.2      lib/python31/PYSTAF.so
+
+   2.12 Solaris (AMD64/Opteron x64, aka solaris-x64-64)
+
+   Supported Python Version Built with     PYSTAF library
+   2.2.x (default)          2.2.3      lib/python22/PYSTAF.so
+   2.3.x                    2.3.5      lib/python23/PYSTAF.so
+   2.4.x                    2.4.4      lib/python24/PYSTAF.so
+   2.5.x                    2.5.4      lib/python25/PYSTAF.so
+   2.6.x                    2.6.2      lib/python26/PYSTAF.so
+   2.7.x                    2.7.0      lib/python27/PYSTAF.so
+   3.0.x                    3.0.1      lib/python30/PYSTAF.so
+   3.1.x                    3.1.2      lib/python31/PYSTAF.so
+
+   2.13 Solaris (x86 32-bit)
+
+   Supported Python Version Built with     PYSTAF library
+   2.2.x (default)          2.2.3      lib/python22/PYSTAF.so
+   2.3.x                    2.3.5      lib/python23/PYSTAF.so
+   2.4.x                    2.4.4      lib/python24/PYSTAF.so
+   2.5.x                    2.5.4      lib/python25/PYSTAF.so
+   2.6.x                    2.6.2      lib/python26/PYSTAF.so
+   2.7.x                    2.7.0      lib/python27/PYSTAF.so
+   3.0.x                    3.0.1      lib/python30/PYSTAF.so
+   3.1.x                    3.1.2      lib/python31/PYSTAF.so
+
+   2.14 FreeBSD 7.3+ (i386)
+
+   Supported Python Version Built with     PYSTAF library
+   2.2.x                    2.2.3      lib/python22/PYSTAF.so
+   2.3.x                    2.3.5      lib/python23/PYSTAF.so
+   2.4.x (default)          2.4.4      lib/python24/PYSTAF.so
+   2.5.x                    2.5.4      lib/python25/PYSTAF.so
+   2.6.x                    2.6.2      lib/python26/PYSTAF.so
+   2.7.x                    2.7.0      lib/python27/PYSTAF.so
+   3.0.x                    3.0.1      lib/python30/PYSTAF.so
+   3.1.x                    3.1.2      lib/python31/PYSTAF.so
+
+   2.15 Mac OS X (i386)
+
+   Supported Python Version Built with     PYSTAF library
+   2.3.x (default)          2.3.5      lib/python23/PYSTAF.so
+
+   2.16 Mac OS X (PPC)
+
+   Supported Python Version Built with     PYSTAF library
+   2.3.x (default)          2.3.5      lib/python23/PYSTAF.so
+
+   2.17 Mac OS X 10.6+ (Universal binary with support for i386, x86_64,
+   and ppc)
+
+   Supported Python Version Built with     PYSTAF library
+   2.6.x (default)          2.6.1      lib/python26/PYSTAF.so
+   2.7.x                    2.7.0      lib/python27/PYSTAF.so
+   3.1.x                    3.1.2      lib/python31/PYSTAF.so
+
+                                3.0 Installation
+
+   To install and configure STAF Python support, perform the following
+   steps:
+
+    1. Install STAF Python support by selecting to install "Python
+       support" during the install. It is installed by default for a
+       "typical" install of STAF if using a STAF installer for the
+       platforms listed in section 2.0 Supported Platforms and Python
+       Versions. Currently, STAF Python support is not provided in the
+       STAF installer files for other operating systems (though you can
+       build STAF Python support yourself). See section 1.0 Introduction
+       above for more information on how to build STAF Python support
+       yourself.
+       Once STAF Python support is installed, verify that the STAF Python
+       library file exists:
+          + On Windows, verify that file PYSTAF.pyd exists in directory
+            C:\STAF\bin, assuming you installed STAF to directory C:\STAF
+          + On Linux, Solaris, or FreeBSD, verify that file PYSTAF.so
+            exists in directory /usr/local/staf/lib, assuming you
+            installed STAF to directory /usr/local/staf
+          + On Mac OS X, verify that file PYSTAF.so exists in directory
+            /Library/staf/lib, assuming you installed STAF to directory
+            /Library/staf
+       The library file for the version of Python that was selected as the
+       default Python version during the STAF installation will either
+       have a link in {STAF/Config/STAFRoot}/lib (on Unix) or a copy in
+       {STAF/Config/STAFRoot}/bin on Windows.
+    2. To configure STAF Python support, you need to set or update your
+       PYTHONPATH environment variable as follows:
+          + On Linux, Solaris, or FreeBSD, add the /usr/local/staf/lib
+            directory to your PYTHONPATH, assuming you installed STAF to
+            directory /usr/local/staf. For example:
+  export PYTHONPATH=/usr/local/staf/lib:$PYTHONPATH
+          + On Mac OS X, add the /Library/staf/lib directory to your
+            PYTHONPATH, assuming you installed STAF to directory
+            /Library/staf. For example:
+  export PYTHONPATH=/Library/staf/lib:$PYTHONPATH
+          + On Windows, add the C:\STAF\bin directory to your PYTHONPATH,
+            assuming you installed STAF to directory C:\STAF. For example:
+  set PYTHONPATH=C:\STAF\bin;%PYTHONPATH%
+    3. Verify that the version of Python you have installed matches that
+       version of Python that STAF Python support was built with because
+       the version of Python used to build the STAF Python libraries is
+       usually the only Python version that will work with those STAF
+       Python libraries. See section 1.0 Introduction above for more
+       information on the version of Python used to build the STAF Python
+       libraries if using STAF Python support provided with the STAF
+       installer file and how to build STAF Python support for another
+       version of Python.
+    4. Finally, you simply need to import the modules (e.g. PySTAF,
+       PySTAFMon, PySTAFLog) described below that you use. For example, to
+       import the PySTAF module, make sure your Python program contains
+       the following line at the beginning:
+  from PySTAF import *
+     __________________________________________________________________
+
+                          4.0 Modules PySTAF, PySTAFv3
+
+   The PySTAF module provides the base level of support for Python 2.x
+   scripts to call into STAF.
+
+   The PySTAFv3 module provides the base level of support for Python 3.x
+   scripts to call into STAF.
+
+   These packages externalize some classes, utility functions, and
+   constants. Whether you are using Python 2.x or Python 3.x, usage of
+   these classes, utility functions, and constants is exactly the same. In
+   your Python script, just make sure to import the version that
+   corresponds to the version of Python you are using (i.e use PySTAF with
+   Python 2.x, and use PySTAFv3 with Python 3.x).
+
+   The STAF Python classes that it externalizes are:
+     * STAFHandle - The primary class for communicating with STAF
+     * STAFResult - A class representing the result of a STAF request
+     * STAFException - A class representing an error registering with STAF
+     * STAFMapClassDefinition - A class representing a map class
+       definition that can be used by STAF marshalling contexts
+     * STAFMarshallingContext - A class representing a STAF marshalling
+       context which is used to define structured data
+
+   The STAF Python functions that it externalizes are:
+     * isMarshalledData - A utility function that tests if a string is a
+       marshalled data string
+     * marshall - A utility function for converting a data structure into
+       a string-based representation.
+     * unmarshall - A utility function for converting the string-based
+       marshalled representation back into a data structure. It returns a
+       marshalling context.
+     * formatObject - A utility function for "pretty printing" an object
+       such that it returns a string containing a verbose hierarchical
+       format
+     * wrapData (aka STAFWrapData) - A utility function for creating
+       colon-length-colon delimited strings for use in STAF requests
+     * addPrivacyDelimiters (aka STAFAddPrivacyDelimiters) - A utility
+       function for adding privacy delimiters to a string for use in
+       protecting private data specified in a STAF command option that
+       supports handling private data
+     * escapePrivacyDelimiters (aka STAFEscapePrivacyDelimiters) - A
+       utility function for escaping privacy delimiters in a string
+     * removePrivacyDelimiters (aka STAFRemovePrivacyDelimiters) - A
+       utility function for removing privacy delimiters from a string
+     * maskPrivateData (aka STAFMaskPrivateData - A utility function for
+       masking private data
+
+   To use this module with Python 2.x you simply import it like so:
+from PySTAF import *
+
+   To use this module with Python 3.x you simply import it like so:
+from PySTAFv3 import *
+
+   Since the STAF Python libraries include several files with "PYSTAF" as
+   their file name (with varying cases, i.e. PySTAF, PYSTAF), make sure
+   that you are not using the "PYTHONCASEOK" environment variable. For
+   example, if you have it set as "PYTHONCASEOK=1" and then try to use the
+   STAF Python libraries, you will get the following error:
+Traceback (most recent call last):
+  File "TestPython.py", line 9, in ?
+    from PySTAF import *
+ImportError: dynamic module does not define init function (initPySTAF)
+
+   To correct this error, set "PYTHONCASEOK=".
+
+4.1 Primary STAF APIs
+
+   These APIs allow you to register/unregister with STAF, submit STAF
+   service requests, and to wrap the values of options used in STAF
+   service requests.
+
+  4.1.1 Class STAFHandle
+
+    Definition
+
+   class STAFHandle(handleNameOrNumber[, handleType])
+          The STAFHandle class is the primary class used to communicate
+          with STAF. It is used to register with STAF, submit service
+          requests to STAF, and unregister with STAF. Each Python script
+          should generally create one and only one STAFHandle instance
+          object. The act of creating this object registers the Python
+          application with STAF.
+
+          There are two ways to create a STAFHandle instance object:
+
+          + The first (and standard) way allows you to specify a string
+            containing the name by which your handle should be known. It
+            creates a new STAF handle and returns an instance of a
+            STAFHandle object referencing this new STAF handle.
+          + The second way allows you to specify an integer which is the
+            number of an existing STAF static handle. It returns an
+            instance of a STAFHandle object referencing this existing
+            static handle.
+
+          If a STAFHandle instance object could not be created, an
+          instance of STAFException is generated.
+
+          The required argument handleNameOrHandle specifies a handle name
+          or number. If you specify a standard handle type (the default),
+          this argument must be a string containing a name for the STAF
+          handle to be created. If you specify a static handle type, this
+          argument must be an integer containing the handle number for an
+          existing static STAF handle.
+
+          The optional argument handleType specifies the type of handle.
+          The valid handle types are:
+
+          + STAFHandle.Standard:  specifies the standard handle type. This
+            is the default.
+          + STAFHandle.Static:  specifies the static handle type.
+
+   Once you have a valid STAFHandle instance object, you can begin
+   submitting requests to STAF services. To do this, you use the submit()
+   method, to which you specify the machine and service which should
+   handle the request, as well as the request string itself.
+
+   Before the Python script exits, it should unregister with STAF by
+   calling the unRegister() method.
+
+   STAFHandle defines the following member variables. They are initialized
+   by the constructor, and should not be modified directly.
+
+        handle
+                An integer containing the number of the STAF handle.
+
+        handleType
+                The type of handle (STAFHandle.Standard or
+                STAFHandle.Static).
+
+        doUnmarshallResult
+                An integer containing 1 or 0. It is set to 1 by default
+                when a STAFHandle is created, but can be changed using the
+                setDoUnmarshallResult() method. When set to 1, this causes
+                STAF results to be automatically unmarshalled when the
+                handle's submit() method returns a STAFResult (meaning the
+                STAFResult's resultContext and resultObj fields will be
+                set).
+
+                Since: STAF V3.3.1
+
+   STAFHandle defines the following methods:
+
+        submit(location, service, request, [, mode])
+                Allows your Python script to call STAF services. Returns
+                an instance of class STAFResult described below, which
+                consists of the rc and result string from the service
+                request. In addition, if auto-unmarshalling is enabled for
+                the handle that called the submit() method, the STAFResult
+                object also contains the marshalling context for the
+                result (e.g. the unmarshalled result) and the result
+                object (e.g. the root object of the marshalling context).
+                Otherwise, if auto-unmarshalling is disabled, the
+                resultContext and resultObj fields in the STAFResult
+                object will be set to None.
+
+                The required argument location specifies the endpoint of
+                the machine where the service is registered.
+
+                The required argument service specifies the name of the
+                service to submit the request to.
+
+                The required argument request specifies the request to
+                submit to the service.
+
+                The optional argument mode specifies the mode to use when
+                submitting the request. The default is
+                STAFHandle.Synchronous. Other possible values are:
+
+               o STAFHandle.FireAndForget
+               o STAFHandle.Queue,
+               o STAFHandle.Retain
+               o STAFHandleQueueRetain
+
+        unregister()
+                Unregisters the handle. Returns 0 if the handle was
+                successfully unregistered. Otherwise, if an error occurs
+                unregistering the handle, an instance of STAFException is
+                generated.
+
+        setDoUnmarshallResult(flag)
+                Sets the flag indicating if auto-unmarshalling will be
+                performed when the handle submits a STAF service request.
+
+                The required argument flag should be 0 to disable
+                auto-unmarshalling or 1 to enable auto-unmarshalling.
+
+                Since: STAF V3.3.1.
+
+        getDoUnmarshallResult()
+                Gets the flag that indicates if auto-unmarshalling will be
+                performed when the handle submits a STAF service request.
+
+                Returns 0 if auto-unmarshalling is disabled or 1 if
+                auto-unmarshalling is enabled.
+
+                Since: STAF V3.3.1.
+
+   STAFHandle defines the following constants:
+    # STAFHandle types
+
+    Standard = 0
+    Static   = 1
+
+    # Modes for submit call
+
+    Synchronous   = 0
+    FireAndForget = 1
+    Queue         = 2
+    Retain        = 3
+    QueueRetain   = 4
+
+   Note, you can obtain more information on standard vs. static handles
+   and the various submission modes in the C API reference in the STAF
+   User's Guide.
+
+    Examples
+
+   The following is a Python 2.x example of a program which registers with
+   STAF, calls a couple of STAF services, and then unregisters with STAF.
+    from PySTAF import *
+    import sys
+
+    try:
+        handle = STAFHandle("MyTest")
+    except STAFException, e:
+        print "Error registering with STAF, RC: %d" % e.rc
+        sys.exit(e.rc)
+
+    result = handle.submit("local", "ping", "ping")
+
+    if (result.rc != 0):
+        print "Error submitting request, RC: %d, Result: %s" % (result.rc, resul
+t.result)
+
+    result = handle.submit("local", "var", "resolve string {STAF/Config/OS/Name}
+")
+
+    if (result.rc != 0):
+        print "Error submitting request, RC: %d, Result: %s" % (result.rc, resul
+t.result)
+    else:
+        print "OS Name: %s" % result.result
+
+    rc = handle.unregister()
+
+    sys.exit(rc)
+
+   The following is the same Python script, written to support Python 3.x.
+    from PySTAFv3 import *
+    import sys
+
+    try:
+        handle = STAFHandle("MyTest")
+    except STAFException as e:
+        print("Error registering with STAF, RC: %d" % e.rc)
+        sys.exit(e.rc)
+
+    result = handle.submit("local", "ping", "ping")
+
+    if (result.rc != 0):
+        print("Error submitting request, RC: %d, Result: %s" % (result.rc, resul
+t.result))
+
+    result = handle.submit("local", "var", "resolve string {STAF/Config/OS/Name}
+")
+
+    if (result.rc != 0):
+        print("Error submitting request, RC: %d, Result: %s" % (result.rc, resul
+t.result))
+    else:
+        print("OS Name: %s" % result.result)
+
+    rc = handle.unregister()
+
+    sys.exit(rc)
+
+   Note that the remaining examples in this document will show scripts
+   that support Python 2.x.
+
+   The following is an example of a program which registers with STAF
+   using a static STAF handle. Note that a static handle is a handle which
+   can be shared by several processes on the same system. See the STAF
+   User's Guide for more information on static handles. Generally, you
+   don't need to use a static STAF handle.
+    from PySTAF import *
+
+    # First, need to obtain an existing static handle number from somewhere.
+    # This example assumes that this Python program will be run by submitting
+    # a START request to the STAF PROCESS service using the STATICHANDLENAME
+    # option.  This allows it to obtain the STAF static handle number from
+    # environment variable STAF_STATIC_HANDLE.
+    #
+    # Note:  Another way a static handle could have been obtained is if it
+    # is passed to the Python program as an argument.  The static handle
+    # could have been created by another program (which submitted a CREATE
+    # HANDLE request to the HANDLE service).
+
+    import os
+    staticHandleNumber = os.environ.get('STAF_STATIC_HANDLE')
+
+    if staticHandleNumber == None:
+        print "Error:  STAF_STATIC_HANDLE environment variable does not exist"
+        sys.exit(1)
+
+    staticHandleNumber = int(staticHandleNumber)
+    print "Using STAF static handle %s" % (staticHandleNumber)
+
+    # Register with STAF using a static STAF handle that already exists
+
+    try:
+        handle = STAFHandle(staticHandleNumber, STAFHandle.Static)
+    except STAFException, e:
+        print "Error registering with STAF, RC: %d" % e.rc
+        sys.exit(e.rc)
+
+    result = handle.submit("local", "ping", "ping")
+
+    if (result.rc != 0):
+        print "Error submitting request, RC: %d, Result: %s" % (result.rc, resul
+t.result)
+
+  4.1.2 Class STAFResult
+
+    Definition
+
+   This class encapsulates the result of a STAF service request (made via
+   the STAFHandle.submit() method). This class also contains a set of
+   constants representing the various common STAF return codes. It has two
+   constructors:
+
+   class STAFResult([rc][, result])
+          The optional argument rc specifies the numeric return code of
+          the service request. The default is 0.
+          The optional argument result specifies a string result buffer
+          returned from the service request. The default is "".
+
+   class STAFResult(rc,result,doUnmarshallResult)
+          The required argument rc specifies the numeric return code of
+          the service request.
+          The required argument result specifies a string result buffer
+          returned from the service request.
+          The optional argument doUnmarshallResult specifies whether to
+          enable auto-unmarshalling. Set to a true value (e.g. 1) to
+          enable or a false value (e.g. 0) to disable. Note: This argument
+          was added in STAF V3.3.1.
+
+   STAFResult defines the following member variables. They are initialized
+   by the constructor, and should not be modified directly.
+
+        rc
+                An integer identifying the return code of the service
+                request.
+
+        result
+                A string containing the result buffer returned from the
+                service request.
+
+        resultContext
+                If the second constructor is used to create a STAFResult
+                object (the one with the doUnmarshallResult argument) and
+                the doUnmarshallResult argument is true, this variable
+                will contain the marshalling context for the result (e.g.
+                the unmarshalled result). Otherwise, this variable will be
+                set to None.
+
+                Note: This variable was added in STAF V3.3.1.
+
+        resultObj
+                If the second constructor is used to create a STAFResult
+                object (the one with the doUnmarshallResult argument) and
+                the doUnmarshallResult argument is true, this variable
+                will contain the root object of the result's marshalling
+                context. Otherwise, this variable will be set to None.
+
+                Note: This variable was added in STAF V3.3.1.
+
+   STAFResult defines the following constants representing the various
+   common STAF return codes.
+    Ok                          = 0
+    InvalidAPI                  = 1
+    UnknownService              = 2
+    InvalidHandle               = 3
+    HandleAlreadyExists         = 4
+    HandleDoesNotExist          = 5
+    UnknownError                = 6
+    InvalidRequestString        = 7
+    InvalidServiceResult        = 8
+    REXXError                   = 9
+    BaseOSError                 = 10
+    ProcessAlreadyComplete      = 11
+    ProcessNotComplete          = 12
+    VariableDoesNotExist        = 13
+    UnResolvableString          = 14
+    InvalidResolveString        = 15
+    NoPathToMachine             = 16
+    FileOpenError               = 17
+    FileReadError               = 18
+    FileWriteError              = 19
+    FileDeleteError             = 20
+    STAFNotRunning              = 21
+    CommunicationError          = 22
+    TrusteeDoesNotExist         = 23
+    InvalidTrustLevel           = 24
+    AccessDenied                = 25
+    STAFRegistrationError       = 26
+    ServiceConfigurationError   = 27
+    QueueFull                   = 28
+    NoQueueElement              = 29
+    NotifieeDoesNotExist        = 30
+    InvalidAPILevel             = 31
+    ServiceNotUnregisterable    = 32
+    ServiceNotAvailable         = 33
+    SemaphoreDoesNotExist       = 34
+    NotSemaphoreOwner           = 35
+    SemaphoreHasPendingRequests = 36
+    Timeout                     = 37
+    JavaError                   = 38
+    ConverterError              = 39
+    InvalidObject               = 41
+    InvalidParm                 = 42
+    RequestNumberNotFound       = 43
+    InvalidAsynchOption         = 44
+    RequestNotComplete          = 45
+    ProcessAuthenticationDenied = 46
+    InvalidValue                = 47
+    DoesNotExist                = 48
+    AlreadyExists               = 49
+    DirectoryNotEmpty           = 50
+    DirectoryCopyError          = 51
+    DiagnosticsNotEnabled       = 52
+    HandleAuthenticationDenied  = 53
+    HandleAlreadyAuthenticated  = 54
+    InvalidSTAFVersion          = 55
+    RequestCancelled            = 56
+    CreateThreadError           = 57
+    MaximumSizeExceeded         = 58
+    MaximumHandlesExceeded      = 59
+
+    Examples
+
+    1. The following example shows the use of the STAFResult class when
+       submitting a request to a STAF service that returns a single string
+       result.
+# The variable "handle" is an instance of the STAFHandle class that was
+# previously instantiated
+
+result = handle.submit("local", "ping", "ping")
+
+print "Ping request RC: %d" % result.rc
+print "Ping request result buffer: %s" % result.result
+
+    2. The following example shows the use of the STAFResult class when
+       submitting a request to a STAF service that returns a marshalled
+       result string.
+# The variable "handle" is an instance of the STAFHandle class that was
+# previously instantiated
+
+dirName = "{STAF/Config/STAFRoot}/bin";
+request = "LIST DIRECTORY " + wrapData(dirName) + " TYPE F LONG";
+
+result = handle.submit("local", "FS", request);
+
+print "LIST DIRECTORY request RC: %d" % result.rc
+print "LIST DIRECTORY result context: %s" % result.resultContext
+
+list = result.resultObj
+print "LIST DIRECTORY result contains %s entries" % len(list)
+
+  4.1.3 Class STAFException
+
+    Definition
+
+   class STAFException([rc][, result])
+          This class is the base exception class used by the STAF modules.
+          Currently, this class is only used when trying to register or
+          unregister with STAF.
+
+          The optional argument rc specifies the numeric return code which
+          is the basis of the exception. The default is 0.
+          The optional argument result specifies a string which further
+          describes the exception. The default is "".
+
+   STAFException defines the following member variables. They are
+   initialized by the constructor, and should not be modified directly.
+
+        rc
+                An integer identifying the return code which is the basis
+                of the exception.
+
+        result
+                A string which further describes the exception.
+
+    Examples
+
+   The following is an example of a program which shows how to deal with a
+   STAFException when registering with STAF.
+from PySTAF import *
+import sys
+
+try:
+    handle = STAFHandle("MyTest")
+except STAFException, e:
+    print "Error registering with STAF, RC: %d" % e.rc
+
+  4.1.4 Function wrapData
+
+    Definition
+
+        wrapData(inputString)
+                Returns a colon-length-colon delimited version of the
+                input string. This function is widely used to pass the
+                values of options in STAF requests.
+
+   Note that STAFWrapData is an alias for the wrapData function and can be
+   used instead to call this function.
+
+    Examples
+
+   This example creates a colon-length-colon delimited version of string
+   Hello world. The resulting string is :11:Hello world.
+outputString = wrapData("Hello world")
+
+   This example uses the wrapData function for the semaphore name (which
+   contains spaces) in an EVENT POST request to the SEM service.
+semName = "My Synch Sem"
+result = handle.submit("local", "sem", "event %s post" % wrapData(semName))
+
+4.2 Marshalling APIs
+
+   These APIs allow you to define, manipulate, and (un)marshall data
+   structures, and print marshalled data in human-readable ("pretty"
+   print) format.
+
+   STAF supports the automatic marshalling and unmarshalling of structured
+   data. The act of marshalling takes a data structure and converts it
+   into a string-based representation. The act of unmarshalling reverses
+   this and converts the string-based representation back into a data
+   structure. See Section 6.1, "Marshalling Structured Data" in the STAF
+   User's Guide for more information.
+
+  4.2.1 Class STAFMapClassDefinition
+
+    Definition
+
+   class STAFMapClassDefinition([name])
+          A class which provides the metadata associated with a map class.
+          In particular, it defines the keys associated with the map
+          class. This class is used to create and/or access a STAF map
+          class definition which can be useful if you want to generate a
+          STAF marshalling context with map classes. The map class
+          definition is used to reduce the size of a marshalling map class
+          in comparison to a map containing the same data. It also
+          contains information about how to display instances of the map
+          class, such as the order in which to display the keys and the
+          display names to use for the keys. You get and set map class
+          definitions using the STAFMarshallingContext class
+          setMapClassDefinition and getMapClassDefinition functions.
+
+          The optional keyword argument name specifies the name of the
+          STAF map class definition. The default is None.
+
+   STAFMapClassDefinition defines the following methods:
+
+        createInstance()
+                Returns a map containing one entry with a key name of
+                'staf-map-class-name' with a value set to the name of the
+                map class definition.
+
+        addKey(keyName[, displayName])
+                Adds a key to the map class definition.
+
+                The required keyword argument keyName specifies the name
+                of a key.
+
+                The optional keyword argument displayName specifies a
+                string to use when displaying the key. The default is None
+                which indicates to use the actual key name when displaying
+                the key.
+
+        setKeyProperty(keyName, property, value)
+                Sets a property such as a short display name
+                ("display-short-name") for a key in the map class
+                definition.
+
+                The required keyword argument keyName specifies the name
+                of a key for which this property is being set.
+
+                The required keyword argument property specifies the name
+                of the property being set. The only property name
+                currently recognized is 'display-short-name' which is used
+                by the STAF executable when displaying a result in a
+                tabular format when the length of the values for the
+                fields is less than the length of the 'display-name'.
+
+                The required keyword argument value specifies the value
+                for the property being set.
+
+        keys()
+                Returns a list of all of the keys. Each entry in the list
+                is a map containing a key named 'key', and optionally, a
+                key named 'display-name', and optionally, any key property
+                names such as 'display-short-name'.
+
+        name()
+                Returns the name for the map class definition.
+
+        getMapClassDefinitionObject()
+                Returns the map class definition map which consists of a
+                map containing two entries: 'name' and 'keys'.
+
+    Example
+
+   The following is an example of how to create a map class definition
+   named 'Test/MyMap' containing four keys, each with a display name, and
+   one with a short display name.
+myMapClassDef = STAFMapClassDefinition('Test/MyMap')
+myMapClassDef.addKey('name', 'Name')
+myMapClassDef.addKey('exec', 'Executable')
+myMapClassDef.addKey('testType', 'Test Type')
+myMapClassDef.setKeyProperty('testType', 'display-short-name', 'Test')
+myMapClassDef.addKey('outputList', 'Outputs')
+
+print "The keys for map class definition '%s' are:" % (myMapClassDef.name())
+print formatObject(myMapClassDef.keys())
+
+   This example prints the following:
+The keys for map class definition 'Test/MyMap' are:
+[
+  {
+    display-name: Name
+    key         : name
+  }
+  {
+    display-name: Executable
+    key         : exec
+  }
+  {
+    display-name      : Test Type
+    key               : testType
+    display-short-name: Test
+  }
+  {
+    display-name: Outputs
+    key         : outputList
+  }
+]
+
+  4.2.2 Class STAFMarshallingContext
+
+    Definition
+
+   class STAFMarshallingContext([obj])
+          A class is used to create and/or access a STAF marshalling
+          context which is used by STAF to help in marshalling and
+          unmarshalling data. A marshalling context is simply a container
+          for map class definitions and a data structure that uses (or is
+          defined in terms of) them.
+
+          In order to use a map class when marshalling data, you must add
+          the map class definition to the marshalling context, set the
+          root object of the marshalling context to the object you want to
+          marshall, and then marshall the marshalling context itself. When
+          you unmarshall a data structure, you will always receive a
+          marshalling context. Any map class definitions referenced by map
+          classes within the data structure will be present in the
+          marshalling context.
+
+          The primary use of this class is to represent multi-valued
+          results that consist of a data structure (e.g. results from a
+          QUERY/LIST service request, etc.) as a string that can also be
+          converted back into the data structure. This string can be
+          assigned to the string result buffer returned from the service
+          request.
+
+          The optional keyword argument obj specifies the root object to
+          be marshalled. The default is None.
+
+   STAFMarshallingContext defines the following methods:
+
+        isMarshalledData(someData)
+                Tests if the keyword argument someData is a string-based
+                marshalled representation. Returns a true value if is a
+                marshalled string.
+
+        setMapClassDefinition(mapClassDef)
+                Called to add a map class definition to the marshalling
+                context.
+
+                The required argument mapClassDef specifies a
+                STAFMapClassDefinition object that can be used when
+                marshalling the object. You may call this method any
+                number of times to set multiple STAFMapClassDefinition
+                objects for the marshalling context.
+
+        getMapClassDefinition(mapClassName)
+                Returns the map class definition for the specified map
+                class name.
+
+                The required argument mapClassName specifies a string
+                containing the name of the STAFMapClassDefinition object
+                that you want to return.
+
+        hasMapClassDefinition(mapClassName)
+                Called to determine whether the marshalling context
+                contains the specified map class definition. Returns a
+                true value if it exists.
+
+                The required argument mapClassName specifies a string
+                containing the name of the STAFMapClassDefinition object
+                that you want to check if the marshalling context's
+                contains in its list of map class defintions.
+
+        getMapClassMap()
+                Returns a map of the map class definitions for the
+                marshalling context where each key in the map is the name
+                of a map class definition and each value is a map class
+                definition object.
+
+        mapClassDefinitionIterator()
+                Returns a map of the names of the map class definitions
+                for the marshalling context.
+
+        setRootObject(rootObject)
+                Sets the root object for the marshalling context.
+
+                The required argument rootObject can specify any object.
+
+        getRootObject()
+                Returns the root object for the marshalling context.
+
+        getPrimaryObject()
+                Returns the primary object for the marshalling context
+                which is the marshalling context object itself if the
+                marshalling context contains one or more map class
+                definitions. Otherwise, it returns the root object.
+
+        marshall()
+                This is the marshalling function that creates marshalled
+                data for the marshalling context. Returns a string
+                containing the marshalled data.
+
+    Examples
+
+   The following is an example of how to create a marshalling context
+   containing one map class definition named 'Test/MyMap' and a root
+   object which is a list of maps defined by the map class definition.
+   Then it shows how to marshall and unmarshall the marshalling context.
+# Create a map class definition
+
+myMapClassDef = STAFMapClassDefinition('Test/MyMap')
+myMapClassDef.addKey('name', 'Name')
+myMapClassDef.addKey('exec', 'Executable')
+
+testList = [
+             {'name': 'TestA', 'exec': '/tests/TestA.py'},
+             {'name': 'TestB', 'exec': '/tests/TestB.sh'},
+             {'name': 'TestC', 'exec': '/tests/TestC.cmd'}
+           ]
+
+# Create a marshalling context with testList
+
+mc = STAFMarshallingContext()
+mc.setMapClassDefinition(myMapClassDef)
+
+myTestList = []
+
+for test in testList:
+    testMap = myMapClassDef.createInstance()
+    testMap['name'] = test['name']
+    testMap['exec'] = test['exec']
+    myTestList.append(testMap)
+
+mc.setRootObject(myTestList)
+print 'Test List:\n%s' % (mc)
+
+# Create a string from the marshalling context
+# This string could be a message that you log or send to a queue, etc.
+
+stringResult = mc.marshall()
+
+# Convert the marshalled string representation back into a list
+
+mc2 = unmarshall(stringResult)
+theTestList = mc2.getRootObject()
+
+   This example prints the following:
+Test List:
+[
+  {
+    Name      : TestA
+    Executable: /tests/TestA.py
+  }
+  {
+    Name      : TestB
+    Executable: /tests/TestB.sh
+  }
+  {
+    Name      : TestC
+    Executable: /tests/TestC.cmd
+  }
+]
+
+  4.2.3 Function isMarshalledData
+
+    Definition
+
+        isMarshalledData(someData)
+                A function used to test if the keyword argument someData
+                is a string-based marshalled representation. Returns a
+                true value if it is a marshalled string.
+
+    Example
+
+if isMarshalledData(result.result):
+    mc = unmarshall(result.result)
+
+  4.2.4 Function marshall
+
+    Definition
+
+        marshall(object[, context])
+                A function used to create a string-based marshalled
+                representation of the object specified by the keyword
+                argument object. Returns a marshalled string.
+
+                The default for optional keyword argument context is None.
+
+                Note, normally you would use a STAFMarshallingContext
+                object's marshall() method instead of this function.
+
+    Examples
+
+   This example converts a Python dictionary and converts it into a
+   string-based marshalled representation. It also shows how to convert
+   this marshalled string back into the original Python dictionary.
+myTestMap = {'name': 'TestA', 'exec': '/tests/TestA.py', 'testType': 'FVT', 'out
+puts': ['TestA.out', 'TestA.err']}
+message = marshall(myTestMap)
+result = handle.submit('local', 'QUEUE', 'QUEUE MESSAGE %s' % message)
+
+if result.rc != STAFResult.Ok:
+    print 'QUEUE MESSAGE failed with RC=%s Result=%s' % (result.rc, result.resul
+t)
+    sys.exit(result.rc)
+
+# Another process could obtain the message from the queue and unmarshall
+# it to get the original dictionary (map) object
+
+result = handle.submit('local', 'QUEUE', 'GET')
+
+# Note that if auto-unmarshalling is enabled for a handle, which it is
+# by default, you don't have to unmarshall the STAFResult's result string
+# returned by the submit() method.  Instead, you can directly access the
+# the result's marshalling context, result.resultContext, and/or the root
+# object of the result's marshalling context, result.resultObj.
+
+if result.rc == STAFResult.Ok:
+    mc = unmarshall(result.result)
+    yourTestMap = mc.getRootObject()
+    print 'Received following message:\n%s\n' % (mc)
+else:
+    print 'QUEUE GET failed with RC=%s Result=%s\n' % (result.rc, result.result)
+    sys.exit(result.rc);
+
+   This example creates a marshalling context with one map class
+   definition and a Python list where each entry is a map. It then creates
+   a string-based marshalled representation of it.
+myMapClassDef = STAFMapClassDefinition('Test/MyMap')
+myMapClassDef.addKey('name', 'Name')
+myMapClassDef.addKey('exec', 'Executable')
+
+testList = [
+             {'name': 'TestA', 'exec': '/tests/TestA.py'},
+             {'name': 'TestB', 'exec': '/tests/TestB.sh'},
+             {'name': 'TestC', 'exec': '/tests/TestC.cmd'}
+           ]
+
+mc = STAFMarshallingContext()
+mc.setMapClassDefinition(myMapClassDef)
+
+myTestList = []
+
+for test in testList:
+    testMap = myMapClassDef.createInstance()
+    testMap['name'] = test['name']
+    testMap['exec'] = test['exec']
+    myTestList.append(testMap)
+
+print 'Test List:\n%s' % (STAFFormatObject(myTestList, mc))
+
+message = marshall(myTestList, mc)
+
+  4.2.5 Function unmarshall
+
+    Definition
+
+        unmarshall(data[, context][, flags])
+                A function used to convert a string-based marshalled
+                representation specified by the keyword argument data back
+                into a data structure. It returns a marshalling context
+                (from which you can get the data structure via the
+                STAFMarshallingContext class getRootObject() function).
+
+                The required keyword argument data is a string to be
+                unmarshalled.
+
+                The optional keyword argument context specifies the
+                STAFMarshallingContext object that should be used when
+                generating when unmarshalling the string. The default is
+                None.
+
+                The optional keyword argument flags can be used to control
+                how to unmarshall the string. When a string is
+                unmarshalled into a data structure, it is possible that
+                one of the string objects that is unmarshalled is itself
+                the string form of another marshalled data structure. The
+                default is UNMARSHALLING_DEFAULTS which will recursively
+                unmarshall these nested objects. Use
+                IGNORE_INDIRECT_OBJECTS to disable this additional
+                processing.
+
+    Example
+
+fileName = 'C:/tests/testA'
+
+result = handle.submit('local', 'FS', 'QUERY ENTRY %s' % fileName)
+
+if result.rc != STAFResult.Ok:
+    print 'FS QUERY ENTRY %s failed' % fileName
+    print 'RC=%s Result=%s' % (result.rc, result,result)
+    sys.exit(1)
+
+# Note that if auto-unmarshalling is enabled for a handle, which it is
+# by default, you don't have to unmarshall the STAFResult's result string
+# returned by the submit() method.  Instead, you can directly access the
+# the result's marshalling context, result.resultContext, and/or the root
+# object of the result's marshalling context, result.resultObj.
+
+mc = unmarshall(result.result)
+entryMap = mc.getRootObject()
+
+if entryMap['type'] == 'F':
+    print 'File %s has size %s and was last modified on %s' % \
+          (fileName, entryMap['lowerSize'], entryMap['lastModifiedTimestamp'])
+else:
+    print '%s is not a file.  Type=%s' % entryMap['type']
+
+  4.2.6 Function formatObject
+
+    Definition
+
+        formatObject(obj[, context][)
+                A function used to convert a data structure into a verbose
+                formatted hierarchical string that can be used when you
+                want a "pretty print" representation of an object.
+
+                The required keyword argument obj specifies the object to
+                be formatted in a verbose, more readable format.
+
+                The optional keyword argument context specifies the
+                STAFMarshallingContext object that should be used when
+                generating the "pretty print" output. The default is None.
+
+    Examples
+
+   This example that prints a Python dictionary in a "pretty" verbose
+   format:
+myTestMap = {'name': 'TestA', 'exec': '/tests/TestA.py', 'testType': 'FVT', 'out
+puts': ['TestA.out', 'TestA.err']}
+print formatObject(myTestMap)
+
+   This could result in the following output printed:
+{
+  outputs : [
+    TestA.out
+    TestA.err
+  ]
+  testType: FVT
+  name    : TestA
+  exec    : /tests/TestA.py
+}
+
+   This example prints the result from a FS QUERY ENTRY request in a
+   "pretty" verbose format:
+fileName = '{STAF/Config/ConfigFile}'
+
+request = 'QUERY ENTRY %s' % (fileName)
+result = handle.submit('local', 'FS', request)
+
+if result.rc != STAFResult.Ok:
+    print 'Request failed:  STAF local FS %s' % (request)
+    print 'RC=%s Result=%s' % (result.rc, result.result)
+    sys.exit(1)
+
+print 'Formatted output:\n%s' % formatObject(result.resultObj, result.resultCont
+ext)
+
+   If successful, this could result in the following output printed:
+Formatted output:
+{
+  Name              : c:\staf\bin\STAF.cfg
+  Type              : F
+  Upper 32-bit Size : 0
+  Lower 32-bit Size : 5902
+  Modified Date-Time: 20050322-11:07:02
+}
+
+   However, note that specifying instead of specifying
+   formatObject(result.resultObj, result.resultContext), you could just
+   print the marshalling context itself, result.resultContext, to get the
+   same output as the str function for a STAFMarshallingContext object
+   calls the formatObject function. For example:
+print 'Formatted output:\n%s' % (result.resultContext)
+
+4.3 Private Data Manipulation APIs
+
+   These APIs allow you to handle private data. See Section 7.3, "Private
+   Data" in the STAF User's Guide for more information about handling
+   private data.
+
+  4.3.1 Function addPrivacyDelimiters
+
+    Definition
+
+        addPrivacyDelimiters(data)
+                Adds privacy delimiters to a string and returns the
+                updated string. See Section 7.3, "Private Data" in the
+                STAF User's Guide for more information about handling
+                private data.
+
+                This method should be used by anyone who wants to protect
+                private data specified in a STAF command option that
+                supports handling private data.
+
+                Required argument data is a String that contains data you
+                want to protect.
+
+                Returns a String object containing the string with opening
+                and closing privacy delimiters added and escapes any
+                privacy delimiters already contained in the string with a
+                caret (^). If the string has length 0 or already has an
+                unescaped opening privacy delimiter at the beginning and
+                an unescaped closing privacy delimiter at the end, privacy
+                delimiters are not added.
+
+                Examples:
+
+               o If the data is 'passw0rd', this method would return
+                 string '!!@passw0rd@!!'.
+               o If the data is 'Password: !!@secret@!!', this method
+                 would return '!!@Password: ^!!@secret^@!!@!!'.
+
+                Since: STAF V3.1.0
+
+   Note that STAFAddPrivacyDelimiters is an alias for the
+   addPrivacyDelimiters function and can be used instead to call this
+   function.
+
+    Examples
+
+   This example adds privacy delimiters to 'passw0rd' used in the PASSWORD
+   option when starting a process as another user.
+password = addPrivacyDelimiters('passw0rd')
+request = 'START SHELL COMMAND C:/tests/TestA USERNAME Test1 PASSWORD %s' % (pas
+sword)
+result = handle.submit('local', 'PROCESS', request);
+
+   This example adds privacy delimiters to password 'secret' used in the
+   COMMAND option when starting a process.
+command = 'C:/tests/admin -password %s' % (addPrivacyDelimiters('secret'))
+request = 'START SHELL COMMAND %s" % (wrapData(command))
+result = handle.submit('local', "PROCESS", request)
+
+  4.3.2 Function escapePrivacyDelimiters
+
+    Definition
+
+        escapePrivacyDelimiters(data)
+                Escapes all privacy delimiters (!!@ and @!!) found in the
+                data with a caret (^) and returns the updated string. See
+                Section 7.3, "Private Data" in the STAF User's Guide for
+                more information about handling private data.
+
+                This method should be used before calling the
+                addPrivacyDelimiters method for data that needs to be
+                protected but may contain substrings !!@ and/or @!! that
+                should not be mistaken for privacy delimiters .
+
+                Required argument data is a String.
+
+                Returns a String object containing the updated data.
+
+                For example, if the data is 'passw@!!d', this method would
+                return 'passw^@!!d'.
+
+                Since: STAF V3.1.0
+
+   Note that STAFEscapePrivacyDelimiters is an alias for the
+   escapePrivacyDelimiters function and can be used instead to call this
+   function.
+
+    Examples
+
+   This example escapes privacy delimiters in password 'passw@!!d' before
+   adding privacy delimiters to it and then uses the password in the
+   PASSWORD option when starting a process as another user.
+password = addPrivacyDelimiters(escapePrivacyDelimiters('passw@!!d'))
+request = 'START SHELL COMMAND C:/tests/TestA USERNAME Test1 PASSWORD %s' % (pas
+sword)
+result = handle.submit('local', 'PROCESS', request);
+
+  4.3.3 Function removePrivacyDelimiters
+
+    Definition
+
+        removePrivacyDelimiters(data[, numLevels])
+                Removes privacy delimiters found in the data and returns
+                the updated string. See Section 7.3, "Private Data" in the
+                STAF User's Guide for more information about handling
+                private data.
+
+                Required argument data is a String that may contain
+                privacy delimiters (e.g. !!@, @!!).
+
+                Optional argument numLevels in an int that specifies the
+                number of levels of privacy data to remove. The default is
+                0 which indicates to remove all levels of privacy data.
+                Note that, generally, you'll want to remove all levels of
+                privacy delimiters.
+
+                Returns a String object containing the updated data with
+                privacy delimiters removed.
+
+                Examples:
+
+               o If the data is '!!@passw0rd@!!', this method would return
+                 'passw0rd'.
+               o If the data is '!!@passw^@!!d@!!', this method would
+                 return 'passw@!!d'.
+               o If the data is '!!@Password=^!!@secret^@!!.@!!' and the
+                 numLevels is 0, this method would return
+                 'Password=secret'.
+               o If the data is '!!@Password=^!!@secret^@!!.@!!' and the
+                 numLevels is 1, this method would return
+                 'Password=!!@secret@!!'.
+
+                Since: STAF V3.1.0
+
+   Note that STAFRemovePrivacyDelimiters is an alias for the
+   removePrivacyDelimiters function and can be used instead to call this
+   function.
+
+    Examples
+
+   This example removes privacy delimiters from protected password
+   '!!@secret@!!' and assigns 'secret' as the password.
+protectedPassword = '!!@secret@!!'
+password = removePrivacyDelimiters(protectedPassword)
+
+  4.3.4 Function maskPrivateData
+
+    Definition
+
+        maskPrivateData(data)
+                Masks any private data (enclosed between opening, !!@, and
+                closing, @!!, privacy delimiters) by replacing the private
+                data with asterisks. See Section 7.3, "Private Data" in
+                the STAF User's Guide for more information about handling
+                private data.
+
+                Required argument data is a String that may contain
+                privacy delimiters (e.g. !!@, @!!).
+
+                Returns a String object containing the string with any
+                private data masked.
+
+                Examples:
+
+               o If the data is '!!@passw0rd@!!', this method would return
+                 '**************'.
+               o If the data is 'testA -password !!@secret@!!', this
+                 method would return 'testA -password ************'.
+
+                Since: STAF V3.1.0
+
+   Note that STAFMaskPrivateData is an alias for the maskPrivateData
+   function and can be used instead to call this function.
+
+    Examples
+
+   This example masks any private data indicated by privacy delimiters in
+   a request string before displaying it. This example prints:
+   START COMMAND C:/tests/TestA.exe USERNAME Test1 PASSWORD **************
+request = 'START COMMAND C:/tests/TestA.exe USERNAME Test1 PASSWORD %s' % \
+          (addPrivacyDelimiters('passw0rd'))
+print maskPrivateData(request)
+
+4.4 Constants
+
+   Constants defined in this module include:
+
+        UNMARSHALLING_DEFAULTS
+                Set to 0 to indicate that nested objects should be
+                recursively unmarshalled.
+
+        IGNORE_INDIRECT_OBJECTS
+                Set to 1 to indicate that nested objects should not be
+                recursively unmarshalled.
+
+        MARSHALLED_DATA_MARKER
+                Set to '@SDT/'.
+
+        NONE_MARKER
+                Set to '@SDT/$0:0:'.
+
+        SCALAR_MARKER
+                Set to '@SDT/$'.
+
+        SCALAR_STRING_MARKER
+                Set to '@SDT/$S'.
+
+        LIST_MARKER
+                Set to '@SDT/['.
+
+        MAP_MARKER
+                Set to '@SDT/{'.
+
+        MC_INSTANCE_MARKER
+                Set to '@SDT/%'.
+
+        CONTEXT_MARKER
+                Set to '@SDT/*'.
+
+        NONE_STRING
+                Set to ''.
+
+        DISPLAY_NAME_KEY
+                Set to 'display-name'.
+
+        MAP_CLASS_MAP_KEY
+                Set to 'map-class-map'.
+
+        MAP_CLASS_NAME_KEY
+                Set to 'staf-map-class-name'.
+
+        ENTRY_SEPARATOR
+                Set to ''.
+
+        INDENT_DELTA
+                Set to 2.
+
+        SPACES
+                Set to a string containing 80 spaces.
+     __________________________________________________________________
+
+                              5.0 Module PySTAFMon
+
+   The PySTAFMon module provides a class to ease the use of the Monitor
+   service.  To use this module you simply import it like so:
+    from PySTAFMon import *
+
+5.1 Class STAFMonitor
+
+    Definition
+
+   class STAFMonitor(stafHandle[, system][, service])
+          A class used to provide a wrapper around the Monitor service. It
+          also contains a set of constants representing the Monitor
+          service return codes. The primary method of interest is the
+          log() method which allows you to log a message to the STAF
+          Monitor service.
+
+          The required keyword argument stafHandle specifies the STAF
+          handle to use to submit the request to the Monitor service.
+
+          The optional keyword argument system specifies the endpoint of
+          the machine to submit the request to. The default is "local".
+
+          The optional keyword argument service specifies the registered
+          name of the STAF Monitor service. The default is "Monitor".
+
+          Note: By default, the STAFMonitor class will use the service
+          named "Monitor" on the local system. This can be changed by
+          explicitly specifying the system and/or service when you
+          construct the STAFMonitor object.
+
+   STAFMonitor defines the following methods:
+
+        log(message)
+                Submits a LOG request to the Monitor service to log a
+                message.
+
+                The required keyword argument message specifies the
+                message to log.
+
+    Examples
+
+   The following example shows the use of the STAFMonitor class to log a
+   status message to the Monitor service.
+    from PySTAFMon import *
+
+    # The variable "handle" is an instance of the STAFHandle class that was
+    # previously instantiated
+
+    monitor = STAFMonitor(handle)
+    result = monitor.log("Beginning section ABC of test")
+     __________________________________________________________________
+
+                              6.0 Module PySTAFLog
+
+   The PySTAFLog module provides a class to ease the use of the Log
+   service.  To use this module you simply import it like so:
+    from PySTAFLog import *
+
+6.1 Class STAFLog
+
+    Definition
+
+   class STAFLog(handle, logType, name[, monitorMask][, system][,
+          service])
+          A class used to provide a wrapper around the Log service. It
+          provides a log() method for logging a message to the Log
+          service. It also contains constants for the various log file
+          types and logging levels, as well as the return codes returned
+          by the Log service. This wrapper also allows you to specify a
+          set of log levels for which the messages logged to the Log
+          service will also be logged to the Monitor service.
+
+          The required keyword argument handle specifies the STAF handle
+          to use to submit the request to the Log service.
+
+          The required keyword argument logType specifies the log type
+          (e.g. STAFLog.Global, STAFLog.Machine, or STAFLog.Handle)
+
+          The required keyword argument name specifies the name of the
+          log.
+
+          The optional keyword argument monitorMask specifies a mask that
+          consists of a list of logging levels. This list controls which
+          messages are also sent to the Monitor service. The default is to
+          enable "Fatal", "Error", "Warning", "Start", "Stop", "Pass", and
+          "Fail". If there is an error logging, STAFLog will also try to
+          send an error to the Monitor service.
+
+          The optional keyword argument system specifies the endpoint of
+          the machine to submit the log request to. The default is
+          "local".
+
+          The optional keyword argument service specifies the registered
+          name of the STAF Log service. The default is "Log".
+
+          Note: By default, the STAFLog class will use the service named
+          "Log" on the local system. This can be changed by explicitly
+          specifying the system and/or service when you construct the
+          STAFLog object.
+
+   STAFLog defines the following methods:
+
+        log(level, message)
+                Submits a LOG request to the Log service to log a message.
+
+                The required keyword argument level specifies the logging
+                level (e.g. STAFLog.Info, STAFLog.Error, etc.
+
+                The required keyword argument message specifies the
+                message to log.
+
+   STAFLog defines the following constants:
+    # Log type constants
+
+    Global  = "GLOBAL"
+    Machine = "MACHINE"
+    Handle  = "HANDLE"
+
+    # Log level constants
+
+    Fatal     = "Fatal"
+    Error     = "Error"
+    Warning   = "Warning"
+    Info      = "Info"
+    Trace     = "Trace"
+    Trace2    = "Trace2"
+    Trace3    = "Trace3"
+    Debug     = "Debug"
+    Debug2    = "Debug2"
+    Debug3    = "Debug3"
+    Start     = "Start"
+    Stop      = "Stop"
+    Pass      = "Pass"
+    Fail      = "Fail"
+    Status    = "Status"
+    User1     = "User1"
+    User2     = "User2"
+    User3     = "User3"
+    User4     = "User4"
+    User5     = "User5"
+    User6     = "User6"
+    User7     = "User7"
+    User8     = "User8"
+
+    # Log service return codes
+
+    InvalidLevel                = 4004
+    InvalidLogFileFormat        = 4007
+    PurgeFailure                = 4008
+
+    Examples
+
+   The following example shows the use of the STAFLog class to log some
+   messages.
+from PySTAFLog import *
+
+# The variable "handle" is an instance of the STAFHandle class that was
+# previously instantiated
+
+# Let's create a machine based log file that also sends fatal, error, and
+# warning messages to the Monitor service
+
+log = STAFLog(handle, STAFLog.Machine, "MyLog",
+              [STAFLog.Fatal, STAFLog.Error, STAFLog.Warning])
+
+# This message will only go to the log service, since we didn't specify
+# that start message get sent to the Monitor service
+
+result = log.log(STAFLog.Start, "Beginning ABC test")
+
+# This message will be sent to the Log and Monitor services
+
+result = log.log(STAFLog.Warning, "Got some ambiguous result")
+     __________________________________________________________________
+
+                          7.0 Python Program Examples
+
+7.1 Example 1
+
+   This example shows a Python program that tests most of the STAF Python
+   APIs.
+
+   The source code for this program is provided in the STAF source code
+   directory tree at src/staf/lang/python/TestPython.py. See section
+   "Obtaining the STAF Source Code" in the STAF Developer's Guide for
+   instructions on how to download STAF source code.
+
+   Note that a version of this script for Python 3.x is provided in the
+   STAF source code directory tree at
+   src/staf/lang/python/TestPythonV3.py.
+#############################################################################
+# Software Testing Automation Framework (STAF)                              #
+# (C) Copyright IBM Corp. 2001, 2005                                        #
+#                                                                           #
+# This software is licensed under the Eclipse Public License (EPL) V1.0.    #
+#############################################################################
+
+# This file contains tests for the STAF Python support
+from PySTAF import *
+from PySTAFMon import *
+from PySTAFLog import *
+import string
+import sys
+
+##############################################
+# Test the STAFHandle and STAFResult classes #
+##############################################
+
+print "Testing the STAFHandle constructor"
+
+# Verify get error if specify an integer for handle name when
+# registering using a static STAF Handle
+
+typeError = 0
+
+try:
+    handle = STAFHandle(1)
+except STAFException, e:
+    print "Error registering with STAF, RC: %d, Result: %s" % (e.rc, e.result)
+    sys.exit(e.rc)
+except TypeError, e:
+    typeError = 1
+    #print "Got expected TypeError: %s" % (e)
+
+if typeError != 1:
+    print "Did not get expected TypeError when specifying an invalid handle name
+"
+    sys.exit(1)
+
+# Verify get error if specify a non-integer for handle number when
+# registering using a static STAF Handle
+
+typeError = 0
+
+try:
+    handle = STAFHandle("MyHandle", STAFHandle.Static)
+except STAFException, e:
+    print "Error registering with STAF, RC: %d, Result: %s" % (e.rc, e.result)
+    sys.exit(e.rc)
+except TypeError, e:
+    typeError = 1
+    #print "Got expected Type Error: %s" % (e)
+
+if typeError != 1:
+    print "Did not get expected TypeError when specifying an invalid handle numb
+er"
+    sys.exit(1)
+
+# Verify creating a standard handle works and then use it to submit requests
+
+print "Testing creating a standard handle and using it to submit requests"
+
+try:
+    handle = STAFHandle("Lang/Python/Test/Basic")
+except STAFException, e:
+    print "Error registering with STAF, RC: %d" % e.rc
+    sys.exit(e.rc)
+
+print "Using standard handle %d" % handle.handle
+
+print "Testing submitting requests using a standard handle"
+
+result = handle.submit("local", "ping", "ping")
+
+if ((result.rc != STAFResult.Ok) or (result.result != "PONG")):
+    print "Error on ping request."
+    print "Expected RC: 0, Result: PONG"
+    print "Received RC: %d, Result: %s" % (result.rc, result.result)
+    sys.exit(1)
+
+result = handle.submit("local", "var", "resolve string {STAF/Config/MachineNickn
+ame}")
+
+if (result.rc != STAFResult.Ok):
+    print "Error resolving machine nickname, RC: %d, Result: %s" % \
+          (result.rc, result.result)
+    sys.exit(result.rc)
+
+self = result.result
+
+# Verify creating a static handle works
+
+print "Testing creating a reference to a static handle that exists"
+
+result = handle.submit("local", "HANDLE", "CREATE HANDLE NAME TestPython");
+
+if (result.rc != STAFResult.Ok):
+    print "Error on create handle request."
+    print "Expected RC: 0, Result: <A Number>"
+    print "Received RC: %d, Result: %s" % (result.rc, result.result)
+    sys.exit(1)
+
+staticHandleNumber = int(result.result)
+
+print "Using static handle %s" % (staticHandleNumber)
+
+try:
+    staticHandle = STAFHandle(staticHandleNumber, STAFHandle.Static)
+except STAFException, e:
+    print "Error registering a static handle with STAF, RC: %d" % e.rc
+    sys.exit(e.rc)
+
+if staticHandle.handle != staticHandleNumber:
+    print "Invalid static handle number %s.  Expected %s." % \
+          (staticHandle.handle, staticHandleNumber)
+if staticHandle.handleType != STAFHandle.Static:
+    print "Invalid handle type %s.  Expected %s." % \
+          (staticHandle.handleType, STAFHandle.Static)
+
+print "Testing submitting requests using a static handle"
+
+result = staticHandle.submit("local", "PING", "PING")
+
+if (result.rc != 0) or (result.result != "PONG"):
+    print "Error submitting request, RC: %d, Result: %s" % (result.rc, result.re
+sult)
+    sys.exit(result.rc)
+
+# Verify doUnmarshallingResult defaults to 1 when creating a static handle
+
+if staticHandle.getDoUnmarshallResult() != 1:
+    print "ERROR: staticHandle.getDoUnmarshallResult() != 1"
+    print 'Found: %s' % (staticHandle.getDoUnmarshallResult())
+    sys.exit(1)
+
+print "Unregister and delete static handle %s" % (staticHandleNumber)
+
+try:
+    staticHandle.unregister()
+except STAFException, e:
+    print "Error unregistering static handle with STAF, RC: %d" % e.rc
+    sys.exit(e.rc)
+
+result = handle.submit("local", "HANDLE", "DELETE HANDLE %s" % (staticHandleNumb
+er))
+
+if (result.rc != STAFResult.Ok):
+    print "Error deleting static handle."
+    print "Expected RC: 0"
+    print "Received RC: %d, Result: %s" % (result.rc, result.result)
+    sys.exit(1)
+
+result = handle.submit("local", "HANDLE", "QUERY HANDLE %s" % (staticHandleNumbe
+r))
+
+if (result.rc != STAFResult.HandleDoesNotExist):
+    print "ERROR: Static handle %s still exists after being deleted."
+    print "Expected RC: %s, Result: %s" % (STAFResult.HandleDoesNotExist, static
+HandleNumber)
+    print "Received RC: %d, Result: %s" % (result.rc, result.result)
+    sys.exit(1)
+
+print "\nVerify that auto-unmarshalling result is turned on by default"
+
+# Test the STAFHandle.getDoUnmarshallResult API
+
+if handle.getDoUnmarshallResult() != 1:
+    print "ERROR: handle.getDoUnmarshallResult() != 1"
+    print 'Found: %s' % (handle.getDoUnmarshallResult())
+    sys.exit(1)
+
+request = "WHOAMI"
+result = handle.submit("local", "MISC", request)
+
+if (result.rc != STAFResult.Ok):
+    print "Error on MISC WHOAMI requst, RC: %d, Result: %s" % \
+          (result.rc, result.result)
+    sys.exit(result.rc)
+
+# Make sure that the resultContext and resultObj variables in the
+# STAFResult class were set correctly since auto-unmarshalling result is on
+
+if result.resultContext.getRootObject() != unmarshall(result.result).getRootObje
+ct():
+    print 'STAFResult resultContext variable is not set correctly.'
+    print 'Expected:\n%s' % (unmarshall(result.result))
+    print 'Found:\n%s' % (result.resultContext)
+    sys.exit(1)
+
+if result.resultObj != unmarshall(result.result).getRootObject():
+    print 'STAFResult resultObj variable is not set correctly.'
+    print 'Expected:\n%s' % (unmarshall(result.result).getRootObject())
+    print 'Found:\n%s' % (result.resultObj)
+    sys.exit(1)
+
+# Make sure that if turn off auto-unmarshalling result that the
+# resultContext and resultObj variables are set to None since
+# auto-unmarshalling result is off
+
+# Test the STAFHandle.setDoUnmarshallResult API
+
+print "Turn off auto-unmarshalling result"
+handle.setDoUnmarshallResult(0)
+
+if handle.getDoUnmarshallResult() != 0:
+    print "ERROR: handle.getDoUnmarshallResult() != 0"
+    print 'Found: %s' % (handle.getDoUnmarshallResult())
+    sys.exit(1)
+
+result = handle.submit("local", "MISC", request)
+
+if (result.rc != STAFResult.Ok):
+    print "Error on MISC WHOAMI requst, RC: %d, Result: %s" % \
+          (result.rc, result.result)
+    sys.exit(result.rc)
+
+if result.resultContext != None:
+    print 'STAFResult resultContext variable != None'
+    print 'Found:\n%s' % (result.resultContext)
+    sys.exit(1)
+
+if result.resultObj != None:
+    print 'STAFResult resultObj variable != None'
+    print 'Found:\n%s' % (result.resultObj)
+    sys.exit(1)
+
+# Test if pass in any true value to setDoUnmarshallResult() that
+# getDoUnmarshallResult returns 1
+
+handle.setDoUnmarshallResult("true");
+
+if handle.getDoUnmarshallResult() != 1:
+    print "ERROR: handle.getDoUnmarshallResult() != 1"
+    print 'Found: %s' % (handle.getDoUnmarshallResult())
+    sys.exit(1)
+
+# Test if pass in any false value to setDoUnmarshallResult() that
+# getDoUnmarshallResult returns 0
+
+handle.setDoUnmarshallResult("");
+
+if handle.getDoUnmarshallResult() != 0:
+    print "ERROR: handle.getDoUnmarshallResult() != 0"
+    print 'Found: %s' % (handle.getDoUnmarshallResult())
+    sys.exit(1)
+
+# Make sure that if turn on auto-unmarshalling result that the
+# resultContext and resultObj variables are set correctly since
+# auto-unmarshalling result is on
+
+print "Turn on auto-unmarshalling result"
+handle.setDoUnmarshallResult(1)
+
+if handle.getDoUnmarshallResult() != 1:
+    print "ERROR: handle.getDoUnmarshallResult() != 1"
+    print 'Found: %s' % (handle.getDoUnmarshallResult())
+    sys.exit(1)
+
+result = handle.submit("local", "MISC", request)
+
+if (result.rc != STAFResult.Ok):
+    print "Error on MISC WHOAMI requst, RC: %d, Result: %s" % \
+          (result.rc, result.result)
+    sys.exit(result.rc)
+
+# Make sure that the resultContext and resultObj variables in the
+# STAFResult class were set correctly
+
+if result.resultContext.getRootObject() != unmarshall(result.result).getRootObje
+ct():
+    print 'STAFResult resultContext variable is not set correctly.'
+    print 'Expected:\n%s' % (unmarshall(result.result))
+    print 'Found:\n%s' % (result.resultContext)
+    sys.exit(1)
+
+if result.resultObj != unmarshall(result.result).getRootObject():
+    print 'STAFResult resultObj variable is not set correctly.'
+    print 'Expected:\n%s' % (unmarshall(result.result).getRootObject())
+    print 'Found:\n%s' % (result.resultObj)
+    sys.exit(1)
+
+###############################################
+# Next, lets test the monitor service wrapper #
+###############################################
+
+print "\nTesting Monitor service functions"
+
+# Log the message
+
+monitor = STAFMonitor(handle)
+monitorMessage = "Hello World"
+
+result = monitor.log(monitorMessage)
+
+if (result.rc != STAFResult.Ok):
+    print "Error on STAFMonitorDoLog, RC: %d, Result: %s" % \
+          (result.rc, result.result)
+    sys.exit(result.rc)
+
+# Try to retrieve it
+
+request = "query machine %s handle %d" % (self, handle.handle)
+result = handle.submit("local", "monitor", request)
+
+if (result.rc != STAFResult.Ok):
+    print "Error querying monitor info, RC: %d, Result: %s" % \
+          (result.rc, result.result)
+    sys.exit(result.rc)
+
+# Make sure we got back the correct message
+
+monitorMap = result.resultObj
+
+if monitorMap['message'] != monitorMessage:
+    print "Wrong output for MONITOR QUERY request"
+    print "Expected to find:"
+    print "{"
+    print "  Date-Time: <Timestamp>"
+    print "  Message  : %s" % (monitorMessage)
+    print "}"
+    print "Found:\n%s" % context
+    sys.exit(1)
+
+##############################################
+# Finally, lets test the log service wrapper #
+##############################################
+
+print "Testing Log service functions"
+
+logName = "PythonTest"
+
+# Setup logging
+
+log = STAFLog(handle, STAFLog.Handle, logName,
+              [ STAFLog.Fatal, STAFLog.Error, STAFLog.Warning, STAFLog.Info ])
+
+# Log the message
+
+logMessage = "A log message"
+result = log.log(STAFLog.Info, logMessage)
+
+if (result.rc != STAFResult.Ok):
+    print "Error on STAFLog.log(), RC: %d, Result: %s" % \
+          (result.rc, result.result)
+    sys.exit(result.rc)
+
+# Try to retrieve it
+
+request = "query machine %s handle %d logname %s" % \
+          (self, handle.handle, logName)
+result = handle.submit("local", "log", request)
+
+if (result.rc != STAFResult.Ok):
+    print "Error on STAF LOG Service QUERY, RC: %d, Result: %s" % \
+          (result.rc, result.result)
+    sys.exit(result.rc)
+
+# Make sure we got back the correct message
+
+logRecordList = result.resultObj
+
+if (len(logRecordList) > 0 and
+    logRecordList[len(logRecordList) - 1]['level'] == STAFLog.Info and
+    logRecordList[len(logRecordList) - 1]['message'] == logMessage):
+    logRecord = logRecordList[len(logRecordList) - 1]
+else:
+    print "Wrong output for log query request"
+    print "Expected to find one record with level: '%s' and message: '%s'" % \
+          (STAFLog.Info, logMessage)
+    print "Found:\n'%s'" % context
+    sys.exit(1)
+
+# Try to retrieve it from monitor
+
+request = "query machine %s handle %d" % (self, handle.handle)
+result = handle.submit("local", "monitor", request)
+
+if (result.rc != STAFResult.Ok):
+    print "Error on querying monitor info, RC: %d, Result: %s" % \
+          (result.rc, result.result)
+    sys.exit(result.rc)
+
+# Make sure we got back the correct message from monitor
+
+monitorMap = result.resultObj
+
+if monitorMap['message'] != '%s:%s' % (STAFLog.Info, logMessage):
+    print "Wrong output for MONITOR QUERY request"
+    print "Expected to find:"
+    print "{"
+    print "  Date-Time: <Timestamp>"
+    print "  Message  : %s:%s" % (STAFLog.Info, logMessage)
+    print "}"
+    print "Found:\n%s" % context
+    sys.exit(1)
+
+# Delete the log file
+
+request = "delete machine %s handle %d logname %s confirm" % \
+          (self, handle.handle, logName)
+result = handle.submit("local", "log", request)
+
+if (result.rc != STAFResult.Ok):
+    print "Error deleting log file, RC: %s, Result: %s" % \
+          (result.rc, result.result)
+    sys.exit(1)
+
+# Log the message so that Monitor shouldn't get it
+
+result = log.log(STAFLog.Status, logMessage)
+
+if (result.rc != STAFResult.Ok):
+    print "Error on STAFLog.log(), RC: %d, Result: %s" % \
+          (result.rc, result.result)
+    sys.exit(result.rc)
+
+# Try to retrieve it
+
+request = "query machine %s handle %d logname %s" % \
+          (self, handle.handle, logName)
+result = handle.submit("local", "log", request)
+
+if (result.rc != STAFResult.Ok):
+    print "Error on STAF LOG Service QUERY, RC: %d, Result: %s" % \
+          (result.rc, result.result)
+    sys.exit(result.rc)
+
+# Make sure we got back the correct message
+
+logRecordList = result.resultObj
+
+if (len(logRecordList) == 1 and
+    logRecordList[0]['level'] == STAFLog.Status and
+    logRecordList[0]['message'] == logMessage):
+    logRecord = logRecordList[0]
+else:
+    print "Wrong output for log query request"
+    print "Expected to find one record with level: '%s' and message: '%s'" % \
+          (STAFLog.Status, logMessage)
+    print "Found '%s'" % context
+    sys.exit(1)
+
+# Try to retrieve it from monitor
+
+request = "query machine %s handle %d" % (self, handle.handle)
+result = handle.submit("local", "monitor", request)
+
+if (result.rc != STAFResult.Ok):
+    print "Error on querying monitor info, RC: %d, Result: %s" % \
+          (result.rc, result.result)
+    sys.exit(result.rc)
+
+# Make sure we got back the correct (old) message from monitor
+
+monitorMap = result.resultObj
+
+if monitorMap['message'] != '%s:%s' % (STAFLog.Info, logMessage):
+    print "Wrong output for MONITOR QUERY request"
+    print "Expected to find:"
+    print "{"
+    print "  Date-Time: <Timestamp>"
+    print "  Message  : %s:%s" % (STAFLog.Info, logMessage)
+    print "}"
+    print "Found:\n%s" % context
+    sys.exit(1)
+
+# Delete the log file
+
+request = "delete machine %s handle %d logname %s confirm" % \
+          (self, handle.handle, logName)
+result = handle.submit("local", "log", request)
+
+if (result.rc != STAFResult.Ok):
+    print "Error deleting log file, RC: %s, Result: %s" % \
+          (result.rc, result.result)
+    sys.exit(1)
+
+
+########################################
+# Next, test the marshall function     #
+########################################
+
+print "Testing marshall function"
+
+myTestMap = {'name': 'TestA', 'exec': '/tests/TestA.py', 'testType': 'FVT', 'out
+puts': ['TestA.out', 'TestA.err']}
+marshalledResult = marshall(myTestMap)
+expectedResult = (
+    "@SDT/{:138::7:outputs@SDT/[2:38:@SDT/$S:9:TestA.out" +
+    "@SDT/$S:9:TestA.err:8:testType@SDT/$S:3:FVT:4:name" +
+    "@SDT/$S:5:TestA:4:exec@SDT/$S:15:/tests/TestA.py")
+
+if marshalledResult != expectedResult:
+    print "Wrong output for marshall function"
+    print "Expected to find:\n%s" % (expectedResult)
+    print "Found:\n%s" % (marshalledResult)
+    sys.exit(1)
+
+
+#########################################
+# Next, test the STAFMapClassDefinition #
+#########################################
+
+print "Testing STAFMapClassDefinition class"
+
+mapClassDefName = 'Test/MyMap'
+
+myMapClassDef = STAFMapClassDefinition(mapClassDefName)
+myMapClassDef.addKey('name', 'Name')
+myMapClassDef.addKey('exec', 'Executable')
+myMapClassDef.addKey('testType', 'Test Type')
+myMapClassDef.setKeyProperty('testType', 'display-short-name', 'test')
+myMapClassDef.addKey('outputs', 'Outputs')
+
+expectedKeyMap = [
+  {'display-name': 'Name', 'key': 'name'},
+  {'display-name': 'Executable', 'key': 'exec'},
+  {'display-name': 'Test Type', 'key': 'testType', 'display-short-name': 'test'}
+,
+  {'display-name': 'Outputs', 'key': 'outputs'}
+]
+
+if myMapClassDef.keys() != expectedKeyMap:
+    print "Wrong keys for myMapClassDef"
+    print "Expected:\n%s" % (expectedKeyMap)
+    print "Found:\n%s" % (myMapClassDef.keys())
+    sys.exit(1)
+
+if myMapClassDef.name() != mapClassDefName:
+    print "Wrong name for myMapClassDef"
+    print "Expected: %s" % (myClassDefName)
+    print "Found   : %s" % (myMapClassDef.name())
+    sys.exit(1)
+
+expectedMapClass = {
+  'keys': [
+    {'display-name': 'Name', 'key': 'name'},
+    {'display-name': 'Executable', 'key': 'exec'},
+    {'display-name': 'Test Type', 'key': 'testType', 'display-short-name': 'test
+'},
+    {'display-name': 'Outputs', 'key': 'outputs'}
+  ],
+  'name': 'Test/MyMap'
+}
+
+if myMapClassDef.getMapClassDefinitionObject() != expectedMapClass:
+    print "getMapClassDefinitionObject() returned wrong object"
+    print "Expected:\n%s" % (expectedMapClass)
+    print "Found:\n%s" % (myMapClassDef.getMapClassDefinitionObject())
+    sys.exit(1)
+
+myMapClass = myMapClassDef.createInstance()
+
+#########################################
+# Next, test the STAFMarshallingContext #
+#########################################
+
+print "Testing STAFMarshallingContext class"
+
+mc = STAFMarshallingContext()
+
+mc.setMapClassDefinition(myMapClassDef)
+
+theMapClassDef = mc.getMapClassDefinition('Test/MyMap')
+
+if theMapClassDef.keys() != expectedKeyMap:
+    print "Wrong keys for theMapClassDef"
+    print "Expected:\n%s" % (expectedKeyMap)
+    print "Found:\n%s" % (theMapClassDef.keys())
+    sys.exit(1)
+
+if theMapClassDef.getMapClassDefinitionObject() != expectedMapClass:
+    print "Error: getMapClassDefinitionObject() returned wrong object"
+    print "Expected:\n%s" % (expectedMapClass)
+    print "Found:\n%s" % (theMapClassDef.getMapClassDefinitionObject())
+    sys.exit(1)
+
+if mc.hasMapClassDefinition('Test/MyMap') != 1:
+    print "Error: The marshalling context does not have map class definition 'Te
+st/MyMap'"
+    sys.exit(1)
+
+mc.setRootObject(myTestMap)
+rootObj = mc.getRootObject()
+
+if rootObj != myTestMap:
+    print "Error: mc.getRootObject() returned wrong object"
+    print "Expected:\n%s" % (myTestMap)
+    print "Found:\n%s" % (rootObj)
+    sys.exit(1)
+
+if isMarshalledData('xyz'):
+    print "Error: 'xyz' is not marshalled data"
+    sys.exit(1)
+
+if not mc.isMarshalledData(marshalledResult):
+    print "Not marshalled data.  marshalledResult=%s" % (marshalledResult)
+    sys.exit(1)
+
+keyMap = mc.mapClassDefinitionIterator()
+if len(keyMap) == 1 and keyMap[0] == 'Test/MyMap':
+    print ''
+else:
+    print "Error: mc.mapClassDefinitionIterator() != ['Test/MapMap']"
+    print "mc.mapClassDefinitionIterator()=%s" % mc.mapClassDefinitionIterator()
+    sys.exit()
+
+priObj = mc.getPrimaryObject()
+
+if priObj != mc:
+    print "Error: mc.getPrimaryObject() != mc"
+    print "mc.getPrimaryObject()=%s" % (mc.getPrimaryObject())
+    print "mc=%s" % (mc)
+    sys.exit()
+
+formattedOutput = '%s' % (mc)
+formattedOutput1 = mc.__str__()
+formattedOutput2 = mc.__repr__()
+formattedOutput3 = formatObject(myTestMap, mc)
+
+if (formattedOutput != formattedOutput1 or
+    formattedOutput != formattedOutput2 or
+    formattedOutput != formattedOutput3):
+    print "Error in str(), repr(), or formatObject function"
+    print "formattedOutput=%s" % (formattedOutput)
+    print "formattedOutput1=%s" % (formattedOutput)
+    print "formattedOutput2=%s" % (formattedOutput)
+    print "formattedOutput3=%s" % (formattedOutput)
+    sys.exit(1)
+
+# Test the marshall function using a MapClassDefinition
+
+expectedResult2 = (
+    "@SDT/*:558:@SDT/{:398::13:map-class-map@SDT/{:370::10:Test/MyMap" +
+    "@SDT/{:345::4:keys@SDT/[4:298:@SDT/{:50::12:display-name" +
+    "@SDT/$S:4:Name:3:key@SDT/$S:4:name@SDT/{:57::12:display-name" +
+    "@SDT/$S:10:Executable:3:key@SDT/$S:4:exec@SDT/{:95::12:display-name" +
+    "@SDT/$S:9:Test Type:3:key@SDT/$S:8:testType:18:display-short-name" +
+    "@SDT/$S:4:test@SDT/{:56::12:display-name@SDT/$S:7:Outputs:3:key" +
+    "@SDT/$S:7:outputs:4:name@SDT/$S:10:Test/MyMap@SDT/{:138::7:outputs" +
+    "@SDT/[2:38:@SDT/$S:9:TestA.out@SDT/$S:9:TestA.err:8:testType" +
+    "@SDT/$S:3:FVT:4:name@SDT/$S:5:TestA:4:exec@SDT/$S:15:/tests/TestA.py")
+
+marshalledResult2 = marshall(mc, mc)
+
+if marshalledResult2 != expectedResult2:
+    print "Error: Wrong output for marshall function"
+    print "Expected to find:\n%s" % (expectedResult2)
+    print "Found:\n%s" % (marshalledResult2)
+    sys.exit(1)
+
+marshalledResult3 = mc.marshall()
+
+if marshalledResult3 != expectedResult2:
+    print "Error: Wrong output for marshall function"
+    print "Expected to find:\n%s" % (expectedResult2)
+    print "Found:\n%s" % (marshalledResult3)
+    sys.exit(1)
+
+# Create a STAFMarshallingContext instance specifying the object
+# and mapClassMap
+
+mc2 = STAFMarshallingContext(myTestMap, mc.getMapClassMap())
+
+if mc2.hasMapClassDefinition('Test/MyMap') != 1:
+    print "Error: mc2 does not have map class definition 'Test/MyMap'"
+    print "mc2=%s" % mc2
+    sys.exit(1)
+
+rootObj = mc2.getRootObject()
+
+if rootObj != myTestMap:
+    print "Error: mc2.getRootObject() returned wrong object"
+    print "Expected:\n%s" % (myTestMap)
+    print "Found:\n%s" % (rootObj)
+    sys.exit(1)
+
+
+########################################
+# Next, test the unmarshall function   #
+########################################
+
+print "Testing unmarshall function"
+
+# Unmarshall the marshalledResult
+
+mc = unmarshall(marshalledResult)
+
+if mc.getRootObject() != myTestMap:
+    print 'Unmarshalled object not same as original object that was marshalled'
+    print 'Expected:\n%s' % (myTestMap)
+    print 'Found:\n%s' % (marshalledResult.getRootObject())
+    sys.exit(1)
+
+# Unmarshall the result from a FS QUERY ENTRY request
+
+fileName = '{STAF/Config/ConfigFile}'
+
+result = handle.submit('local', 'FS', 'QUERY ENTRY %s' % fileName)
+
+if result.rc != STAFResult.Ok:
+    print 'FS QUERY ENTRY %s failed' % fileName
+    print 'RC=%s Result=%s' % (result.rc, result,result)
+    sys.exit(1)
+
+mc = unmarshall(result.result)
+entryMap = mc.getRootObject()
+
+if entryMap['type'] == 'F' and int(entryMap['lowerSize']) > 0 and entryMap['last
+ModifiedTimestamp']:
+    print ''
+else:
+    print 'Unmarshall/getRootObject() failed'
+    print "entryMap['type']=%s entryMap['lowerSize']=%s entryMap['lastModifiedTi
+mestamp']=%s" % \
+          (entryMap['type'], entryMap['lowerSize'], entryMap['lastModoifiedTimes
+tamp'])
+
+# Marshall a map and queue it; Get it off the queue, and unmarshall it
+# and verify results in original map object that was marshalled
+
+message = marshall(myTestMap)
+result = handle.submit('local', 'QUEUE', 'QUEUE MESSAGE %s' % message)
+
+if result.rc != STAFResult.Ok:
+    print 'QUEUE MESSAGE failed with RC=%s Result=%s' % (result.rc, result.resul
+t)
+    sys.exit(1)
+
+# Another process could obtain the message from the queue and unmarshall
+# it to get the original dictionary (map) object
+
+result = handle.submit('local', 'QUEUE', 'GET MESSAGE')
+
+if result.rc == STAFResult.Ok:
+    mc = unmarshall(result.result)
+    yourTestMap = mc.getRootObject()
+
+############################################
+# Next, test the formatObject function     #
+############################################
+
+print "Testing formatObject function\n"
+
+print "Printing formatted output for %s" % (myTestMap)
+print formatObject(myTestMap)
+
+fileName = '{STAF/Config/ConfigFile}'
+
+result = handle.submit('local', 'FS', 'QUERY ENTRY %s' % wrapData(fileName))
+
+if result.rc != STAFResult.Ok:
+    print 'FS QUERY ENTRY %s failed' % fileName
+    print 'RC=%s Result=%s' % (result.rc, result,result)
+    sys.exit(1)
+
+print "Printing formatted output for FS QUERY ENTRY %s" % (fileName)
+print formatObject(result.resultObj, result.resultContext)
+
+# Create a marshalling context and marshall it, and unmarshall it
+
+myMapClassDef = STAFMapClassDefinition('Test/MyMap')
+myMapClassDef.addKey('name', 'Name')
+myMapClassDef.addKey('exec', 'Executable')
+
+testList = [
+             {'name': 'TestA', 'exec': '/tests/TestA.py'},
+             {'name': 'TestB', 'exec': '/tests/TestB.sh'},
+             {'name': 'TestC', 'exec': '/tests/TestC.cmd'}
+           ]
+
+mc = STAFMarshallingContext()
+mc.setMapClassDefinition(myMapClassDef)
+
+myTestList = []
+
+for test in testList:
+    testMap = myMapClassDef.createInstance()
+    testMap['name'] = test['name']
+    testMap['exec'] = test['exec']
+    myTestList.append(testMap)
+
+mc.setRootObject(myTestList)
+message = marshall(mc)
+mc2 = unmarshall(message)
+mc2.getRootObject()
+
+if str(mc) != str(mc2):
+    print "Error: str(mc) != str(mc2)"
+    print "mc=%s" % mc
+    print "mc2=%s" % mc2
+    sys.exit(1)
+
+mc3 = STAFMarshallingContext(mapClassMap=mc.getMapClassMap())
+mc4 = STAFMarshallingContext(obj=myTestList, mapClassMap=mc.getMapClassMap())
+
+# Test privacy methods
+
+password = 'secret';
+pwWithPD = STAFAddPrivacyDelimiters(password)
+print 'STAFAddPrivacyDelimiters(%s)=%s' % (password, pwWithPD)
+print 'STAFEscapePrivacyDelimiters(%s)=%s' % (pwWithPD, STAFEscapePrivacyDelimit
+ers(pwWithPD))
+print 'STAFMaskPrivateData(%s)=%s' % (pwWithPD, STAFMaskPrivateData(pwWithPD))
+print 'STAFRemovePrivacyDelimiters(%s)=%s' % (pwWithPD, STAFRemovePrivacyDelimit
+ers(pwWithPD))
+
+password = 'secret';
+pwWithPD = addPrivacyDelimiters(password)
+print 'addPrivacyDelimiters(%s)=%s' % (password, pwWithPD)
+print 'escapePrivacyDelimiters(%s)=%s' % (pwWithPD, escapePrivacyDelimiters(pwWi
+thPD))
+print 'maskPrivateData(%s)=%s' % (pwWithPD, maskPrivateData(pwWithPD))
+print 'removePrivacyDelimiters(%s)=%s' % (pwWithPD, removePrivacyDelimiters(pwWi
+thPD))
+
+# Test private data methods
+
+testData = ['secret', 'secret', '!!@secret@!!', 'Pw: !!@pw@!!', '^!!@secret@!!',
+            '^!!@secret^@!!', '!!@secret', '!!@secret^@!!',
+            'Pw1=%s, Pw2=%s.' % (addPrivacyDelimiters('a'), addPrivacyDelimiters
+('pw')),
+            '^%s^%s' % (addPrivacyDelimiters('a'), addPrivacyDelimiters('b')),
+            'Pw1=!!@secret, !!@pw@!!.', 'Pw1=!!@secret@!!, !!@pw.',
+            'Msg: !!@Pw: ^!!@pw^@!!@!!', '@!!a!!@b@!!', '' ]
+
+print ("KEY:\n  apd() = STAFUtil.addPrivacyDelimiters()\n" +
+       "  mpd() = STAFUtil.maskPrivateData()\n" +
+       "  rpd() = STAFUtil.removePrivacyDelimiters()\n" +
+       "  epd() = STAFUtil.escapePrivacyDelimiters()\n")
+
+numErrors = 0;
+
+for i in range(0, len(testData)):
+  data = testData[i]
+
+  print '\n%s)  data: %s\n'  % ((i+1), data)
+
+  maskedData2 = maskPrivateData(data)
+  print "mpd(" + data + "): " + maskedData2 + "\n"
+
+  dataWithPrivacy = addPrivacyDelimiters(data)
+  print "apd(" + data + "): " + dataWithPrivacy
+
+  dataWithPrivacyRemoved = removePrivacyDelimiters(dataWithPrivacy, 1)
+  print "rpd(" + dataWithPrivacy + ", 1): " + dataWithPrivacyRemoved
+
+  dataWithPrivacyRemoved2 = removePrivacyDelimiters(dataWithPrivacy, 2)
+  print "rpd(" + dataWithPrivacy + ", 2): " + dataWithPrivacyRemoved2
+
+  dataWithAllPrivacyRemoved = removePrivacyDelimiters(dataWithPrivacy, 0)
+  print "rpd(" + dataWithPrivacy + ", 0): " + dataWithAllPrivacyRemoved
+
+  escapedData = escapePrivacyDelimiters(data)
+  print "\nepd(" + data + "): " + escapedData
+
+  dataWithPrivacy = addPrivacyDelimiters(escapedData)
+  print "apd(" + escapedData + "): " + dataWithPrivacy
+
+  dataWithPrivacyRemoved = removePrivacyDelimiters(dataWithPrivacy, 1)
+  print "rpd(" + dataWithPrivacy + ", 1): " + dataWithPrivacyRemoved
+
+  if (dataWithPrivacyRemoved != data):
+    print "ERROR: removePrivacyDelimiters(" + dataWithPrivacyRemoved + ", 1) !=
+" + data
+    numErrors = numErrors + 1
+
+  dataWithAllPrivacyRemoved = removePrivacyDelimiters(dataWithPrivacy)
+  print "rpd(" + dataWithPrivacy + ", 0): " + dataWithAllPrivacyRemoved
+
+  if (dataWithAllPrivacyRemoved != data):
+    print "ERROR: removePrivacyDelimiters(" + dataWithAllPrivacyRemoved + ", 0)
+!= " + data
+    numErrors = numErrors + 1
+
+if (numErrors == 0):
+  print "\n*** All tests successful ***"
+else:
+  print "\n*** ERROR: %s tests failed ***" % (numErrors)
+
+
+#############
+# Finish up #
+#############
+
+result = handle.unregister()
+
+if (result != STAFResult.Ok):
+    print "Error unregistering with STAF, RC: %d" % result
+    sys.exit(result)
+
+sys.exit(0)
+
+   This example could print the following when run:
+Testing the STAFHandle constructor
+Testing creating a standard handle and using it to submit requests
+Using standard handle 35
+Testing submitting requests using a standard handle
+Testing creating a reference to a static handle that exists
+Using static handle 36
+Testing submitting requests using a static handle
+Unregister and delete static handle 36
+
+Verify that auto-unmarshalling result is turned on by default
+Turn off auto-unmarshalling result
+Turn on auto-unmarshalling result
+
+Testing Monitor service functions
+Testing Log service functions
+Testing marshall function
+Testing STAFMapClassDefinition class
+Testing STAFMarshallingContext class
+
+Testing unmarshall function
+
+Testing formatObject function
+
+Printing formatted output for {'outputs': ['TestA.out', 'TestA.err'], 'testType'
+: 'FVT', 'name': 'TestA', 'exec': '/tests/TestA.py'}
+{   outputs : [     TestA.out     TestA.err   ]   testType: FVT   name    : Test
+A   exec    : /tests/TestA.py }
+Printing formatted output for FS QUERY ENTRY {STAF/Config/ConfigFile}
+{   Name              : c:\staf\bin\staf3x.cfg   Type              : F   Upper 3
+2-bit Size : 0   Lower 32-bit Size : 8845   Modified Date-Time: 20080721-17:33:2
+2 }
+STAFAddPrivacyDelimiters(secret)=!!@secret@!!
+STAFEscapePrivacyDelimiters(!!@secret@!!)=^!!@secret^@!!
+STAFMaskPrivateData(!!@secret@!!)=************
+STAFRemovePrivacyDelimiters(!!@secret@!!)=secret
+addPrivacyDelimiters(secret)=!!@secret@!!
+escapePrivacyDelimiters(!!@secret@!!)=^!!@secret^@!!
+maskPrivateData(!!@secret@!!)=************
+removePrivacyDelimiters(!!@secret@!!)=secret
+KEY:
+  apd() = STAFUtil.addPrivacyDelimiters()
+  mpd() = STAFUtil.maskPrivateData()
+  rpd() = STAFUtil.removePrivacyDelimiters()
+  epd() = STAFUtil.escapePrivacyDelimiters()
+
+
+1)  data: secret
+
+mpd(secret): secret
+
+apd(secret): !!@secret@!!
+rpd(!!@secret@!!, 1): secret
+rpd(!!@secret@!!, 2): secret
+rpd(!!@secret@!!, 0): secret
+
+epd(secret): secret
+apd(secret): !!@secret@!!
+rpd(!!@secret@!!, 1): secret
+rpd(!!@secret@!!, 0): secret
+
+2)  data: secret
+
+mpd(secret): secret
+
+apd(secret): !!@secret@!!
+rpd(!!@secret@!!, 1): secret
+rpd(!!@secret@!!, 2): secret
+rpd(!!@secret@!!, 0): secret
+
+epd(secret): secret
+apd(secret): !!@secret@!!
+rpd(!!@secret@!!, 1): secret
+rpd(!!@secret@!!, 0): secret
+
+3)  data: !!@secret@!!
+
+mpd(!!@secret@!!): ************
+
+apd(!!@secret@!!): !!@secret@!!
+rpd(!!@secret@!!, 1): secret
+rpd(!!@secret@!!, 2): secret
+rpd(!!@secret@!!, 0): secret
+
+epd(!!@secret@!!): ^!!@secret^@!!
+apd(^!!@secret^@!!): !!@^^!!@secret^^@!!@!!
+rpd(!!@^^!!@secret^^@!!@!!, 1): !!@secret@!!
+rpd(!!@^^!!@secret^^@!!@!!, 0): !!@secret@!!
+
+4)  data: Pw: !!@pw@!!
+
+mpd(Pw: !!@pw@!!): Pw: ********
+
+apd(Pw: !!@pw@!!): !!@Pw: ^!!@pw^@!!@!!
+rpd(!!@Pw: ^!!@pw^@!!@!!, 1): Pw: !!@pw@!!
+rpd(!!@Pw: ^!!@pw^@!!@!!, 2): Pw: pw
+rpd(!!@Pw: ^!!@pw^@!!@!!, 0): Pw: pw
+
+epd(Pw: !!@pw@!!): Pw: ^!!@pw^@!!
+apd(Pw: ^!!@pw^@!!): !!@Pw: ^^!!@pw^^@!!@!!
+rpd(!!@Pw: ^^!!@pw^^@!!@!!, 1): Pw: !!@pw@!!
+rpd(!!@Pw: ^^!!@pw^^@!!@!!, 0): Pw: !!@pw@!!
+
+5)  data: ^!!@secret@!!
+
+mpd(^!!@secret@!!): ^!!@secret@!!
+
+apd(^!!@secret@!!): !!@^^!!@secret^@!!@!!
+rpd(!!@^^!!@secret^@!!@!!, 1): !!@secret@!!
+rpd(!!@^^!!@secret^@!!@!!, 2): !!@secret@!!
+rpd(!!@^^!!@secret^@!!@!!, 0): !!@secret@!!
+
+epd(^!!@secret@!!): ^^!!@secret^@!!
+apd(^^!!@secret^@!!): !!@^^^!!@secret^^@!!@!!
+rpd(!!@^^^!!@secret^^@!!@!!, 1): ^!!@secret@!!
+rpd(!!@^^^!!@secret^^@!!@!!, 0): ^!!@secret@!!
+
+6)  data: ^!!@secret^@!!
+
+mpd(^!!@secret^@!!): ^!!@secret^@!!
+
+apd(^!!@secret^@!!): !!@^^!!@secret^^@!!@!!
+rpd(!!@^^!!@secret^^@!!@!!, 1): !!@secret@!!
+rpd(!!@^^!!@secret^^@!!@!!, 2): !!@secret@!!
+rpd(!!@^^!!@secret^^@!!@!!, 0): !!@secret@!!
+
+epd(^!!@secret^@!!): ^^!!@secret^^@!!
+apd(^^!!@secret^^@!!): !!@^^^!!@secret^^^@!!@!!
+rpd(!!@^^^!!@secret^^^@!!@!!, 1): ^!!@secret^@!!
+rpd(!!@^^^!!@secret^^^@!!@!!, 0): ^!!@secret^@!!
+
+7)  data: !!@secret
+
+mpd(!!@secret): !!@secret
+
+apd(!!@secret): !!@^!!@secret@!!
+rpd(!!@^!!@secret@!!, 1): !!@secret
+rpd(!!@^!!@secret@!!, 2): !!@secret
+rpd(!!@^!!@secret@!!, 0): !!@secret
+
+epd(!!@secret): ^!!@secret
+apd(^!!@secret): !!@^^!!@secret@!!
+rpd(!!@^^!!@secret@!!, 1): !!@secret
+rpd(!!@^^!!@secret@!!, 0): !!@secret
+
+8)  data: !!@secret^@!!
+
+mpd(!!@secret^@!!): !!@secret^@!!
+
+apd(!!@secret^@!!): !!@^!!@secret^^@!!@!!
+rpd(!!@^!!@secret^^@!!@!!, 1): !!@secret@!!
+rpd(!!@^!!@secret^^@!!@!!, 2): !!@secret@!!
+rpd(!!@^!!@secret^^@!!@!!, 0): !!@secret@!!
+
+epd(!!@secret^@!!): ^!!@secret^^@!!
+apd(^!!@secret^^@!!): !!@^^!!@secret^^^@!!@!!
+rpd(!!@^^!!@secret^^^@!!@!!, 1): !!@secret^@!!
+rpd(!!@^^!!@secret^^^@!!@!!, 0): !!@secret^@!!
+
+9)  data: Pw1=!!@a@!!, Pw2=!!@pw@!!.
+
+mpd(Pw1=!!@a@!!, Pw2=!!@pw@!!.): Pw1=*******, Pw2=********.
+
+apd(Pw1=!!@a@!!, Pw2=!!@pw@!!.): !!@Pw1=^!!@a^@!!, Pw2=^!!@pw^@!!.@!!
+rpd(!!@Pw1=^!!@a^@!!, Pw2=^!!@pw^@!!.@!!, 1): Pw1=!!@a@!!, Pw2=!!@pw@!!.
+rpd(!!@Pw1=^!!@a^@!!, Pw2=^!!@pw^@!!.@!!, 2): Pw1=a, Pw2=pw.
+rpd(!!@Pw1=^!!@a^@!!, Pw2=^!!@pw^@!!.@!!, 0): Pw1=a, Pw2=pw.
+
+epd(Pw1=!!@a@!!, Pw2=!!@pw@!!.): Pw1=^!!@a^@!!, Pw2=^!!@pw^@!!.
+apd(Pw1=^!!@a^@!!, Pw2=^!!@pw^@!!.): !!@Pw1=^^!!@a^^@!!, Pw2=^^!!@pw^^@!!.@!!
+rpd(!!@Pw1=^^!!@a^^@!!, Pw2=^^!!@pw^^@!!.@!!, 1): Pw1=!!@a@!!, Pw2=!!@pw@!!.
+rpd(!!@Pw1=^^!!@a^^@!!, Pw2=^^!!@pw^^@!!.@!!, 0): Pw1=!!@a@!!, Pw2=!!@pw@!!.
+
+10)  data: ^!!@a@!!^!!@b@!!
+
+mpd(^!!@a@!!^!!@b@!!): ^!!@a@!!^!!@b@!!
+
+apd(^!!@a@!!^!!@b@!!): !!@^^!!@a^@!!^^!!@b^@!!@!!
+rpd(!!@^^!!@a^@!!^^!!@b^@!!@!!, 1): !!@a@!!!!@b@!!
+rpd(!!@^^!!@a^@!!^^!!@b^@!!@!!, 2): !!@a@!!!!@b@!!
+rpd(!!@^^!!@a^@!!^^!!@b^@!!@!!, 0): !!@a@!!!!@b@!!
+
+epd(^!!@a@!!^!!@b@!!): ^^!!@a^@!!^^!!@b^@!!
+apd(^^!!@a^@!!^^!!@b^@!!): !!@^^^!!@a^^@!!^^^!!@b^^@!!@!!
+rpd(!!@^^^!!@a^^@!!^^^!!@b^^@!!@!!, 1): ^!!@a@!!^!!@b@!!
+rpd(!!@^^^!!@a^^@!!^^^!!@b^^@!!@!!, 0): ^!!@a@!!^!!@b@!!
+
+11)  data: Pw1=!!@secret, !!@pw@!!.
+
+mpd(Pw1=!!@secret, !!@pw@!!.): Pw1=*******************.
+
+apd(Pw1=!!@secret, !!@pw@!!.): !!@Pw1=^!!@secret, ^!!@pw^@!!.@!!
+rpd(!!@Pw1=^!!@secret, ^!!@pw^@!!.@!!, 1): Pw1=!!@secret, !!@pw@!!.
+rpd(!!@Pw1=^!!@secret, ^!!@pw^@!!.@!!, 2): Pw1=secret, !!@pw.
+rpd(!!@Pw1=^!!@secret, ^!!@pw^@!!.@!!, 0): Pw1=secret, !!@pw.
+
+epd(Pw1=!!@secret, !!@pw@!!.): Pw1=^!!@secret, ^!!@pw^@!!.
+apd(Pw1=^!!@secret, ^!!@pw^@!!.): !!@Pw1=^^!!@secret, ^^!!@pw^^@!!.@!!
+rpd(!!@Pw1=^^!!@secret, ^^!!@pw^^@!!.@!!, 1): Pw1=!!@secret, !!@pw@!!.
+rpd(!!@Pw1=^^!!@secret, ^^!!@pw^^@!!.@!!, 0): Pw1=!!@secret, !!@pw@!!.
+
+12)  data: Pw1=!!@secret@!!, !!@pw.
+
+mpd(Pw1=!!@secret@!!, !!@pw.): Pw1=************, !!@pw.
+
+apd(Pw1=!!@secret@!!, !!@pw.): !!@Pw1=^!!@secret^@!!, ^!!@pw.@!!
+rpd(!!@Pw1=^!!@secret^@!!, ^!!@pw.@!!, 1): Pw1=!!@secret@!!, !!@pw.
+rpd(!!@Pw1=^!!@secret^@!!, ^!!@pw.@!!, 2): Pw1=secret, !!@pw.
+rpd(!!@Pw1=^!!@secret^@!!, ^!!@pw.@!!, 0): Pw1=secret, !!@pw.
+
+epd(Pw1=!!@secret@!!, !!@pw.): Pw1=^!!@secret^@!!, ^!!@pw.
+apd(Pw1=^!!@secret^@!!, ^!!@pw.): !!@Pw1=^^!!@secret^^@!!, ^^!!@pw.@!!
+rpd(!!@Pw1=^^!!@secret^^@!!, ^^!!@pw.@!!, 1): Pw1=!!@secret@!!, !!@pw.
+rpd(!!@Pw1=^^!!@secret^^@!!, ^^!!@pw.@!!, 0): Pw1=!!@secret@!!, !!@pw.
+
+13)  data: Msg: !!@Pw: ^!!@pw^@!!@!!
+
+mpd(Msg: !!@Pw: ^!!@pw^@!!@!!): Msg: ********************
+
+apd(Msg: !!@Pw: ^!!@pw^@!!@!!): !!@Msg: ^!!@Pw: ^^!!@pw^^@!!^@!!@!!
+rpd(!!@Msg: ^!!@Pw: ^^!!@pw^^@!!^@!!@!!, 1): Msg: !!@Pw: ^!!@pw^@!!@!!
+rpd(!!@Msg: ^!!@Pw: ^^!!@pw^^@!!^@!!@!!, 2): Msg: Pw: !!@pw@!!
+rpd(!!@Msg: ^!!@Pw: ^^!!@pw^^@!!^@!!@!!, 0): Msg: Pw: pw
+
+epd(Msg: !!@Pw: ^!!@pw^@!!@!!): Msg: ^!!@Pw: ^^!!@pw^^@!!^@!!
+apd(Msg: ^!!@Pw: ^^!!@pw^^@!!^@!!): !!@Msg: ^^!!@Pw: ^^^!!@pw^^^@!!^^@!!@!!
+rpd(!!@Msg: ^^!!@Pw: ^^^!!@pw^^^@!!^^@!!@!!, 1): Msg: !!@Pw: ^!!@pw^@!!@!!
+rpd(!!@Msg: ^^!!@Pw: ^^^!!@pw^^^@!!^^@!!@!!, 0): Msg: !!@Pw: ^!!@pw^@!!@!!
+
+14)  data: @!!a!!@b@!!
+
+mpd(@!!a!!@b@!!): @!!a*******
+
+apd(@!!a!!@b@!!): !!@^@!!a^!!@b^@!!@!!
+rpd(!!@^@!!a^!!@b^@!!@!!, 1): @!!a!!@b@!!
+rpd(!!@^@!!a^!!@b^@!!@!!, 2): @!!ab
+rpd(!!@^@!!a^!!@b^@!!@!!, 0): @!!ab
+
+epd(@!!a!!@b@!!): ^@!!a^!!@b^@!!
+apd(^@!!a^!!@b^@!!): !!@^^@!!a^^!!@b^^@!!@!!
+rpd(!!@^^@!!a^^!!@b^^@!!@!!, 1): @!!a!!@b@!!
+rpd(!!@^^@!!a^^!!@b^^@!!@!!, 0): @!!a!!@b@!!
+
+15)  data:
+
+mpd():
+
+apd():
+rpd(, 1):
+rpd(, 2):
+rpd(, 0):
+
+epd():
+apd():
+rpd(, 1):
+rpd(, 0):
+
+*** All tests successful ***
+
+    *** End of Document ***
+http://staf.sourceforge.net/current/STAFPython.htm#Header_Intro
+http://staf.sourceforge.net/current/STAFPython.htm#Header_PlatformsVersions
+http://staf.sourceforge.net/current/STAFPython.htm#Header_Win32
+http://staf.sourceforge.net/current/STAFPython.htm#Header_Win64
+http://staf.sourceforge.net/current/STAFPython.htm#Header_WinAMD64
+http://staf.sourceforge.net/current/STAFPython.htm#Header_Linux32
+http://staf.sourceforge.net/current/STAFPython.htm#Header_LinuxAMD64
+http://staf.sourceforge.net/current/STAFPython.htm#Header_LinuxPPC64_32
+http://staf.sourceforge.net/current/STAFPython.htm#Header_LinuxPPC64_64
+http://staf.sourceforge.net/current/STAFPython.htm#Header_LinuxIA64
+http://staf.sourceforge.net/current/STAFPython.htm#Header_SolarisSparc32
+http://staf.sourceforge.net/current/STAFPython.htm#Header_SolarisSparc64
+http://staf.sourceforge.net/current/STAFPython.htm#Header_Solarisx64
+http://staf.sourceforge.net/current/STAFPython.htm#Header_Solarisx64_64
+http://staf.sourceforge.net/current/STAFPython.htm#Header_Solarisx86
+http://staf.sourceforge.net/current/STAFPython.htm#Header_FreeBSD
+http://staf.sourceforge.net/current/STAFPython.htm#Header_MacOSXi386
+http://staf.sourceforge.net/current/STAFPython.htm#Header_MacOSXPPC
+http://staf.sourceforge.net/current/STAFPython.htm#Header_MacOSX_Universal
+http://staf.sourceforge.net/current/STAFPython.htm#Header_Install
+http://staf.sourceforge.net/current/STAFPython.htm#Header_PySTAF
+http://staf.sourceforge.net/current/STAFPython.htm#Header_Primary
+http://staf.sourceforge.net/current/STAFPython.htm#Header_STAFHandle
+http://staf.sourceforge.net/current/STAFPython.htm#Header_STAFResult
+http://staf.sourceforge.net/current/STAFPython.htm#Header_STAFException
+http://staf.sourceforge.net/current/STAFPython.htm#Header_wrapData
+http://staf.sourceforge.net/current/STAFPython.htm#Header_Marshalling
+http://staf.sourceforge.net/current/STAFPython.htm#Header_STAFMCDef
+http://staf.sourceforge.net/current/STAFPython.htm#Header_STAFMC
+http://staf.sourceforge.net/current/STAFPython.htm#Header_isMarshalled
+http://staf.sourceforge.net/current/STAFPython.htm#Header_marshall
+http://staf.sourceforge.net/current/STAFPython.htm#Header_unmarshall
+http://staf.sourceforge.net/current/STAFPython.htm#Header_formatObj
+http://staf.sourceforge.net/current/STAFPython.htm#Header_PrivateData
+http://staf.sourceforge.net/current/STAFPython.htm#Header_addPrivacyDelimiters
+http://staf.sourceforge.net/current/STAFPython.htm#Header_escapePrivacyDelimiters
+http://staf.sourceforge.net/current/STAFPython.htm#Header_removePrivacyDelimiters
+http://staf.sourceforge.net/current/STAFPython.htm#Header_maskPrivateData
+http://staf.sourceforge.net/current/STAFPython.htm#Header_constants
+http://staf.sourceforge.net/current/STAFPython.htm#Header_PySTAFMon
+http://staf.sourceforge.net/current/STAFPython.htm#Header_STAFMonitor
+http://staf.sourceforge.net/current/STAFPython.htm#Header_PySTAFLog
+http://staf.sourceforge.net/current/STAFPython.htm#Header_STAFLog
+http://staf.sourceforge.net/current/STAFPython.htm#Header_Examples
+http://staf.sourceforge.net/current/STAFPython.htm#Header_Example1
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_Intro
+http://staf.sourceforge.net/current/stafdg.html
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_PlatformsVersions
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_Win32
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_Win64
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_WinAMD64
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_Linux32
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_LinuxAMD64
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_LinuxPPC64_32
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_LinuxPPC64_64
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_LinuxIA64
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_SolarisSparc32
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_SolarisSparc64
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_Solarisx64
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_Solarisx64_64
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_Solarisx86
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_FreeBSD
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_MacOSXi386
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_MacOSXPPC
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_MacOSX_Universal
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_Install
+http://staf.sourceforge.net/current/STAFPython.htm#Header_PlatformsVersions
+http://staf.sourceforge.net/current/STAFPython.htm#Header_Intro
+http://staf.sourceforge.net/current/STAFPython.htm#Header_Intro
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_PySTAF
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_Primary
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_STAFHandle
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_STAFResult
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_STAFException
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_wrapData
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_Marshalling
+http://staf.sourceforge.net/current/STAFUG.htm#HDRMARSHALL
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_STAFMCDef
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_STAFMC
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_isMarshalled
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_marshall
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_unmarshall
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_formatObj
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_PrivateData
+http://staf.sourceforge.net/current/STAFUG.htm#HDRPRIVATEDATA
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_addPrivacyDelimiters
+http://staf.sourceforge.net/current/STAFUG.htm#HDRPRIVATEDATA
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_escapePrivacyDelimiters
+http://staf.sourceforge.net/current/STAFUG.htm#HDRPRIVATEDATA
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_removePrivacyDelimiters
+http://staf.sourceforge.net/current/STAFUG.htm#HDRPRIVATEDATA
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_maskPrivateData
+http://staf.sourceforge.net/current/STAFUG.htm#HDRPRIVATEDATA
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_constants
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_PySTAFMon
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_STAFMonitor
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_PySTAFLog
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_STAFLog
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_Examples
+http://staf.sourceforge.net/current/STAFPython.htm#ToC_Example1
+http://staf.sourceforge.net/current/stafdg.html#Header_getsource
+http://staf.cvs.sourceforge.net/viewvc/staf/src/staf/lang/python/TestPythonV3.py?view=log

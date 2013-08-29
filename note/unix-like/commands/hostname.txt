@@ -1,0 +1,74 @@
+= link:commands.html[Unix-like / Commands] / `hostname` =
+:title: [Unix-like] hostname
+
+`hostname` 可以用來查詢／設定 hostname，例如：
+
+[source,console]
+--------------------------------------------------------------------------------
+$ hostname # <1>
+jeremy-laptop
+$ sudo hostname my-laptop # <2>
+$ hostname
+my-laptop
+--------------------------------------------------------------------------------
+<1> `hostname` 不帶任何參數可以印出目前的 hostname。
+<2> `hostname <new_hostname>` 可以將 hostname 改成 'new_hostname'。
+
+不過上面修改 hostname 的動作，重新開機會就會失效，因為開機時會依據設定檔（通常是 `/etc/hostname`）的內容重新設定 hostname。因此修改 hostname 正確的方式應該是直接修改設定檔，並讓系統重新讀取該設定檔：
+
+[source,console]
+--------------------------------------------------------------------------------
+$ sudo vi /etc/hostname # <1>
+$ cat /etc/hostname
+my-laptop
+$ hostname 
+jeremy-laptop
+
+$ sudo hostname -F /etc/hostname # <2>
+$ hostname
+my-laptop
+--------------------------------------------------------------------------------
+<1> 從設定檔修改 hostname，但這個時候 `hostname` 仍然傳回舊的 hostname。
+<2> 除非重新開機，否則必須透過 `hostname -F <filename>` （或 `--file`）更新系統 runtime 的 hostname。
+
+除了 hostname 之外，`hostname` 也可以用來查看 DNS domain name 跟 FQDN (Fully Qualified Domain Name)，例如：
+
+[source,console]
+--------------------------------------------------------------------------------
+$ hostname -d # <1>
+???
+$ hostname --fqdn # <2>
+???
+
+$ hostname -d
+hostname: Name or service not known
+$ hostname --fqdn
+hostname: Name or service not known
+--------------------------------------------------------------------------------
+<1> `hostname -d` （或 `--domain`）可以
+<2> `hostname --fqdn` 
+
+domain name 好像跟 `/etc/resolv.conf` 裡 `domain` 的設定無關，而是跟 `/etc/hosts` 裡的設定有關?? 
+
+== 延伸閱讀 ==
+
+ * link:../../debian/networking/hostname-fqdn.html[[Debian&#93; Hostname and Domain Name]
+
+== 參考資料 ==
+
+ * http://linux.die.net/man/1/hostname[hostname(1): show/set system's hostname - Linux man page]
+
+////////////////////////////////////////////////////////////////////////////////
+** Hostname is the program that is used to either set or display the current host, domain or node name of the system. These names are used by many of the networking programs to identify the machine.
+** `dnsdomainname` will print the domain part of the FQDN (Fully Qualified Domain Name). The complete FQDN of the system is returned with `hostname --fqdn`.
+** When called with one argument or with the `--file` option, the commands set the hostname,
+** It is not possible to set the FQDN or the DNS domain name with the `dnsdomainname` command
+** The hostname is usually set once at system startup in `/etc/rc.d/rc.inet1` or `/etc/init.d/boot` (normally by reading the contents of a file which contains the hostname, e.g. `/etc/hostname`).
+** You can't change the FQDN (as returned by `hostname --fqdn`) or the DNS domain name (as returned by `dnsdomainname`) with this command.
+** Therefore it depends on the configuration (usually in `/etc/host.conf`) how you can change it. Usually (if the hosts file is parsed before DNS or NIS) you can change it in `/etc/hosts`.
+** `-d, --domain` Display the name of the DNS domain.
+** `-F, --file filename` Read the hostname from the specified file.
+** `-f, --fqdn, --long` Display the FQDN (Fully Qualified Domain Name). A FQDN consists of a short hostname and the DNS domain name.
+** Unless you are using bind or NIS for host lookups you can change the FQDN and the DNS domain name (which is part of the FQDN) in the `/etc/hosts` file. 這份文件一再強調 `/etc/hosts` 可以決定 domain name，但又沒講清楚怎麼做??
+////////////////////////////////////////////////////////////////////////////////
+

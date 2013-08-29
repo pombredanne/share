@@ -1,0 +1,76 @@
+= link:server.html[MySQL / Server] / System Variables =
+:title: [MySQL] System Variables
+
+ SHOW [GLOBAL | SESSION] VARIABLES
+     [LIKE 'pattern' | WHERE expr]
+
+`SHOW VARIABLES` 可以用來查看 server 現在套用的設定。
+
+--------------------------------------------------------------------------------
+mysql> SHOW VARIABLES;
++---------------------------------+-------------------------------------+
+| Variable_name                   | Value                               |
++---------------------------------+-------------------------------------+
+| auto_increment_increment        | 1                                   |
+| auto_increment_offset           | 1                                   |
+| automatic_sp_privileges         | ON                                  |
+| back_log                        | 50                                  |
+...
+--------------------------------------------------------------------------------
+
+兩個欄位名稱 `Variable_name` 跟 `Value`，可以搭配 `WHERE` 做條件過濾，例如：
+
+--------------------------------------------------------------------------------
+mysql> SHOW VARIABLES WHERE Variable_name LIKE '%slow%' OR Variable_name = 'long_query_time';
++---------------------------------------+-------------------------------+
+| Variable_name                         | Value                         |
++---------------------------------------+-------------------------------+
+| log_slow_admin_statements             | OFF                           |
+| log_slow_filter                       |                               |
+| log_slow_queries                      | ON                            |
+| log_slow_rate_limit                   | 1                             |
+| log_slow_slave_statements             | OFF                           |
+| log_slow_sp_statements                | ON                            |
+| log_slow_timestamp_every              | OFF                           |
+| log_slow_verbosity                    | microtime                     |
+| long_query_time                       | 30000000.000000               |
+| slow_launch_time                      | 2                             |
+| slow_query_log                        | ON                            |
+| slow_query_log_file                   | /data/mysql/db/query-slow.log |
+| slow_query_log_microseconds_timestamp | OFF                           |
+| use_global_log_slow_control           | none                          |
++---------------------------------------+-------------------------------+
+14 rows in set (0.00 sec)
+--------------------------------------------------------------------------------
+
+== 參考資料 ==
+
+ * http://dev.mysql.com/doc/refman/5.0/en/server-system-variables.html#sysvar_long_query_time[MySQL :: MySQL 5.0 Reference Manual :: 5.1.4 Server System Variables]
+
+////////////////////////////////////////////////////////////////////////////////
+** The MySQL server maintains many system variables that indicate how it is configured. Each system variable has a default value. System variables can be set at server startup using options on the command line or in an option file. Most of them can be changed dynamically while the server is running by means of the `SET` statement, which enables you to modify operation of the server without having to stop and restart it. 但改了之後只有新 client 可以套用到設定??
+** To see the current values used by a running server, use the `SHOW VARIABLES` statement.
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://dev.mysql.com/doc/refman/5.0/en/show-variables.html[MySQL :: MySQL 5.0 Reference Manual :: 13.7.5.36 SHOW VARIABLES Syntax]
+
+////////////////////////////////////////////////////////////////////////////////
+** `SHOW VARIABLES` shows the values of MySQL system variables. This information also can be obtained using the `mysqladmin variables` command. The `LIKE` clause, if present, indicates which variable names to match.
+** With the `GLOBAL` modifier, `SHOW VARIABLES` displays the values that are used for new connections to MySQL. If a variable has no global value, the session value is displayed. With `SESSION`, `SHOW VARIABLES` displays the values that are in effect for the current connection. If no modifier is present, the default is `SESSION`.
+** With a `LIKE` clause, the statement displays only rows for those variables with names that match the pattern. To obtain the row for a specific variable, use a `LIKE` clause as shown: `SHOW VARIABLES LIKE 'max_join_size';`
+** To get a list of variables whose name match a pattern, use the “%” wildcard character in a `LIKE` clause: `SHOW VARIABLES LIKE '%size%';`
+** Strictly speaking, because “_” is a wildcard that matches any single character, you should escape it as “\_” to match it literally. In practice, this is rarely necessary.
+** if you would like to see all variables, except the storage engine specific ones, you can use the following expression: `SHOW VARIABLES WHERE Variable_Name NOT LIKE '%myisam%' AND Variable_Name NOT LIKE '%innodb%';`
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://dev.mysql.com/doc/refman/5.0/en/set-statement.html[MySQL :: MySQL 5.0 Reference Manual :: 13.7.4 SET Syntax]
+
+////////////////////////////////////////////////////////////////////////////////
+** The `SET` statement assigns values to different types of variables that affect the operation of the server or your client.
+** The `SET` statement can be used to assign values to these types of variables: System variables, User-defined variables, Stored procedure and function parameters, and stored program local variables.
+** To indicate explicitly that a variable is a global variable, precede its name by `GLOBAL` or `@@global`.. The `SUPER` privilege is required to set global variables. To indicate explicitly that a variable is a session variable, precede its name by `SESSION`, `@@session`., or `@@`. Setting a session variable requires no special privilege, but a client can change only its own session variables, not those of any other client.
+** A `SET` statement can contain multiple variable assignments, separated by commas. For example, the statement can assign values to a user-defined variable and a system variable. If you set several system variables, the most recent `GLOBAL` or `SESSION` modifier in the statement is used for following variables that have no modifier specified.
+** `SET GLOBAL sort_buffer_size=1000000, SESSION sort_buffer_size=1000000;`
+** If you change a global system variable, the value is remembered and used for new connections until the server restarts. (To make a global system variable setting permanent, you should set it in an option file.) The change is visible to any client that accesses that global variable. However, the change affects the corresponding session variable only for clients that connect after the change. The global variable change does not affect the session variable for any client that is currently connected (not even that of the client that issues the `SET GLOBAL` statement). 只有新 client 才會套用，但某些 system-level variables 應該跟特定 client 無關吧??
+////////////////////////////////////////////////////////////////////////////////
+

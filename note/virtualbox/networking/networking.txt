@@ -1,0 +1,48 @@
+= link:../virtualbox.html[VirtualBox] / Networking =
+:title: [VirtualBox] Networking
+
+== 參考資料 ==
+
+ * http://www.virtualbox.org/manual/ch06.html[Chapter 6. Virtual networking - User Manual]
+
+////////////////////////////////////////////////////////////////////////////////
+** This can be used to create a network containing the host and a set of virtual machines, without the need for the host's physical network interface. Instead, a virtual network interface (similar to a loopback interface) is created on the host, providing connectivity among virtual machines and the host. 就像是 ESXi 的 virtual switch，可以把多台 virtual machines 串接在一起，形成一個獨立的 network。
+** It can be thought of as a hybrid between the bridged and internal networking modes: as with bridged networking, the virtual machines can talk to each other and the host as if they were connected through a physical ethernet switch. Similarly, as with internal networking however, a physical networking interface need not be present, and the virtual machines cannot talk to the world outside the host since they are not connected to a physical networking interface. 加一張 bridge 或 NAT 就可以對外通信。
+** Instead, when host-only networking is used, VirtualBox creates a new software interface on the host which then appears next to your existing network interfaces. In other words, whereas with bridged networking an existing physical interface is used to attach virtual machines to, with host-only networking a new "loopback" interface is created on the host. And whereas with internal networking, the traffic between the virtual machines cannot be seen, the traffic on the "loopback" interface on the host can be intercepted.
+** Host-only networking is particularly useful for preconfigured virtual appliances, where multiple virtual machines are shipped together and designed to cooperate.
+** For example, one virtual machine may contain a web server and a second one a database, and since they are intended to talk to each other, the appliance can instruct VirtualBox to set up a host-only network for the two. A second (bridged) network would then connect the web server to the outside world to serve data to, but the outside world cannot connect to the database.
+** For host-only networking, like with internal networking, you may find the DHCP server useful that is built into VirtualBox. This can be enabled to then manage the IP addresses in the host-only network since otherwise you would need to configure all IP addresses statically.
+** In the VirtualBox graphical user interface, you can configure all these items in the global settings via "File" -> "Settings" -> "Network", which lists all host-only networks which are presently in use. Click on the network name and then on the "Edit" button to the right, and you can modify the adapter and DHCP settings.
+** On Linux and Mac OS X hosts the number of host-only interfaces is limited to 128. There is no such limit for Solaris and Windows hosts.
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://www.virtualbox.org/manual/ch09.html[Chapter 9. Advanced topics - User Manual]
+
+////////////////////////////////////////////////////////////////////////////////
+** In NAT mode, the guest network interface is assigned to the IPv4 range 10.0.x.0/24 by default where x corresponds to the instance of the NAT interface +2. So x is 2 when there is only one NAT instance active. In that case the guest is assigned to the address 10.0.2.15, the gateway is set to 10.0.2.2 and the name server can be found at 10.0.2.3. 這樣每次開機取得的 IP 就無法固定下來?? 而且 NAT 底下的多台機器是不能互通的??
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://www.slideshare.net/powerhan96/networking-between-host-and-guest-v-ms-in-virtual-box[Networking between host and guest VMs in VirtualBox] (2012-02)
+
+////////////////////////////////////////////////////////////////////////////////
+** (p2) You have to move around through VM windows. In order to access all virtual servers using SSH just like we do in the real world, several things should be done first. 採用 NAT 時，還真的無法從 host 存取到。
+** (p3) Separate network is necessary for host OS to access guest VMs. To do that, each guest VMs should have two network adpaters. One is for guest VM to access outbound network, namely NAT adapter. Another is for host OS to access each guest VM, namely Host-only adpater. 除了 NAT adapter 之外，還要加一個 host-only adapter 才行。
+** (p3) 這裡的 virtual domain 是怎麼定義出來的？為什麼大家 eth0 的 IP 都是一樣的??
+** (p4) NAT (看圖比較清楚)
+   *** It creates a single separate sub network below the inbound IP (public IP) so that number of machines can get an internet access and can share with each other too.
+   *** But in VirtualBox, NAT is attached to each VM which is so called "Basic NAT" that does one-to-one translation, and in contrast home routers do on-to-many translation. That's why with default adapters for VMs, they can't see each other, even from the host 結果就是沒人能存取得到 guest VM，包括 host 也一樣
+   *** Actually, IP, gateway, DNS is somewhat 'hard coded' in VirtualBox's NAT adapter.??
+** (p5) Host-only Networking
+   *** NAT is useful for guest VMs to access outbound network but as it is treated as a separate network, there is no way for host OS to access each guest OS.
+   *** Bridged networking is used to handle this problem in real world, but it implies complexity. 這裡的 complexity 指的是什麼??
+   *** Host-only networking is kind of hybrid between internal and bridged networking. In VirtualBOx (Host), Host-only network is a gateway for host (external network) to access guest VMs (internal network) to communicate with each other. So, it doesn't need to be created as many the number of guest VMs. 除了做為 host/guest 的通訊管道，guests 之間也可以透過 host-only network 相互溝通。
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+
+ * Adapter 的設定裡有看到 IPv6 相關的設定
+ * File > Preferences... > Network 只提到 Host-only Networks？但從 VM 個別 Network 的設定裡可以看到支援的類型相當廣，包括 NAT（不用綁定實體網卡，所以可攜性比較高）、Bridged Adapter（可以選擇要搭在哪一張實體網卡，無線網路也沒問題）、Internal Network（這跟 NAT 有什麼不一樣？）、Hosted-only Adapter 等，可以自訂網卡型態、MAC addresses。
+ * 每一張 network adapter 都可以個別做 port forwarding，這對於 NAT 或 hosted-only adapter 特別有用。
+
+////////////////////////////////////////////////////////////////////////////////
+

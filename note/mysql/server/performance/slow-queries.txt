@@ -1,0 +1,30 @@
+= link:performance.html[MySQL / Server / Performance] / Slow Queries =
+:title: [MySQL][Perf] Slow Queries
+
+跟 slow query 相關的 link:../system-variables.html[system variables] 有 `*slow*` 跟 `long_query_time`。
+
+ SHOW GLOBAL VARIABLES WHERE Variable_name LIKE '%slow%' OR Variable_name = 'long_query_time';
+
+其中比較重要的有：
+
+ * `log_slow_queries` - 要不要記錄 slow queries 的總開關。
+ * `long_query_time` - 運算時間超過幾秒才叫做 "慢"？預設是 10 秒。
+ * `slow_query_log_file` - 記錄 slow queries 的檔案位置。
+
+== 參考資料 ==
+
+* http://dev.mysql.com/doc/refman/5.0/en/slow-query-log.html[MySQL :: MySQL 5.0 Reference Manual :: 5.2.4 The Slow Query Log]
+
+////////////////////////////////////////////////////////////////////////////////
+** The slow query log consists of SQL statements that took more than `long_query_time` seconds to execute. The minimum and default values of `long_query_time` are 1 and 10, respectively.
+** mysqld writes a statement to the slow query log after it has been executed and after all locks have been released, so log order might differ from execution order.
+** To enable the slow query log, start mysqld with the `--log-slow-queries[=file_name]` option. If the slow query log file is enabled but no name is specified, the default name is `host_name-slow.log` and the server creates the file in the same directory where it creates the PID file. If a name is given, the server creates the file in the data directory unless an absolute path name is given to specify a different directory.
+** To include queries that do not use indexes for row lookups in the statements written to the slow query log, use the `--log-queries-not-using-indexes` server option. See Section 5.1.3, “Server Command Options”. When such queries are logged, the slow query log may grow quickly.
+** The slow query log should be protected because logged statements might contain passwords.
+** The slow query log can be used to find queries that take a long time to execute and are therefore candidates for optimization. However, examining a long slow query log can become a difficult task. To make this easier, you can process a slow query log file using the mysqldumpslow command to summarize the queries that appear in the log.
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://dev.mysql.com/doc/refman/5.0/en/mysqldumpslow.html[MySQL :: MySQL 5.0 Reference Manual :: 4.6.8 mysqldumpslow — Summarize Slow Query Log Files]
+
+ * http://www.percona.com/resources/technical-presentations/advanced-mysql-query-tuning-percona-mysql-webinar[Advanced MySQL Query Tuning] (2013-07-24)
+

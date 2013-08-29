@@ -1,0 +1,3053 @@
+= STAF (Software Testing Automation Framework) =
+<<TableOfContents>>
+
+== STAF (Wikipedia) ==
+http://en.wikipedia.org/wiki/STAF @2010/10/04
+
+=== Introduction ===
+
+The Software Testing Automation Framework (STAF) is an open source project that __enables users to create cross-platform, distributed software test environments.__
+
+=== Services ===
+
+__STAF includes a number of ''services'' that provide specific functionality. The most prominent of these is called the STAf eXecution engine (STAX), which executes test scripts. Other services provide cron, file system, inter-process communication, e-mail, and HTML support, among others.__ The documentation includes instructions and guidelines for developers to generate their own custom services, as well.
+
+=== Support ===
+
+__IBM supports users of STAF through extensive online documentation and user forums__, accessible via the STAF website.
+
+=== External links ===
+
+ * Software Testing Automation Framework (STAF)
+
+== Home ==
+http://staf.sourceforge.net/ @2010/10/04
+
+__The Software Testing Automation Framework (STAF) is an open source, multi-platform, ''multi-language'' framework designed around the idea of reusable components, called ''services'' (such as process invocation, resource management, logging, and monitoring). STAF removes the tedium of building an ''automation infrastructure'', thus enabling you to focus on building your automation solution. The STAF framework provides the foundation upon which to build higher level solutions, and provides a ''pluggable'' approach supported across a large variety of platforms and languages.__
+
+__STAF can be leveraged to help solve common industry problems, such as more frequent product cycles, less preparation time, reduced testing time, more platform choices, more programming language choices__, and increased National Language requirements. STAF can help in these areas since it is a proven and mature technology, promotes automation and reuse, has broad platform and language support, and provides a common infrastructure across teams.
+
+__STAX is an execution engine which can help you thoroughly automate the distribution, execution, and results analysis of your testcases. STAX builds on top of three existing technologies, STAF, XML, and Python, to place great automation power in the hands of testers. STAX also provides a powerful monitoring application which allows you to interact with and monitor the progress of your jobs.__ Some of the main features of STAX are: support for parallel execution, user-defined granularity of execution control, support for nested testcases, the ability to control the length of execution time, the ability to import modules at run-time, support for existing Python and Java modules and packages, and the ability to extend both the STAX language as well as the STAX monitoring application. Using these capabilities, you can build sophisticated scripts to automate your entire test environment, while ensuring maximum efficiency and control.
+
+__Other STAF services are also provided to help you to create an ''end-to-end automation'' solution.__ By using these services in your test cases and automated solutions, you can develop more robust, dynamic test cases and test environments.
+
+We encourage the community to post patches, new features, new STAF services, etc. that enhance or extend the STAF project. Please see Making Contributions to STAF for more information on how to do this.
+
+Also, feel free to post a question via one of our discussion forums or mailing lists. These are also good places to search for answers to questions, in addition to the FAQ, STAF User Guide, STAX User Guide, and other documentation.
+
+Note that eWeek.com ran an article in 2007 about the most important open-source applications. At the end they invited readers to write in letting them know about applications they missed. Then they ran an article containing the ones most often mentioned and their readers said STAF was one of the most important open-source applications. See the full article here. This slide is about STAF.
+
+Also, SDTimes.com ran an article on July 22, 2008 that put STAF at the top of its list of open source tools for Automated Testing. See the Functional Testing Tools, the Open-Source Wave article. 
+
+== Getting Started with STAF V3 ==
+http://staf.sourceforge.net/current/STAFGS.pdf @2010/10/04
+
+=== Introduction ===
+
+==== Overview ====
+
+STAF is an Open Source automation framework designed around the idea of reusable components. It is intended to make it easier to create automated testcases and workloads. STAF can help you increase the efficiency, productivity, and quality of your testing by improving your ''level of automation'' and reuse in your individual testcases as well as your overall test environment.
+
+__This document will guide you through many common tasks that are performed when using STAF, including a detailed examination of a Demo which shows how you can instrument and leverage STAF in your testcases.__
+
+Note that this document is based on STAF V3.0.0. Older releases of STAF may not have the same functionality that is described in this document.
+
+==== STAF Resources ====
+
+'''Website''
+
+Here is a link to the official STAF SourceForge website From this web site you can access and contribute to STAF software and documentation, as well as submit Bug and Feature requests. There are also Public Forums where you can ask questions about STAF
+
+'''Forums'''
+
+You can ask questions about STAF on the Help forum on the STAF website.
+
+'''Mailing Lists'''
+
+There are 3 Mailing Lists on the SourceForge STAF web site for which you can subscribe:
+
+ * staf-news - Low traffic, read-only list for news and announcements
+ * staf-users - Questions, suggestions, support, and general discussion of STAF
+ * staf-devel - For development use only
+
+'''IBM Internal newsgroup'''
+
+The IBM Intranet STAF news group allows IBM Employees to participate in discussions regarding STAF and to obtain assistance both from the STAF Support team and from fellow STAF users. Many times when you have a question about STAF or have run into a STAF problem, you'll find that you're not the first user with that same question or problem, so you may be able to get assistance just by browsing through the existing discussions.
+
+__The news group name is ibm.websphere.awe and is located on news server websphere.austin.ibm.com.__
+
+==== Installing STAF ====
+
+===== Windows Installation =====
+
+We provide InstallShield Universal installers for Windows. __You can perform a GUI installation, or specify the `-silent` option for a silent installation.__ See the STAF User's Guide Windows Installation section for more details.
+
+===== Unix Installation =====
+
+__We provide InstallShield Universal installers for Unix platforms that are supported by InstallShield.__ You can perform a GUI installation, or specify the `-silent` option for a silent installation. See the STAF User's Guide Unix Installation section for more details.
+
+For all Unix platforms, we provide a single compressed tar file, or gzipped tar file, that can be used to install STAF. Before installing STAF, you will need to uncompress (or gunzip) the compressed file and then untar it. See the STAF User's Guide Unix Installation section for more details.
+
+===== Notes =====
+
+Throughout this document we will assume that you installed STAF to the default location (`C:\STAF` on Windows, `/usr/local/staf` on Unix). If you installed STAF to another location, you will need to make the appropriate substitutions. This document will show Windows path information by default (and screen captures will be from Windows systems). If you are using Unix you will need to make the appropriate path translations.
+
+=== Basic STAF Concepts ===
+
+==== STAFProc ====
+
+__STAF runs as a ''daemon process'' (called STAFProc) on each system. So, for example, if you wanted to run STAF on your office machine and 5 test machines in a lab, you would install STAF on all 6 systems. Then, to use STAF in this environment, you would start STAFProc on all 6 machines. The collection of machines on which you have installed STAF is referred to as the ''STAF Environment''.__
+
+__STAF operates in a ''peer-to-peer'' environment; in other words, there is no client-server hierarchy among machines running STAF.__ Figure 1 illustrates that the STAFProc daemons serve as the communication mechanism over the network.
+
+{{attachment:figure-1.png}}
+
+==== STAF Services ====
+
+__STAF services are reusable components that provide all the capability in STAF. Each STAF service provides a specific set of functionality (such as Logging, File Transfer, Process Inovcation, etc.) and defines a set of ''requests'' that it will accept.__
+
+==== STAF Service Requests ====
+
+__STAF Services are used by sending ''STAF requests'' to them. A STAF request is simply a ''string'' which describes the operation to perform. STAF requests can be sent to services on the local machine or to another, remote, machine in the STAF Environment. In either case, the STAFProc daemon process handles the sending and receiving of requests.__
+
+==== STAF Machine Names ====
+
+__Machine names are used to identify different systems in the STAF Environment. Typically, STAF machine names are simply the TCP/IP host name or the IP address of the machine.__
+
+==== STAF Instances ====
+
+__Since multiple instances of STAF can be run at the same time on the same system, a STAF Instance name is used to specify a name for each STAF instance. You specify the instance name to be used by setting the environment variable `STAF_INSTANCE_NAME`. The default instance name is "STAF".__
+
+==== STAF Handles ====
+
+__A handle is a unique identifier which is used when submitting requests to STAF. This handle, combined with the STAF instance name, uniquely identifies ''a particular process'' in the STAF environment.__
+
+__It is this combination of STAF instance name and handle that allows STAF Services to ''track requests'' from multiple processes on different machines. Every process that accesses STAF does so through a handle.__
+
+==== STAF Variables ====
+
+__STAF provides facilities to store and retrieve variables. These variables are commonly used to store Testcase configuration information, Runtime information, and System Environment information.__
+
+__These variables live within the STAFProc process. This allows them to be dynamically updated without having to start and stop applications using them (after the update, any applications referencing the updated variable will get the new value).__
+
+__STAF maintains a "system" variable pool that is common to all the handles on a given STAF Client. STAF also maintains a "shared" variable pool which is also system-wide, but which will be sent across the network and used in ''variable resolution'' on remote systems. In addition, each handle has its own variable pool.__
+
+__By default, the values of variables in a handle's variable pool override the values of variables in the system and shared variable pools. However, the handle may override this behavior when asking for the value of a variable. Basically, as part of every ''remote request'', the originating handle and system shared variable pools are sent across the wire. These pools are stored only for the duration of the request for use in variable resolution.__
+
+==== STAF Security ====
+
+__Security in STAF can be defined at the ''machine level'' and/or the ''user level''. In other words, you grant access to machines and/or to userids.__
+
+__Access in STAF is granted by specifying a certain ''trust level'' for a machine or user, where trust level 0 indicates no access and trust level 5 indicates full access.__
+
+__Each service in STAF defines what trust level is required in order to use the various functions the service provides.__
+
+==== STAF Queues ====
+
+__Each handle in STAF has a ''priority queue'' associated with it.__
+
+__Applications receive messages sent from other handles on their queue.__
+
+==== Submitting STAF Requests ====
+
+__While STAF requests can be submitted from a variety of programming languages, they may also be submitted from the command line (via the `STAF` executable, which is described in more detail later in this document).__
+
+__However, submitting requests to STAF from the command line does have its limitations. When you submit a request to STAF from the command line, a unique handle is generated for that request. After the request completes, that handle is no longer active in STAF. So if you were to submit a subsequent STAF request from the command line which referenced the previous handle or was dependent upon the existence of the previous handle, your request would fail.__
+
+__STAF requests submitted from the command line are generally used to query information from STAF services.__
+
+__Before an application can submit STAF requests, it must first register with STAF. Registering with STAF provides your program with a handle to which your program can submit any number of STAF requests. This handle will remain active in STAF until your program unregisters the handle or until the process ends.__
+
+We'll see specific examples of these issues later in this document.
+
+=== STAF Services ===
+
+==== Internal STAF Services ====
+
+__The executable code for internal STAF services resides within STAFProc, which means they are always available and have a fixed name.__
+
+|| DIAG || Provides diagnostics services || Internal ("DIAG") ||
+|| DELAY || Provides a means to sleep a specified amount of time || Internal ("DELAY") ||
+|| ECHO || Echos back a supplied message || Internal ("ECHO") ||
+|| FILE SYSTEM || __Allows you to get and copy files across the network__ || Internal ("FS") ||
+|| HANDLE || Provides information about existing STAF handles || Internal ("HANDLE") ||
+|| HELP || Provides Help on STAF error codes || Internal ("HELP") ||
+|| MISC || Handles miscellaneous ''commands'' such as displaying the version of STAF that is currently running || Internal ("MISC") ||
+|| PING || Provides a simple is-alive message || Internal ("PING") ||
+|| PROCESS || Allows you to start, stop, and query processes || Internal ("PROCESS") ||
+|| QUEUE || Provides a network-enabled IPC mechanism for STAF Programs || Internal ("QUEUE") ||
+|| SEMAPHORE || Provides network-enabled named event and mutex semaphores || Internal ("SEM") ||
+|| SERVICE || Allows you to list services available on a machine and to examine the Requests that have been submitted on a machine || Internal ("SERVICE") ||
+|| SHUTDOWN || Provides a means to shutdown STAF and register for shutdown notifications || Internal ("SHUTDOWN") ||
+|| TRACE || Provides tracing information for STAF services || Internal ("TRACE") ||
+|| TRUST || Interfaces with STAF's security || Internal ("TRUST") ||
+|| VARIABLE || Provides a method for maintaining configuration and runtime data (variables) || Internal ("VAR") ||
+
+==== External STAF Services ====
+
+__The executable code for external STAF services resides outside of STAFProc, for example in a Java jar file, a C++ DLL file, or a Rexx script file.__
+
+__External STAF services must be registered via the `STAF.cfg` configuration file. The name by which the service is known is specified when the service is registered.__ You can find out more about registering external services later in this document.
+
+__Note that you may want to install and register some external STAF services (e.g. STAX, Event, Monitor, ResPool) on just one machine in your STAF test environment. This allows the other STAF machines in your test environment to send requests for these services to that one machine; thus, each machine in the test environment does not have to have these external STAF services installed and registered__
+
+|| CRON || Calls into STAF services at a specified time interval || External (Java) ||
+|| EMAIL || Allows you to send email messages || External (Java) ||
+|| EVENT || Provides a publish/subscribe notification system || External (Java) ||
+|| EVENTMANAGER || Allows you to call STAF services when a specified Event occurs || External (Java) ||
+|| HTTP || __Allows you to make HTTP requests which can be grouped together in a session__ || External (Java) ||
+|| LOG || Provides a full-featured logging facility || External (C++) ||
+|| MONITOR || __Allows a testcase to publish its current running execution status for others to read__ || External (C++) ||
+|| RESOURCE POOL || Allows you to manage exclusive access to pools of elements, e.g. VM UserIDs or Software Licenses || External (C++) ||
+|| STAX || Provides an XML-based execution engine || External (Java) || 
+|| ZIP || Provides a means to zip/unzip/list/delete PKZip/WinZip compatible archives || External (C++) ||
+
+==== Delegated STAF Services ====
+
+__STAF services may also be delegated to another machine in the STAF environment. In this case, when a request is made for the service on the local STAF machine, it is automatically forwarded to the machine to which this service has been delegated.__
+
+==== STAF ServiceLoaders ====
+
+__STAF ServiceLoaders are external services whose purpose is to ''load services on-demand''. They allow services to be loaded only when they have been requested, so they don't take up memory until needed. They also allow dynamic service registration when a request is made so that you don't have to change the STAF configuration file to register a service.__
+
+__When a request is encountered for a service that doesn't exist, STAF will call each serviceloader, in the order they were configured, until the service exists or we run out of servicelaoders. If we run out of serviceloaders, then the standard RC:2 (Unknown service) will be returned. Otherwise, the request will be sent to the newly added service. A ''default serviceloader'' is shipped with STAF, and it can dynamically load the Log, Monitor, ResPool, and Zip services.__
+
+==== Custom STAF Services ====
+
+__Note that you can also write your own custom services that can be plugged into STAF. These services can be written in Java or C++.__
+
+==== STAF Authenticators ====
+
+__Authenticators are special external services whose purpose is to authenticate users in order to provide user level trust, which can be used in addition (or instead of) machine level trust. An Authenticator is a special service that accepts an authenticate request. As a user, you cannot directly submit a request to an authenticator service. Authenticators are accessed indirectly via the Handle service.__
+
+==== STAF Connection Providers ====
+
+__Currently, the only network interface which comes with STAF is TCP/IP. However, STAF allows you to plug in network interfaces, called Connection Providers, so that you can create your own connection provider which can communicate via any mechanism you choose (e.g. SSL, a Serial Line, NetBIOS, or SNA). Connection provider interfaces are C/C++ based so they are platform specific.__
+
+__The STAF TCP/IP Connection Provider supports both IPv4 and IPv6.__
+
+=== STAF Commands ===
+
+Now that you've installed STAF and understand some of the basic concepts, it's time to actually start using STAF. We suggest that as you go through this tutorial, you work with 2 machines that both have STAF installed. This will allow you to submit STAF requests not only locally, but to remote machines. This will be especially beneficial during the STAF demo and will show you the capabilities and power of STAF.
+
+In this tutorial, the images and commands shown will reference machines "staf3c" (our local machine) and "staf1c" (our remote machine). You will need to substitute your machines names.
+
+==== Starting STAFProc ====
+
+__The `STAFProc` command is what starts the STAF daemon process running on a machine.__ On Windows machines, you can also start STAFProc via the Start menu (just go to the folder where you chose to install STAF, titled "STAF 3.0.0" and click on "Start STAF". Note that on Unix systems you will need to ensure that `/usr/local/staf/bin` is in your `PATH`).
+
+You can also start STAFProc by simply typing `STAFProc` at a command prompt window.
+
+You should see a window similar to Figure 2.
+
+{{attachment:figure-2.png}}
+
+Of course, the "Machine" and "Machine nickname" would be specific to your system.
+
+If any errors are encountered while STAFProc is starting, error messages will be displayed in this window.
+
+__Note that on Windows systems, if you chose to start STAF from the Start menu, and a fatal error is encountered while starting STAF, the "Start STAF" window will close so you will not be able to see the error message. If this occurs, start STAFProc from a command prompt window so that you can see the error messages.__
+
+==== Shutting Down STAFProc ====
+
+__When shutting down STAF, it is recommended that you always use the `SHUTDOWN` command of the SHUTDOWN service (or the "Shutdown STAF" program on Windows via the Start menu) rather than just Ctrl-C stopping STAFProc. This will allow STAF to free any resources which may be in use.__
+
+The command to issue is:
+
+ {{{
+STAF local shutdown shutdown
+ }}}
+
+After the shutdown completes, you should see the message "STAFProc ending normally" and STAFProc should then terminate.
+
+==== Submitting STAF Requests from the Command Line ====
+
+Notice that in the above shutdown command, the program executed is `STAF`. This is an executable that is used to submit requests to STAF from the command line.
+
+The syntax of this command is:
+
+ {{{
+STAF <Endpoint> <Service> <Request>
+ }}}
+
+ * __`<Endpoint>` is either `LOCAL`, if you wish to make a request of the local machine, or the name of the machine of which you wish to make a request__
+
+ * __`<Service>` is the name of the service that will receive and process the request__
+
+ * `<Request>` is the ''service request''
+
+__The `STAF` command line utility works just like any other ''STAF application''. It registers with STAF, performs a request (which is the ''service request'' you specify), and then unregisters. That last step causes the handle to be deleted. This somewhat limits the usage of the STAF command line utility.__
+
+When using `STAF` from batch or shell scripts, see section 5.2 of the STAF User's Guide for information on working around these limitations.
+
+==== Remote system identification ====
+
+__When making a STAF request to a remote system, in addition to specifying the machine name, you may also specify the network interface over which communication will take place.__ The format for this is
+
+ {{{
+[<Interface>://]<System Identifier>[@<Port>]
+ }}}
+
+__where `<Interface>` is the name of the network interface and `<System Identifier>` is a valid ''network identifier'' for the `<Interface>` in question. If no `<Interface>` is specified, the default interface is used. You may specify logical or physical identifiers. For example, for a TCP/IP interface, the physical identifier for a system is the IP address, while the logical identifier is the hostname. You may optionally specify a valid port to use for a TCP/IP interface.__
+
+==== Pinging Machines ====
+
+__To make certain that you can access a machine via STAF (and that the machine is alive)__, you can use the PING service as follows
+
+{{attachment:figure-3.png}}
+
+The first command, `STAF local ping ping`, simply pings the local machine.
+
+The second command, `STAF staf1c ping ping`, demonstrates that you can also use the ''short hostname'' (`staf1c`) for the remote machine.
+
+The third command, `STAF staf1c.austin.ibm.com ping ping` pings a remote machine using its ''full hostname'' (`staf1c.austin.ibm.com`).
+
+The fourth command, `STAF staf1c@6500 ping ping` pings a remote machine using its short hostname on TCP/IP port 6500.
+
+The fifth command, `STAF 9.3.41.192 ping ping` demonstrates that you can use IP addresses.
+
+The sixth command, `STAF nonexistantmachine ping ping`, fails because remote machine `nonexistantmachine` cannot be found.
+
+==== Obtaining Help for a Service ====
+
+__To obtain help for a service, issue the following command: `STAF local service help` This returns the valid ''service request strings'';__ the result should look like:
+
+{{attachment:figure-4.png}}
+
+In this case we are actually requesting help for the "service" service. To request help for another service, just change "service" to the other service name. For example, to obtain help for the "shutdown" service, type: `STAF local shutdown help` The result should look like:
+
+{{attachment:figure-5.png}}
+
+Notice that two of the commands returned were "SHUTDOWN" and "HELP". The information returned by Help show us the options we can place after "STAF local shutdown ....." in command requests for the Shutdown service.
+
+==== Listing Available Services ====
+
+__To list available STAF services, issue the following command from a command prompt: `STAF local service list`__
+
+{{attachment:figure-6.png}}
+
+__Notice in the response that only internal services are available. This is because we have not yet registered any external services in the STAF configuration file.__
+
+==== Listing Variables ====
+
+__To list available STAF variables, issue the following command from a command prompt: `STAF local var list`__
+
+{{attachment:figure-7.png}}
+
+This lists all of the STAF variables. __Notice that even though we have not yet defined any variables in the STAF configuration file, STAF predefines many useful variables, including information about the machine's Operating System and File/Line/Path separators.__
+
+To get the value of a specific system variable, for example the file separator, issue the following command (note that the local machine in this example is running Windows): `STAF local var resolve system string {STAF/Config/Sep/File}`
+
+{{attachment:figure-8.png}}
+
+Notice that the second command `staf staf6f var resolve system string (STAF/Config/Sep/File}` was sent to a machine running a Unix operating system, so the output reflects the Unix File Separator.
+
+==== Listing Handles ====
+
+To list the current STAF handles, issue the following command: `STAF local handle list handles`
+
+{{attachment:figure-9.png}}
+
+__Notice that in each response above, handle 1 is assigned to STAFProc. Each of the STAF/Client requests represent each of the three "STAF local handle list handles" commands you submitted. Note that each request is assigned a new handle number, and that the previous handles have been deleted__ (for example, the third response does not show handles 14 and 15).
+
+=== Configuring STAF ===
+
+==== STAF Configuration File ====
+
+__STAF is configured through a text file called the STAF configuration file. This file may have any name you desire, but the default is `STAF.cfg`. If you want to use a different name for the file, then this name must be passed as the first parameter when starting STAFProc. This file is located in the `c:\staf\bin` directory on Windows systems, or `/usr/local/staf/bin` on Unix systems.__
+
+__When STAFProc is started on a machine, that machine's `STAF.cfg` file will be read to determine how STAF should be configured on the machine.__
+
+__Note that whenever you make changes to the `STAF.cfg` file, you must restart STAFProc in order for the modified configuration information to be read.__
+
+==== Default STAF.cfg ====
+
+__When you first install STAF, a default `STAF.cfg` file will be created for you.__ Here is what the default file looks like:
+
+{{attachment:figure-10.png}}
+
+Notice that comments start with `#`.
+
+The first configuration statement is `trace enable tracepoints "error deprecated"`. __This statement causes a trace message to be generated for error conditions that STAF detects, such as broken communication connections and fatal service errors, as well as for deprecated options that STAF detects.__
+
+The second configuration statement is `interface tcp library STAFTCP`. __This statement is used to indicate that you wish to send and accept STAF requests on a network interface. The default port which is used by STAF is 6500. If you wish to specify a port other than 6500, you would specify the port number at the end of the statement. For example, to use port 6600, the statement would be `interface tcp2 LIBRARY STAFTCP OPTION PORT=6600`.__
+
+__The third configuration statment is `trust machine local://local level 5`, which sets the ''local trust level'' to 5 (full access).__
+
+__The fourth configuration statement, `serviceloader Library STAFDSLS` registers the default ServiceLoader, which can dynamically load the Log, Monitor, ResPool, and Zip services.__
+
+You can see that there isn't much to the default `STAF.cfg`. Now we'll start adding statements to it.
+
+==== Machine Nickname ====
+
+__You may specify a nickname for your machine using the `MACHINENICKNAME` ''configuration statement''. This overrides the value of the `STAF/Config/MachineNickname` system variable. This primarily effects the data stored by services such as the Log and Monitor services, which store data based on the machine from which it came by using the `STAF/Config/MachineNickname` system variable as part of the directory path when creating logs and monitor data. By allowing the `STAF/Config/MachineNickname` system variable to be overridden, it allows you to better manage your data.__
+
+__Note that the machine nickname is not used to communicate with other systems and does not have any effect on trust.__
+
+Run the following commands:
+
+ {{{
+staf local log log machine logname log1 level info message test-message
+staf local log list machines
+staf local log query machine <your-long-hostname> logname log1
+ }}}
+
+{{attachment:figure-11.png}}
+
+__Notice that by default the "machine" that the Log service uses to store machine logs is the ''long hostname'' for the machine.__
+
+Now add the following statement to your `STAF.cfg` file:
+
+ {{{
+MACHINENICKNAME testmachine1
+ }}}
+
+Add this statement to your `STAF.cfg` file and save it. Remember to shutdown and restart STAFProc to pick up the `STAF.cfg` updates.
+
+{{attachment:figure-12.png}}
+
+Now run the following commands:
+
+ {{{
+staf local log log machine logname log2 level info message second-message
+staf local log list machines
+staf local log query machine testmachine1 logname log2
+ }}}
+
+{{attachment:figure-13.png}}
+
+Notice that now the Log service is using the machine nickname as the "machine" that the Log service uses to store machine logs.
+
+==== Operational Parameters ====
+
+__Through the `SET` command, STAF allows you to set various parameters which affect the general operation of STAF.__ The STAF User's Guide lists all of the available parameters.
+
+__One of the available parameters is `DATADIR`. It specifies the directory that STAF and its services will use to write data. This allows STAF to be installed in a location that is read-only when STAFProc is running. By default the directory will be `{STAF/Config/STAFRoot}/data/{STAF/Config/InstanceName}`.__ To use a different directory, use the following statement:
+
+ {{{
+SET DATADIR C:\MyDir
+ }}}
+
+Add this statement to your `STAF.cfg` file and save it. Remember to shutdown and restart STAFProc to pick up the `STAF.cfg` updates.
+
+{{attachment:figure-14.png}}
+
+==== Setting Variables ====
+
+__You may set system STAF variables at startup by using the `SET VAR` configuration statement.__ Add the following test variables to your `STAF.cfg` file:
+
+ {{{
+SET SYSTEM VAR Test/TestABC=websphere
+SET SYSTEM VAR Test/TestXYZ=150
+ }}}
+
+{{attachment:figure-15.png}}
+
+Now restart STAFProc and from a command prompt, try the `STAF local var list` command:
+
+{{attachment:figure-16.png}}
+
+Notice that the 2 test variables are now included at the bottom of the output.
+
+==== Trust Levels ====
+
+__STAF allows you to grant access to machines and users by using the `TRUST` configuration statement.__ Add the following statements to your `STAF.cfg`:
+
+ {{{
+TRUST LEVEL 2 DEFAULT
+TRUST LEVEL 5 MACHINE tcp://client1.austin.ibm.com
+TRUST LEVEL 3 MACHINE *.austin.ibm.com
+TRUST LEVEL 4 MACHINE tcp://9.3.41.*
+TRUST LEVEL 5 MACHINE tcp://9.41.53.147
+ }}}
+
+{{attachment:figure-17.png}}
+
+The numeric trust levels are defined in the STAF User's Guide; higher numbers indicate greater access. Now restart STAFProc on your machine, and run the command `staf local trust list`.
+
+{{attachment:figure-18.png}}
+
+__Setting the default trust level to 2 indicates that all machines in the STAF Environment that are not specified in other TRUST configuration statements will have a trust level of 2. If you do not specify a default trust level in your `STAF.cfg` file, the default is set to 3.__
+
+__Remember that all STAF services define trust levels for each of the requests that they accept. These trust level requirements for the STAF services are defined in the STAF User's Guide.__
+
+Now remove these 5 `TRUST` entries from your `STAF.cfg` file and restart STAFProc.
+
+=== Using the Help Service ===
+
+One of STAF's Internal Services, the Help Service, can be very useful when debugging STAF problems. Let's explore the Help service and the information it provides. Issue the following command: `staf local help help`
+
+{{attachment:figure-19.png}}
+
+To demonstrate the STAF Help Service, type the following command (note that we are intentionally specifying an invalid service name "error"): `staf local error list`
+
+{{attachment:figure-20.png}}
+
+To find out what a RC 2 means, issue the following command: `staf local help error 2`
+
+{{attachment:figure-21.png}}
+
+The error message explains that there is no "error" service
+
+=== Registering STAF Services ===
+
+When we issued the `STAF local service list` command in the "STAF Commands" section, the only services listed were the Internal services. Now we'll register some External services.
+
+==== Using Java STAF Services ====
+
+In order to run any Java STAF Services and the STAF Demo itself, you will need to have a Java Software Development Kit (SDK) version 1.3 or later, or a Java Runtime Environment (JRE) version 1.3 or later, installed on your test machines.
+
+You can obtain the Sun Java Standard Edition versions from the Sun Java web site.
+
+You can download the external IBM Java versions from the IBM Java web site.
+
+IBM Employees can obtain the IBM Java versions via ISSI or from the IBM Intranet at: IBM Internal Java web site.
+
+Note that some versions of the GNU compiler for Java provided with some Linux operating systems cannot be used when registering STAF Java services. Use IBM or Sun Java instead.
+
+After you have installed Java on your test machines, you can verify that the SDK/JRE is set up correctly by typing `java -version` from a Command Prompt. The response should be the version of Java you have installed. Note that `c:\jdk1.4.2\jre\bin` (assuming that you installed Java 1.4.2 to directory `c:\jdk1.4.2`) must be in your System `PATH`.
+
+==== Registering Java STAF Services ====
+
+Now let's register a Java service (note that this service is not required to run the Demo, but is included as an example of how to register a Java service). Add the following line to your `STAF.cfg` file:
+
+ {{{
+service Event library JSTAF execute c:/staf/services/STAFEvent.jar
+ }}}
+
+__Note that the only case-sensitive options in this statement are "JSTAF" and the name of the Jar file.__ Now restart STAFProc on your machine.
+
+If you are starting the "Start STAF" program from the Windows Start menu, you should see the STAFProc window displayed briefly and then disappear--this means there was a fatal error. To see the error details, start "STAFProc" from a Command Prompt. You should then see the error:
+
+{{attachment:figure-22.png}}
+
+__This demonstrates the fact that the Event Service is not only an External Service, it is also not shipped with the STAF package. There are several Services, including Event, which are available on the `staf.sourceforge.net` web site. You are required to download the `STAFEvent.jar` file to your machine (note that the jar file does not need to be in your `CLASSPATH`). Download the file now to `C:\staf\services` and restart STAF. Then execute the `STAF local service list` command again.__
+
+{{attachment:figure-23.png}}
+
+Now issue a Help request for the Event service, and try to issue some commands to the Event Service. Note that the Event Service User's Guide is available on the "Services" page on the `staf.sourceforge.net` web site.
+
+In the next section we'll finish the preparation for running the STAF Demo, and then we'll show you how to execute the STAF Demo and examine the code that makes it all work.
+
+=== STAF Demo (幾乎沒什麼整理, 看完 User's Guide 再說吧) ===
+
+==== Running the STAF Demo ====
+
+===== Configuring the STAF Demo =====
+
+__The STAF Demo is a sample application, written in Java, that demonstrates STAF's capabilities and how to leverage the primary internal and external services in STAF.__ In particular, it shows the use of the following STAF services:
+
+ * Process
+ * Variable
+ * Semaphore
+ * Queue
+ * Log
+ * Monitor
+ * Resource Pool
+
+The STAF Demo is shipped with the STAF package. It is located at `C:\STAF\samples\demo\STAFDemo.jar`.
+
+__In order to run the demo, each machine must give the other machine a TRUST level of 5,__ so you will need to add a `TRUST` statement to each machine's `STAF.cfg` file (you can remove the example `TRUST` entries that were added earlier in this document).
+
+__You must also have "`C:\STAF\samples\demo\STAFDemo.jar`" in your `CLASSPATH` on your local and remote machines (note, if you selected the default options during the STAF InstallShield installation, this file will already be in your `CLASSPATH`).__
+
+Your local machine's `STAF.cfg` file should now look similar to:
+
+{{attachment:figure-24.png}}
+
+Your remote machine's `STAF.cfg` file should now look similar to:
+
+{{attachment:figure-25.png}}
+
+The `C:\STAF\samples\demo` directory also contains the following 2 files, whic are the Java source code for the demo:
+
+ * `STAFDemoController.java`
+ * `STAFProcess.java`
+
+===== Starting the STAF Demo =====
+
+At this point you should have the STAF Demo set up on both of your machines, so let's start the demo. First, let's run it locally on one machine. Make sure STAFProc is up and running with your latest `STAF.cfg` updates. From a command prompt, enter:
+
+ {{{
+java STAFDemoController
+ }}}
+
+__`STAFDemoController` is the program that drives the demo.__ You should see the following dialog displayed:
+
+{{attachment:figure-26.png}}
+
+Now click on the Start button. You should see the following dialogs displayed (note that the exact data, such as timestamps, loop #s, etc., will be different than these images). Note that the windows may overlap so you may need to move the first panel to see the second panel.
+
+{{attachment:figure-27.png}}
+
+{{attachment:figure-28.png}}
+
+__The first dialog ("Machine:....") is the Control window (跟主畫面的 Controller window 不同), and the second dialog ("An Arbitrary Process...") is the sample application (`STAFProcess`). The sample application will loop indefinitely. Note that the titles of the sections in the Control window ("Queue/Semaphore", "Variable", "Monitor", "Log/Variable") indicate which STAF services are being utilized. At this point both the Control window and the application are running on the same local machine.__
+
+Click on the Stop button in the Control window (this will cause the "An Arbitrary Process" window to close), and then close the Control window.
+
+Now let's run the demo on a remote system. Make sure that STAFProc is up and running on your remote machine, and verify that it has the STAF Demo correctly set up.
+
+In the STAF Demo Controller window, change "staf3c.austin.ibm.com" to your remote machine (for the tutorial this will be "staf1c"):
+
+{{attachment:figure-29.png}}
+
+Then click on the Start button. You should still see the Control window on your local machine:
+
+{{attachment:figure-30.png}}
+
+__However, the `STAFProcess` window should be displayed on your remote machine:__
+
+{{attachment:figure-31.png}}
+
+===== Using the Variable Service to Change the Application's Background Color =====
+
+Let's try a simple update to the application. In the Control window, notice that the "background color to" combo box is set to "Blue". Select "Yellow" and click on the Set button:
+
+{{attachment:figure-32.png}}
+
+You should see the update to the sample application on your remote system:
+
+{{attachment:figure-33.png}}
+
+Note how we are able to change the behavioral characteristics of the application without needing to stop and start the application. __At the top of each loop, the application simply checks the value of a STAF variable that defines what its background color should be.__ This is easily extended to any other type of dynamic information that you would like to be able to change while the application is executing.
+
+===== Using the Semaphore Service to Control the Application's Execution =====
+
+Click the "Pause" button in the Control window:
+
+{{attachment:figure-34.png}}
+
+__You should see that the application on the remote system is no longer incrementing its loop counter. Click "Continue" in the Control window and note that the application is continuing its execution. This is accomplished through the semaphore service.__ The application simply waits on an event semaphore at the top of its loop. This semaphore is normally posted, so the application simply falls on through. When you clicked "Pause", this reset the event semaphore, which caused the application to wait for it to be posted. Clicking "Continue" causes the event semaphore to be posted, which enables the application to continue execution.
+
+===== Using the Monitor Service to View the Application's Status =====
+
+The Monitor service allows applications to publish their current status. Look at the "Timestamp:" and "Status:" fields in the "Monitor" group:
+
+{{attachment:figure-35.png}}
+
+You should see the information updated every few seconds. Note, you can determine where, in execution, the application is, without needing to actually look at the application display. This is particularly useful when the systems running the applications are not "conveniently" located. In order to do this, the application simply logs occasional messages via the Monitor service.
+
+===== Using the Log Service to Record Testcase Information =====
+
+Click "Refresh Totals" in the Control window. You should see that the number of "Error" log messages has increased.
+
+{{attachment:figure-36.png}}
+
+Click "Display Log" and you should see a new window which contains all the logged error messages.
+
+{{attachment:figure-37.png}}
+
+Select the "Warning", "Info", and "Debug" checkboxes in the Control window and, then, click on "Set Log Mask".
+
+{{attachment:figure-38.png}}
+
+Now wait for about 30 seconds, and, then, click "Refresh Totals". You should now see that the totals for all the logging levels have increased.
+
+{{attachment:figure-39.png}}
+
+Click "Display Log" and you should see the other types of log messages at the end of the display.
+
+{{attachment:figure-40.png}}
+
+__This is an example of the ''dynamic level masking'' of the STAF Log service. This allows you to define (and change) during runtime the types of messages that are actually being logged into the log file. Note that throughout its execution, the application is actually requesting messages be logged for all 4 types of logs. However, since the log mask was originally set to only "Error", the Log service only wrote "Error" messages to the log. This allows you to have robust logging built into your application, while at the same time being able to dynamically, without changing the application or starting/stopping it, adjust how much information is written to the log.__
+
+Click "Clear Log" and you should see all the log totals reset to zero.
+
+{{attachment:figure-41.png}}
+
+You have just purged the log, even though the application is still logging data.
+
+===== Using the Resource Pool Service to Manage Resources =====
+
+Now, go back to the main control window and start two more STAFProcess applications running on the remote machine. Be sure to change their background colors so that you can distinguish between them. At this point you should have 3 STAFProcess applications running on your remote system:
+
+{{attachment:figure-42.png}}
+
+__Since there are initially only two resources available, you should notice that only two out of the three applications will be using a resource at any one time; the other application will be waiting for a resource. This is because each application needs a "resource" in order to continue execution. Periodically, the applications give up their resource and try to acquire a new one. Thus, you should see the applications swapping these two resources amongst themselves.__
+
+Now, from the main controller window, click the "+" button to the right of "Number of resource".
+
+{{attachment:figure-43.png}}
+
+This will add another resource for the applications. You should now see all three applications using resources simultaneously.
+
+{{attachment:figure-44.png}}
+
+===== Using the Queue Service to Send Messages to Testcases =====
+
+Finally, go to one of the application control windows and click the "Stop" button.
+
+{{attachment:figure-45.png}}
+
+This will send a message to the application's STAF queue. The application will check this at the top of its loop and terminate gracefully. You should see the application terminate. You should also see the monitor "Status:" display "Terminating". Note, you are still able to retrieve the monitor and log information even after the application has finished.
+
+This is the end of the demo. You can click the "Stop" buttons on the other application controller windows to terminate those applications, and then close the "STAF Demo Controller" window.
+
+__So you've now installed STAF on both of your machines, and you are using your local machine to control and monitor STAFProcess applications which are running on your remote machine. Now imagine that you have STAF installed on 100 different machines in a lab (maybe even in different buildings or different coutries), and you're controlling the execution of your application on all 100 machines from your local machine. Hopefully this illustrates the power and capability STAF provides you.__
+
+==== STAF Demo Code - Leveraging STAF ====
+
+===== Registering and Un-registering with STAF =====
+
+In this section we'll start looking at the actual Java source code for `STAFDemoController` and `STAFProcess`, and see exactly how STAF can be leveraged in your test environment. Of course, you don't have to write your applications or services in Java; you could use C, C++, REXX, Perl, Python, TCL, etc.
+
+STAF externalizes four primary classes to Java applications:
+
+ * `STAFHandle` - This class handles registering and unregistering with STAF as well as submitting service requests.
+ * `STAFException` - This class is thrown by STAFHandle when errors are encountered.
+ * `STAFResult` - This class contains the result of the STAFHandle.submit2() method as well as the STAF error constants.
+ * `STAFUtil` - This class contains STAF utility functions
+
+These classes all reside in the `com.ibm.staf` package. In order to use them in a Java application, you must import the STAF package. Line 26 of `STAFDemoController.java` shows the `import` statement.
+
+`STAFDemoController.java`:
+
+ {{{
+20: import java.io.*;
+21: import java.util.*;
+22: import java.awt.*;
+23: import java.awt.event.*;
+24: import javax.swing.*;
+25: import javax.swing.border.*;
+26: import com.ibm.staf.*;
+ }}}
+
+The STAFHandle class is used to register, unregister, and submit service requests to STAF. Normally each Java application should create one and only one STAFHandle object. The act of creating this object registers the Java application with STAF using the name passed to the constructor. Let's examine the constructor for STAFDemoController.java:
+
+`STAFDemoController.java`:
+
+ {{{
+40: static STAFHandle handle;
+41: static String stafMachineName;
+42: static String stafMachineNickname;
+43: static int numResources = 2;
+44:
+45: // This version of STAFDemo can only communicate with machines
+46: // running STAF V3.x.
+47: static int mainVersion = 3;
+48:
+49: JPanel stafStartPanel;
+50: String targetJavacmd;
+51: String targetClasspath;
+52:
+53: public STAFDemoController()
+54: {
+55: super("STAF Demo Controller");
+56:
+57: try
+58: {
+59: handle = new STAFHandle("STAFDemo_Controller");
+60: }
+61: catch(STAFException e)
+62: {
+63: System.out.println("Error registering with STAF, RC: " + e.rc);
+64: System.exit(e.rc);
+65: }
+ }}}
+
+Notice on line 40 that a STAFHandle object is defined. Then on line 59, the STAFHandle object is created (passing the name "STAFDemo_Controller"). The "handle" variable will then be used whenever you need to submit requests to STAF. Execution of line 59 effectively registers STAFDemoController with STAF.
+
+The STAFException class is the exception thrown by the STAFHandle class. It contains an rc variable which contains the actual return code from STAF. You may use the standard Throwable method getMessage() to retrieve any extra information provided by STAF. Notice in the constructor for STAFDemoContoller.java, the creation of the STAFHandle is in a try block. On line 61 there is a catch statement for the STAFException class. If an error is encountered while registering with STAF, a STAFException will be thrown. Notice on lines 63 and 64 that you can access the return code by using the rc variable.
+
+Before a Java application exits, it should unregister with STAF by calling the unRegister() method (see line 128 below).
+
+`STAFDemoController.java`:
+
+ {{{
+120: public void windowClosing(WindowEvent event)
+121: {
+122: try
+123: {
+124: handle.submit2(
+125: "local", "QUEUE", "QUEUE HANDLE " + handle.getHandle() +
+126: " TYPE STAF/STAFDemo/Stop MESSAGE " +
+127: STAFUtil.wrapData(""));
+128: handle.unRegister();
+129: }
+130: catch(STAFException e)
+131: {
+132: System.out.println("Error unregistering with STAF, RC: " +
+133: e.rc);
+134: }
+135:
+136: dispose();
+137: System.exit(0);
+138: }
+ }}}
+
+===== Submitting Requests to STAF =====
+
+:::
+
+== STAF V3 Installation Guide (2010-09-28) ==
+http://staf.sourceforge.net/current/STAFInstall.pdf @2010/10/07
+
+This document describes how to install STAF V3.4.3 and later.
+
+=== Installing STAF ===
+
+There are two types of installers that are provided for STAF:
+
+ * InstallAnywhere (available for Windows and most Unix platforms)
+ * STAFInst (available for all Unix platforms)
+
+__Note that the InstallAnywhere and STAFInst installers install the exact same files on a given platform.__ You can select which type of installer is most appropriate to use in your environment.
+
+==== InstallAnywhere ====
+
+InstallAnywhere is a Java-based multi-platform software installation program.
+
+InstallAnywhere provides three installation modes:
+
+ * Graphical installation mode (requires a UI display)
+
+ * __Console installation mode (via command-line, useful for systems without a UI display but requiring an interactive install)__
+
+ * Silent installation mode (where the install options are specified when starting the silent installation, either via command-line options or a ''response file'')
+
+Note that if you start a graphical installation, but the system does not hava a display (i.e. if you are accessing a Unix system via telnet or ssh), the installer will detect this situation and continue the installation in console mode.
+
+There are three types of InstallAnywhere files that are provided for STAF:
+
+ * Installer executable with a bundled JVM (named `STAF<version>-setup-<platform>.exe` on Windows and `STAF<version>-setup-<platform>.bin` on Unix) __The bundled JVM will be used for the installation, and will be copied to the "jre" directory in the root STAF install directory. This JVM will also be used to uninstall STAF.__
+
+ * Installer executable without a bundled JVM (named `STAF<version>-setup-<platform>-NoJVM.exe` on Windows, `STAF<version>-setup- <platform>-NoJVM.bin` on Unix, and `STAF<version>-setup-<platform>.bin` on Mac OS X)
+
+ * Installer zip file without a bundled JVM for Mac OS X (named `STAF<version>-setup-<platform>.zip`)
+
+To run an installer without a bundled JVM, you must already have a JVM on the system. Supported JVMs are:
+
+ * Sun: 1.4.x, 1.5.x, 1.6.x
+ * IBM: 1.4.x, 1.5.x
+ * Apple: 1.4.x, 1.5.x
+ * HP: 1.4.x, 1.5.x
+
+To use an InstallAnywhere STAF installer, the target system must have:
+
+ * 64 MB of free RAM
+ * Minimum of 8-bit color depth (256 colors) for graphical installation
+ * Minimum 640 X 480 screen resolution for graphical installation
+
+An InstallAnywhere install of STAF will typically require 1-5 minutes depending on the platform and system performance.
+
+More information on InstallAnywhere can be found at http://www.flexerasoftware.com/products/installanywhere.htm
+
+==== STAFInst ====
+
+__STAFInst is a script-based installer for Unix platforms. It will install all files required to run STAF, however, it will not perform some installation steps that InstallAnywhere performs, such as updating user profiles for environment variable updates.__
+
+The STAFInst installer is packaged as a "GNU zipped tar" file (named `STAF<version>-<platform>.tar.gz`) except on z/OS where it is packaged as a Unix compressed file (named `STAF<version>-<platform>.tar.Z`).
+
+A STAFInst install of STAF will typically require about 1 minute.
+
+=== Installers available for each platform ===
+
+==== Overview ====
+
+To download the latest versions of STAF, go to the Download STAF page.
+
+The following table shows an overview of the STAF installers available for each platform.
+
+:::
+
+==== Install properties for STAF Installers ====
+
+__After the STAF install is complete, an `install.properties` file will be created in the root STAF install directory. The file will contain key/value pairs that provide information about the version of STAF that has been installed.__
+
+The `install.properties` file will contain the following information:
+
+ * `version` - the version of STAF that has been installed
+
+ * `platform` - the STAF platform name
+
+ * `architecture` - the architecture of the STAF build (32-bit or 64-bit)
+ 
+ * `installer` - the type of installer (InstallAnywhere, STAFInst)
+
+ * `file` - the file used to install STAF
+
+ * `osname` - the operating system name for the STAF build (equivalent to the "os.name" Java property)
+
+ * `osversion` - the operating system version supported by the STAF build ("*" indicates the build is supported on any version of the OS; a version number followed by a "+" indicates the build supports that version or later)
+
+ * `osarch` - the operating system architecture supported by the STAF build (equivalent to the "os.arch" Java property)
+
+The following table shows the possible values for the `install.properties` file
+
+:::
+
+__Note that the `install.properties` file will be overwritten every time you install STAF to a target location. You should not delete or modify the `install.properties` file.__
+
+Here is a sample `install.properties` file from a Windows system (using the IA installer):
+
+ {{{
+version=3.4.3
+platform=win32
+architecture=32-bit
+installer=IA
+file=STAF343-setup-win32.exe
+osname=Windows
+osversion=*
+osarch=x86
+ }}}
+
+Here is a sample `install.properties` file from a Mac OS X i386 system (using the STAFInst installer):
+
+ {{{
+version=3.4.3
+platform=macosx-i386
+architecture=32-bit
+installer=STAFInst
+file=STAF343-macosx-i386.tar
+osname=Mac OS X
+osversion=10.4+
+osarch=i386
+ }}}
+
+Note that __if STAF is running on a system, you can use the "MISC LIST PROPERTIES" service request to obtain the information in the `install.properties` file__
+
+__When using Java classes that call into the STAF APIs, it is important to understand that STAF is implemented in C++, so any calls that your Java code makes into the STAF APIs will be using JNI to interface with the native C++ code.__
+
+__This means that you must use the version of STAF that is compatible with the architecture (32-bit or 64-bit) of the JVM that you are using.__
+
+If the "STAF architecture" is "32-bit", then you must use a 32-bit JVM with that version of STAF.
+
+If the "STAF architecture" is "64-bit", then you must use a 64-bit JVM with that version of STAF.
+
+=== Install Topics ===
+
+==== STAF License Agreement ====
+
+In order to install STAF, you must read and accept the terms of the license agreement.
+
+==== Installation Target ====
+
+When installing STAF, you must specify the target installation directory. The default install location varies depending on the operating system.
+
+ * On Windows, the default install directory is `C:\STAF`
+ * On Mac OS X, the default install directory is `/Library/staf`
+ * On other Unix platforms, the default install directory is `/usr/local/staf`
+
+==== Upgrading STAF ====
+
+__When installing STAF via InstallAnywhere, if you have selected a target installation directory where a version of STAF is already installed, you will be asked if you want to upgrade the existing version. If you choose to do the upgrade installation, all of STAF files will be upgraded to the new version. Any files created after STAF was installed (e.g. additional services, log files, updated STAF.cfg, etc) will not be removed.__
+
+__When installing STAF via STAFInst, if you have selected a target installation directory where a version of STAF is already installed, the install will display an error message indicating that you must first uninstall the existing version of STAF.__
+
+==== Install Sets ====
+
+There are several ''install sets'' available when installing STAF, which define the set of STAF features that will be installed:
+
+ * Full - All features will be installed. This option is recommended for most users.
+
+ * Minimal - Only required application features will be installed. This option is recommended only for users with limited disk space.
+
+ * Custom - Choose this option to customize the features to be installed. This install set is only available with the InstallAnywhere installers.
+
+Here is a list of the available features:
+
+ * STAF Application (STAF) - Core STAF application
+ * External Services (ExtSvcs) - External STAF services (Log, Monitor, ResPool, Zip)
+ * Language Support (Langs) - STAF Language Support (Java, Perl, Python, TCL, etc.)
+ * Samples and Demos (Samples) - Samples and Demos
+ * Additional Codepage Support (Codepage) - Install all STAF codepages
+ * Documentation (Docs) - STAF documenation
+ * Development Support (Develop) - Service developer header files and libraries
+
+Note that the STAFInst installers allow install set types of "recommended", "full", and "minimal". Selecting "recommended" or "full" will perform a full install.
+
+==== Registration ====
+
+During the install you can optionally choose to provide registration information to the STAF development team. This information is used by the STAF team to determine the number of projects that are using STAF.
+
+Note that this registration information is currently transmitted (the first time that STAFProc is started after the install) to a system within the IBM network. (裝肖維!!) If you register information from a system that is outside the IBM network, the transmission will fail and the registration information will be discarded (note that this will not impact your ability to use STAF).
+
+==== Advanced Options ====
+
+Here is a list of the advanced options that are available during the install:
+
+'''Update Enviroment/Menus For:'''
+
+This allows you to specify the scope of environment/menu updates. The possible selections are:
+
+ * System - the System environment variables and menus (if applicable) will be updated
+ * User - the currently logged-in user's environment variables and menus (if applicable) will be updated
+ * None - no environment variables or menus will be updated
+
+__Note that on Unix systems, after the install completes, you must logout and log back in the have the system/user environment variables refreshed.__
+
+'''Start STAF on user login (Windows only)'''
+
+__This indicates whether you want STAF to automatically start when you login (by adding STAF to your Windows StartUp folder).__ This option is not available if you selected None for Update Environment/Menus. This option is only available with the InstallAnywhere installers.
+
+'''Create Start menu icons (Windows only)'''
+
+This indicates whether you want icons placed on the Windows "Start Programs" menu. This option is not available if you selected None for Update Environment/Menus. This option is only available with the InstallAnywhere installers.
+
+'''Start STAFProc (Windows only)'''
+
+__This indicates whether you want STAFProc to be started in normal state (visible on the desktop) or minimized when the "Start STAF" icon in the Windows "Start Programs" menu is selected, or when STAFProc automatically starts when you login to Windows.__ This option is not available if you selected None for Update Environment/Menus. This option is only available with the InstallAnywhere installers.
+
+'''Default TCP/IP version'''
+
+__This indicates whether you want to use the IPv4 TCP libraries only, or if you want to use the TCP libraries that support both IPv4 and IPv6.__
+
+'''Default Perl version (if applicable)'''
+
+This indicates which version of Perl you want to be the default Perl support for STAF.
+
+'''Use Perl version in System Path (if applicable)'''
+
+This indicates to determine the version of Perl in the system `PATH` at install-time (if possible) and use that version of Perl by default. If there is no version of Perl in the system `PATH` (or if the output of "perl -v" returns an unexpected value, i.e. something other than "5.6.x", "5.8.x", or "5.10.x") then the default version of Perl (determined by the "Default Perl version" option) will be used.
+
+'''Default STAF Instance Name'''
+
+__This allows you to specify the value for the STAF instance name for this version of STAF. Since multiple instances of STAFProc can be run at the same time on the same system, the `STAF_INSTANCE_NAME` environment variable can be used to specify a name for each STAFProc instance. You can leave the default instance name as "STAF", or you can change the instance name. Note, this value will only be used in the STAFEnv script file that will be created for you.__ This option is only available with the InstallAnywhere installers.
+
+==== STAFEnv script ====
+
+__After the STAF install is complete, a `STAFEnv.bat` file (on Windows) or a `STAFEnv.sh` file (on Unix) will be created in the root STAF install directory. The STAFEnv script files are useful if you are going to be running two versions of STAF on the same machine and need a convenient way to switch settings for each version of STAF. An optional argument specifying the STAF instance name can be passed to a STAFEnv script file.__
+
+Here is a sample `STAFEnv.bat` file from a Windows system:
+
+ {{{
+@echo off
+REM STAF environment variables
+set PATH=C:\STAF\bin;%PATH%
+set CLASSPATH=C:\STAF\bin\JSTAF.jar;C:\STAF\samples\demo\STAFDemo.jar;%CLASSPATH%
+set STAFCONVDIR=C:\STAF\codepage
+if "%1" EQU "" set STAF_INSTANCE_NAME=STAF
+if "%1" NEQ "" set STAF_INSTANCE_NAME=%1
+ }}}
+
+Here is a sample `STAFEnv.sh` file from a Linux system:
+
+ {{{
+#!/bin/sh
+# STAF environment variables
+PATH=/usr/local/staf/bin:${PATH:-}
+LD_LIBRARY_PATH=/usr/local/staf/lib:${LD_LIBRARY_PATH:-}
+CLASSPATH=/usr/local/staf/lib/JSTAF.jar:/usr/local/staf/samples/demo/STAFDemo.jar:${CLASSPATH:-}
+STAFCONVDIR=/usr/local/staf/codepage
+if [ $# = 0 ]
+then
+  STAF_INSTANCE_NAME=STAF
+else
+  if [ $1 != "start" ]
+  then
+    STAF_INSTANCE_NAME=$1
+  else
+    # Ignore "start" STAF instance name
+    STAF_INSTANCE_NAME=STAF
+  fi
+fi
+export PATH LD_LIBRARY_PATH CLASSPATH STAFCONVDIR STAF_INSTANCE_NAME
+ }}}
+
+Note that to correctly execute the `STAFEnv.sh` script on Unix, you must execute it in this format:
+
+ {{{
+. ./STAFEnv.sh
+ }}}
+
+Or, if the `STAFEnv.sh` script is not in the current directory:
+
+ {{{
+. ./usr/local/staf/STAFEnv.sh
+ }}}
+
+__Note that if `STAFEnv.sh` is executed during the bootup process on Unix, the bootup script may inadvertently pass the "start" argument to `STAFEnv.sh`, so when STAFProc is started during the system reboot, it will be using a STAF instance name of "start" instead of "STAF". To avoid this problem, the `STAFEnv.sh` script will ignore the STAF instance name argument if it is equal to "start".__
+
+:::
+
+== STAF V3 User's Guide ==
+http://staf.sourceforge.net/current/STAFUG.htm @2010/11/24
+
+=== Overview ===
+
+As its name indicates, STAF is a framework. __It was designed to promote reuse and extensibility. It is intended to make software testing easier, and specifically to make it easier to automate software testing. This includes creating automated testcases, managing and automating the test environment, creating ''execution harnesses'' (i.e., applications which schedule and/or execute work on test systems), etc.__
+
+__STAF ''externalizes'' its capabilities through services. A service provides a focused set of functionality, such as, Logging, Process Invocation, etc. STAFProc is the process that runs on a machine, called a STAF Client, which accepts requests and routes them to the appropriate service. These requests may come from the local machine or from another STAF Client. Thus, STAF works in a ''peer environment'', where machines may make requests of services on other machines.__
+
+STAF was designed with the following points in mind.
+
+ * Minimum machine requirements - This is both a hardware and a software statement.
+ * Easily useable
+ * Easily extendable - This means that it should be easy to create other services to plug into STAF.
+
+:::
+
+=== Commands / STAF (這一段簡單看過, 還沒整理...) ===
+
+__`STAF` is an executable that is used to submit requests to STAF from the command line.__ Please see "Using the STAF command from shell-scripts" for more information on using the `STAF` command from within shell-scripts.
+
+==== Syntax ====
+
+`STAF [-verbose] <Endpoint> <Service> <Request>`
+
+ * __`-verbose` specifies to force the use of the ''verbose mode'' for the output.__
+
+ * `<Endpoint>` is either `LOCAL`, if you wish to make a request of the local machine, or the name of the machine of which you wish to make a request. When making a STAF request to a remote system, in addition to specifying the machine name, you may also specify the network interface over which communication will take place. The format for this is:
+
+ {{{
+[<Interface>://]<System Identifier>[@<Port>]
+ }}}
+
+   where:
+
+   * `<Interface>` is the name of the network interface. If not specified, the default interface is used.
+
+   * `<System Identifier>` is a valid network identifier for the interface in question. You may specify logical or physical identifiers. For example, for a TCP/IP interface, the physical identifier for a system is the IP address, while the logical identifier is the hostname.
+
+   * `<Port>` is a valid port to use for a TCP/IP interface. If not specified, the port for the default interface is used. One of the things this allows you to do is communicate with an instance of STAF that is using a different TCP/IP port. __Note that the port specified does not have to be configured on the machine submitting the request.__
+
+  * `<Service>` is the name of the service to which you are submitting a request. __Note the name of a service is case-insensitive.__
+
+  * __`<Request>` is the actual request string that you wish to submit to the service. Note that the options for requests to STAF services are case-insensitive.__
+
+==== Examples ====
+
+ {{{
+STAF local PING PING
+STAF local sem event SynchSem post
+STAF testmach1 PROCESS START COMMAND notepad
+STAF testmach1.company.com PROCESS LIST
+STAF -verbose testmach1.company.com PROCESS LIST
+STAF ssl://testmach1 PROCESS START SHELL COMMAND /tests/myTest RETURNSTDOUT STDERRTOSTDOUT WAIT
+STAF tcp://testmach1 TRUST LIST
+STAF alt-tcp2://9.3.283.13 SERVICE LIST
+STAF testmach1@6600 PROCESS START COMMAND notepad NOTIFY ONEND
+STAF tcp://testmach.company.com@6500 MISC WHOAMI
+STAF local ECHO ECHO "Hi there"
+STAF 9.3.823.20 LOG MACHINE LOGNAME MyLog LEVEL info MESSAGE "This is a message"
+STAF local var set SYSTEM var "SomeName=Some  text  string"
+ }}}
+
+==== Notes ====
+
+ 1. Take a closer look at the last three examples. __Quotes are required around the value to the echo, message, and set options because their values contain spaces. When calling STAF APIs directly from testcases/applications, you should normally use the colon-length-colon delimited format__ described in 7.2, "Option Value Formats".
+
+ 2. Older versions of STAF (prior to V2.1.0) required extra effort when quoting things on the command line. If you should need to resort to the old command line handling algorithm, simply set the environment variable `STAF_OLDCLI` to any non-empty value.
+
+ 3. __If running multiple instances of STAFProc, the `STAF_INSTANCE_NAME` environment variable must be set to the instance name of the STAFProc daemon that you want the STAF command to talk to.__ For example:
+
+ {{{
+set STAF_INSTANCE_NAME=MySTAF
+staf local ping ping
+ }}}
+
+==== Output ====
+
+On a successful STAF request (i.e., a request with a zero return code), the output from the `STAF` command will be as follows
+
+ {{{
+Response
+--------
+<Result string>
+ }}}
+
+where `<Result string>` is any information that was returned from the STAF service request.
+
+For example, the output of `STAF LOCAL PING PING` should be
+
+ {{{
+Response
+--------
+PONG
+ }}}
+
+On an unsuccessful STAF request (i.e., a request with a non-zero return code), the output from the STAF command will be as follows
+
+ {{{
+Error submitting request, RC: <Return code>
+Additional info
+---------------
+<Result string>
+ }}}
+
+where `<Return code>` is the actual return code from the request, and `<Result string>` is any information returned from the request. `<Result string>` usually contains information that explains why the error occurred. Note, the "Additional info" will only be present if a non-empty result string was returned. Additionally, you may refer to Appendix A, "API Return Codes" for information about the `<Return code>`
+
+For example, the output of `STAF LOCAL SEM LIST` should be
+
+ {{{
+Error submitting request, RC: 7
+Additional info
+---------------
+You must have at least 1, but no more than 1 of the option(s), MUTEX EVENT
+ }}}
+
+Note: If the `<Result string>` from a `STAF` command contains any null characters, you can set the environment variable STAF_REPLACE_NULLS to any non-empty value. This will cause the `STAF` command to replace any null characters in the `<Result string>` with the specified value. Otherwise, the `<Result string>` will be truncated at the first null character found.
+
+When structured data (see 6.1, "Marshalling Structured Data") is returned in the result strings above, the `STAF` command will automatically unmarshall the data and print it in the most appropriate format. If the data is a `<List>` of `<String>`, then each entry in the list will be printed on its own line. For example,
+
+ {{{
+C:\> staf local fs list directory c:\
+Response
+--------
+AUTOEXEC.BAT
+boot.ini
+CONFIG.SYS
+Documents and Settings
+i387
+IO.SYS
+MSDOS.SYS
+My Music
+NTDETECT.COM
+ntldr
+PAGEFILE.SYS
+Program Files
+Recycled
+RECYCLER
+System Volume Information
+temp
+WINNT
+ }}}
+
+If the data is a `<Map>` (or `<Map:<Class>>`) which has values which are all of type `<String>`, then each key/value pair will be printed on its own line. For example,
+
+ {{{
+C:\> staf local monitor list settings
+Response
+--------
+Max Record Size    : 1024
+Resolve Message    : Disabled
+Resolve Message Var: Disabled
+ }}}
+
+The above two types of formatted output are frequently referred to as "default format".
+
+__If the data is a `<List>` of `<Map:<Class>>` where every item in the list is an instance of the same map class, then the data will be printed out in a tabular format, called "table format".__ For example,
+
+ {{{
+$ staf local handle list handles
+Response
+--------
+Handle Handle Name                     State      Last Used Date-Time
+------ ------------------------------- ---------- -------------------
+1      STAF_Process                    InProcess  20040929-13:57:40
+2      STAF/Service/STAFServiceLoader1 InProcess  20040929-16:06:47
+5      STAF/Service/LOG                InProcess  20040929-13:57:52
+7      STAF/Service/RESPOOL            InProcess  20040929-13:58:04
+51     STAF/Service/MONITOR            InProcess  20040929-16:06:47
+57     STAF/Client                     Registered 20040929-16:09:35
+ }}}
+
+__The column headings in the table format are determined using the display name specified for each key. Short display names may be used as column headings by the STAF executable when displaying the result in a tabular form if the total width of the display names exceeds 80 characters.__
+
+By default a single record in the table format will only display the first 20 lines (the last line will show "(More...)" to indicate that there were more lines in the record). You can override the maximum number of lines that are displayed per record by setting the environment variable `STAF_TABLE_LINES_PER_RECORD` to the maximum number of lines.
+
+You can disable the output of tables by setting the environment variable `STAF_PRINT_NO_TABLES` to any value. If you disable the output of tables, their data will show up in the more verbose mode (described below).
+
+If the data is more complex than the above (or tables have been turned off), the output will be printed in a ''hierarchical nested format'', called "verbose format". The best way to describe it is with an example.
+
+ {{{
+C:\> staf local sem query event Test
+Response
+--------
+{
+  State      : Reset
+  Last Posted: {
+    Machine    : crankin3
+    Handle Name: STAF/Client
+    Handle     : 62
+    User       : none://anonymous
+    Date-Time  : 20040929-16:20:56
+  }
+  Last Reset : {
+    Machine    : crankin3
+    Handle Name: STAF/Client
+    Handle     : 65
+    User       : none://anonymous
+    Date-Time  : 20040929-16:21:43
+  }
+  Waiters    : [
+    {
+      Machine    : crankin3
+      Handle Name: TestHandle
+      Handle     : 67
+      User       : none://anonymous
+      Date-Time  : 20040929-16:22:16
+    }
+  ]
+}
+ }}}
+
+You can change the amount of indentation used by setting the environment variable `STAF_INDENT_DELTA` to any non-negative integer.
+
+You can use the `-verbose` option to force the use of the verbose mode on a command basis. For example,
+
+ {{{
+C:\> staf -verbose local fs list directory c:\
+Response
+--------
+[
+  AUTOEXEC.BAT
+  boot.ini
+  CONFIG.SYS
+  Documents and Settings
+  i387
+  IO.SYS
+  MSDOS.SYS
+  My Music
+  NTDETECT.COM
+  ntldr
+  PAGEFILE.SYS
+  Program Files
+  Recycled
+  RECYCLER
+  System Volume Information
+  temp
+  WINNT
+]
+ }}}
+
+You can force the exclusive use of the verbose mode by setting the environment variable `STAF_PRINT_MODE` to `"verbose"`. For example,
+
+ {{{
+C:\> set STAF_PRINT_MODE=verbose
+ 
+C:\> staf local fs list directory c:\
+Response
+--------
+[
+  AUTOEXEC.BAT
+  boot.ini
+  CONFIG.SYS
+  Documents and Settings
+  i387
+  IO.SYS
+  MSDOS.SYS
+  My Music
+  NTDETECT.COM
+  ntldr
+  PAGEFILE.SYS
+  Program Files
+  Recycled
+  RECYCLER
+  System Volume Information
+  temp
+  WINNT
+]
+ }}}
+
+If you should ever need to get at the raw result string (instead of the structured output), you can set the environment variable `STAF_PRINT_MODE` to `"raw"`. For example,
+
+ {{{
+C:\> set STAF_PRINT_MODE=raw
+ 
+C:\> staf local fs list directory C:/temp/docs
+Response
+--------
+@SDT/*:267:@SDT/{:26::13:map-class-map@SDT/{:0:@SDT/[10:218:@SDT/$S:11:STAFTcl.h
+tm@SDT/$S:12:STAFPerl.htm@SDT/$S:14:STAFPython.htm@SDT/$S:7:History@SDT/$S:12:ST
+AFCMDS.htm@SDT/$S:11:STAFFAQ.htm@SDT/$S:10:STAFGS.pdf@SDT/$S:12:STAFHome.htm@SDT
+/$S:10:STAFRC.htm@SDT/$S:10:STAFUG.htm
+ }}}
+
+Note, by default, any `<String>` value that looks as though it, itself, is a marshalled data structure will be recursively unmarshalled. For example, if someone marshalls a data structure and uses the resultant string as the message for a log request, and then you query the log, the data structure in the log message string will automatically be unmarshalled. If you want to turn off this behavior from the command line, and, instead, see the marshalled string in the message, set the environment variable `STAF_IGNORE_INDIRECT_OBJECTS` to any value.[?] 
+
+==== Using the STAF command from shell-scripts ====
+
+__There are two special environment variables that can be used to make the `STAF` command blend in with shell-scripts. The first is `STAF_QUIET_MODE`. Setting this environment variable to any non-null value will cause the `STAF` command to only output the `<Result string>` that the request generated.__ For example, the `"STAF local ping ping"` command above would simply return
+
+ {{{
+PONG
+ }}}
+
+__This makes it easy to call STAF from shell-scripts.__ For example,
+
+ {{{
+export STAF_QUIET_MODE=1
+ 
+STAFResult=`STAF local ping ping`
+
+if [ $? -ne 0 ]; then
+   echo "Non-zero return code from ping request";
+elif [ "$STAFResult" != "PONG" ]; then
+   echo "Expected PONG, received $STAFResult";
+else
+   echo "ping request succeeded"
+fi
+ }}}
+
+The second environment variable is `STAF_STATIC_HANDLE`. __If this environment variable is set, the `STAF` command will use the handle number indicated by this environment variable. This ensures that the shell-script can use the same handle throughout its execution. You may obtain a static handle in one of two ways. The first is using the `CREATE` command of the `HANDLE` service (see 8.5.2, "CREATE").__ For example,
+
+ {{{
+export STAF_STATIC_HANDLE=`STAF local handle create handle name "My Test"`
+ }}}
+
+__In this case, you are responsible for deleting the shell-scripts handle prior to your shell-script exiting.__ For example,
+
+ {{{
+STAF local handle delete handle $STAF_STATIC_HANDLE
+ }}}
+
+The second way is by __using the `STATICHANDLENAME` option when starting your script through the `PROCESS` service (see 8.12.2, "START"). In this case the `STAF_STATIC_HANDLE` environment variable will already be set for you. In addition, the handle will automatically be deleted by STAF when your shell-script completes.__
+
+__You can test for the existence of the `STAF_STATIC_HANDLE` environment variable to determine if your shell-script was started via STAF, or whether it was started by hand from the command line.__
+
+=== API Reference ===
+
+==== Marshalling Structured Data ====
+
+__STAF supports the automatic marshalling and unmarshalling of ''structured data''. The act of marshalling takes a data structure and converts it into a ''string-based representation''. The act of unmarshalling reverses this and converts the string-based representation back into a data structure.__
+
+STAF supports the following generic data types with its marshalling.
+
+ * None - a unique type representing the absence of a value
+ * String - an arbitrary string value
+ * List - an ordered collection of other objects
+ * Map - an unordered collection of key/value pairs
+ * __Map class - a Map with intrinsic metadata__
+ * __Marshalling context - represents a set of map class definitions and a data structure defined in terms of them__
+
+__Most languages support some form of the None, String, List, and Map data types. However, a map class and a marshalling context are likely new concepts.__
+
+__A map class is really just a specialized map that is associated with a ''map class definition''. The map class definition is used to reduce the size of a marshalling map class in comparison to a map containing the same data. It also contains information about how to display instances of the map class. A map class definition contains for following information for ''each key'' defined for a map class:__
+
+ * `key` - The name of the key in the map class
+ * `display-name` - The display name for the key
+ * `display-short-name` - The short display name for the key (Optional) 
+
+__You indicate that a map is ''an instance of a map class'' by setting the key `"staf-map-class-name"` to the name of the map class. And, when you unmarshall a data structure, if you see that a map has a key called `"staf-map-class-name"`, you know that the map is really an instance of a map class. You get and set map class definitions using a ''marshalling context''.__
+
+__A marshalling context is simply a container for map class definitions and a data structure that uses (or is defined in terms of) them. In order to use a map class when marshalling data, you must add the map class definition to the marshalling context, set the ''root object'' of the marshalling context to the object you want to marshall, and then marshall the marshalling context itself. When you unmarshall a data structure, you will always receive a marshalling context. Any map class definitions referenced by map classes within the data structure will be present in the marshalling context.__
+
+__When a string is unmarshalled into a data structure, it is possible that one of the string objects that is unmarshalled is itself the string form of another marshalled data structure. By default, STAF will recursively unmarshall these nested objects. However, each language has a way to disable these additional processing.__
+
+:::
+
+=== Service reference / Process Service ===
+
+==== Description ====
+
+The PROCESS service is one of the internal STAF services. It provides the following commands
+
+ * `START` - Starts a process, and optionally registers for ''process end notification''
+ * `STOP` - Stops a process
+ * `LIST` - Retrieves brief information on processes or lists the operational settings for the Process service
+ * `QUERY` - Retrieves detailed information about a process with a specified handle
+ * `FREE` - Releases the ''results data'' about a process
+ * `NOTIFY REGISTER` - Registers for process end notification
+ * `NOTIFY UNREGISTER` - Unregisters for process end notification
+ * `NOTIFY LIST` - Displays the list of machines/processes to receive process end notification
+ * `SET` - Sets operational settings for the Process service
+ * `HELP` - Returns syntax information
+
+==== START ====
+
+__`START` allows you to start a process. Processes may be started synchronously or asynchronously. You may also specify to which workload they belong, parameters to pass to them, their working directory, any process specific STAF variables to set for them, as well as any environment variables they may need.__
+
+===== Syntax =====
+
+ {{{
+START [SHELL [<Shell>]] COMMAND <Command> [PARMS <Parms>]  [WORKDIR <Directory>]
+      [VAR <Variable=Value>]...  [ENV <Variable=Value>]... [USEPROCESSVARS]
+      [WORKLOAD <Name>]  [TITLE <Title>]  [WAIT [<Number>[s|m|h|d|w]] | ASYNC]
+      [STOPUSING <Method>]  [STATICHANDLENAME <Name>]
+      [NEWCONSOLE | SAMECONSOLE]  [FOCUS <Background | Foreground | Minimized>]
+      [USERNAME <User name> [PASSWORD <Password>]]
+      [DISABLEDAUTHISERROR | IGNOREDISABLEDAUTH]
+      [STDIN <File>] [STDOUT <File> | STDOUTAPPEND <File>]
+      [STDERR <File> | STDERRAPPEND <File> | STDERRTOSTDOUT]
+      [RETURNSTDOUT] [RETURNSTDERR] [RETURNFILE <File>]...
+      [NOTIFY ONEND [HANDLE <Handle> | NAME <Name>]  [MACHINE <Machine>]
+      [PRIORITY <Priority>] [KEY <Key>]]
+ }}}
+
+`WORKLOAD` __allows you to specify the name of the workload for which this process is a member. This may be useful in conjunction with other PROCESS commands. The default is no workload name.__ This option will resolve variables using the IGNOREERRORS option.
+
+`TITLE` __allows you to specify the program title of the process. Unless overridden by the process, the TITLE will be the text that is displayed on the title bar of the application.__ This option will resolve variables using the IGNOREERRORS option. 
+
+`COMMAND` __specifies the actual command that you want to start. If the path to the command is not specified, the system `PATH` will be searched for the command. Only actual executable files, such as `.EXE`s, can be `START`ed. Rexx files cannot be `START`ed directly. On Windows systems, they need to be started through `REXX.EXE`.__ This option will resolve variables using the `IGNOREERRORS` option. This option will handle private data.
+
+`PARMS` __specifies any parameters that you wish to pass to the command.__ This option will resolve variables using the `IGNOREERRORS` option. This option will handle private data.
+
+`SHELL` __specifies that `COMMAND` should be started via a separate shell. Using a separate shell allows complex commands involving pipelines to be readily executed.__ This option will resolve variables using the `IGNOREERRORS` option. __Note, if `COMMAND` and `PARMS` are both specified they will be concatenated with a space between them, and the resulting string is what will be executed. You may specify an optional shell, which overrides any defaults specified in the STAF configuration file.__ See 4.7, "Operational parameters" for more information on how to specify the shell.
+
+`WORKDIR` __specifies the directory from which the command should be executed. If you do not specify `WORKDIR`, the command will be started from whatever directory STAFProc is currently in.__ This option will resolve variables using the `IGNOREERRORS` option.
+
+`WAIT` __specifies that the `START` request should not return until the process has finished executing. You may specify an optional time duration, after which the request should return. If no time duration is specified, the request will wait indefinitely until the process has finished executing. If the `WAIT` does not timeout, the process termination information will not be saved after the process ends, and no `FREE` is necessary. This option will resolve variables. The time duration may be expressed in milliseconds, seconds, minutes, hours, days, weeks, or years. Its format is `<Number>[s|m|h|d|w]`, where `<Number>` is an integer >= 0 and indicates milliseconds unless one of the following case-insensitive suffixes is specified:__
+
+ * `s` (for seconds)
+ * `m` (for minutes)
+ * `h` (for hours)
+ * `d` (for days)
+ * `w` (for weeks). 
+
+__Note that the calculated timeout cannot exceed 4294967294 milliseconds.__ So, the maximum values in each time category that can be specified are:
+
+ * 4294967294 (4294967294 milliseconds)
+ * 4294967s (4294967 seconds)
+ * 71582m (71582 minutes)
+ * 1193h (1193 hours)
+ * 49d (49 days)
+ * 7w (7 weeks) 
+
+`ASYNC` __specifies that the process should be started asynchronously, and that the `START` request should return to the caller as soon as the process has begun execution. In this case, the process termination will be saved after the process ends, and will later need to be `FREE`'d. This is the default.__
+
+`VAR` __allows you to specify variables that go into the ''process specific'' variable pool.__
+
+`ENV` __allows you to specify environment variables that will be set for the process. Environment variables may be mixed case, however most programs assume environment variable names will be uppercase, so, in most cases, ensure that your environment variable names are all in uppercase.__ This option will resolve variables using the `IGNOREERRORS` option.
+
+:::
+
+`FOCUS` __specifies the focus that is to be given to new windows opened when starting a process on a Windows system. The window(s) it effects depends on whether you are using the ''default command mode'' or the ''shell command mode''. If the process is started using the default command mode (no `SHELL` option), then the specified focus specified is given to any new windows opened by the specified command. Otherwise, if the process is started using the shell command mode, then the specified focus is given only to the new shell command window opened, not to any windows opened by the specified command. This option only has effect on Windows systems.__ This option will resolve variables using the `IGNOREERRORS` option. This option was added in STAF V3.1.4. Recognized values are the following:
+
+ * `Background`: This indicates to display a window in the background (not give it focus) in its most recent size and position. This is the default mode.
+
+ * `Foreground`: This indicates to display a window in the foreground (give it focus) in its most recent size and position.
+
+ * `Minimized`: This indicates to display a window as minimized.
+
+`USERNAME` __specifies the username under which the process should be started.__ This option will resolve variables using the `IGNOREERRORS` option.
+
+Note: __The `PROCESSAUTHMODE` operational parameter must be enabled in the STAF configuration file on the system where the process is run under a different username.__ See 4.7, "Operational parameters" for more information on how to enable the `PROCESSAUTHMODE` operational parameter. __There are additional requirements that must be met to run a process under a different username on a Windows system.__ See "Starting a Process Under a Different User on Windows" for more information.
+
+`PASSWORD` __specifies the password with which to authenticate the user specified with `USERNAME`.__ This option will handle private data. This option will resolve variables.
+
+`DISABLEDAUTHISERROR` __specifies that an error should be returned if a `USERNAME`/`PASSWORD` is specified but authentication has been disabled. This option overrides any default specified in the STAF configuration file.__
+
+`IGNOREDISABLEDAUTH` __specifies that any `USERNAME`/`PASSWORD` specified on the request is ignored if authentication is disabled. This option overrides any default specified in the STAF configuration file.__
+
+`STATICHANDLENAME` __specifies that a static handle should be created for this process. The name specified for this option will be the registered name of the static handle. Using this option will also cause the environment variable `STAF_STATIC_HANDLE` to be set appropriately for the process.__ See "Using the STAF command from shell-scripts" for more information on static handles. This option will resolve variables using the `IGNOREERRORS` option. 
+
+`STDIN` __specifies the name of the file from which standard input will be read.__ This option will resolve variables using the `IGNOREERRORS` option.
+
+`STDOUT` __specifies the name of the file to which standard output will be redirected. If the file already exists, it will be replaced.__ This option will resolve variables using the `IGNOREERRORS` option.
+
+`STDOUTAPPEND` __specifies the name of the file to which standard output will be redirected. If the file already exists, the process' standard output will be appended to it.__ This option will resolve variables using the `IGNOREERRORS` option.
+
+`STDERR` __specifies the name of the file to which standard error will be redirected. If the file already exists, it will be replaced.__ This option will resolve variables using the `IGNOREERRORS` option.
+
+`STDERRAPPEND` __specifies the name of the file to which standard error will be redirected. If the file already exists, the process' standard error will be appended to it.__ This option will resolve variables using the `IGNOREERRORS` option.
+
+`STDERRTOSTDOUT` __specifies that standard error should be redirected to the same file to which standard output is being redirected. This option is valid only if `STDOUT` or `STDOUTAPPEND` or `RETURNSTDOUT` is specified.__
+
+`RETURNSTDOUT` __specifies that the contents of the file to which standard output was redirected should be returned when the process completes. If `STDOUT` is not specified, standard output will be redirected to a temporary file. If `STDERRTOSTDOUT` is specified, the file returned will contain both standard output and standard error. This information is only available if using the `WAIT` or `NOTIFY` options.__
+
+`RETURNSTDERR` __specifies that the contents of the file to which standard error was redirected should be returned when the process completes. If `STDERR` is not specified, standard error will be redirected to a temporary file. This information is only available if using the `WAIT` or `NOTIFY` options.__
+
+`RETURNFILE` __specifies that the contents of the specified file should be returned when the process completes. This information is only available if using the `WAIT` or `NOTIFY` options.__ This option will resolve variables using the `IGNOREERRORS` option.
+
+`NOTIFY ONEND` __specifies that you wish to send a notification when this process ends.__ See 8.12.8, "NOTIFY REGISTER/UNREGISTER" for the content of the notification message.
+
+__`MACHINE` specifies the machine to which the notification should be sent. The default is the machine submitting the request.__ This option will resolve variables using the `IGNOREERRORS` option.
+
+__`PRIORITY` specifies the priority of the notification message. The default is 5.__ This option will resolve variables.
+
+__`KEY` specifies a key that will be included in the notification message.__ This option will resolve variables using the `IGNOREERRORS` option.
+
+__`HANDLE` specifies the handle to which the notification should be sent. The default is the handle of the process submitting the request.__ This option will resolve variables.
+
+__`NAME` specifies the registered name of the process(es) to which the notification should be sent.__ This option will resolve variables using the `IGNOREERRORS` option.
+
+===== Notes =====
+
+ 1. On Windows systems, if you are redirecting stdin/out/err and are not using `SAMECONSOLE`, it is recommended that you redirect all three input/output streams. If one or two streams are redirected, but not all three, the non-redirected streams will not be available to the application. For example, if stdout and stderr are redirected, but not stdin, then the application will receive errors if it tries to read from standard input. As another example, if stdin and stdout are redirected, but not stderr, then you will not see any of the standard error output displayed in the console window. This problem only occurs when using `NEWCONSOLE`, which is the default. You may freely redirect any combination of stdin, stdout, and stderr when using `SAMECONSOLE`. This problem is due to a known limitation in the Windows API.[?]
+
+ 2. __A STAF handle variable for the process named `STAF/Service/Process/OrgEndpoint` is set that contains the endpoint for the system that originated the `PROCESS START` request. The process can use this variable if it needs to ''communicate back'' to the machine that started the process.__
+
+ 3. __Since the entire contents of returned files are stored in the result string, if you attempt to return the contents of a very large file, you may run out of memory so it is not recommended that you use the `RETURNSTDOUT`, `RETURNSTDERR`, or `RETURNFILE` options to return large files. To help prevent this problem, you can specify a maximum size for a file returned by this request by setting the `MAXRETURNFILESIZE` operational parameter in the STAF configuration file on the machine where the process is run, or by setting the `STAF/MaxReturnFileSize` variable in the request variable pool of the handle that submitted the request. The lowest of these two values is used as the maximum return file size (not including 0 which indicates no limit).__
+
+===== Security =====
+
+This command requires trust level 5.
+
+===== Return Codes =====
+
+All return codes from `START` are documented in Appendix A, "API Return Codes".
+
+===== Results =====
+
+__If the `ASYNC` option is specified, or defaulted to (by not specifying the `WAIT` option), the result buffer will contain the handle of the started process.__
+
+__If the `WAIT` option is specified and the submit call does not timeout, the result buffer will contain a marshalled `<Map:STAF/Service/Process/CompletionInfo>` which represents the completion information for the process, including the return code from the process, the `KEY` (if one was specified with the `NOTIFY ONEND` option), as well as any files specified by `RETURNSTDOUT`, `RETURNSTDERR`, and/or `RETURNFILE`.__
+
+The maps are defined as follows:
+
+Table 61. Definition of map class `STAF/Service/Process/CompletionInfo`
+
+||<-4> Description: This map class represents completion information for a process. ||
+|| Key Name || Display Name || Type || Format / Value ||
+|| `rc` || Return Code || `<String>` || ||
+|| `key` || Key || `<String>` | `<None>` || ||
+|| `fileList` || Files || `<List>` of `<Map:STAF/Service/Process/ReturnFileInfo>` || ||
+||<-4> Notes: __The "Files" value will contain a list of information about the files requested to be returned, or an empty list if no files were requested to be returned. Files will be returned in the order of standard output, then standard error, then any files specified with the `RETURNFILE` option.__ ||
+
+Table 62. Definition of map class `STAF/Service/Process/ReturnFileInfo`
+
+||<-4> Description: This map class represents a file returned by the process. ||
+|| Key Name || Display Name || Type || Format / Value ||
+|| `rc` || Return Code || `<String>` || ||
+|| `data` || Data || `<String>` || ||
+||<-4> Notes: __For each file, a standard STAF return code indicating the success or failure of retrieving the file's contents is provided. If the file's return code is 0, then the data contained in the file is also provided. If the file's return code is 58 (Maximum Size Exceeded), that indicates that the file size exceeded the maximum return file size.__ ||
+
+For example, suppose a `PROCESS START COMMAND "java TestA" WAIT` request is submitted from the command line, and assume that the process completed successfully and returned 0. The result, in verbose format, could look like the following:
+
+ {{{
+{
+  Return Code: 0
+  Key        : <None>
+  Files      : []
+}
+ }}}
+
+For example, suppose a `PROCESS START COMMAND "java TestA" RETURNSTDOUT RETURNSTDERR WAIT` request is submitted from the command line, and assume that the process completed successfully and returned 0, that the standard output of the process was simply "Success !!!", and that the standard error of the process was blank. The result, in verbose format, could look like the following:
+
+ {{{
+{
+  Return Code: 0
+  Key        : <None>
+  Files      : [
+    {
+      Return Code: 0
+      Data       : Success !!!
+    }
+    {
+      Return Code: 0
+      Data       : 
+    }
+  ]
+}
+ }}}
+
+__If the `WAIT` option is specified but the submit call timed out, the result buffer will contain the handle of the started process. Note, you will also receive a Timeout error code (37) in this case.__
+
+===== Examples =====
+
+The following examples show the syntax, and results using the STAF command executable from a Windows command prompt. These STAF requests could also be submitted from a program (e.g. Java, C++, Perl, shell, etc.) or via a `<process>` element in a STAX job.
+
+'''Start the java executable (with the `-version` parameter) on the local machine.'''
+
+Syntax and Results:
+
+ {{{
+C:\>STAF local PROCESS START SHELL COMMAND "java -version"
+Response
+--------
+35
+ }}}
+
+The result buffer contains the handle number of the process that was started (which in this case is 35). This is not the return code of the process as the process was started asynchronously (no `WAIT` option was specified) so __it doesn't wait for the process to complete.__
+
+__If you invoke the same process again, you'll get a different handle number each time.__ For example:
+
+ {{{
+C:\>STAF local PROCESS START SHELL COMMAND "java -version"
+Response
+--------
+37
+ }}}
+
+If you want the STAF command to wait for the process to complete before returning, specify the `WAIT` option. For example:
+
+ {{{
+C:\>STAF local PROCESS START SHELL COMMAND "java -version" WAIT
+Response
+--------
+{
+  Return Code: 0
+  Key        : <None>
+  Files      : []
+}
+ }}}
+
+The result buffer contains a map of the results from running the `"java -version"` command, including the return code from the command which was 0 in this example. A return code of 0 from a `"java -version"` command indicates that the command ran successfully. __Note that no files were returned, as indicated by an empty list, `[]`, since none of the return file options (`RETURNSSTDOUT`, `RETURNSTDERR`, `RETURNFILE`) were specified.__
+
+__The `"java -version"` command writes the Java version information to standard error (stderr). To obtain that information, plus any information written to standard output (stdout), you could use the `STDERRTOSTDOUT` option to redirect stderr to stdout and use the `RETURNSTDOUT` option to return the content of stdout.__ For example:
+
+ {{{
+C:\>STAF local PROCESS START SHELL COMMAND "java -version" WAIT STDERRTOSTDOUT RETURNSTDOUT
+Response
+--------
+{
+  Return Code: 0
+  Key        : <None>
+  Files      : [
+    {
+      Return Code: 0
+      Data       : java version "1.5.0"
+Java(TM) 2 Runtime Environment, Standard Edition (build 1.5.0-b64)
+Java HotSpot(TM) Client VM (build 1.5.0-b64, mixed mode, sharing)
+ 
+    }
+  ]
+}
+ }}}
+
+The result buffer contains a map of the results from running the `"java -version"` command, including a return code of 0 and a list of the files returned by the process, which in this case contains one file (the stdout file). For each file returned, a standard STAF return code is provided which indicates the success or failure of retrieving the file's contents, which in this case was 0, indicating the file's contents were successfully retrieved. In addition, if the file's return code is 0, then the data contained in the file is also provided. In this case, it contains the java version information.
+
+Note that instead of specifying `local` as the machine on which to start this process, you could have specified the name of a remote machine that is also running STAF and which has given trust level 5 to the requesting machine.
+
+'''Start the `myTest.exe` executable on machine client1.'''
+
+Syntax and Results:
+
+ {{{
+C:\>STAF client1 PROCESS START COMMAND myTest.exe
+Response
+--------
+60
+ }}}
+
+The result buffer contains the handle number of the process that was started (which in this case is 60). This is not the return code of the process as the process was started asynchronously (without the `WAIT` option) so the STAF request completes as soon as the process is started and doesn't wait for the process to complete.
+
+However, if the `myTest.exe` file was not found in the system path on machine client1, you would get an error starting the process. For example:
+
+ {{{
+C:\>STAF client1 PROCESS START COMMAND myTest.exe
+Error submitting request, RC: 10
+Additional info
+---------------
+Error starting the process. CreateProcess failed with OS RC 2: The system cannot
+ find the file specified.
+ }}}
+
+__The return code from the STAF request is 10. STAF RC 10 indicates a base operating system error was encountered (e.g. `STAF local HELP ERROR 10` gives more information about STAF RC 10) and an error message that includes the actual base ''operating system error code'', 2, is provided in the result buffer. OS error code 2 indicates that a file was not found. In this case, the `myTest.exe` file was not found since it's not in the system path.__
+
+If `myTest.exe` is located in directory `C:\tests` on machine client1, you can fully qualify the path to `myTest.exe` so that the command can be located and successfully started. For example:
+
+ {{{
+C:\>STAF client1 PROCESS START COMMAND C:/tests/myTest.exe
+Response
+--------
+62
+ }}}
+
+Or, if you wanted `myTest.exe` to run in an environment where the system path included the `C:/tests` directory, you can use the `ENV` option to update the system path environment variable. Note that if you specify the `SHELL` option in this situation, you don't need to specify the path to the command because the updated system path will be used to find the command. For example:
+
+ {{{
+C:\>STAF client1 PROCESS START SHELL COMMAND myTest.exe ENV PATH=C:/tests{STAF/Config/Sep/Path}{STAF/Env/Path}
+Response
+--------
+64
+ }}}
+
+'''Start a java testcase named `TestA` (located in directory `C:/tests`) on machine client1 and wait for it to complete and return any data that the testcase program wrote to stdout and to stderr.'''
+
+Syntax and Results:
+
+ {{{
+C:\>STAF client1 PROCESS START COMMAND "java -cp C:/tests TestA" WAIT RETURNSTDOUT RETURNSTDERR
+Response
+--------
+{
+  Return Code: 0
+  Key        : <None>
+  Files      : [
+    {
+      Return Code: 0
+      Data       : SUCCESS.  Yippee!!!
+    }
+    {
+      Return Code: 0
+      Data       :
+    }
+  ]
+}
+ }}}
+
+The result buffer contains a map of the results from running the java testcase, including a return code of 0 and a list of the files returned. The first file returned is stdout and it contains `"SUCCESS. Yippee!!!"`. The second file returned is stderr and it contains nothing.
+
+'''Start a Windows `.bat` file named `C:\test.bat` on Windows machine client2 and wait for it to complete.'''
+
+If the `.bat` file exits using the `/B` option, e.g. `EXIT /B [rc]`, you'll see that the process return code when run via a `PROCESS START` request is always 0 instead of the value of `ERRORLEVEL`. (Note: Run `"HELP EXIT"` from a Windows command prompt to explain what the `/B` option does.) In order to get the real process return code, you need to exit without using the `/B` option. For example, `EXIT 99`. However, if you cannot change the `.bat` file (or don't want to), then here's an example of how you can use the Windows command separator (`&`) to run three commands as a single process. First, run the `.bat` file. Second, get the `ERRORLEVEL` value and set another environment variable named `PROCESSRC` (or whatever name you prefer) to it's value. Third, exit using the `PROCESSRC` value. For this example, `C:\test.bat` contains:[?]
+
+ {{{
+@echo off
+EXIT /B 99
+ }}}
+
+Syntax and Results:
+
+ {{{
+C:\>STAF client2 PROCESS START SHELL COMMAND "C:/test.bat & set PROCESSRC=%ERRORLEVEL% & exit %PROCESSRC%" WAIT
+Response
+--------
+{
+  Return Code: 99
+  Key        : <None>
+  Files      : []
+}
+ }}}
+
+The following examples show the goal and the syntax of the request to submit to the `PROCESS` service but not the results.
+
+ * Start `tc1.exe` with a title of `"Testcase 1"` from directory `d:\testcase` with environment variables `RUNMODE` set to `Type1` and `AUTO=1`.
+
+ {{{
+START COMMAND tc1.exe TITLE "Testcase 1" WORKDIR d:/testcase ENV RUNMODE=Type1 ENV AUTO=1
+ }}}
+
+ * Start the `tc2` executable from directory `d:\webtests` as part of workload `Web Tests`, with STAF variables `WebServer` set to `testsrv1.test.austin.ibm.com` and `RunMode` set to `1`, and don't return until it completes.
+
+ {{{
+START COMMAND tc2 WORKDIR d:/webtests VAR WebServer=testsrv1.test.austin.ibm.com VAR RunMode=1 WORKLOAD "Web Tests" WAIT
+ }}}
+
+ * Start testcase `www1.exe`. The testcase resides in and should be run from the directory referred to by variable `WWWTestDir`. Wait a maximum of 30 minutes for the process to end.
+
+ {{{
+START COMMAND {WWWTestDir}/www1.exe WORKDIR {WWWTestDir} WAIT 30m
+ }}}
+
+ * Start `tc2.exe` from directory `c:/testcase` and register to receive a notification when the process ends.
+
+ {{{
+START COMMAND tc2.exe WORKDIR c:/testcase NOTIFY ONEND
+ }}}
+
+ * Start `tc2.exe` from directory `c:\testcase` and register to have a priority 1 notification sent to registered process name `ProcessHandler` on machine `EventController`. The Key `"9bt1az54fq"` will be included in the notification message.
+
+ {{{
+START COMMAND tc2.exe WORKDIR c:/testcase NOTIFY ONEND PRIORITY 1 MACHINE EventController NAME ProcessHandler KEY 9bt1az54fq
+ }}}
+
+ * Start `tc2.exe` from directory `c:\testcase` and it to be STOPed via the `SIGINT` method.
+
+ {{{
+START COMMAND tc2.exe WORKDIR c:/testcase STOPUSING SIGINT
+ }}}
+
+ * Start `tc2.exe` from directory `c:\testcase` and have it run in the same console as STAFProc.
+
+ {{{
+START COMMAND tc2.exe WORKDIR c:/testcase SAMECONSOLE
+ }}}
+
+ * Start `tc2` from directory `/testcases` using userid `testuser` and password `tupass` and __use ''privacy delimiters'' to indicate that the password is private.__
+
+ {{{
+START COMMAND tc2 WORKDIR /testcases USERNAME testuser PASSWORD !!@tupass@!!
+ }}}
+
+ * Start `tc2` from directory `/testcases` and redirect standard output to `/testcases/tc2/stdout.txt`.
+
+ {{{
+START COMMAND tc2 WORKDIR /testcase STDOUT /testcases/tc2/stdout.txt
+ }}}
+
+ * Start shell-script `tc3.sh` and ensure it uses a static handle with registered name `"Test case 3"`.
+
+ {{{
+START COMMAND tc3.sh STATICHANDLENAME "Test case 3"
+ }}}
+
+ * Execute the following shell-style command `"ps | grep test | wc >testcount.txt"`
+
+ {{{
+START SHELL COMMAND "ps | grep test | wc >testcount.txt"
+ }}}
+
+ * Execute the following shell-style command `"grep 'Count = ' /tests/out | awk '{print $5}'"` redirecting its standard output and standard error to `/tests/awk.out`.
+
+ {{{
+START SHELL COMMAND "grep 'Count = ' /tests/out | awk '{print $5}'" STDOUT /tests/awk.out STDERRTOSTDOUT
+ }}}
+
+   Note: When using STAF V3.4.0 or later, you no longer have to use a caret (`^`) as an escape character for `"{"` if it does not denote a variable reference because the `IGNOREERRRORS` option is used when submitting a `VAR RESOLVE` request to resolve variables in option values on a `PROCESS START` request.
+
+ * Start shell-script `tc3.sh` and redirect its standard output and standard error to `/tmp/tc3.out`
+
+ {{{
+START COMMAND tc3.sh STDOUT /tmp/tc3.out STDERRTOSTDOUT
+ }}}
+
+ * Start shell-script `tc3.sh`, redirect its standard output and standard error to `/tmp/tc3.out`, and wait for it to complete. Additionally, have the contents of standard output (which also contains standard error), as well as the contents of file `/tmp/tc3.results`, returned when the script completes.
+
+ {{{
+START COMMAND tc3.sh STDOUT /tmp/tc3.out STDERRTOSTDOUT WAIT RETURNSTDOUT RETURNFILE /tmp/tc3.results
+ }}}
+
+ * Start shell-script `tc3.sh`, redirect its standard output and standard error to a temporary file (indicated by not specifying `STDOUT`), and wait for it to complete. Additionally, have the contents of standard output (which also contains standard error) returned when the script completes.
+
+ {{{
+START COMMAND tc3.sh STDERRTOSTDOUT WAIT RETURNSTDOUT
+ }}}
+
+ * Start shell-script `"D:/tests/test1.sh machA"` on a Windows system specifying to start the command via a Cygwin shell.
+
+ {{{
+START SHELL "D:/Cygwin/bin/bash.exe -c %C" COMMAND "D:/tests/test1.sh machA" WORKDIR D:/tests
+ }}}
+
+ * Start shell-script `"/tests/test1.sh machA"` on a Unix system specifying to start the command via a `xterm` shell with a title of `"Test 1"` and to redirect standard output to `/tests/test1.out`.
+
+ {{{
+START SHELL "xterm -title %T -e /bin/sh -c %X" COMMAND "/tests/test1.sh machA" TITLE "Test 1" STDOUT /tests/test1.out
+ }}}
+
+ * Start shell-script `"/tests/test1.sh machA"` on a Unix system specifying to start the command via a C shell.
+
+ {{{
+START SHELL "/bin/csh -c %C" COMMAND "/tests/test1.sh machA" WORKDIR /tests
+ }}}
+
+ * Run a command, `'echo $HOME'`, on a UNIX system as if the system was actually logged in as a user named `test` so that it echos the home directory for user `test`, e.g. `/home/test`, instead of the home directory for the root user that STAFProc was started with, e.g. `/root`.
+
+ {{{
+START SHELL 'su - %u -c %C' COMMAND 'echo $HOME' USERNAME test WAIT STDOUT /temp/test.out STDERRTOSTDOUT RETURNSTDOUT 
+ }}}
+
+==== STOP ====
+
+__`STOP` allows you to stop a process that was started via STAF (e.g. a process that was started by submitting a `START` request to the `PROCESS` service). You may stop a single process, all processes that are part of a given workload, or all processes started by STAF.__
+
+===== Syntax =====
+
+ {{{
+STOP <ALL CONFIRM | WORKLOAD <Name> | HANDLE <Handle>> [USING <Method>]
+ }}}
+
+`ALL` __specifies that you want to stop all running processes that STAF has STARTed. If you wish to do this, you must also specify the `CONFIRM` option.__
+
+`WORKLOAD` __specifies that you want to stop all processes that are part of a given workload.__ This option will resolve variables.
+
+`HANDLE` __specifies that only the specified handle should be stopped.__ This option will resolve variables.
+
+`USING` __specifies the method used to stop the process.__ This option will resolve variables. The following methods are supported:
+
+ * `SIGKILLALL` - __This unconditionally stops the process and all of its child processes. On Unix systems, this sends a `SIGKILL` signal to the process and all of its child processes. On Windows XP and later systems, this uses the `taskkill` command with the force (`/f`) and tree (`/t`) options. On Windows 2000 and earlier systems, this sends a `WM_CLOSE` message to the application (see below for more information on `WM_CLOSE`). This is particularly useful for stopping console applications which spawn numerous child processes. This is the default.__
+
+ * `SIGKILL` - __This unconditionally stops the process. On Unix systems, this sends a `SIGKILL` signal to the process. On Windows, this calls `TerminateProcess()`.__
+
+ * `SIGTERM` - __On Unix systems, this sends a `SIGTERM` signal to the process. On Windows systems, this sends a CTRL-Break event to the process (note, the process must have been STARTed with the `SAMECONSOLE` option for this to work).__
+
+ * `SIGINT` - __On Unix systems, this sends a `SIGINT` signal to the process. On Windows systems, this sends a CTRL-C event to the process (note, the process must have been STARTed with the `SAMECONSOLE` option for this to work).__
+
+ * `WM_CLOSE` - __On Windows systems, this unconditionally stops the process and all of its child processes by sending a `WM_CLOSE` message to the application. This will not work on console applications started using the `SAMECONSOLE` option. This is not supported on Unix systems.__
+
+===== Security =====
+
+This command requires trust level 4.
+
+===== Return Codes =====
+
+All return codes from STOP are documented in Appendix A, "API Return Codes".
+
+===== Results =====
+
+__If the `HANDLE` option is specified, the result buffer will be empty if successful.__
+
+__If the `ALL` or `WORKLOAD` option is specified, the result buffer will contain a marshalled `<Map:STAF/Service/Process/StopInfo>`__ defined as follows if successful:
+
+Table 63. Definition of map class `STAF/Service/Process/StopInfo`
+
+||<-4> Description: This map class represents statistics for stopped processes. ||
+|| Key Name || Display Name || Type || Format / Value ||
+|| `stoppedProcesses` || Stopped Processes || `<String>` || ||
+|| `totalProcesses` || Total Processes || `<String>` || ||
+||<-4> Notes: __This map contains the number of processes actually stopped and the total number of processes. These two numbers will be different if some of the processes have already been stopped or have already completed execution on their own.__ ||
+
+===== Examples =====
+
+'''Stop process with handle 42.'''
+
+ {{{
+STOP HANDLE 42
+ }}}
+
+'''Gracefully stop process with handle 113 using the `SIGTERM` method.'''
+
+ {{{
+STOP HANDLE 113 USING SIGTERM
+ }}}
+
+'''Unconditionally stop process with handle 17.'''
+
+ {{{
+STOP HANDLE 17 USING SIGKILL
+ }}}
+
+'''Stop all processes in the Web Tests workload.'''
+
+ {{{
+STOP WORKLOAD "Web Tests"
+ }}}
+
+If the request is submitted from the command line, the result, in default format, could look like:
+
+ {{{
+Stopped Processes: 5
+Total Processes: 18
+ }}}
+
+'''Stop all processes currently running via STAF.'''
+
+ {{{
+STOP ALL CONFIRM
+ }}}
+
+If the request is submitted from the command line, the result, in default format, could look like:
+
+ {{{
+Stopped Processes: 16
+Total Processes: 16
+ }}}
+
+==== KILL ====
+
+:::
+
+== Python User's Guide ==
+http://staf.sourceforge.net/current/STAFPython.htm @2010/10/10
+
+=== Introduction ===
+
+This document describes STAF's V3 support for the Python language. It includes information on the core STAF Python APIs as well as the ''wrappers'' provided for the Monitor and Log services.
+
+__''STAF Python support'' must be installed in order to submit requests to STAF via a Python program.__
+
+__The version of Python used to build the STAF Python libraries is usually the only Python version that will work with those STAF Python libraries.__
+
+:::
+
+=== Installation ===
+
+To install and configure STAF Python support, perform the following steps:
+
+1. __Install STAF Python support by selecting to install "Python support" during the install.__ It is installed by default for a "typical" install of STAF if using a STAF installer for the platforms listed in section 2.0 Supported Platforms and Python Versions. Currently, STAF Python support is not provided in the STAF installer files for other operating systems (though you can build STAF Python support yourself). See section 1.0 Introduction above for more information on how to build STAF Python support yourself.
+
+Once STAF Python support is installed, verify that the STAF Python library file exists:
+
+ * __On Windows, verify that file `PYSTAF.pyd` exists in directory `C:\STAF\bin`, assuming you installed STAF to directory `C:\STAF`__
+
+ * __On Linux, Solaris, or FreeBSD, verify that file `PYSTAF.so` exists in directory `/usr/local/staf/lib`, assuming you installed STAF to directory `/usr/local/staf`__
+
+ * On Mac OS X, verify that file `PYSTAF.so` exists in directory `/Library/staf/lib`, assuming you installed STAF to directory `/Library/staf`
+
+The library file for the version of Python that was selected as the default Python version during the STAF installation will either have a link in `{STAF/Config/STAFRoot}/lib` (on Unix) or a copy in `{STAF/Config/STAFRoot}/bin` on Windows.
+
+2. __To configure STAF Python support, you need to set or update your `PYTHONPATH` environment variable__ as follows:
+
+ * On Linux, Solaris, or FreeBSD, add the `/usr/local/staf/lib` directory to your `PYTHONPATH`, assuming you installed STAF to directory `/usr/local/staf`. For example: `export PYTHONPATH=/usr/local/staf/lib:$PYTHONPATH`
+
+ * On Mac OS X, add the `/Library/staf/lib` directory to your `PYTHONPATH`, assuming you installed STAF to directory `/Library/staf`. For example: `export PYTHONPATH=/Library/staf/lib:$PYTHONPATH`
+
+ * On Windows, add the `C:\STAF\bin` directory to your `PYTHONPATH`, assuming you installed STAF to directory `C:\STAF`. For example: `set PYTHONPATH=C:\STAF\bin;%PYTHONPATH%`
+
+3. Verify that the version of Python you have installed matches that version of Python that STAF Python support was built with because the version of Python used to build the STAF Python libraries is usually the only Python version that will work with those STAF Python libraries. See section 1.0 Introduction above for more information on the version of Python used to build the STAF Python libraries if using STAF Python support provided with the STAF installer file and how to build STAF Python support for another version of Python.
+
+4. Finally, you simply need to import the modules (e.g. `PySTAF`, `PySTAFMon`, `PySTAFLog`) described below that you use. For example, to import the `PySTAF` module, make sure your Python program contains the following line at the beginning:
+
+ {{{
+from PySTAF import *
+ }}}
+
+=== Modules PySTAF, PySTAFv3 ===
+
+__The `PySTAF` module provides the base level of support for Python 2.x scripts to call into STAF.__
+
+__The `PySTAFv3` module provides the base level of support for Python 3.x scripts to call into STAF.__
+
+__These packages externalize some classes, utility functions, and constants. Whether you are using Python 2.x or Python 3.x, usage of these classes, utility functions, and constants is exactly the same. In your Python script, just make sure to import the version that corresponds to the version of Python you are using__ (i.e use `PySTAF` with Python 2.x, and use `PySTAFv3` with Python 3.x).
+
+The STAF Python classes that it externalizes are:
+
+ * `STAFHandle` - The primary class for communicating with STAF
+ * `STAFResult` - A class representing the result of a STAF request
+ * `STAFException` - A class representing an error registering with STAF
+ * `STAFMapClassDefinition` - A class representing a map class definition that can be used by STAF marshalling contexts
+ * `STAFMarshallingContext` - A class representing a STAF marshalling context which is used to ''define structured data''
+
+The STAF Python functions that it externalizes are:
+
+ * `isMarshalledData` - A utility function that tests if a string is a marshalled data string
+
+ * `marshall` - A utility function for converting a data structure into a string-based representation.
+
+ * `unmarshall` - A utility function for converting the string-based marshalled representation back into a data structure. It returns a marshalling context.
+
+ * `formatObject` - A utility function for "pretty printing" an object such that it returns a string containing a verbose hierarchical format
+
+ * `wrapData` (aka `STAFWrapData`) - A utility function for creating ''colon-length-colon delimited strings'' for use in STAF requests
+
+ * `addPrivacyDelimiters` (aka `STAFAddPrivacyDelimiters`) - A utility function for adding privacy delimiters to a string for use in protecting private data specified in a STAF command option that supports handling private data
+
+ * `escapePrivacyDelimiters` (aka `STAFEscapePrivacyDelimiters`) - A utility function for escaping privacy delimiters in a string
+
+ * `removePrivacyDelimiters` (aka `STAFRemovePrivacyDelimiters`) - A utility function for removing privacy delimiters from a string
+
+ * `maskPrivateData` (aka `STAFMaskPrivateData` - A utility function for masking private data
+
+To use this module with Python 2.x you simply import it like so:
+
+ {{{
+from PySTAF import *
+ }}}
+
+To use this module with Python 3.x you simply import it like so:
+
+ {{{
+from PySTAFv3 import *
+ }}}
+
+Since the STAF Python libraries include several files with "PYSTAF" as their file name (with varying cases, i.e. `PySTAF`, `PYSTAF`), make sure that you are not using the "`PYTHONCASEOK`" environment variable. For example, if you have it set as "`PYTHONCASEOK=1`" and then try to use the STAF Python libraries, you will get the following error:
+
+ {{{
+Traceback (most recent call last):
+  File "TestPython.py", line 9, in ?
+    from PySTAF import *
+ImportError: dynamic module does not define init function (initPySTAF)
+ }}}
+
+To correct this error, set "`PYTHONCASEOK=`". 
+
+==== Primary STAF APIs ====
+
+These APIs allow you to register/unregister with STAF, submit STAF service requests, and to wrap the values of options used in STAF service requests.
+
+===== Class STAFHandle =====
+
+`class STAFHandle(handleNameOrNumber[, handleType])`:
+
+__The `STAFHandle` class is the primary class used to communicate with STAF. It is used to register with STAF, submit service requests to STAF, and unregister with STAF. Each Python script should generally create one and only one `STAFHandle` instance object. The act of creating this object registers the Python application with STAF.__
+
+There are two ways to create a `STAFHandle` instance object:
+
+ * __The first (and standard) way allows you to specify a string containing the name by which your handle should be known. It creates a new STAF handle and returns an instance of a `STAFHandle` object referencing this new STAF handle.__
+
+ * __The second way allows you to specify an integer which is the number of an ''existing STAF static handle''. It returns an instance of a `STAFHandle` object referencing this existing static handle.__ 
+
+__If a `STAFHandle` instance object could not be created, an instance of `STAFException` is generated.__
+
+__The required argument `handleNameOrHandle` specifies a handle name or number. If you specify a ''standard handle type'' (the default), this argument must be a string containing a name for the STAF handle to be created. If you specify a ''static handle type'', this argument must be an integer containing the handle number for an existing static STAF handle.__
+
+The optional argument `handleType` specifies the type of handle. The valid handle types are:
+
+ * `STAFHandle.Standard`: specifies the standard handle type. This is the default.
+ * `STAFHandle.Static`: specifies the static handle type. 
+
+__Once you have a valid `STAFHandle` instance object, you can begin submitting requests to STAF services. To do this, you use the `submit()` method, to which you specify the machine and service which should handle the request, as well as the ''request string'' itself.__
+
+__Before the Python script exits, it should unregister with STAF by calling the `unregister()` method.__
+
+__`STAFHandle` defines the following member variables. They are initialized by the constructor, and should not be modified directly.__
+
+ * `handle` - __An integer containing the number of the STAF handle.__
+
+ * `handleType` - __The type of handle (`STAFHandle.Standard` or `STAFHandle.Static`).__
+
+ * `doUnmarshallResult` - __An integer containing 1 or 0. It is set to 1 by default when a `STAFHandle` is created, but can be changed using the `setDoUnmarshallResult()` method. When set to 1, this causes STAF results to be automatically unmarshalled when the handle's `submit()` method returns a `STAFResult` (meaning the `STAFResult`'s `resultContext` and `resultObj` fields will be set). Since: STAF V3.3.1__
+
+`STAFHandle` defines the following methods:
+
+`submit(location, service, request, [, mode])`:
+
+__Allows your Python script to call STAF services. Returns an instance of class `STAFResult` described below, which consists of the `rc` and `result` string from the service request. In addition, if auto-unmarshalling is enabled for the handle that called the `submit()` method, the `STAFResult` object also contains the marshalling context for the result (e.g. the unmarshalled result) and the result object (e.g. the root object of the marshalling context). Otherwise, if auto-unmarshalling is disabled, the `resultContext` and `resultObj` fields in the `STAFResult` object will be set to `None`.__
+
+__The required argument `location` specifies the endpoint of the machine where the service is registered.__
+
+__The required argument `service` specifies the name of the service to submit the request to.__
+
+__The required argument `request` specifies the request to submit to the service.__
+
+__The optional argument `mode` specifies the mode to use when submitting the request.__ The default is `STAFHandle.Synchronous`. Other possible values are:
+
+ * `STAFHandle.FireAndForget`
+ * `STAFHandle.Queue`
+ * `STAFHandle.Retain`
+ * `STAFHandle.QueueRetain`
+
+`unregister()`:
+
+__Unregisters the handle. Returns 0 if the handle was successfully unregistered. Otherwise, if an error occurs unregistering the handle, an instance of STAFException is generated.__
+
+`setDoUnmarshallResult(flag)`:
+
+__Sets the flag indicating if auto-unmarshalling will be performed when the handle submits a STAF service request.__
+
+__The required argument `flag` should be 0 to disable auto-unmarshalling or 1 to enable auto-unmarshalling.__
+
+Since: STAF V3.3.1.
+
+`getDoUnmarshallResult()`:
+
+__Gets the flag that indicates if auto-unmarshalling will be performed when the handle submits a STAF service request.__
+
+__Returns 0 if auto-unmarshalling is disabled or 1 if auto-unmarshalling is enabled.__
+
+Since: STAF V3.3.1.
+
+`STAFHandle` defines the following constants:
+
+ {{{
+# STAFHandle types
+
+Standard = 0
+Static   = 1
+
+# Modes for submit call
+
+Synchronous   = 0
+FireAndForget = 1
+Queue         = 2
+Retain        = 3
+QueueRetain   = 4
+ }}}
+
+Note, you can obtain more information on standard vs. static handles and the various submission modes in the C API reference in the STAF User's Guide.
+
+The following is a Python 2.x example of a program which registers with STAF, calls a couple of STAF services, and then unregisters with STAF.
+
+ {{{
+from PySTAF import *
+import sys
+
+try:
+    handle = STAFHandle("MyTest")
+except STAFException, e:
+    print "Error registering with STAF, RC: %d" % e.rc
+    sys.exit(e.rc)
+
+result = handle.submit("local", "ping", "ping")
+
+if (result.rc != 0):
+    print "Error submitting request, RC: %d, Result: %s" % (result.rc, result.result)
+
+result = handle.submit("local", "var", "resolve string {STAF/Config/OS/Name}")
+
+if (result.rc != 0):
+    print "Error submitting request, RC: %d, Result: %s" % (result.rc, result.result)
+else:
+    print "OS Name: %s" % result.result
+
+rc = handle.unregister()
+
+sys.exit(rc)
+ }}}
+
+The following is the same Python script, written to support Python 3.x.
+
+ {{{
+from PySTAFv3 import * 
+import sys
+
+try:
+    handle = STAFHandle("MyTest")
+except STAFException as e:
+    print("Error registering with STAF, RC: %d" % e.rc)
+    sys.exit(e.rc)
+
+result = handle.submit("local", "ping", "ping")
+
+if (result.rc != 0):
+    print("Error submitting request, RC: %d, Result: %s" % (result.rc, result.result))
+
+result = handle.submit("local", "var", "resolve string {STAF/Config/OS/Name}")
+
+if (result.rc != 0):
+    print("Error submitting request, RC: %d, Result: %s" % (result.rc, result.result))
+else:
+    print("OS Name: %s" % result.result)
+
+rc = handle.unregister()
+
+sys.exit(rc)
+ }}}
+
+Note that the remaining examples in this document will show scripts that support Python 2.x.
+
+The following is an example of a program which registers with STAF using a static STAF handle. __Note that a static handle is a handle which can be shared by several processes on the same system.__ See the STAF User's Guide for more information on static handles. Generally, you don't need to use a static STAF handle.
+
+ {{{
+from PySTAF import *
+
+# First, need to obtain an existing static handle number from somewhere.
+# This example assumes that this Python program will be run by submitting
+# a START request to the STAF PROCESS service using the STATICHANDLENAME
+# option.  This allows it to obtain the STAF static handle number from
+# environment variable STAF_STATIC_HANDLE.
+#
+# Note:  Another way a static handle could have been obtained is if it
+# is passed to the Python program as an argument.  The static handle
+# could have been created by another program (which submitted a CREATE
+# HANDLE request to the HANDLE service).
+
+import os
+staticHandleNumber = os.environ.get('STAF_STATIC_HANDLE')
+
+if staticHandleNumber == None:
+    print "Error:  STAF_STATIC_HANDLE environment variable does not exist"
+    sys.exit(1)
+
+staticHandleNumber = int(staticHandleNumber)
+print "Using STAF static handle %s" % (staticHandleNumber)
+
+# Register with STAF using a static STAF handle that already exists
+
+try:
+    handle = STAFHandle(staticHandleNumber, STAFHandle.Static)
+except STAFException, e:
+    print "Error registering with STAF, RC: %d" % e.rc
+    sys.exit(e.rc)
+
+result = handle.submit("local", "ping", "ping")
+
+if (result.rc != 0):
+    print "Error submitting request, RC: %d, Result: %s" % (result.rc, result.result)
+ }}}
+
+===== Class STAFResult =====
+
+__This class encapsulates the result of a STAF service request (made via the `STAFHandle.submit()` method). This class also contains a set of constants representing the various common STAF return codes.__ It has two constructors:
+
+`class STAFResult([rc][, result])`
+
+ * The optional argument `rc` specifies the numeric return code of the service request. The default is 0.
+
+ * The optional argument `result` specifies a string result buffer returned from the service request. The default is "".
+
+`class STAFResult(rc,result,doUnmarshallResult)`
+
+ * The required argument `rc` specifies the numeric return code of the service request.
+
+ * The required argument `result` specifies a ''string result buffer'' returned from the service request.
+
+ * The optional argument `doUnmarshallResult` __specifies whether to enable auto-unmarshalling. Set to a true value (e.g. 1) to enable or a false value (e.g. 0) to disable.__ Note: This argument was added in STAF V3.3.1. 
+
+`STAFResult` defines the following member variables. They are initialized by the constructor, and should not be modified directly.
+
+ * `rc` - __An integer identifying the return code of the service request.__
+
+ * `result` - __A string containing the result buffer returned from the service request.__
+
+ * `resultContext` - __If the second constructor is used to create a `STAFResult` object (the one with the `doUnmarshallResult` argument) and the `doUnmarshallResult` argument is true, this variable will contain the ''marshalling context'' for the result (e.g. the unmarshalled result). Otherwise, this variable will be set to `None`.__ Note: This variable was added in STAF V3.3.1.
+
+ * `resultObj` - __If the second constructor is used to create a `STAFResult` object (the one with the `doUnmarshallResult` argument) and the `doUnmarshallResult` argument is true, this variable will contain the ''root object'' of the result's marshalling context. Otherwise, this variable will be set to `None`.__ Note: This variable was added in STAF V3.3.1. 
+
+`STAFResult` defines the following constants representing the various common STAF return codes.
+
+ {{{
+Ok                          = 0
+InvalidAPI                  = 1
+UnknownService              = 2
+InvalidHandle               = 3
+HandleAlreadyExists         = 4
+HandleDoesNotExist          = 5
+UnknownError                = 6
+InvalidRequestString        = 7
+InvalidServiceResult        = 8
+REXXError                   = 9
+BaseOSError                 = 10
+ProcessAlreadyComplete      = 11
+ProcessNotComplete          = 12
+VariableDoesNotExist        = 13
+UnResolvableString          = 14
+InvalidResolveString        = 15
+NoPathToMachine             = 16
+FileOpenError               = 17
+FileReadError               = 18
+FileWriteError              = 19
+FileDeleteError             = 20
+STAFNotRunning              = 21
+CommunicationError          = 22
+TrusteeDoesNotExist         = 23
+InvalidTrustLevel           = 24
+AccessDenied                = 25
+STAFRegistrationError       = 26
+ServiceConfigurationError   = 27
+QueueFull                   = 28
+NoQueueElement              = 29
+NotifieeDoesNotExist        = 30
+InvalidAPILevel             = 31
+ServiceNotUnregisterable    = 32
+ServiceNotAvailable         = 33
+SemaphoreDoesNotExist       = 34
+NotSemaphoreOwner           = 35
+SemaphoreHasPendingRequests = 36
+Timeout                     = 37
+JavaError                   = 38
+ConverterError              = 39
+InvalidObject               = 41
+InvalidParm                 = 42
+RequestNumberNotFound       = 43
+InvalidAsynchOption         = 44
+RequestNotComplete          = 45
+ProcessAuthenticationDenied = 46
+InvalidValue                = 47
+DoesNotExist                = 48
+AlreadyExists               = 49
+DirectoryNotEmpty           = 50
+DirectoryCopyError          = 51
+DiagnosticsNotEnabled       = 52
+HandleAuthenticationDenied  = 53
+HandleAlreadyAuthenticated  = 54
+InvalidSTAFVersion          = 55
+RequestCancelled            = 56
+CreateThreadError           = 57
+MaximumSizeExceeded         = 58
+MaximumHandlesExceeded      = 59
+ }}}
+
+The following example shows the use of the `STAFResult` class when submitting a request to a STAF service that returns a ''single string result''.
+
+ {{{
+# The variable "handle" is an instance of the STAFHandle class that was
+# previously instantiated
+
+result = handle.submit("local", "ping", "ping")
+
+print "Ping request RC: %d" % result.rc
+print "Ping request result buffer: %s" % result.result
+ }}}
+
+The following example shows the use of the `STAFResult` class when submitting a request to a STAF service that returns a ''marshalled result string''.
+
+ {{{
+# The variable "handle" is an instance of the STAFHandle class that was
+# previously instantiated
+
+dirName = "{STAF/Config/STAFRoot}/bin";
+request = "LIST DIRECTORY " + wrapData(dirName) + " TYPE F LONG";
+        
+result = handle.submit("local", "FS", request);
+
+print "LIST DIRECTORY request RC: %d" % result.rc
+print "LIST DIRECTORY result context: %s" % result.resultContext
+
+list = result.resultObj
+print "LIST DIRECTORY result contains %s entries" % len(list)
+ }}}
+
+===== Class STAFException =====
+
+`class STAFException([rc][, result])`
+
+__This class is the base exception class used by the STAF modules. Currently, this class is only used when trying to register or unregister with STAF.__
+
+The optional argument `rc` specifies the numeric return code which is the basis of the exception. The default is 0.
+
+The optional argument `result` specifies a string which further describes the exception. The default is "".
+
+`STAFException` defines the following member variables. They are initialized by the constructor, and should not be modified directly.
+
+ * `rc` - An integer identifying the return code which is the basis of the exception.
+ * `result` - A string which further describes the exception. 
+
+The following is an example of a program which shows how to deal with a `STAFException` when registering with STAF.
+
+ {{{
+from PySTAF import *
+import sys
+
+try:
+    handle = STAFHandle("MyTest")
+except STAFException, e:
+    print "Error registering with STAF, RC: %d" % e.rc
+ }}}
+
+===== Function wrapData =====
+
+`wrapData(inputString)`
+
+__Returns a colon-length-colon delimited version of the input string. This function is widely used to pass the values of options in STAF requests.__
+
+__Note that `STAFWrapData` is an alias for the `wrapData` function and can be used instead to call this function.__
+
+
+This example creates a colon-length-colon delimited version of string `Hello world`. The resulting string is `:11:Hello world`.
+
+ {{{
+outputString = wrapData("Hello world")
+ }}}
+
+This example uses the `wrapData` function for the semaphore name (which contains spaces) in an `EVENT POST` request to the SEM service.
+
+ {{{
+semName = "My Synch Sem"
+result = handle.submit("local", "sem", "event %s post" % wrapData(semName))
+ }}}
+
+:::
+
+== STAF Ant Task User's Guide ==
+http://staf.sourceforge.net/current/STAFAnt.htm @2010/10/13
+
+=== Overview ===
+
+__The `STAF` Ant Task allows you call into the STAF framework from within an Ant build script.__
+
+__This allows you to take advantage of some of STAF's capabilities such as ''distributed synchronization'' via the SEM (Semaphore) service and resource pooling via the ResPool service.__
+
+__The `STAFWrapData` Ant Task allows you to create a ''length delimited representation'' of a string, which is useful when submitting STAF requests that contain embedded spaces and quotes.__
+
+=== Setup ===
+
+==== Installation =====
+
+The `STAF` and `STAFWrapData` __Ant Task classes are located a file named `STAFAnt.jar`. If you selected to install Java support during the installation of STAF, then the `STAFAnt.jar` file will be located in `{STAF/Config/STAFRoot}/bin` for Windows or in `{STAF/Config/STAFRoot}/lib` for Unix.__
+
+==== Configuration ====
+
+To use the `STAF` and `STAFWrapData` Ant Tasks, you will need to add the `STAFAnt.jar` file to your `CLASSPATH`.
+
+For example, on Windows, if you installed STAF to the default directory, you would need to update your `CLASSPATH` with:
+
+ {{{
+set CLASSPATH=C:\STAF\bin\STAFAnt.jar;%CLASSPATH%
+ }}}
+
+On Unix, if you installed STAF to the default directory, you would need to update your `CLASSPATH` with:
+
+ {{{
+export CLASSPATH=/usr/local/staf/lib/STAFAnt.jar:$CLASSPATH
+ }}}
+
+=== Using the STAF Ant Task Extension ===
+
+==== Using the <taskdef> ====
+
+__To use the `STAF` Ant Task you must define a `<taskdef>` with attributes `name="staf"` and `classname="com.ibm.staf.ant.taskdef.STAF"`. If you would prefer to not set the `CLASSPATH` environment variable before running your Ant script, you can specify the optional attribute `classpath="C:\STAF\bin\STAFAnt.jar"`.__
+
+==== Properties ====
+
+The `STAF` Ant Task accepts the following attributes:
+
+`location`:
+
+This is either `LOCAL` (實際上比較常用小寫), if you wish to make a request of the local machine, or the name of the machine of which you wish to make a request. When making a STAF request to a remote system, in addition to specifying the machine name, you may also specify the network interface over which communication will take place. The format for this is:
+
+ {{{
+[<Interface>://]<System Identifier>[@<Port>]
+ }}}
+
+where:
+
+ * `<Interface>` is the name of the network interface. If not specified, the default interface is used.
+
+ * `<System Identifier>` is a valid network identifier for the interface in question. You may specify logical or physical identifiers. For example, for a TCP/IP interface, the physical identifier for a system is the IP address, while the logical identifier is the hostname.
+
+ * `<Port>` is a valid port to use for a TCP/IP interface. __If not specified, the port for the default interface is used. One of the things this allows you to do is communicate with an instance of STAF that is using a different TCP/IP port.__ Note that the port specified does not have to be configured on the machine submitting the request.
+
+`service`:
+
+__This is the name of the service to which you are submitting a request.__
+
+`request`:
+
+__This is the actual ''request string'' that you wish to submit to the service.__
+
+`resultPrefix`:
+
+__This is the prefix that will be used to set properties for the return code and the result from the STAF service request. The properties that will be set are `resultPrefix.rc` and `resultPrefix.result`. It is recommended that you check the return code every time the STAF Ant Task is used.__
+
+`throwBuildException`:
+
+__If this attribute is set to ''any string'' other than empty string (`""`), a `BuildException` will be thrown if the STAF request results in a non-zero return code. If this attribute is not specified (or if it is set to an empty string), a `BuildException` will not be thrown.__
+
+__Note that since Ant properties are immutable, meaning that they cannot be changed after being set, to get the correct return code and result value from the STAF Ant Task, you need to use a unique `resultPrefix` every time the STAF Ant Task is used.__
+
+=== Using the STAFWrapData Ant Task Extension ===
+
+==== Using the <taskdef> ====
+
+__To use the `STAFWrapData` Ant Task you must define a `<taskdef>` with attributes `name="stafWrapData"` and `classname="com.ibm.staf.ant.taskdef.STAFWrapData"`.__ If you would prefer to not set the `CLASSPATH` environment variable before running your Ant script, you can specify the optional attribute `classpath="C:\STAF\bin\STAFAnt.jar"`.
+
+==== Properties ====
+
+The `STAFWrapData` Ant Task accepts the following attributes: 
+
+`data`:
+
+__The input string.__
+
+`result`:
+
+__The result property that will be set with the ''wrapped data''. This property can then be referenced in the STAF Ant Task "`request`" attribute.__
+
+__Note that since Ant properties are immutable, meaning that they cannot be changed after being set, to get the correct wrapped data result from the `STAFWrapData` Ant Task, you need to use a unique `result` every time the `STAFWrapData` Ant Task is used.__
+
+=== Examples ===
+
+==== Example 1 ====
+
+Here is an example of an Ant build script that uses the `STAF` Ant Task:
+
+ {{{
+<project name="TestSTAFAntExtension" default="main" basedir=".">
+
+    <description>
+        Build file to test the STAF Ant Extension
+    </description>
+
+    <taskdef name="staf"
+              classname="com.ibm.staf.ant.taskdef.STAF"/>
+
+    <target name="main">
+      <staf location="local"
+            service="PING"
+            request="PING"
+            throwBuildException="1"/>
+      <staf location="local"
+            service="MISC"
+            request="VERSION"
+            resultPrefix="version"/>
+      <echo>RC: ${version.rc}, Result: ${version.result}</echo>
+      <staf location="local"
+            service="MISC"
+            request="WHOAMI"
+            resultPrefix="whoami"/>
+      <echo>RC: ${whoami.rc}, Result: ${whoami.result}</echo>
+      <staf location="local"
+            service="TEST"
+            request="HELP"
+            resultPrefix="testhelp"/>
+      <echo>RC: ${testhelp.rc}, Result: ${testhelp.result}</echo>
+      <staf location="local"
+            service="TRUST"
+            request="LIST"
+            resultPrefix="trustlist"/>
+      <echo>RC: ${trustlist.rc}, Result: ${trustlist.result}</echo>
+    </target>
+
+</project>
+ }}}
+
+Here is the output from this sample script:
+
+ {{{
+Buildfile: build.xml
+
+main:
+     [staf] local PING PING
+     [staf] RC=0, Result=PONG
+     [staf] local MISC VERSION
+     [staf] RC=0, Result=3.1.0 Beta 1
+     [echo] RC: 0, Result: 3.1.0 Beta 1
+     [staf] local MISC WHOAMI
+     [staf] RC=0, Result=
+     [staf] {
+     [staf]   Instance Name   : STAF
+     [staf]   Instance UUID   : 70742C435C0500000935359732323638
+     [staf]   Request Number  : 91
+     [staf]   Interface       : local
+     [staf]   Logical ID      : local
+     [staf]   Physical ID     : local
+     [staf]   Endpoint        : local://local
+     [staf]   Machine         : machineA.austin.ibm.com
+     [staf]   Machine Nickname: testmachine1
+     [staf]   Local Request   : Yes
+     [staf]   Handle          : 18
+     [staf]   Handle Name     : STAF_Ant_Extension
+     [staf]   User            : none://anonymous
+     [staf]   Trust Level     : 5
+     [staf] }
+     [echo] RC: 0, Result:
+     [echo] {
+     [echo]   Instance Name   : STAF
+     [echo]   Instance UUID   : 70742C435C0500000935359732323638
+     [echo]   Request Number  : 91
+     [echo]   Interface       : local
+     [echo]   Logical ID      : local
+     [echo]   Physical ID     : local
+     [echo]   Endpoint        : local://local
+     [echo]   Machine         : machineA.austin.ibm.com
+     [echo]   Machine Nickname: testmachine1
+     [echo]   Local Request   : Yes
+     [echo]   Handle          : 18
+     [echo]   Handle Name     : STAF_Ant_Extension
+     [echo]   User            : none://anonymous
+     [echo]   Trust Level     : 5
+     [echo] }
+     [staf] local TEST HELP
+     [staf] RC=2, Result=TEST
+     [echo] RC: 2, Result: TEST
+     [staf] local TRUST LIST
+     [staf] RC=0, Result=
+     [staf] [
+     [staf]   {
+     [staf]     Type       : Default
+     [staf]     Entry      : <None>
+     [staf]     Trust Level: 3
+     [staf]   }
+     [staf]   {
+     [staf]     Type       : Machine
+     [staf]     Entry      : local://local
+     [staf]     Trust Level: 5
+     [staf]   }
+     [staf]   {
+     [staf]     Type       : Machine
+     [staf]     Entry      : tcp://machineB.austin.ibm.com
+     [staf]     Trust Level: 5
+     [staf]   }
+     [staf]   {
+     [staf]     Type       : Machine
+     [staf]     Entry      : tcp://machineC.austin.ibm.com
+     [staf]     Trust Level: 5
+     [staf]   }
+     [staf] ]
+     [echo] RC: 0, Result:
+     [echo] [
+     [echo]   {
+     [echo]     Type       : Default
+     [echo]     Entry      : <None>
+     [echo]     Trust Level: 3
+     [echo]   }
+     [echo]   {
+     [echo]     Type       : Machine
+     [echo]     Entry      : local://local
+     [echo]     Trust Level: 5
+     [echo]   }
+     [echo]   {
+     [echo]     Type       : Machine
+     [echo]     Entry      : tcp://machineB.austin.ibm.com
+     [echo]     Trust Level: 5
+     [echo]   }
+     [echo]   {
+     [echo]     Type       : Machine
+     [echo]     Entry      : tcp://machineC.austin.ibm.com
+     [echo]     Trust Level: 5
+     [echo]   }
+     [echo] ]
+
+BUILD SUCCESSFUL
+Total time: 1 second
+ }}}
+
+==== Example 2 ====
+
+Here is an example that demonstates how you might use STAF services as part of your build. This example does the following steps:
+
+ * Uses the SEM service to request the build semaphore to ensure that only one build occurs at a time.
+ * Uses the RESPOOL service to request a machine from the buildMachines resource pool.
+ * Next you would add the tasks to build Product XYZ.
+ * Uses the RESPOOL service to release the machine from the buildMachines resource pool.
+ * __Uses the EVENT service to generate a build event to kick off BVT (Build Verification Test).__
+ * Uses the EMAIL service to send an email indicating that the build is complete.
+ * Uses the SEM service to release the build semaphore.
+
+ {{{
+<project name="BuildProductXYZ" default="main" basedir=".">
+
+    <description>
+        Build file to build product XYZ.
+    </description>
+
+    <taskdef name="staf"
+              classname="com.ibm.staf.ant.taskdef.STAF"/>
+
+    <target name="main">
+
+        <!-- Request the build semaphore to ensure that only one build
+             occurs at a time. -->
+      <staf location="local"
+            service="SEM"
+            request="REQUEST MUTEX ProductXYZBuild"
+            throwBuildException="1"/>
+
+      <!-- Request a machine from the buildMachines resource pool. -->
+      <staf location="local"
+            service="RESPOOL"
+            request="REQUEST POOL buildMachines"
+            throwBuildException="1"
+            resultPrefix="resourceEntry"/>
+      <echo>Using build machine: ${resourceEntry.result}</echo>
+
+      <!-- Next you would add the tasks to build Product XYZ. -->
+
+      <!-- Release the machine from the buildMachines resource pool. -->
+      <staf location="local"
+            service="RESPOOL"
+            request="RELEASE POOL buildMachines ENTRY ${resourceEntry.result} FORCE"
+            throwBuildException="1"/>
+
+      <!-- Generate a build event to kick off BVT. -->
+      <staf location="local"
+            service="EVENT"
+            request="GENERATE TYPE productXYZ SUBTYPE start-bvt"
+            throwBuildException="1"/>
+
+      <!-- Send an email indicating that the build is complete. -->
+      <staf location="local"
+            service="EMAIL"
+            request="SEND TO user@company.com MESSAGE ProductXYZ-BuildComplete"
+            throwBuildException="1"/>
+
+      <!-- Release the build semaphore. -->
+      <staf location="local"
+            service="SEM"
+            request="RELEASE MUTEX ProductXYZBuild FORCE"
+            throwBuildException="1"/>
+
+    </target>
+
+</project>
+ }}}
+
+Here is the output from this sample script:
+
+ {{{
+Buildfile: build.xml
+
+main:
+     [staf] local SEM REQUEST MUTEX ProductXYZBuild
+     [staf] RC=0, Result=
+     [staf] local RESPOOL REQUEST POOL buildMachines
+     [staf] RC=0, Result=machineA
+     [echo] Using build machine: machineA
+     [staf] local RESPOOL RELEASE POOL buildMachines ENTRY machineA FORCE
+     [staf] RC=0, Result=
+     [staf] local EVENT GENERATE TYPE productXYZ SUBTYPE start-bvt
+     [staf] RC=0, Result=10
+     [staf] local EMAIL SEND TO bdavid@us.ibm.com MESSAGE ProductXYZ-BuildComplete
+     [staf] RC=0, Result=
+     [staf] local SEM RELEASE MUTEX ProductXYZBuild FORCE
+     [staf] RC=0, Result=
+
+BUILD SUCCESSFUL
+Total time: 11 seconds
+ }}}
+
+==== Example 3 ====
+
+Here is an example that shows how to embed quotes in the STAF service request (using `&quot;`). The service request is a STAX `EXECUTE` request including the `ARGS` option; the `ARGS` option value needs to be enclosed with double quotes, and includes single quotes.
+
+ {{{
+<project name="args5" default="main" basedir=".">
+
+    <description>
+        Build file to execute STAX job args5.xml
+    </description>
+
+    <taskdef name="staf"
+              classname="com.ibm.staf.ant.taskdef.STAF"/>
+
+    <target name="main">
+      <staf location="local"
+             service="STAX"
+             request="EXECUTE FILE C:/staxtest/args5.xml ARGS &quot;{ 'ArchiveIDs': [\'B1\',\'B2\',\'B3\',\'B4\'] }&quot; WAIT RETURNRESULT"
+             resultPrefix="staxexecute"/>
+      <echo>RC: ${staxexecute.rc}, Result: ${staxexecute.result}</echo>
+    </target>
+
+</project>
+ }}}
+
+The `args5.xml` STAX job simply returns the argument passed to it:
+
+ {{{
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE stax SYSTEM "stax.dtd">
+
+<stax>
+
+  <defaultcall function="main"/>
+
+  <function name="main">
+  
+    <function-map-args>
+
+      <function-optional-arg name="ArchiveIDs" default="['B1','B3']"/>
+
+    </function-map-args>
+
+    <sequence>
+
+      <message log="1">
+        '%s' % (ArchiveIDs)
+      </message>
+
+      <return>ArchiveIDs</return>
+
+    </sequence>
+
+  </function>
+
+</stax>
+ }}}
+
+Here is the output from this sample script:
+
+ {{{
+Buildfile: build.xml
+
+main:
+     [staf] local STAX EXECUTE FILE C:/staxtest/args5.xml ARGS "{ 'ArchiveIDs':
+[\'B1\',\'B2\',\'B3\',\'B4\'] }" WAIT RETURNRESULT
+     [staf] RC=0, Result=
+     [staf] {
+     [staf]   Job ID: 2
+     [staf]   Result: ['B1', 'B2', 'B3', 'B4']
+     [staf]   Status: Normal
+     [staf] }
+     [echo] RC: 0, Result:
+     [echo] {
+     [echo]   Job ID: 2
+     [echo]   Result: ['B1', 'B2', 'B3', 'B4']
+     [echo]   Status: Normal
+     [echo] }
+
+BUILD SUCCESSFUL
+Total time: 1 second
+ }}}
+
+==== Example 4 ====
+
+Here is an example that shows how to use the `STAFWrapData` Ant Task to create a ''length delimited representation of a string, which will then be used as part of the "`request`" attribute for a `STAF` Ant Task. In this example we are executing a `PROCESS START` request, where the `COMMAND` includes embedded quotes and spaces.
+
+ {{{
+<project name="TestSTAFWrapDataAntExtension" default="main" basedir=".">
+
+    <description>
+        Build file to test the STAFWrapData Ant Extension
+    </description>
+
+    <taskdef name="staf"
+             classname="com.ibm.staf.ant.taskdef.STAF"/>
+    <taskdef name="stafWrapData"
+             classname="com.ibm.staf.ant.taskdef.STAFWrapData"/>
+
+    <target name="main">
+      <stafWrapData data="dir &quot;C:\Program Files\Java&quot;"
+                    result="dirCommand"/>
+      <staf location="local"
+            service="PROCESS"
+            request="START SHELL COMMAND ${dirCommand} RETURNSTDOUT STDERRTOSTDOUT WAIT"
+            resultPrefix="process"/>
+      <echo>RC: ${process.rc}, Result: ${process.result}</echo>
+    </target>
+
+</project>
+ }}}
+
+Here is the output from this sample script:
+
+ {{{
+Buildfile: build.xml
+
+main:
+     [staf] local PROCESS START SHELL COMMAND :27:dir "C:\Program Files\Java" RE
+TURNSTDOUT STDERRTOSTDOUT WAIT
+     [staf] RC=0, Result=
+     [staf] {
+     [staf]   Return Code: 0
+     [staf]   Key        : <None>
+     [staf]   Files      : [
+     [staf]     {
+     [staf]       Return Code: 0
+     [staf]       Data       :  Volume in drive C is C_Drive
+     [staf]  Volume Serial Number is 46B9-A0E8
+
+     [staf]  Directory of C:\Program Files\Java
+
+     [staf] 01/08/2008  03:03 PM    <DIR>          .
+     [staf] 01/08/2008  03:03 PM    <DIR>          ..
+     [staf] 10/17/2007  11:01 AM    <DIR>          jdk1.5.0_13
+     [staf] 10/17/2007  11:01 AM    <DIR>          jre1.5.0_13
+     [staf] 01/08/2008  03:03 PM    <DIR>          jre1.6.0_03
+     [staf]                0 File(s)              0 bytes
+     [staf]                5 Dir(s)  39,176,253,440 bytes free
+
+     [staf]     }
+     [staf]   ]
+     [staf] }
+     [echo] RC: 0, Result:
+     [echo] {
+     [echo]   Return Code: 0
+     [echo]   Key        : <None>
+     [echo]   Files      : [
+     [echo]     {
+     [echo]       Return Code: 0
+     [echo]       Data       :  Volume in drive C is C_Drive
+     [echo]  Volume Serial Number is 46B9-A0E8
+     [echo]
+     [echo]  Directory of C:\Program Files\Java
+     [echo]
+     [echo] 01/08/2008  03:03 PM    <DIR>          .
+     [echo] 01/08/2008  03:03 PM    <DIR>          ..
+     [echo] 10/17/2007  11:01 AM    <DIR>          jdk1.5.0_13
+     [echo] 10/17/2007  11:01 AM    <DIR>          jre1.5.0_13
+     [echo] 01/08/2008  03:03 PM    <DIR>          jre1.6.0_03
+     [echo]                0 File(s)              0 bytes
+     [echo]                5 Dir(s)  39,176,253,440 bytes free
+     [echo]
+     [echo]     }
+     [echo]   ]
+     [echo] }
+
+BUILD SUCCESSFUL
+Total time: 0 seconds
+ }}}
+
+== Download STAF V3 Eclipse Plug-ins ==
+http://staf.sourceforge.net/geteclipse.php @2010/10/13
+
+The latest release of the STAF Eclipse Plug-ins can be downloaded from this page.
+
+Recently an effort has begun to provide STAF interaction via the Eclipse Platform. __This will hopefully provide an entry point for beginning STAF users to get introduced to STAF via a GUI environment. Advanced users may find it useful as it provides access to a variety of information displayed in a graphical format and provides a persistent history of commands. Following the spirit of Eclipse, the STAF Editor is extensible so that the STAF team and other users may easily add additional pages to the STAF Multi-Page Editor.__
+
+Below is a brief list of features, download link, and a short getting started guide. The Getting Started Guide contains steps to install and begin using the STAF Eclipse Plug-ins.
+
+If you have any comments or suggestions for improving this tool please post them to the STAF Discussion Forum. This is a Beta release and any input will be used to help steer the direction of the tool, so any and all ideas or comments are greatly appreciated.
+
+Features:
+
+ * Submit any STAF commands via an eclipse editor
+ * Results of commands are saved for later reference
+ * Results of commands displayed in dynamically generated widget based on format of result data
+ * Open editors for multiple machines
+ * Uses the Eclipse extension architecture to allow additional editor tabs to be quickly developed
+ * Currently Implemented Service-Based plug-ins:
+   * Service - provides graphical access to the details of currently running services and requests
+   * Trust - provides ability to quickly view and modify trust settings
+   * Var - provides ability to quickly view and modify STAF variables
+   * Handle - provides quick access to STAF handles and allows for easy filtering of which handles are displayed
+
+Reference the STAF Eclipse Plug-ins History page for version and history information. 
+
+== Getting Started with STAF Eclipse Plug-ins ==
+http://staf.sourceforge.net/current/eclipsegs.htm @2010/10/13
+
+ * Open a STAF Perspective
+
+ * Create a STAF Project
+
+ * Create a STAF Machine Group (optional) - STAF Machines (next step) may exist without a group
+
+ * Create a STAF Machine
+
+   * File -> New -> Machine
+
+   * Select the STAF Machine Group or STAF Project as the container
+
+   * Enter the Hostname of the desired machine (this machine must be running STAF)
+
+   * Optionally enter the interface and/or port needed to communicate with the machine. __In most circumstances, these items may be left as the "Local Default" in which case STAF will perform the standard interface cycling when attempting to establish communication with the machine.__
+
+   * Click Finish
+
+ * Open the STAF Editor for the newly created Machine
+
+   * Double-click the newly created machine in the STAF view (left panel of Eclipse)
+
+   * __NOTE: STAF must be running on the local machine and on the remote machine__
+
+   * Use the editor to interact with STAF on remote machines
+
+ * The STAF Editor is an Eclipse Multi-Page Editor with 2 static pages with dynamically loaded pages based on the installed plug-ins and currently running services on the given STAF endpoint.
+
+   * The main editor page, "STAF Editor" contains three sections or sashes that may be resized:
+
+     * Command Submission - This sash contains some basic information about the STAF endpoint and widgets to submit STAF commands. All commands submitted from this section will appear in the "Command History".
+
+     * Command History - This sash contains the history of commands submitted via the STAF Editor. This information is persisted when the editor is saved. Double-clicking an entry will populate its data in the "Command Submission" widgets for re-submission or editing.
+
+     * Command Results - When a command that has completed is selected in the "Command History" table its result data will appear in this section. The type of widget used to display the data will be dynamically created based upon the format of the result data.
+
+   * The "Properties" page allows the hostname, port, and interface of the STAF endpoint to be modified. It also allows mappings between service names and STAF Editor extensions to be created. However, this functionality is currently moot as extensions have thus far only been created for internal services.
+
+   * The Beta release contains extensions for a few of the standard STAF internal services (HANDLE, SERVICE, TRUST, VAR). These pages may be used to retrieve data from the service and in some instances modify data or settings on the service.
+
+     * HANDLE – The Handle service extension displays current handle information. The types of handles displayed may be filtered using the checkboxes at the top of the page. Use the refresh button to retrieve updated information from STAF.
+
+     * SERVICE – The Service service extension displays information about registered services and current requests. This information is separated into two tabs, Requests & Services. Select an item from the list to display detailed information. Use the refresh button to retrieve updated information from STAF.
+
+     * TRUST – The Trust service extension displays and allows modification of STAF trust settings. The input widgets at the top of the page may be used to add new trust settings. Double click an entry in the table to populate its information into the input widgets. Use the refresh button to retrieve updated information from STAF.
+
+     * VAR – The Var service extension displays and allows modification of STAF variables. The input widgets at the top of the page may be used to add or update variables. Double click an entry in the table to populate its information into the input widgets. Use the refresh button to retrieve updated information from STAF. The bottom section of the page may be used to test STAF variable resolutions. Enter the text to resolve in the left text pane, click “Resolves To ->” button and the resolved string is displayed in the right text pane.
+
+
+

@@ -1,0 +1,60 @@
+= link:dropbox.html[Dropbox] / Unix-like =
+:title: [Dropbox] Unix-like
+
+== Unable to monitor filesystem ==
+
+在 Linux 看到下面這個訊息時，表示你 Dropbox 下的目錄數量已經超過系統可以 "monitor for change" 的數量。
+
+image::unix-like/unable_to_monitor_filesystem.png[]
+
+系統預設的數量限制可以查看 `/proc/sys/fs/inotify/max_user_watches`，預設是 8192
+
+[source,console]
+--------------------------------------------------------------------------------
+$ cat /proc/sys/fs/inotify/max_user_watches
+8192
+--------------------------------------------------------------------------------
+
+要改變這個上限，可以直接改掉 `/proc/sys/fs/inotify/max_user_watches` 裡面的值，但下次重開機就失效了。建議從 `/etc/sysctl.conf` 下手，再用 `sysctl -p` 重新載入設定
+
+[source,console]
+--------------------------------------------------------------------------------
+$ echo fs.inotify.max_user_watches=100000 | sudo tee -a /etc/sysctl.conf
+$ sudo sysctl -p
+
+$ cat /proc/sys/fs/inotify/max_user_watches
+100000
+--------------------------------------------------------------------------------
+ 
+== 參考資料 ==
+
+ * https://www.dropbox.com/help/145/en[Dropbox - Why aren't certain files on one computer syncing to another?]
+
+////////////////////////////////////////////////////////////////////////////////
+** The Linux version of the Dropbox desktop application is limited from monitoring more than 10000 folders by default. Anything over that is not watched and, therefore, ignored when syncing.
+** There's an easy fix for this. Open a terminal and enter the following: `echo fs.inotify.max_user_watches=100000 | sudo tee -a /etc/sysctl.conf; sudo sysctl -p`
+** This command will tell your system to watch up to 100000 folders. Once the command is entered and you enter your password, Dropbox will immediately resume syncing.
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://webapps.stackexchange.com/questions/26598/dropbox-error-about-monitoring-file-system[Dropbox error about monitoring file system - Web Applications Stack Exchange] (2012-05-08)
+
+////////////////////////////////////////////////////////////////////////////////
+** On Linux, the Dropbox client is subject to a default system limit on the number of directories it can monitor for changes. 可以 sync，但無法 "monitor for change"??
+** After multiple tries I was still getting the "unable to monitor filesystem" error. I finally figured out why: 100,857 Files, 15,009 Folders I had to bump my max_user_watches to a higher number. 問題在 directory 的數量。
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://stackoverflow.com/questions/535768/what-is-a-reasonable-amount-of-inotify-watches-with-linux[inotifypropertychanged - What is a reasonable amount of inotify watches with Linux? - Stack Overflow] (2009-02-11)
+
+////////////////////////////////////////////////////////////////////////////////
+** You can find the system limits by reading `/proc/sys/fs/inotify/max_user_instances` (maximum number of inotify "objects") and `/proc/sys/fs/inotify/max_user_watches` (maximum number of files watched), so if you exceed those numbers, it's too many ;-) The maximum number of watches is usually several tens of thousands or higher - on my system, 262143 - which is probably more than you'd ever need unless you're trying to watch every file in a file system, but you shouldn't be doing that.
+** I would say, just try not to use more inotify watches than you need to, and don't worry about it unless you notice a significant decrease in performance.
+** Kernel Korner - Intro to inotify mentions “thousands of watches” so at least that number should not be a problem.
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://monodevelop.com/Inotify_watches_limit[Inotify Watches Limit - MonoDevelop]
+
+////////////////////////////////////////////////////////////////////////////////
+** The default is 8192. 16384 is good, 32768 is probably more than enough. To change the limit, run: # `echo 16384 > /proc/sys/fs/inotify/max_user_watches`
+** To make the change permanent, edit the file `/etc/sysctl.conf` and add this line to the end of the file: `fs.inotify.max_user_watches=16384`
+////////////////////////////////////////////////////////////////////////////////
+

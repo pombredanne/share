@@ -1,0 +1,39 @@
+= link:networking.html[VirtualBox / Networking] / NAT (Network Address Translation) =
+:title: [VBox] NAT Networking
+
+Port forwarding 在 Unix-like 下有 host port > 1024 的要求。
+
+--------------------------------------------------------------------------------
+$ sudo lsof -i :2222
+COMMAND    PID   USER   FD   TYPE DEVICE SIZE/OFF NODE NAME
+VirtualBo 2946 jeremy   89u  IPv4 138329      0t0  TCP *:2222 (LISTEN)
+--------------------------------------------------------------------------------
+
+== 參考資料 ==
+
+ * http://www.virtualbox.org/manual/ch06.html[Chapter 6. Virtual networking - User Manual]
+
+////////////////////////////////////////////////////////////////////////////////
+** Network Address Translation (NAT) is the simplest way of accessing an external network from a virtual machine. Usually, it does not require any configuration on the host network and guest system. For this reason, it is the default networking mode in VirtualBox.
+** A virtual machine with NAT enabled acts much like a real computer that connects to the Internet through a router. The "router", in this case, is the VirtualBox networking engine, which maps traffic from and to the virtual machine transparently.
+** In VirtualBox this router is placed between each virtual machine and the host. This separation maximizes security since by default virtual machines cannot talk to each other. 看 http://www.slideshare.net/powerhan96/networking-between-host-and-guest-v-ms-in-virtual-box p4 的圖示比較清楚
+** The disadvantage of NAT mode is that, much like a private network behind a router, the virtual machine is invisible and unreachable from the outside internet; (包括 host 自己也存取不到) you cannot run a server this way unless you set up port forwarding
+** The network frames sent out by the guest operating system are received by VirtualBox's NAT engine, which extracts the TCP/IP data and resends it using the host operating system. To an application on the host, or to another computer on the same network as the host, it looks like the data was sent by the VirtualBox application on the host, using an IP address belonging to the host. VirtualBox listens for replies to the packages sent, and repacks and resends them to the guest machine on its private network.
+** The virtual machine receives its network address and configuration on the private network from a DHCP server integrated into VirtualBox. The IP address thus assigned to the virtual machine is usually on a completely different network than the host.
+** As more than one card of a virtual machine can be set up to use NAT, the first card is connected to the private network 10.0.2.0, the second card to the network 10.0.3.0 and so on. 如果兩個 VM 各有一個 NAT 會怎樣??
+** As the virtual machine is connected to a private network internal to VirtualBox and invisible to the host, network services on the guest are not accessible to the host machine or to other computers on the same network. However, like a physical router, VirtualBox can make selected services available to the world outside the guest through port forwarding. This means that VirtualBox listens to certain ports on the host and resends all packets which arrive there to the guest, on the same or a different port. 就像是頻寬分享器上 virtual server 的功能。
+** To an application on the host or other physical (or virtual) machines on the network, it looks as though the service being proxied is actually running on the host. This also means that you cannot run the same service on the same ports on the host. However, you still gain the advantages of running the service in a virtual machine -- for example, services on the host machine or on other virtual machines cannot be compromised or crashed by a vulnerability or a bug in the service, and the service can run in a different operating system than the host system. 安全性跟不同於 host 的 OS
+** You will need to know which ports on the guest the service uses and to decide which ports to use on the host (often but not always you will want to use the same ports on the guest and on the host). You can use any ports on the host which are not already in use by a service.
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://www.slideshare.net/powerhan96/networking-between-host-and-guest-v-ms-in-virtual-box[Networking between host and guest VMs in VirtualBox] (2012-02)
+
+////////////////////////////////////////////////////////////////////////////////
+** (p4) NAT (看圖比較清楚)
+   *** It creates a single separate sub network below the inbound IP (public IP) so that number of machines can get an internet access and can share with each other too.
+   *** But in VirtualBox, NAT is attached to each VM which is so called "Basic NAT" that does one-to-one translation, and in contrast home routers do on-to-many translation. That's why with default adapters for VMs, they can't see each other, even from the host 結果就是沒人能存取得到 guest VM，包括 host 也一樣
+   *** Actually, IP, gateway, DNS is somewhat 'hard coded' in VirtualBox's NAT adapter.??
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://www.howtogeek.com/122641/how-to-forward-ports-to-a-virtual-machine-and-use-it-as-a-server/[How to Forward Ports to a Virtual Machine and Use It as a Server]
+

@@ -1,0 +1,220 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Selenium 2/WebDriver] Python Binding 的內部實作 - 在電梯裡遇見雙胞胎 | 傑洛米 Jeremy</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<!--link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" /-->
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="https://www.facebook.com/jeremy.kao.92" target="_blank">Jeremy Kao - 傑洛米·高</a></div>
+  <div><a href="../../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <!--div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div-->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <!--a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a--></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="python.html">Selenium 2/WebDriver / API / Python</a> / Internals</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="listingblock">
+<div class="title"><code>selenium/__init__.py</code></div>
+<div class="content">
+<pre><code>from selenium import selenium</code></pre>
+</div></div>
+<div class="paragraph"><p>Selenium 1/RC 所用的 <code>selenium.selenium</code>。</p></div>
+<div class="listingblock">
+<div class="title"><code>selenium/webdriver/__init__.py</code></div>
+<div class="content"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">.firefox.webdriver</span> <span class="kn">import</span> <span class="n">WebDriver</span> <span class="k">as</span> <span class="n">Firefox</span>
+<span class="kn">from</span> <span class="nn">.firefox.firefox_profile</span> <span class="kn">import</span> <span class="n">FirefoxProfile</span>
+<span class="kn">from</span> <span class="nn">.chrome.webdriver</span> <span class="kn">import</span> <span class="n">WebDriver</span> <span class="k">as</span> <span class="n">Chrome</span>
+<span class="kn">from</span> <span class="nn">.chrome.options</span> <span class="kn">import</span> <span class="n">Options</span> <span class="k">as</span> <span class="n">ChromeOptions</span>
+<span class="kn">from</span> <span class="nn">.ie.webdriver</span> <span class="kn">import</span> <span class="n">WebDriver</span> <span class="k">as</span> <span class="n">Ie</span>
+<span class="kn">from</span> <span class="nn">.opera.webdriver</span> <span class="kn">import</span> <span class="n">WebDriver</span> <span class="k">as</span> <span class="n">Opera</span>
+<span class="kn">from</span> <span class="nn">.phantomjs.webdriver</span> <span class="kn">import</span> <span class="n">WebDriver</span> <span class="k">as</span> <span class="n">PhantomJS</span>
+<span class="kn">from</span> <span class="nn">.remote.webdriver</span> <span class="kn">import</span> <span class="n">WebDriver</span> <span class="k">as</span> <span class="n">Remote</span>
+<span class="kn">from</span> <span class="nn">.common.desired_capabilities</span> <span class="kn">import</span> <span class="n">DesiredCapabilities</span>
+<span class="kn">from</span> <span class="nn">.common.action_chains</span> <span class="kn">import</span> <span class="n">ActionChains</span>
+<span class="kn">from</span> <span class="nn">.common.touch_actions</span> <span class="kn">import</span> <span class="n">TouchActions</span>
+<span class="kn">from</span> <span class="nn">.common.proxy</span> <span class="kn">import</span> <span class="n">Proxy</span>
+</pre></div></div></div>
+<div class="paragraph"><p>很有趣的結構，所有的 driver 都是從 <code>&lt;browser&gt;/webdriver.py</code> 拉出來的。接下來以 Firefox 為例&#8230;</p></div>
+<div class="listingblock">
+<div class="title"><code>selenium/webdriver/firefox/webdriver.py</code></div>
+<div class="content"><div class="highlight"><pre><span class="k">class</span> <span class="nc">WebDriver</span><span class="p">(</span><span class="n">RemoteWebDriver</span><span class="p">):</span> <span class="c"># <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></span>
+
+    <span class="c"># There is no native event support on Mac</span>
+    <span class="n">NATIVE_EVENTS_ALLOWED</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span> <span class="o">!=</span> <span class="s">&quot;darwin&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">firefox_profile</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">firefox_binary</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
+                 <span class="n">capabilities</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">proxy</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">binary</span> <span class="o">=</span> <span class="n">firefox_binary</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">profile</span> <span class="o">=</span> <span class="n">firefox_profile</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">profile</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">profile</span> <span class="o">=</span> <span class="n">FirefoxProfile</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">profile</span><span class="o">.</span><span class="n">native_events_enabled</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">NATIVE_EVENTS_ALLOWED</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">profile</span><span class="o">.</span><span class="n">native_events_enabled</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">binary</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">binary</span> <span class="o">=</span> <span class="n">FirefoxBinary</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">capabilities</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">capabilities</span> <span class="o">=</span> <span class="n">DesiredCapabilities</span><span class="o">.</span><span class="n">FIREFOX</span>
+
+        <span class="k">if</span> <span class="n">proxy</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">proxy</span><span class="o">.</span><span class="n">add_to_capabilities</span><span class="p">(</span><span class="n">capabilities</span><span class="p">)</span>
+
+
+        <span class="n">RemoteWebDriver</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+            <span class="n">command_executor</span><span class="o">=</span><span class="n">ExtensionConnection</span><span class="p">(</span><span class="s">&quot;127.0.0.1&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">profile</span><span class="p">,</span> <span class="c"># <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">binary</span><span class="p">,</span> <span class="n">timeout</span><span class="p">),</span>
+            <span class="n">desired_capabilities</span><span class="o">=</span><span class="n">capabilities</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_is_remote</span> <span class="o">=</span> <span class="bp">False</span>
+
+    <span class="k">def</span> <span class="nf">create_web_element</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Override from RemoteWebDriver to use firefox.WebElement.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">WebElement</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element_id</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">quit</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Quits the driver and close every associated window.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">RemoteWebDriver</span><span class="o">.</span><span class="n">quit</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">http_client</span><span class="o">.</span><span class="n">BadStatusLine</span><span class="p">:</span>
+            <span class="c"># Happens if Firefox shutsdown before we&#39;ve read the response from</span>
+            <span class="c"># the socket.</span>
+            <span class="k">pass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">binary</span><span class="o">.</span><span class="n">kill</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">profile</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">profile</span><span class="o">.</span><span class="n">tempfolder</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">profile</span><span class="o">.</span><span class="n">tempfolder</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">firefox_profile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">profile</span>
+</pre></div></div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+不只是 Firefox，所有 browser 的實作都是繼承 <code>RemoteWebDriver</code>。這意謂著就算是直接操控本機上的 browser，中間也會涉及 HTTP/JSON requests。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+<code>ExtensionConnection</code> 會負責將 Firefox 帶出來（固定掛上 <code>webdriver.xpi</code>），並將該 extension 設定在 <code>http://127.0.0.1:&lt;port&gt;/hub</code> 接收 HTTP/JSON requests。
+</td></tr>
+</table></div>
+<div class="listingblock">
+<div class="title"><code>selenium/webdriver/firefox/extension_connection.py</code></div>
+<div class="content"><div class="highlight"><pre><span class="k">class</span> <span class="nc">ExtensionConnection</span><span class="p">(</span><span class="n">RemoteConnection</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">host</span><span class="p">,</span> <span class="n">firefox_profile</span><span class="p">,</span> <span class="n">firefox_binary</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">30</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">profile</span> <span class="o">=</span> <span class="n">firefox_profile</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">binary</span> <span class="o">=</span> <span class="n">firefox_binary</span>
+        <span class="n">HOST</span> <span class="o">=</span> <span class="n">host</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">binary</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">binary</span> <span class="o">=</span> <span class="n">FirefoxBinary</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">HOST</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>                     <span class="c"># <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></span>
+            <span class="n">HOST</span> <span class="o">=</span> <span class="s">&quot;127.0.0.1&quot;</span>
+
+        <span class="n">PORT</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">free_port</span><span class="p">()</span>             <span class="c"># <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">profile</span><span class="o">.</span><span class="n">port</span> <span class="o">=</span> <span class="n">PORT</span>                 <span class="c"># <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">profile</span><span class="o">.</span><span class="n">update_preferences</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">profile</span><span class="o">.</span><span class="n">add_extension</span><span class="p">()</span>             <span class="c"># <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">binary</span><span class="o">.</span><span class="n">launch_browser</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">profile</span><span class="p">)</span> <span class="c"># <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></span>
+        <span class="n">_URL</span> <span class="o">=</span> <span class="s">&quot;http://</span><span class="si">%s</span><span class="s">:</span><span class="si">%d</span><span class="s">/hub&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">HOST</span><span class="p">,</span> <span class="n">PORT</span><span class="p">)</span>
+        <span class="n">RemoteConnection</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">_URL</span><span class="p">)</span>
+</pre></div></div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+預設在 <code>http://127.0.0.1:&lt;port&gt;</code> 服務，其中 <em>port</em> 是動態決定的。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+把 Firefox 叫起來，透過 profile 加載 <code>webdriver.xpi</code>，並約定好在 <code>http://127.0.0.1:&lt;port&gt;/hub</code> 接收 HTTP/JSON requests。
+</td></tr>
+</table></div>
+<div class="paragraph"><p>簡單做個實驗：</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span class="gp">$</span> python
+<span class="gp">&gt;</span>&gt;&gt; from selenium import webdriver
+<span class="gp">&gt;</span>&gt;&gt; <span class="nv">driver</span> <span class="o">=</span> webdriver.Firefox<span class="o">()</span>
+<span class="gp">&gt;</span>&gt;&gt; driver.profile.port <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+<span class="go">42336</span>
+
+<span class="gp">$</span> sudo lsof -i :42336
+<span class="go">COMMAND  PID   USER   FD   TYPE DEVICE SIZE/OFF NODE NAME</span>
+<span class="go">firefox 3508 jeremy   40u  IPv4 177902      0t0  TCP localhost:42336 (LISTEN) <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></span>
+
+<span class="gp">$</span> curl http://localhost:42336/hub/status <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+<span class="go">{&quot;name&quot;:&quot;getStatus&quot;,&quot;sessionId&quot;:{},&quot;status&quot;:0,&quot;value&quot;:{&quot;os&quot;:{&quot;arch&quot;:&quot;x86_64&quot;,&quot;name&quot;:&quot;Linux&quot;,&quot;version&quot;:&quot;unknown&quot;},&quot;build&quot;:{&quot;revision&quot;:&quot;unknown&quot;,&quot;time&quot;:&quot;unknown&quot;,&quot;version&quot;:&quot;unknown&quot;}}}</span>
+</pre></div></div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+得知動態決定的 port 是 42336，反查之後確實是 Firefox 本身在 listen。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+利用 <a href="../api/json-wire-protocol.html">JSON Wire Protocol</a> 所定義的 <code>GET /status</code> 做測試，果真有回應。
+</td></tr>
+</table></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2013-08-15 23:23:21 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<!--script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script-->
+</body>
+</html>

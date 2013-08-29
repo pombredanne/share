@@ -1,0 +1,143 @@
+= link:random.html[Random] / Python =
+:title: [Python] Random
+
+Python 內建 `random` 可以用來產生 pseudo-random numbers。例如：
+
+[source,pycon]
+--------------------------------------------------------------------------------
+>>> import random
+>>> [random.random() for _ in range(5)]        # <1>
+[0.2046831942202948, 0.27349020549237124, 0.36018432545783086, 0.22738618725393034, 0.0906220334907547]
+
+>>> [random.randint(1, 20) for _ in range(10)] # <2>
+[16, 17, 3, 8, 12, 18, 5, 13, 1, 19]
+>>> [random.randint(1, 20) for _ in range(10)]
+[5, 5, 4, 2, 4, 20, 8, 18, 8, 16]
+
+>>> seq = ['apple', 'orange', 'pineapple']
+>>> [random.choice(seq) for _ in range(10)]    # <3>
+['apple', 'apple', 'orange', 'pineapple', 'apple', 'pineapple', 'pineapple', 'orange', 'apple', 'orange']
+
+>>> [random.sample(seq, 2) for _ in range(5)]  # <4>
+[['orange', 'apple'], ['apple', 'pineapple'], ['apple', 'pineapple'], ['orange', 'pineapple'], ['apple', 'orange']]
+>>> random.sample(xrange(0, 10000, 2), 5)      # <5>
+[6936, 1844, 6208, 4610, 5544]
+
+>>> python = ['p', 'y', 't', 'h', 'o', 'n']
+>>> for _ in range(5): random.shuffle(python); print python # <6>
+... 
+['p', 'n', 't', 'y', 'h', 'o']
+['n', 'h', 't', 'p', 'o', 'y']
+['t', 'o', 'h', 'y', 'p', 'n']
+['t', 'o', 'h', 'p', 'n', 'y']
+['t', 'h', 'o', 'n', 'y', 'p']
+--------------------------------------------------------------------------------
+<1> `random()` 會產生一個浮點數（`[0.0, 1.0)`），是其他 functions 的基礎。
+<2> `randint(a, b)` 可以產生一個介於 'a' 跟 'b' 之間的亂數 'N' (`a <= N <= b`)。
+<3> `choice(seq)` 可以從 'seq' 隨機選出一個項目，如果 'seq' 是空的，則會丟出 `IndexError`。
+<4> `sample(seq, n)` 跟 `choice()` 類似，但一次取出 'n' 個不重複的項目。
+<5> `sample()` 可以搭配 `xrange()` 有效地取出 "大範圍" 內的多個數值。例如這裡示範一次取出 5 個 0 ~ 10000 之間的偶數。
+<6> `shuffle(seq)` 可以就地（in place）將 'seq' 內各資料項之間的順序打亂。 
+
+[TIP]
+================================================================================
+`random` 這個 module 第一次被 import 時，內部會生成一個 `random.Random`，上面這些 module-level functions 其實是源自該 hidden instance。
+
+[source,python]
+.`random.py`
+----------------------------------------------------------------------
+# Create one instance, seeded from current time, and export its methods
+# as module-level functions.  The functions share state across all uses
+#(both in the user's code and in the Python libraries), but that's fine
+# for most programs and is easier for the casual user than making them
+# instantiate their own Random() instance.
+
+_inst = Random()
+seed = _inst.seed
+random = _inst.random
+uniform = _inst.uniform
+triangular = _inst.triangular
+randint = _inst.randint
+choice = _inst.choice
+randrange = _inst.randrange
+sample = _inst.sample
+shuffle = _inst.shuffle
+----------------------------------------------------------------------
+================================================================================
+
+背後預設採用 Mersenne Twister 做為 generator，不過 'completely deterministic' 的特性，使得它不適合用在密碼學安全領域，當然這也是為什麼被稱做 'pseudo' 的原因。
+
+[quote,'http://docs.python.org/2/library/random.html[random — Generate pseudo-random numbers — The Python Standard Library]']
+________________________________________________________________________________
+The Mersenne Twister is one of the most extensively tested random number generators in existence. However, being 'completely deterministic', it is not suitable for all purposes, and is completely unsuitable for cryptographic purposes.
+________________________________________________________________________________
+
+[quote,'delnan','http://stackoverflow.com/questions/5555712/generate-a-random-number-in-python[Generate a random number in python - Stack Overflow]']
+________________________________________________________________________________
+You can generate a pseudo-random number with the `random` module. Sufficient for games (perhaps with a wrapper to even out distributions percived as "unfair"), 'distributions that seem unpredictable to users (note that "random" != "even distribution")', etc. but not suitable for cryptographic use or anything else that can be demolished by the fact that the generated numbers are 'deterministic when re-starting with the same seed'. Don't think of them as truly random, they aren't.
+________________________________________________________________________________
+
+// random != uniform distribution (均勻分佈)
+
+[source,pycon]
+--------------------------------------------------------------------------------
+>>> random.seed(999)
+>>> [random.randint(1, 20) for _ in range(10)]
+[16, 2, 18, 12, 10, 3, 16, 7, 16, 17]
+>>> [random.randint(1, 20) for _ in range(10)]
+[2, 20, 4, 6, 12, 15, 6, 18, 20, 5]
+
+>>> random.seed(999) # <1>
+>>> [random.randint(1, 20) for _ in range(10)]
+[16, 2, 18, 12, 10, 3, 16, 7, 16, 17]
+>>> [random.randint(1, 20) for _ in range(10)]
+[2, 20, 4, 6, 12, 15, 6, 18, 20, 5]
+--------------------------------------------------------------------------------
+<1> 透過相同的 seed 去初始化，會得到相同的 random sequence。
+
+還好 hidden instance (`random.Random`) 預設採用 current system time 做為 seed，所以通常問題不大。
+
+== 參考資料 ==
+
+.文件
+--
+ * http://docs.python.org/2/library/random.html[random — Generate pseudo-random numbers — The Python Standard Library]
+
+////////////////////////////////////////////////////////////////////////////////
+** This module implements pseudo-random number generators for various distributions. 注意這裡 pseudo-random 的說法，因為餵進相同的 seed，就會得相同 sequence 的亂數。而這裡 distribution 指的是亂數分佈的情形，注意 random != uniform distribution (均勻分佈)
+** Almost all module functions depend on the basic function `random()`, which generates a random float uniformly in the semi-open range `[0.0, 1.0)`. Python uses the Mersenne Twister as the core generator. It produces 53-bit precision floats and has a period of 2**19937-1. The underlying implementation in C is both fast and threadsafe.
+** The Mersenne Twister is one of the most extensively tested random number generators in existence. However, being completely deterministic, it is not suitable for all purposes, and is completely unsuitable for cryptographic purposes. 適用 game 及其他一般用途。
+** The functions supplied by this module are actually bound methods of a hidden instance of the `random.Random` class. 這裡 "bound method" 的說法好特別??
+** You can instantiate your own instances of `Random` to get generators that don’t share state. This is especially useful for multi-threaded programs, creating a different instance of `Random` for each thread, and using the `jumpahead()` method to make it likely that the generated sequences seen by each thread don’t overlap. 既然 underlying implementation 是 threadsafe，為什麼不能共用一個 generator
+** The `random` module also provides the `SystemRandom` class which uses the system function `os.urandom()` to generate random numbers from sources provided by the operating system. 適合安全用途??
+** `random.seed([x])` Initialize the basic random number generator. Optional argument `x` can be any hashable object. If `x` is omitted or `None`, current system time is used; current system time is also used to initialize the generator when the module is first imported. (指的是那個 hidden instance) If randomness sources are provided by the operating system, they are used instead of the system time (see the `os.urandom()` function for details on availability).
+** `random.randrange(stop)` `random.randrange(start, stop[, step])` Return a randomly selected element from `range(start, stop, step)`. This is equivalent to `choice(range(start, stop, step))`, but doesn’t actually build a range object.
+** `random.randint(a, b)` Return a random integer N such that a <= N <= b.
+** `random.choice(seq)` Return a random element from the non-empty sequence `seq`. If seq is empty, raises `IndexError`.
+** `random.shuffle(x[, random])` Shuffle the sequence `x` in place. The optional argument `random` is a 0-argument function returning a random float in `[0.0, 1.0)`; by default, this is the function `random()`.
+** `random.sample(population, k)` Return a `k` length list of unique elements chosen from the `population` sequence. Used for random sampling without replacement (不重複). Returns a new list containing elements from the population while leaving the original population unchanged.
+** To choose a sample from a range of integers, use an `xrange()` object as an argument. This is especially fast and space efficient for sampling from a large population: `sample(xrange(10000000), 60)`.
+** `random.random()` Return the next random floating point number in the range [0.0, 1.0).
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://en.wikipedia.org/wiki/Mersenne_twister[Mersenne twister - Wikipedia, the free encyclopedia]
+--
+
+.其他文件
+--
+ * http://stackoverflow.com/questions/5555712/generate-a-random-number-in-python[Generate a random number in python - Stack Overflow] ^https://diigo.com/010gf0[閱讀]^ (2011-04-05)
+
+////////////////////////////////////////////////////////////////////////////////
+** Try using `randint` from the built-in `random` module.
+** `random.randrange` operates significantly faster than `random.randint`
+** You can generate a pseudo-random number with the `random` module. Sufficient for games (perhaps with a wrapper to even out distributions percived as "unfair"), distributions that seem unpredictable to users (note that "random" != "even distribution"), etc. but not suitable for cryptographic use or anything else that can be demolished by the fact that the generated numbers are deterministic when re-starting with the same seed. Don't think of them as truly random, they aren't. 一語道破什麼是 pseudo!!
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://stackoverflow.com/questions/306400/how-do-i-randomly-select-an-item-from-a-list-using-python/306417#306417[How do I randomly select an item from a list using Python? - Stack Overflow] (2008-11-20)
+
+////////////////////////////////////////////////////////////////////////////////
+** This is why you love Python? I'm not a fan of the fact that the function is named `choice`. 'Choice' implies intent. Randomness does not imply intent; quite the opposite. Ruby used to have a similar method (`choice`) but it is now deprecated in favor of `sample`, which is closer to what a statistician would say in common conversation.
+** @DavidJames there is also `random.sample()` in python. For example : `random.sample(some_list, 5)` will return list of 5 elements where every element is randomly chosen from `some_list`.
+////////////////////////////////////////////////////////////////////////////////
+--
+

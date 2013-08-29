@@ -1,0 +1,99 @@
+= link:python.html[Selenium 2/WebDriver / API / Python] / Desired Capabilities =
+:title: [Selenium][WebDriver][Python] Desired Capabilities
+
+// 這裡說明 desired capabilities 在 Python 裡的用法。至於 Firefox 支援的 capabilities 則會寫在 ../drivers/firefox 裡，另外 Firefox profile 的用法則寫在 open-browsers 裡。
+
+Desired capabilities 通常用在 link:open-browsers.html#remote[Remote WebDriver] 指定 link:../../selenium-server/selenium-server.html[Selenium Server] 背後要啟動哪個 browser，例如：
+
+[source,pycon]
+--------------------------------------------------------------------------------
+>>> from selenium.webdriver import Remote, DesiredCapabilities
+>>> driver = Remote(desired_capabilities=DesiredCapabilities.FIREFOX)
+--------------------------------------------------------------------------------
+
+待 browser 開啟之後，也可以透過 `WebDriver.capabilities` 得知 browser 實際支援的 capabilities：
+
+[source,pycon]
+--------------------------------------------------------------------------------
+>>> from pprint import pprint
+>>> pprint(driver.capabilities)
+{u'acceptSslCerts': False, <1>
+ u'applicationCacheEnabled': True,
+ u'browserConnectionEnabled': True,
+ u'browserName': u'firefox',
+ u'cssSelectorsEnabled': True,
+ u'databaseEnabled': True,
+ u'handlesAlerts': True,
+ u'javascriptEnabled': True,
+ u'locationContextEnabled': True,
+ u'nativeEvents': False,
+ u'platform': u'LINUX',
+ u'rotatable': False,
+ u'takesScreenshot': True,
+ u'version': u'23.0',
+ u'webStorageEnabled': True,
+ u'webdriver.remote.sessionid': u'a9c939f2-8aa0-4397-9638-1d1b3ad07c7a'} <2>
+--------------------------------------------------------------------------------
+<1> `acceptSslCerts` 未被啟用，這跟直接使用 Firefox Driver 的狀況不同。
+<2> `webdriver.remote.sessionid` 可以取得 session ID，這是 Selenium Server 特有的。
+
+事實上，`DesiredCapabilities` 所定義的幾個常數，主要是藉由 `browserName` 這個 capability 來指定要開啟的 browser，也可以做為擴充其他 desired capabilities 的基礎。
+
+[source,pycon]
+--------------------------------------------------------------------------------
+>>> DesiredCapabilities.FIREFOX
+{'platform': 'ANY', 'browserName': 'firefox', 'version': '', 'javascriptEnabled': True} <1>
+>>> DesiredCapabilities.SAFARI
+{'platform': 'MAC', 'browserName': 'safari', 'version': '', 'javascriptEnabled': True}
+
+>>> desired_caps = dict(DesiredCapabilities.FIREFOX) # <1>
+>>> desired_caps['acceptSslCerts'] = True            # <2>
+>>> driver = Remote(desired_capabilities=desired_caps)
+>>> pprint(driver.capabilities)
+{u'acceptSslCerts': True, <2>
+ u'applicationCacheEnabled': True,
+ ...
+>>> assert driver.capabilities['acceptSslCerts'] # <3>
+--------------------------------------------------------------------------------
+<1> 將 `DesiredCapabilities.FIREFOX` 複製一份出來再做調整（只是 dictionary 而已），避免影響其他程式。
+<2> 透過 desired capabilities 傳達 "訴求"，從結果來看也確實產生了效果。
+<3> 由於開出來的 browser 即使無法滿足 desired capabilities 的要求，過程中也不會丟出例外，因此還是得從實際支援的 capabilities 做一下檢查。
+
+到這裡，你可能會以為 (desired) capabilities 只專用於 Remote WebDriver，但它其實也可以用在其他 drivers，只是比較少見而已。以上面 Firefox 的 `acceptSslCerts` 為例：
+
+[source,pycon]
+--------------------------------------------------------------------------------
+>>> from selenium.webdriver import Firefox
+>>> driver = Firefox()
+>>> assert driver.capabilities['acceptSslCerts'] # <1>
+>>> driver.close()
+
+>>> desired_caps = { 'acceptSslCerts': False }
+>>> driver = Firefox(capabilities=desired_caps) # <2>
+>>> assert not driver.capabilities['acceptSslCerts']
+--------------------------------------------------------------------------------
+<1> 透過 Firefox Driver 來啟動 Firefox 時，`acceptSslCerts` 預設是啟用的。
+<2> 可以用 desired capabilities 將傳達希望能將 `acceptSslCerts` 關閉的 "訴求"（例如測試 production 時，就不該盲目地接受 self-signed certificates）；注意參數名稱是 `capabilities`，跟 `Remote` 的 `desired_capabilities` 不同。
+
+== 延伸閱讀 ==
+
+ * link:../api/desired-capabilities.html[Desired Capabilities]
+
+== 參考資料 ==
+
+.手冊
+--
+ * http://selenium.googlecode.com/svn/trunk/docs/api/py/webdriver/selenium.webdriver.common.desired_capabilities.html[selenium.webdriver.common.desired_capabilities — Selenium 2.0 documentation]
+--
+
+.文件
+--
+ * http://stackoverflow.com/questions/16022226/selenium-desired-capabilities-set-handlesalerts-for-phantomjs-driver[python - Selenium Desired Capabilities - set handlesAlerts for PhantomJS driver - Stack Overflow] ^https://diigo.com/010wu1[閱讀]^ (2013-04-15)
+
+////////////////////////////////////////////////////////////////////////////////
+** The API specifies that desired capabilities be passed into the constructor. However, it may be the case that a driver does not support a feature requested in the desired capabilities. In that case, no error is thrown by the driver, and this is intentional. A capabilities object is returned by the session which indicates the capabilities that the session actually supports.
+** In most language bindings, this returned capabilities object is read-only; in language bindings where the returned object may be read-write, modifying these capabilities has no actual effect on the session.
+** In the pending W3C WebDriver specification, there is a `requiredCapabilities` setting which would throw an exception if the server cannot provide the capability, but that hasn't been implemented by any driver yet as far as I'm aware.
+////////////////////////////////////////////////////////////////////////////////
+--
+

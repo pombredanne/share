@@ -1,0 +1,70 @@
+= link:python.html[Selenium 2/WebDriver / API / Python] / Open Browsers =
+:title: [Selenium][WebDriver][Python] 啟動瀏覽器
+
+[source,pycon]
+--------------------------------------------------------------------------------
+>>> from selenium import webdriver
+>>> dir(webdriver)
+['ActionChains', 'Chrome', 'ChromeOptions', 'DesiredCapabilities', 'Firefox', \
+ 'FirefoxProfile', 'Ie', 'Opera', 'PhantomJS', 'Proxy', 'Remote', \
+ 'TouchActions', ...]
+--------------------------------------------------------------------------------
+
+[[firefox]]
+== Firefox Driver ==
+
+ selenium.webdriver.firefox.webdriver.WebDriver(
+     firefox_profile=None,
+     firefox_binary=None,
+     timeout=30,
+     capabilities=None,
+     proxy=None)
+
+[source,pycon]
+--------------------------------------------------------------------------------
+>>> from selenium.webdriver import Firefox
+>>> driver = Firefox()
+>>> driver.get('http://www.google.com')
+--------------------------------------------------------------------------------
+
+[[remote]]
+== Remote WebDriver ==
+
+ selenium.webdriver.remote.webdriver.WebDriver(
+     command_executor='http://127.0.0.1:4444/wd/hub',
+     desired_capabilities=None,
+     browser_profile=None)
+
+首先啟動 link:../../selenium-server/selenium-server.html[Selenium Server]，過程會提示 Remote WebDriver 要連接的位置：
+
+ INFO - RemoteWebDriver instances should connect to: http://127.0.0.1:4444/wd/hub
+
+這正是 `command_executor` 的預設值。
+
+以 link:../drivers/firefox.html[Firefox] 為例：
+
+--------------------------------------------------------------------------------
+>>> from selenium.webdriver import Remote, DesiredCapabilities
+>>> DesiredCapabilities.FIREFOX # <1>
+{'platform': 'ANY', 'browserName': 'firefox', 'version': '', 'javascriptEnabled': True}
+>>> driver = Remote(desired_capabilities=DesiredCapabilities.FIREFOX) # <2>
+>>> driver.get('http://www.google.com')
+--------------------------------------------------------------------------------
+<1> http://selenium.googlecode.com/svn/trunk/docs/api/py/webdriver/selenium.webdriver.common.desired_capabilities.html[`DesiredCapabilities`] 定義了 `CHROME`、`FIREFOX`、`SAFARI`、`ANDROID`、`IPHONE` 等常數，方便指定要開啟什麼 browser。
+<2> Browser 會在這個時候被開啟。
++
+--
+Selenium Server 也會顯示對應的訊息：
+
+ INFO - Executing: [new session: {platform=ANY, javascriptEnabled=true, browserName=firefox, version=}] at URL: /session)
+
+如果沒有事先啟動 Selenium Server 或連接不到，會出現下面的錯誤：
+
+ urllib2.URLError: <urlopen error [Errno 111] Connection refused>
+--
+
+== 參考資料 ==
+
+ * http://selenium.googlecode.com/svn/trunk/docs/api/py/webdriver_remote/selenium.webdriver.remote.webdriver.html[selenium.webdriver.remote.webdriver — Selenium 2.0 documentation]
+ * http://selenium.googlecode.com/svn/trunk/docs/api/py/webdriver_firefox/selenium.webdriver.firefox.webdriver.html[selenium.webdriver.firefox.webdriver — Selenium 2.0 documentation]
+

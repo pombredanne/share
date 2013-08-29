@@ -1,0 +1,91 @@
+= link:android.html[Appium / Android] / Selendroid Mode =
+:title: [Appium][Android] Selendroid Mode
+
+// selendroid server 會裝到 emulator/device 上，就是 `selendroid.com.thehomedepot.apk`?? (package name `selendroid.com.thehomedepot`)
+// 為什麼會有 server 的說法；多個 app 會造成 multiple servers，應該會出狀況??
+// `device` 跟 `browserName` 都要設定 `Selendroid` 才會進入 Selendroid Mode?? (browserName 可以設定空白??) 為什麼都要加個 `javascriptEnabled: true`??
+// `java -jar selendroid-standalone-0.4.0.jar -app THD_E_69140.apk`
+// SDK < 16 in Selendroid mode (>= 10，也就是 Android 2.3.3，等於 Android 2.2 = API 8 支援不到??)
+// `driver.switchTo().window("WEBVIEW");` 可以切進 webview，離開用??
+// appium server 支援 `--selendroid-port` 設定 port number，預設是 8080
+// 範例裡都用 id strategy 來定位，難道 name 跟 tag name 就不援了嗎?? 還是接下來完全就要用 selendroid 的寫法了...
+// 很典型的，相同的 API，但有不同的定義... 真的有點錯亂。例如 find_element_by_name() 在 Appium 是找 text 或 accessibility label。
+
+ * https://github.com/appium/appium/blob/master/sample-code/examples/python/android_web_view.py[appium/sample-code/examples/python/android_web_view.py at master · appium/appium]
+ * https://github.com/appium/appium/blob/master/test/functional/selendroid/web_view.js[appium/test/functional/selendroid/web_view.js at master · appium/appium]
+ * https://github.com/appium/appium/blob/master/sample-code/examples/java/junit/src/test/java/com/saucelabs/appium/AndroidWebViewTest.java[appium/sample-code/examples/java/junit/src/test/java/com/saucelabs/appium/AndroidWebViewTest.java at master · appium/appium]
+
+--------------------------------------------------------------------------------
+from selenium import webdriver
+
+desired_caps = {}
+desired_caps['device'] = 'selendroid'
+desired_caps['app'] = '/home/jeremy/data/Dropbox/Public/site/note/android/sdk/api-demos/ApiDemos_v10_2.3.3.apk'
+desired_caps['app-package'] = 'com.example.android.apis'
+desired_caps['app-activity'] = '.ApiDemos'
+
+driver = webdriver.Remote('http://localhost:4723/wd/hub', desired_caps)
+--------------------------------------------------------------------------------
+
+== 參考資料 ==
+
+.其他文件
+--
+ * https://github.com/appium/appium/issues/803["mobile: tap" not working with Selendroid · Issue #803 · appium/appium] (2013-06-22)
+
+////////////////////////////////////////////////////////////////////////////////
+** `tapObject.put("element", ((RemoteWebElement) row).getId());` // the id of the element we want to tap
+** The way you're currently using this says, "tap 150 pixels from the left side of the element and 30 pixels from the top side of the element". Is that what you intend? Are you sure you're not really intending to tap absolute screen coordinates instead of coordinates relative to a given element?
+** Exactly. So it seems like you should omit the `"element"` key of the HashMap. If you include the "element" key, you're making the tap relative to that element.
+** I don't think mobile: tap works on Selendroid. You'd have to use a Selendroid API call. 搞了半天，Selendroid 不支援 tap，那不就得搬出 monkeyrunner 了?? 又 Selenium API call 指的是什麼??
+////////////////////////////////////////////////////////////////////////////////
+
+ * https://github.com/appium/appium/issues/782[Appium Selendroid not working with error INSTALL_FAILED_UID_CHANGED · Issue #782 · appium/appium] (2013-06-18)
+
+////////////////////////////////////////////////////////////////////////////////
+** info: Starting selendroid server info: Checking whether selendroid is built yet info: Selendroid server exists! info: Starting selendroid
+** info: Checking signed status of C:\Windows\Temp\selendroid.com.thehomedepot.apk
+** info: Installing C:\Windows\Temp\selendroid.com.thehomedepot.apk debug: pkg: /data/local/tmp/selendroid.com.thehomedepot.apk Failure [INSTALL_FAILED_UID_CHANGED]
+** info: Starting instrumentation process for selendroid with cmd: adb shell am ins trument -e main_activity 'com.thehomedepot.Foundation.Controller.SetServicesActi vity' com.thehomedepot.selendroid/io.selendroid.ServerInstrumentation info: Selendroid server is launching
+** `capabilities.setCapability(CapabilityType.BROWSER_NAME, "Selendroid");`
+** `capabilities.setCapability("device","Selendroid");`
+** The problem is INSTALL_FAILED_UID_CHANGED. Try resetting all data on the emulator, or uninstalling the selendroid server.
+** Did you try `adb uninstall selendroid.com.thehomedepot`?
+** What is the output of `$ adb shell pm list packages -3 selendroid`?
+** Hi I tried manually installing the `selendroid.com.thehomedepot.apk` app, I think the app got created wrongly..
+** This is a bug in appium. I'm working on a fix.
+** `shell am start -n com.thehomedepot/com.thehomedepot..Foundation.Controller.SetServicesActivity` is invalid.
+** Try deleting `C:\Windows\Temp\selendroid.com.thehomedepot.apk`
+** There's a different bug with `adb shell am instrument -e main_activity` being invalid for your app. I'm looking into it.
+** I used Selendroid directly and it's unable to start your app. `java -jar selendroid-standalone-0.4.0.jar -app THD_E_69140.apk`
+** That's issue #778. Appium's selendroid mode doesn't work on Windows. I'm able to test your app on OS X in selendroid mode and uiautomator (the default) without problems.
+////////////////////////////////////////////////////////////////////////////////
+
+ * https://github.com/appium/appium/issues/778[BUG in selendroid mode windows7 · Issue #778 · appium/appium] (2013-06-17)
+
+////////////////////////////////////////////////////////////////////////////////
+** What API level is the device? If it's >= 10 then it should work.
+////////////////////////////////////////////////////////////////////////////////
+
+ * https://github.com/appium/appium/issues/641[Selendroid webview tests not passing because of instrumentation errors · Issue #641 · appium/appium] (2013-05-23)
+
+////////////////////////////////////////////////////////////////////////////////
+** Does the proper instrumentation show when running `adb shell pm list instrumentation`?
+** `selendroid.mod.apk` is wrong because it should be namespaced using the app's package just like the clean apk.
+** `package=` is wrong. `android:targetPackage=` and `android:name=` are correct. The clean apk is generated as expected so the problem is limited to Selendroid. 這裡的 clean apk 跟 selendroid apk 有什麼不同??
+** `$ adb shell pm list instrumentation`
+   *** `instrumentation:com.example.android.apis.clean/clean.apk.Clean (target=com.example.android.apis)`
+   *** `instrumentation:com.example.android.apis.selendroid/org.openqa.selendroid.ServerInstrumentation (target=com.example.android.apis)`
+** I'm not sure. There's some code for starting an activity however from what I can see, it's broken when there are "multiple selendroid servers" on a device.
+////////////////////////////////////////////////////////////////////////////////
+
+ * https://groups.google.com/forum/#!topic/appium-discuss/fVyAbtxKuy4/discussion[switch to webview in android using selendroid - Google Groups] (2013-04-26)
+
+////////////////////////////////////////////////////////////////////////////////
+** `driver.switchTo().window("WEBVIEW");`
+** `capabilities.setCapability(CapabilityType.BROWSER_NAME, "native-android-driver");` 為什麼有 `native-android-driver` 這種寫法??
+** I wonder if the fact that 'android' is in your browser name is meaning that you are actually getting android rather than selendroid. Can you set browser name to ""? It's not needed for appium anyway. 原來 `browserName` 這個 key 根本不重要，只要設定空白就好，不設定可以嗎??+
+** Ah. If you're running the "appium" command that means you're running it from the npm install and not from source. To run from source, launch appium like this: `node server.js -V` Can you try again like this? The old npm version may not have had selendroid support yet. 所以正式本什麼時候開始支援 hybrid 的用法??
+////////////////////////////////////////////////////////////////////////////////
+--
+

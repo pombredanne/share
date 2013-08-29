@@ -1,0 +1,1132 @@
+STAF Installation Guide
+
+STAF Installation Guide
+
+September 28, 2010 This document describes how to install STAF V3.4.3 and later. To find more detailed information on using STAF, go to the main STAF web page 1. Introduction 1.1. Installing STAF 1.2. InstallAnywhere 1.3. STAFInst 2. Installers available for each platform 2.1. Overview 2.2. Install properties for STAF Installers 3. Install Topics 3.1. STAF License Agreement 3.2. Installation Target 3.3. Upgrading STAF 3.4. Install Sets 3.5. Registration 3.6. Advanced Options 3.7. STAFEnv script 3.8. startSTAFProc script 4. Using InstallAnywhere to install STAF 4.1. IA Installer Arguments 4.2. InstallAnywhere Graphical Install 4.3. InstallAnywhere Silent Install 4.4. InstallAnywhere Console Install 4.5. Installer Return Codes 4.6. Install Log 4.7. Specifying a Temporary Directory 4.8. Uninstaller 4.9. Comparison of IA install options and ISMP install options
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (1 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+5. Using STAFInst to install STAF 5.1. STAFInst Install 5.2. Examples using STAFInst 5.3. STAFInst Uninstall 6. Platform Installation Notes 6.1. Linux installation 6.2. AIX installation 6.3. HP-UX IA64 64-bit installation 6.4. IBM i 32-bit (previously known as i5/OS or OS/400) installation 6.5. z/OS installation 6.6. FreeBSD installation 6.7. Mac OS X installation 6.8. Solaris installation 7. Environment Variable Settings 7.1. Environment Variable Settings 7.2. Windows 7.3. Unix 7.4. Mac OS X 7.5. IBM i (previously known as i5/OS or OS/400) 8. Installing Multiple Instances of STAF 8.1. Installing Multiple Instances of STAF 9. Install/Uninstall Problems 9.1. Install Problems 9.2. Uninstall Problems 10. Operating System Library Compatability (Linux) 10.1. Operating System Library Compatability (Linux) 11. Starting STAF during system reboot 11.1. Unix 11.2. Mac OS X 11.3. Windows
+
+1. Introduction
+1.1. Installing STAF 1.2. InstallAnywhere 1.3. STAFInst
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (2 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+1.1. Installing STAF There are two types of installers that are provided for STAF:
+q
+
+InstallAnywhere (available for Windows and most Unix platforms) STAFInst (available for all Unix platforms)
+
+q
+
+Note that the InstallAnywhere and STAFInst installers install the exact same files on a given platform. You can select which type of installer is most appropriate to use in your environment. 1.2. InstallAnywhere InstallAnywhere is a Java-based multi-platform software installation program. InstallAnywhere provides three installation modes:
+q
+
+Graphical installation mode (requires a UI display) Console installation mode (via command-line, useful for systems without a UI display but requiring an interactive install) Silent installation mode (where the install options are specified when starting the silent installation, either via command-line options or a response file)
+
+q
+
+q
+
+Note that if you start a graphical installation, but the system does not hava a display (i.e. if you are accessing a Unix system via telnet or ssh), the installer will detect this situation and continue the installation in console mode. There are three types of InstallAnywhere files that are provided for STAF:
+q
+
+Installer executable with a bundled JVM (named STAF<version>-setup-<platform>.exe on Windows and STAF<version>-setup-<platform>. bin on Unix) The bundled JVM will be used for the installation, and will be copied to the "jre" directory in the root STAF install directory. This JVM will also be used to uninstall STAF.
+
+q
+
+Installer executable without a bundled JVM (named STAF<version>-setup-<platform>-NoJVM.exe on Windows, STAF<version>-setup<platform>-NoJVM.bin on Unix, and STAF<version>-setup-<platform>.bin on Mac OS X) Installer zip file without a bundled JVM for Mac OS X (named STAF<version>-setup-<platform>.zip)
+
+q
+
+To run an installer without a bundled JVM, you must already have a JVM on the system. Supported JVMs are:
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (3 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+q q q q
+
+Sun: 1.4.x, 1.5.x, 1.6.x IBM: 1.4.x, 1.5.x Apple: 1.4.x, 1.5.x HP: 1.4.x, 1.5.x
+
+To use an InstallAnywhere STAF installer, the target system must have:
+q q q
+
+64 MB of free RAM Minimum of 8-bit color depth (256 colors) for graphical installation Minimum 640 X 480 screen resolution for graphical installation
+
+An InstallAnywhere install of STAF will typically require 1-5 minutes depending on the platform and system performance. More information on InstallAnywhere can be found at http://www.flexerasoftware.com/products/installanywhere.htm 1.3. STAFInst STAFInst is a script-based installer for Unix platforms. It will install all files required to run STAF, however, it will not perform some installation steps that InstallAnywhere performs, such as updating user profiles for environment variable updates. The STAFInst installer is packaged as a "GNU zipped tar" file (named STAF<version>-<platform>.tar.gz) except on z/OS where it is packaged as a Unix compressed file (named STAF<version>-<platform>.tar.Z). A STAFInst install of STAF will typically require about 1 minute.
+
+2. Installers available for each platform
+2.1. Overview 2.2. Install properties for STAF Installers 2.1. Overview
+
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (4 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+To download the latest versions of STAF, go to the Download STAF page. The following table shows an overview of the STAF installers available for each platform. Platform Windows 32-bit (win32) Windows IA64 (win64) Windows AMD64/Opteron (winamd64) Linux Intel 32-bit (linux) Linux IA64 (linux-ia64) Linux AMD64/Opteron (linux-amd64) Linux PPC64-32 (linux-ppc64-32) Linux PPC64-64 (linux-ppc64-64) zLinux 31-bit (zlinux-32) zLinux 64-bit (zlinux-64) z/OS 32-bit (zos) z/OS 64-bit (zos64) Solaris Sparc 32-bit (solaris-sparc) Solaris Sparc 64-bit (solaris-sparc64) Solaris AMD64/Opteron x64 32-bit Java (solaris-x64) Solaris AMD64/Opteron x64 64-bit Java (solaris-x64-64) Solaris x86 32-bit (solaris-x86) AIX 32-bit (aix) AIX 64-bit (aix64) HPUX PA-RISC 32-bit (hpux) HPUX PA-RISC 64-bit (hpux-parisc64) HPUX IA64-32 (hpux-ia64-32) HPUX IA64-64 (hpux-ia64-64) IBM i 5.2+ 32-bit, previously known as i5/OS or OS/400 (aix) IBM i 5.2+ 64-bit, previously known as i5/OS or OS/400 (aix64) FreeBSD 7.3+ i386 (freebsd)
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (5 of 68)9/27/2010 6:27:04 PM
+
+InstallAnywhere (Bundled JVM) InstallAnywhere (No JVM) STAFInst -
+
+-
+
+-
+
+-
+
+-
+
+STAF Installation Guide
+
+Mac OS X 10.4+ i386 (macosx-i386) Mac OS X 10.4+ PPC (macosx-ppc) Mac OS X 10.6+ Universal binary for i386, x86_64, and ppc (macosxuniversal)
+
+-
+
+2.2. Install properties for STAF Installers After the STAF install is complete, an install.properties file will be created in the root STAF install directory. The file will contain key/value pairs that provide information about the version of STAF that has been installed. The install.properties file will contain the following information:
+q q q q q q q
+
+q
+
+version - the version of STAF that has been installed platform - the STAF platform name architecture - the architecture of the STAF build (32-bit or 64-bit) installer - the type of installer (InstallAnywhere, STAFInst) file - the file used to install STAF osname - the operating system name for the STAF build (equivalent to the "os.name" Java property) osversion - the operating system version supported by the STAF build ("*" indicates the build is supported on any version of the OS; a version number followed by a "+" indicates the build supports that version or later) osarch - the operating system architecture supported by the STAF build (equivalent to the "os.arch" Java property)
+
+The following table shows the possible values for the install.properties file version platform architecture installer file STAF3xx-setupwin32.exe | STAF3xx-setupwin32-NoJVM.exe STAF3xx-setupwin64.exe | STAF3xx-setupwin64-NoJVM.exe STAF3xx-setupwinamd64.exe | STAF3xx-setupwinamd64-NoJVM. exe osname osversion osarch
+
+3.x.x
+
+win32
+
+32-bit
+
+IA | IA_NoJVM
+
+Windows
+
+*
+
+x86
+
+3.x.x
+
+win64
+
+64-bit
+
+IA | IA_NoJVM
+
+Windows
+
+*
+
+ia64
+
+3.x.x
+
+winamd64
+
+64-bit
+
+IA | IA_NoJVM
+
+Windows
+
+*
+
+amd64
+
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (6 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+3.x.x
+
+linux
+
+32-bit
+
+IA | IA_NoJVM | STAFInst
+
+STAF3xx-setup-linux. bin | STAF3xx-setupLinux linux-NoJVM.bin | STAF3xx-linux.tar.gz STAF3xx-setuplinux-ia64.bin | STAF3xx-setupLinux linux-ia64-NoJVM. bin | STAF3xx-linuxia64.tar.gz STAF3xx-setuplinux-amd64.bin | STAF3xx-setupLinux linux-amd64-NoJVM. bin | STAF3xx-linuxamd64.tar.gz STAF3xx-setuplinux-ppc64-32.bin | STAF3xx-setuplinux-ppc64-32NoJVM.bin | STAF3xx-linuxppc64-32.tar.gz STAF3xx-setuplinux-ppc64-64.bin | STAF3xx-setuplinux-ppc64-64NoJVM.bin | STAF3xx-linuxppc64-64.tar.gz STAF3xx-setupzlinux-32.bin | STAF3xx-setupzlinux-32-NoJVM. bin | STAF3xxzlinux-32.tar.gz
+
+*
+
+x86
+
+3.x.x
+
+linux-ia64
+
+64-bit
+
+IA | IA_NoJVM | STAFInst
+
+*
+
+ia64
+
+3.x.x
+
+linux-amd64
+
+64-bit
+
+IA | IA_NoJVM | STAFInst
+
+*
+
+amd64
+
+3.x.x
+
+linux-ppc64-32
+
+32-bit
+
+IA | IA_NoJVM | STAFInst
+
+Linux
+
+*
+
+ppc64
+
+3.x.x
+
+linux-ppc64-64
+
+64-bit
+
+IA | IA_NoJVM | STAFInst
+
+Linux
+
+*
+
+ppc64
+
+3.x.x
+
+zlinux-32
+
+32-bit
+
+IA | IA_NoJVM | STAFInst
+
+Linux
+
+SLES10+/RHEL5+ s390
+
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (7 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+3.x.x
+
+zlinux-64
+
+64-bit
+
+IA | IA_NoJVM | STAFInst
+
+STAF3xx-setupzlinux-64.bin | STAF3xx-setupzlinux-64-NoJVM. bin | STAF3xxzlinux-64.tar.gz STAF3xx-zos.tar.Z
+
+Linux
+
+SLES10+/RHEL5+ s390x
+
+3.x.x 3.x.x
+
+zos zos64
+
+32-bit 64-bit
+
+STAFInst STAFInst
+
+z/OS
+
+1.4+ 1.4+
+
+390 s390x
+
+STAF3xx-zos64.tar.Z z/OS STAF3xx-setupsolaris-sparc.bin | STAF3xx-setupSunOS solaris-sparc-NoJVM. bin | STAF3xxsolaris-sparc.tar.gz STAF3xx-setupsolaris-sparc64.bin | STAF3xx-setupsolaris-sparc64NoJVM.bin | STAF3xx-solarissparc64.tar.gz STAF3xx-setupsolaris-x64.bin | STAF3xx-setupsolaris-x64-NoJVM. bin | STAF3xxsolaris-x64.tar.gz STAF3xx-setupsolaris-x64-64.bin | STAF3xx-setupsolaris-x64-64NoJVM.bin | STAF3xx-solarisx64-64.tar.gz
+
+3.x.x
+
+solaris-sparc
+
+32-bit
+
+IA | IA_NoJVM | STAFInst
+
+5.10+
+
+sparc
+
+3.x.x
+
+solaris-sparc64
+
+64-bit
+
+IA | IA_NoJVM | STAFInst
+
+SunOS
+
+5.10+
+
+sparcv9
+
+3.x.x
+
+solaris-x64
+
+32-bit
+
+IA | IA_NoJVM | STAFInst
+
+x86-64 SunOS 5.10+ (aka x64, amd64)
+
+3.x.x
+
+solaris-x64-64
+
+64-bit
+
+IA | IA_NoJVM | STAFInst
+
+SunOS
+
+5.10+
+
+amd64
+
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (8 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+3.x.x
+
+solaris-x86
+
+32-bit
+
+IA | IA_NoJVM | STAFInst
+
+STAF3xx-setupsolaris-x86.bin | STAF3xx-setupsolaris-x86-NoJVM. bin | STAF3xxsolaris-x86.tar.gz
+
+x86-32 SunOS 5.10+ (aka x86)
+
+3.x.x
+
+aix
+
+32-bit
+
+IA | IA_NoJVM | STAFInst
+
+STAF3xx-setup-aix. bin | STAF3xx-setupAIX aix-NoJVM.bin | STAF3xx-aix.tar.gz STAF3xx-setupaix64.bin | STAF3xxsetup-aix64-NoJVM. AIX bin | STAF3xx-aix64. tar.gz STAF3xx-setup-hpux. bin | STAF3xx-setupHP-UX hpux-NoJVM.bin | STAF3xx-hpux.tar.gz STAF3xx-setuphpux-parisc64.bin | STAF3xx-setuphpux-parisc64NoJVM.bin | STAF3xx-hpuxparisc64.tar.gz
+
+5.1+
+
+ppc
+
+3.x.x
+
+aix64
+
+64-bit
+
+IA | IA_NoJVM | STAFInst
+
+5.1+
+
+ppc64
+
+3.x.x
+
+hpux
+
+32-bit
+
+IA | IA_NoJVM | STAFInst
+
+B.11.11+
+
+PA_RISC2.0
+
+3.x.x
+
+hpux-parisc64
+
+64-bit
+
+IA | IA_NoJVM | STAFInst
+
+HP-UX
+
+B.11.11+
+
+PA_RISC2.0W
+
+3.x.x
+
+hpux-ia64-32
+
+32-bit
+
+IA | IA_NoJVM | STAFInst
+
+STAF3xx-setuphpux-ia64-32.bin | STAF3xx-setuphpux-ia64-32HP-UX NoJVM.bin | STAF3xx-hpux-ia6432.tar.gz
+
+B.11.23+
+
+IA64N
+
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (9 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+3.x.x
+
+hpux-ia64-64
+
+64-bit
+
+IA | IA_NoJVM | STAFInst
+
+STAF3xx-setuphpux-ia64-64.bin | STAF3xx-setuphpux-ia64-64HP-UX NoJVM.bin | STAF3xx-hpux-ia6464.tar.gz STAF3xx-aix.tar.gz AIX
+
+B.11.23+
+
+IA64W
+
+3.x.x 3.x.x
+
+IBM i 32-bit IBM i 64-bit
+
+32-bit 64-bit
+
+STAFInst STAFInst
+
+AIX 5.1+, IBM i 5.2+ AIX 5.1+, IBM i 5.2+
+
+ppc ppc64
+
+STAF3xx-aix64.tar.gz AIX
+
+3.x.x
+
+freebsd
+
+32-bit
+
+STAF3xx-setupfreebsd-NoJVM.bin | IA_NoJVM | STAFInst FreeBSD STAF3xx-freebsd.tar. gz STAF3xx-setupmacosx-i386.zip | STAF3xx-setupIA_NoJVM | STAFInst macosx-i386.bin | STAF3xx-macosxi386.tar.gz STAF3xx-setupmacosx-ppc.zip | STAF3xx-setupIA_NoJVM | STAFInst macosx-ppc.bin | STAF3xx-macosxppc.tar.gz
+
+7.3+
+
+i386
+
+3.x.x
+
+macosx-i386
+
+32-bit
+
+Mac OS X 10.4+
+
+i386
+
+3.x.x
+
+macosx-ppc
+
+32-bit
+
+Mac OS X 10.4+
+
+ppc
+
+3.x.x
+
+STAF3xx-setupmacosx-universal.zip | STAF3xx-setupmacosx-universal 32-bit/64-bit IA_NoJVM | STAFInst Mac OS X 10.6+ macosx-universal.bin | STAF3xx-macosxuniversal.tar.gz
+
+universal (i386, x86_64, ppc)
+
+Note that the install.properties file will be overwritten every time you install STAF to a target location. You should not delete or modify the install. properties file. Here is a sample install.properties file from a Windows system (using the IA installer):
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (10 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+version=3.4.3 platform=win32 architecture=32-bit installer=IA file=STAF343-setup-win32.exe osname=Windows osversion=* osarch=x86 Here is a sample install.properties file from a Mac OS X i386 system (using the STAFInst installer): version=3.4.3 platform=macosx-i386 architecture=32-bit installer=STAFInst file=STAF343-macosx-i386.tar osname=Mac OS X osversion=10.4+ osarch=i386 Note that if STAF is running on a system, you can use the "MISC LIST PROPERTIES" service request to obtain the information in the install.properties file When using Java classes that call into the STAF APIs, it is important to understand that STAF is implemented in C++, so any calls that your Java code makes into the STAF APIs will be using JNI to interface with the native C++ code. This means that you must use the version of STAF that is compatible with the architecture (32-bit or 64-bit) of the JVM that you are using. If the "STAF architecture" is "32-bit", then you must use a 32-bit JVM with that version of STAF. If the "STAF architecture" is "64-bit", then you must use a 64-bit JVM with that version of STAF.
+
+3. Install Topics
+
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (11 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+3.1. STAF License Agreement 3.2. Installation Target 3.3. Upgrading STAF 3.4. Install Sets 3.5. Registration 3.6. Advanced Options 3.7. STAFEnv script 3.8. startSTAFProc script 3.1. STAF License Agreement In order to install STAF, you must read and accept the terms of the license agreement. 3.2. Installation Target When installing STAF, you must specify the target installation directory. The default install location varies depending on the operating system.
+q
+
+On Windows, the default install directory is C:\STAF On Mac OS X, the default install directory is /Library/staf On other Unix platforms, the default install directory is /usr/local/staf
+
+q
+
+q
+
+3.3. Upgrading STAF When installing STAF via InstallAnywhere, if you have selected a target installation directory where a version of STAF is already installed, you will be asked if you want to upgrade the existing version. If you choose to do the upgrade installation, all of STAF files will be upgraded to the new version. Any files created after STAF was installed (e.g. additional services, log files, updated STAF.cfg, etc) will not be removed. When installing STAF via STAFInst, if you have selected a target installation directory where a version of STAF is already installed, the install will display an error message indicating that you must first uninstall the existing version of STAF. 3.4. Install Sets
+
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (12 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+There are several install sets available when installing STAF, which define the set of STAF features that will be installed:
+q
+
+Full - All features will be installed. This option is recommended for most users. Minimal - Only required application features will be installed. This option is recommended only for users with limited disk space. Custom - Choose this option to customize the features to be installed. This install set is only available with the InstallAnywhere installers.
+
+q
+
+q
+
+Here is a list of the available features:
+q
+
+STAF Application (STAF) - Core STAF application External Services (ExtSvcs) - External STAF services (Log, Monitor, ResPool, Zip) Language Support (Langs) - STAF Language Support (Java, Perl, Python, TCL, etc.) Samples and Demos (Samples) - Samples and Demos Additional Codepage Support (Codepage) - Install all STAF codepages Documentation (Docs) - STAF documenation Development Support (Develop) - Service developer header files and libraries
+
+q
+
+q
+
+q
+
+q
+
+q
+
+q
+
+Note that the STAFInst installers allow install set types of "recommended", "full", and "minimal". Selecting "recommended" or "full" will perform a full install. 3.5. Registration During the install you can optionally choose to provide registration information to the STAF development team. This information is used by the STAF team to determine the number of projects that are using STAF. Note that this registration information is currently transmitted (the first time that STAFProc is started after the install) to a system within the IBM network. If you register information from a system that is outside the IBM network, the transmission will fail and the registration information will be discarded (note that this will not impact your ability to use STAF). 3.6. Advanced Options
+
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (13 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+Here is a list of the advanced options that are available during the install:
+q
+
+Update Enviroment/Menus For: This allows you to specify the scope of environment/menu updates. The possible selections are: r System - the System environment variables and menus (if applicable) will be updated r User - the currently logged-in user's environment variables and menus (if applicable) will be updated r None - no environment variables or menus will be updated Note that on Unix systems, after the install completes, you must logout and log back in the have the system/user environment variables refreshed.
+
+q
+
+Start STAF on user login (Windows only) This indicates whether you want STAF to automatically start when you login (by adding STAF to your Windows StartUp folder). This option is not available if you selected None for Update Environment/Menus. This option is only available with the InstallAnywhere installers.
+
+q
+
+Create Start menu icons (Windows only) This indicates whether you want icons placed on the Windows "Start Programs" menu. This option is not available if you selected None for Update Environment/Menus. This option is only available with the InstallAnywhere installers.
+
+q
+
+Start STAFProc (Windows only) This indicates whether you want STAFProc to be started in normal state (visible on the desktop) or minimized when the "Start STAF" icon in the Windows "Start Programs" menu is selected, or when STAFProc automatically starts when you login to Windows. This option is not available if you selected None for Update Environment/Menus. This option is only available with the InstallAnywhere installers.
+
+q
+
+Default TCP/IP version This indicates whether you want to use the IPv4 TCP libraries only, or if you want to use the TCP libraries that support both IPv4 and IPv6.
+
+q
+
+Default Perl version (if applicable) This indicates which version of Perl you want to be the default Perl support for STAF.
+
+q
+
+Use Perl version in System Path (if applicable) This indicates to determine the version of Perl in the system PATH at install-time (if possible) and use that version of Perl by default. If there is no version of Perl in the system PATH (or if the output of "perl -v" returns an unexpected value, i.e. something other than "5.6.x", "5.8.x", or "5.10.x") then the default version of Perl (determined by the "Default Perl version" option) will be used.
+
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (14 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+q
+
+Default STAF Instance Name This allows you to specify the value for the STAF instance name for this version of STAF. Since multiple instances of STAFProc can be run at the same time on the same system, the STAF_INSTANCE_NAME environment variable can be used to specify a name for each STAFProc instance. You can leave the default instance name as "STAF", or you can change the instance name. Note, this value will only be used in the STAFEnv script file that will be created for you. This option is only available with the InstallAnywhere installers.
+
+3.7. STAFEnv script After the STAF install is complete, a STAFEnv.bat file (on Windows) or a STAFEnv.sh file (on Unix) will be created in the root STAF install directory. The STAFEnv script files are useful if you are going to be running two versions of STAF on the same machine and need a convenient way to switch settings for each version of STAF. An optional argument specifying the STAF instance name can be passed to a STAFEnv script file. Here is a sample STAFEnv.bat file from a Windows system: @echo off REM STAF environment variables set PATH=C:\STAF\bin;%PATH% set CLASSPATH=C:\STAF\bin\JSTAF.jar;C:\STAF\samples\demo\STAFDemo.jar;%CLASSPATH% set STAFCONVDIR=C:\STAF\codepage if "%1" EQU "" set STAF_INSTANCE_NAME=STAF if "%1" NEQ "" set STAF_INSTANCE_NAME=%1 Here is a sample STAFEnv.sh file from a Linux system: #!/bin/sh # STAF environment variables PATH=/usr/local/staf/bin:${PATH:-} LD_LIBRARY_PATH=/usr/local/staf/lib:${LD_LIBRARY_PATH:-} CLASSPATH=/usr/local/staf/lib/JSTAF.jar:/usr/local/staf/samples/demo/STAFDemo.jar:${CLASSPATH:-} STAFCONVDIR=/usr/local/staf/codepage if [ $# = 0 ] then STAF_INSTANCE_NAME=STAF else if [ $1 != "start" ] then STAF_INSTANCE_NAME=$1 else # Ignore "start" STAF instance name
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (15 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+STAF_INSTANCE_NAME=STAF fi fi export PATH LD_LIBRARY_PATH CLASSPATH STAFCONVDIR STAF_INSTANCE_NAME Note that to correctly execute the STAFEnv.sh script on Unix, you must execute it in this format: . ./STAFEnv.sh Or, if the STAFEnv.sh script is not in the current directory: . ./usr/local/staf/STAFEnv.sh Note that if STAFEnv.sh is executed during the bootup process on Unix, the bootup script may inadvertently pass the "start" argument to STAFEnv.sh, so when STAFProc is started during the system reboot, it will be using a STAF instance name of "start" instead of "STAF". To avoid this problem, the STAFEnv.sh script will ignore the STAF instance name argument if it is equal to "start". 3.8. startSTAFProc script After the STAF install is complete, a startSTAFProc.bat file (on Windows) or a startSTAFProc.sh file (on Unix) will be created in the root STAF install directory. The startSTAFProc script files can be used to set up the STAF environment variables and start STAFProc. Here is a sample startSTAFProc.bat file from a Windows system: REM Sets up the STAF environment variables and starts STAFProc call "C:\STAF\STAFEnv.bat" start "Start STAF 3.3.5" /min "C:\STAF\bin\STAFProc.exe" Here is a sample startSTAFProc.sh file from a Linux system: #!/bin/sh # Sets up the STAF environment variables and starts STAFProc # in the background, logging STAFProc output to nohup.out . /usr/local/staf/STAFEnv.sh nohup /usr/local/staf/bin/STAFProc & Note that to correctly execute the startSTAFProc.sh script on Unix, you must execute it in this format: ./startSTAFProc.sh Or, if the startSTAFProc.sh script is not in the current directory:
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (16 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+/usr/local/staf/startSTAFProc.sh
+
+4. Using InstallAnywhere to install STAF
+4.1. IA Installer Arguments 4.2. InstallAnywhere Graphical Install 4.3. InstallAnywhere Silent Install 4.4. InstallAnywhere Console Install 4.5. Installer Return Codes 4.6. Install Log 4.7. Specifying a Temporary Directory 4.8. Uninstaller 4.9. Comparison of IA install options and ISMP install options 4.1. IA Installer Arguments Here are the command-line options for an IA installer (or uninstaller): C:\>STAF343-setup-win32.exe -help Usage: STAF343-setup-win32 [-f <path_to_installer_properties_file> | -options] (to execute the installer) where options include: -? show this help text -i [swing | console | silent] specify the user interface mode for the installer -D<name>=<value> specify installer properties The options field may also include the following in case of uninstaller if it is enabled for Maintenance Mode -add <feature_name_1> [<feature_name_2 ...] Add Specified Features -remove <feature_name_1> [<feature_name_2 ...] Remove Specified Features -repair Repair Installation -uninstall
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (17 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+Uninstall notes: 1. the path to the installer properties file may be either absolute, or relative to the directory in which the installer resides. 2. if an installer properties file is specified and exists, all other command line options will be ignored. 3. if a properties file named either 'installer.properties' or <NameOfInstaller>.properties resides in the same directory as the installer, it will automatically be used, overriding all other command line options, unless the '-f' option is used to point to another valid properties file. 4. if an installer properties file is specified but does not exist, the default properties file, if present, will be used. Otherwise, any supplied command line options will be used, or if no additional options were specified, the installer will be run using the default settings. 4.2. InstallAnywhere Graphical Install Here are examples of the screens that will be displayed in the InstallAnywhere Graphical Install. Note that these screen captures are from a Windows install; Unix installs will have similar screens. Figure 1.
+
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (18 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+Figure 2.
+
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (19 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+Figure 3.
+
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (20 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+Figure 4.
+
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (21 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+Figure 5.
+
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (22 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+Figure 6.
+
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (23 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+Figure 7.
+
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (24 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+Figure 8.
+
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (25 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+Figure 9.
+
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (26 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+Figure 10.
+
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (27 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+Figure 11.
+
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (28 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+Figure 12.
+
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (29 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+Figure 13.
+
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (30 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+Note that if you start a graphical installation, but the system does not hava a display (i.e. if you are accessing a Unix system via telnet or ssh), the installer will detect this situation and continue the installation in console mode. For example: ./STAF343-setup-linux.bin Preparing to install... Extracting the JRE from the installer archive... Unpacking the JRE... Extracting the installation resources from the installer archive... Configuring the installer for this system's environment... Launching installer...
+
+Graphical installers are not supported by the VM. The console mode will be used instead...
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (31 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+Preparing CONSOLE Mode Installation... 4.3. InstallAnywhere Silent Install To start in IA install in silent mode, you can specify the "-i silent" property when starting the installer. You can also use specify this property in a response file. The following table shows all of the install properties that are available for a silent installation. Note that these options can be specified at the command line or in a response file. Property Name Description Value Equivalent ISMP option
+
+ACCEPT_LICENSE
+
+Acceptance of the license agreement.
+
+Values are "1" (accept) or "0" (or license.selection any value other than "1"). Default is "0"
+
+USER_INSTALL_DIR
+
+Default is "C:\STAF" on Windows, "/ Library/staf" on Mac The directory where STAF will be installed. stafinstalldirectory.defaultInstallLocation OS X, and "/usr/local/ staf" on other Unix platforms. Values are "silent", "swing", or "console". This allows you to specify the install UI None type without using the "-i" option. Default is "swing". Values are "Full", "Minimal", or "Custom". Default is "Full".
+
+INSTALLER_UI
+
+The install UI type.
+
+CHOSEN_INSTALL_SET
+
+The install set.
+
+setupTypes.selectedSetupTypeId
+
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (32 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+CHOSEN_INSTALL_FEATURE_LIST The Custom features to install.
+
+Valid features names are: STAF,ExtSvcs, Langs,Samples, Codepage,Docs, Develop. The features should be specified as None a comma-separated list of the feature names. Note that this option has no effect for "Full" or "Minimal" install. Values are "1" or "0". Default is "1". Default is "". Default is "". Default is "". Values are "System", "User", "None". Default is "System". Values are "1" or "0". Default is "1". Values are "1" or "0". Default is "1". Values are "Normal" or "Minimized". Default is "Normal". None None None None stafOptions.updateEnvironmentVariables
+
+REGISTER REGISTRATION_NAME REGISTRATION_EMAIL REGISTRATION_ORG UPDATE_ENVIRONMENT
+
+Whether to perform STAF registration when STAF is first started. The name to register. The email to register. The organization to register. Scope of environment/menu updates. Whether to start STAF on Login. This is a Windows-only property. Whether to create Start menu icons/ programs folder for STAF. This is a Windows-only property. Whether to start the STAFProc window in normal state (visible on the desktop) or minimized. This is a Windows-only property. The default TCP/IP version.
+
+START_ON_LOGIN
+
+None
+
+CREATE_START_MENU_ICONS
+
+None
+
+START_STAFPROC
+
+None
+
+USE_TCP_VERSION
+
+Values are "IPV4" or "IPV4_IPV6". "IPV4" stafOptions.defaultIPvVersion is the default.
+
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (33 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+USE_PERL_VERSION
+
+The default Perl version. Only valid on platforms with Perl support.
+
+Values are "5.8", "5.10" and "5.6" (note that the supported Perl versions will vary None depending on the operating system). Default is "5.8".
+
+USE_PERL_SYSTEM_PATH
+
+Whether to determine the version of Perl in the system PATH at install-time (if possible) and use that version of Perl by default. Only valid on platforms with Perl support. If there is no version of Perl in the Values are "0", "1". system PATH (or if the output of "perl -v" Default is "0". returns an unexpected value, i.e. something other than "5.6.x", "5.8.x", or "5.10.x") then the default version of Perl (determined by the USE_PERL_VERSION option) will be used.
+
+None
+
+USE_PYTHON_VERSION
+
+The default Python version. Only valid on platforms with Python support.
+
+Values are "2.2", "2.3", "2.4", "2.5", "2.6", and "2.7" (note that the supported Python versions will vary depending on the operating system). None Default is "2.2" except on Mac OS X (default is "2.3"), Windows IA64 and FreeBSD (default is "2.4"), Windows AMD64 (default is "2.5").
+
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (34 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+USE_PYTHON_SYSTEM_PATH
+
+Whether to determine the version of Python in the system PATH at install-time (if possible) and use that version of Python by default. Only valid on platforms with Python support. If there is no version of Python in the system PATH (or if the Values are "0", "1". output of "python -V" returns an Default is "0". unexpected value, i.e. something other than "2.2.x", "2.3.x", "2.4.x", "2.5.x", "2.6.x", "2.7", or "2.7.x") then the default version of Python (determined by the USE_PYTHON_VERSION option) will be used. The default STAF instance name. Whether to automatically restart the Windows operating system if target files are in use during the STAF installation. Default is "STAF".
+
+None
+
+STAF_INSTANCE_NAME USER_REQUESTED_RESTART
+
+None
+
+Values are "YES" and "NO". Default is None "NO".
+
+Note that the property names and values are case-sensitive. Here are some examples of specifying silent install properties:
+q
+
+Perform a silent install with all default options: STAF343-setup-win32 -i silent -DACCEPT_LICENSE=1
+
+q
+
+Install STAF in C:\Program Files\STAF: STAF343-setup-win32 -i silent -DACCEPT_LICENSE=1 -DUSER_INSTALL_DIR="C:\Program Files\STAF"
+
+q
+
+Perform a silent install of STAF, where the STAFProc window will start minimized: STAF343-setup-win32 -i silent -DACCEPT_LICENSE=1 -DSTART_STAFPROC=Minimized
+
+q
+
+Perform a Minimal install of STAF, without updating any menus or environment variables, and using the IPV4/IPv6-enabled TCP libraries: STAF343-setup-win32 -i silent -DACCEPT_LICENSE=1 -DCHOSEN_INSTALL_SET=Minimal -DUPDATE_ENVIRONMENT=None -DUSE_TCP_VERSION=IPV4_IPV6
+
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (35 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+q
+
+Perform a Custom install of STAF in directory C:\tools\staf, with features STAF, External Services, Languages, and all codepages: STAF343-setup-win32 -i silent -DACCEPT_LICENSE=1 -DUSER_INSTALL_DIR=C:\tools\staf -DCHOSEN_INSTALL_SET=Custom -DCHOSEN_INSTALL_FEATURE_LIST=STAF,ExtSvcs,Langs,Codepage
+
+q
+
+Perform a silent install of STAF, determining the version of Perl in the system PATH at install-time (if possible) and using that version of Perl by default. If there is no version of Perl in the system PATH at install-time, then use Perl 5.10 by default. STAF343-setup-win32 -i silent -DACCEPT_LICENSE=1 -DUSE_PERL_SYSTEM_PATH=1 -DUSE_PERL_VERSION=5.10
+
+q
+
+Perform a silent install of STAF, determining the version of Python in the system PATH at install-time (if possible) and using that version of Python by default. If there is no version of Python in the system PATH at install-time, then use Python 2.6 by default. STAF343-setup-win32 -i silent -DACCEPT_LICENSE=1 -DUSE_PYTHON_SYSTEM_PATH=1 -DUSE_PYTHON_VERSION=2.6
+
+You can specify a properties (response) file to use when starting the STAF IA Installer. The properties file should contain the same -D options that you would specify on a command-line installation. For example: STAF343-setup-win32 -f installer.properties Here is a sample installer.properties file: INSTALLER_UI=silent ACCEPT_LICENSE=1 USER_INSTALL_DIR=C:\\STAF CHOSEN_INSTALL_SET=Full REGISTER=1 REGISTRATION_NAME=Joe Smith REGISTRATION_EMAIL=address@comany.com REGISTRATION_ORG=ABC Test UPDATE_ENVIRONMENT=System START_ON_LOGIN=1 CREATE_START_MENU_ICONS=1 START_STAFPROC=Minimized USE_TCP_VERSION=IPV4 USE_PERL_VERSION=5.8 USE_PERL_SYSTEM_PATH=1 USE_PYTHON_VERSION=2.2 USE_PYTHON_SYSTEM_PATH=1
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (36 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+STAF_INSTANCE_NAME=STAF USER_REQUESTED_RESTART=NO To perform a GUI install and have the selected options recorded in a properties file, you can specify the "-r file-path" option when starting the IA installer. For example: STAF343-setup-win32.exe -r c:/temp/installer.properties This will create a "c:/temp/installer.properties" file. Note that you will need to manually add the INSTALLER_UI=<mode> line. 4.4. InstallAnywhere Console Install In IA to perform a console installation, use the "-i console" option. For example: ./STAF343-setup-linux.bin -i console Here are examples (on Linux) of the console panels that are displayed: Figure 14. Preparing to install... Extracting the JRE from the installer archive... Unpacking the JRE... Extracting the installation resources from the installer archive... Configuring the installer for this system's environment... Launching installer... Preparing CONSOLE Mode Installation... =============================================================================== STAF (created with InstallAnywhere) -------------------------------------------------------------------------------
+
+=============================================================================== Introduction -----------file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (37 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+InstallAnywhere will guide you through the installation of STAF. It is strongly recommended that you quit all programs before continuing with this installation. Respond to each prompt to proceed to the next step in the installation. want to change something on a previous step, type 'back'. You may cancel this installation at any time by typing 'quit'. PRESS <ENTER> TO CONTINUE: Figure 15. =============================================================================== License Agreement ----------------Installation and Use of STAF Requires Acceptance of the Following License Agreement: This software is licensed under the Eclipse Public License (EPL) v 1.0 Eclipse Public License - v 1.0 THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE PUBLIC LICENSE ("AGREEMENT"). ANY USE, REPRODUCTION OR DISTRIBUTION OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT. 1. DEFINITIONS "Contribution" means: a) in the case of the initial Contributor, the initial code and documentation distributed under this Agreement, andb) in the case of each subsequent Contributor: i) changes to the Program, and ii) additions to the Program; where such changes and/or additions to the Program originate from and are
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (38 of 68)9/27/2010 6:27:04 PM
+
+If you
+
+STAF Installation Guide
+
+distributed by that particular Contributor. A Contribution 'originates' from a Contributor if it was added to the Program by such Contributor itself or anyone PRESS <ENTER> TO CONTINUE: ... ... ... ... ... ... ... ... ...
+
+DO YOU ACCEPT THE TERMS OF THIS LICENSE AGREEMENT? (Y/N): Y Figure 16. =============================================================================== Choose Install Folder --------------------Where would you like to install? Default Install Folder: /usr/local/staf ENTER AN ABSOLUTE PATH, OR PRESS <ENTER> TO ACCEPT THE DEFAULT : Figure 17. =============================================================================== Choose Install Set -----------------Please choose the Install Set to be installed by this installer. ->1- Full (Recommended) 2- Minimal 3- Customize... ENTER THE NUMBER FOR THE INSTALL SET, OR PRESS <ENTER> TO ACCEPT THE DEFAULT : Figure 18. ===============================================================================
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (39 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+Registration Information -----------------------Allow STAF to Register? (DEFAULT: 1): Registration Name: Jane Smith Registration Email: janesmith@company.com Registration Organization: Product Test
+
+Figure 19. =============================================================================== Advanced Options ---------------->1- System 2- User 3- None Update Environment/Menus for:
+
+->1- IPV4 2- IPV4_IPV6 Default TCP version:
+
+->1- 5.8 2- 5.10 3- 5.6 Default Perl version:
+
+Use Perl version in System Path? (DEFAULT: 0):
+
+->1234-
+
+2.2 2.3 2.4 2.5
+
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (40 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+5- 2.6 6- 2.7 Default Python version:
+
+Use Python version in System Path? (DEFAULT: 0):
+
+Default STAF Intance Name (DEFAULT: STAF):
+
+Figure 20. =============================================================================== Pre-Installation Summary -----------------------Please Review the Following Before Continuing: Product Name: STAF Install Folder: /usr/local/staf Install Set Full (Recommended) Disk Space Information (for Installation Target): Required: 91,109,690 bytes Available: 16,505,991,168 bytes PRESS <ENTER> TO CONTINUE: Figure 21. =============================================================================== Installing... ------------file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (41 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+[==================|==================|==================|==================] [------------------|------------------|------------------|------------------] Figure 22. =============================================================================== Installation Complete --------------------Congratulations. STAF has been successfully installed to: /usr/local/staf PRESS <ENTER> TO EXIT THE INSTALLER: 4.5. Installer Return Codes The STAF IA installers will return the following return codes:
+q q q
+
+0 - if the install was successful 1 - if there were any errors during the install 200 - if a silent install was performed and the -DACCEPT_LICENSE=1 option was not specified
+
+4.6. Install Log The STAF IA installers will create a log file called STAFInstall.log in the root install directory. Note that the log file will always be created (it is not an option that can be specified when starting the installer) and will be overwritten on each install. The install log will contain a "Summary" section with status information for the install. For example, the Summary for a successful install would look like: Summary ------Installation: Successful. 357 Successes 0 Warnings 0 NonFatalErrors 0 FatalErrors
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (42 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+If there were any errors during the install, the Summary would look like: Summary ------Installation: Successfulwith errors. 287 Successes 0 Warnings 3 NonFatalErrors 0 FatalErrors If there were any errors during the install, the "Install Log Detail" section will contain information about the errors. For example: Install File: /usr/local/staf/lib/libJSTAF.sl Status: ERROR Additional Notes: ERROR - ZeroGs1: /usr/local/staf/lib/libJSTAF.sl (Text
+
+file busy (errno:26)) Install File: /usr/local/staf/lib/libJSTAFSH.sl Status: ERROR Additional Notes: ERROR - ZeroGs1: /usr/local/staf/lib/libJSTAFSH.sl (Text
+
+file busy (errno:26)) Install File: /usr/local/staf/lib/libSTAFLIPC.sl Status: ERROR Additional Notes: ERROR - ZeroGs1: /usr/local/staf/lib/libSTAFLIPC.sl (Text
+
+file busy (errno:26))
+
+4.7. Specifying a Temporary Directory In ISMP, you could override the default temporary directory used during the install (for example, if the default temporary directory did not contain enough free space) by using the "is:tempdir <dir>" option. In IA, on Windows, the installer uses the directory in the TEMP environment variable, and on Unix, the installer uses the directory in the IATEMPDIR environment variable. So, prior to running the installer, set the appropriate environment variable to a directory containing enough free space. 4.8. Uninstaller
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (43 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+The IA uninstaller for STAF is created in directory <install-root>/Uninstall_STAF. The uninstaller executable is <install-root>/Uninstall_STAF/ Uninstall_STAF.exe on Windows and <install-root>/Uninstall_STAF/Uninstall_STAF on Unix. Note that by default, the uninstaller will execute in the mode used for the installation. For example, if the install mode was silent, the uninstaller will run in silent mode by default. 4.9. Comparison of IA install options and ISMP install options Here are some comparisons of silent install options for STAF 3.2.5 (using ISMP) and STAF 3.3.0 and later (using IA):
+q
+
+Perform a silent install using all of the default options (ISMP) STAF325-setup-win32 -is:log c:\temp\ismplog.txt -silent -W license.selection="Accept" (IA) STAF343-setup-win32 -i silent -DACCEPT_LICENSE=1
+
+q
+
+Perform a silent install to C:\tools\staf (ISMP) STAF325-setup-win32 -is:log c:\temp\ismplog.txt -silent -W license.selection="Accept" -W stafinstalldirectory.defaultInstallLocation="C:\tools\staf" (IA) STAF343-setup-win32 -i silent -DACCEPT_LICENSE=1 -DUSER_INSTALL_DIR=C:\tools\staf
+
+q
+
+Perform a a silent installation of install set "Minimal", without updating environment variables/menus, and with the support for IPv4 and IPv6 (ISMP) STAF325-setup-win32 -is:log c:\temp\ismplog.txt -silent -W license.selection="Accept" -W setupTypes.selectedSetupTypeId="Minimal" -W stafOptions.updateEnvironmentVariables="None" -W stafOptions.defaultIPvVersion="IPv4 and IPv6" (IA) STAF343-setup-win32 -i silent -DACCEPT_LICENSE=1 -DCHOSEN_INSTALL_SET=Minimal DUPDATE_ENVIRONMENT=None -DUSE_TCP_VERSION=IPV4_IPV6
+
+q
+
+Perform a silent uninstall (ISMP) ProductDir\_uninst\uninstaller -silent (IA) ProductDir\Uninstall_STAF\Uninstall_STAF.exe -i silent
+
+5. Using STAFInst to install STAF
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (44 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+5.1. STAFInst Install 5.2. Examples using STAFInst 5.3. STAFInst Uninstall 5.1. STAFInst Install A single gzipped or compressed tar file is provided for Unix systems. For some platforms that are not supported by InstallAnywhere, such as z/OS, AS/400, and FreeBSD 4.10, this is the only install file provided. Before installing STAF, you will need to gunzip the gzipped tar file or uncompress the compressed tar file and then untar it into a temporary directory from which you will later run the STAFInst command. Note that when you untar the file, it will expand into a single directory named "staf" that will contain the installation files and directories. For example, assuming you downloaded the gzipped tar file for FreeBSD 4.10 into a temporary directory named /tmp/STAF, cd /tmp/STAF gunzip STAF343-freebsd410.tar.gz tar -xvf STAF343-freebsd410.tar cd staf Or, for example, assuming you downloaded the compressed tar file for z/OS into a temporary directory named /tmp/STAF, cd /tmp/STAF compress -d STAF343-zos.tar.Z tar -xvf STAF343-zos.tar cd staf Note that you can delete this temporary directory (e.g. /tmp/STAF) after you have run the STAFInst command to install STAF to the target directory. Optionally, you may prefer to untar STAF on one system and mount the installable images from other systems. Once the STAF installation image is ready, you should run the STAFInst command. The syntax is as follows. Usage: STAFInst [-source <source path>] [-target <target path>] [-bin <directory>] [-lib <directory>] [-preview] [-type < m | r | f >] [-verbose] [-warn] [-ro <mode>] [-rx <mode>] [-rw <mode>] [-dp <mode>] [-noreg | [-name <name>] [-email <email>] [-org <org>]] [-acceptlicense] [-option name=value]... -source specifies the directory in which the STAF files were untar'd. In our example above, this would be /tmp/STAF/staf. The default is the current directory. If you are not running STAFInst from the directory in which STAFInst resides, you must specify -source.
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (45 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+-target specifies where STAF will be installed. The default is /usr/local/staf for all Unix systems except for Mac OS X where the default is /Library/staf. -bin specifies the directory where softlinks to executables will be created. If this option is not specified, softlinks to executables will not be created. -lib specifies the directory where softlinks to libraries will be created. If this option is not specified, softlinks to libraries will not be created. -type specifies the type of installation (the default is rs). Possible values are:
+q q q
+
+m - This installs the minimum files necessary to run STAF r - This installs all STAF files, including all supported codepages. This value is eqivalent to "f". f - This installs all STAF files, including all supported codepages. This value is eqivalent to "r".
+
+-verbose specifies that all operations performed by STAFInst should be displayed to the user. -warn specifies that STAFInst should stop execution if it encounters a warning condition. An example of a warning condition is trying to copy or link a non-existant file. Normally, these warning conditions are printed and execution continues. -preview displays the intended actions of STAFInst without touching the file system. -ro allows you to specify the mode bits for STAF files intended to be read-only. The default is 444. -rx allows you to specify the mode bits for STAF files intended to be read-execute. The default is 555. -rw allows you to specify the mode bits for STAF files intended to be read-write. The default is 664. -dp allows you to specify the mode bits for the directories STAF creates. The default is 775. -noreg prevents STAF from automatically registering with IBM Austin. This option is highly discouraged. -name allows you to specify the name STAF uses when registering. The default is the empty string. -email allows you to specify the e-mail address STAF uses when registering. The default is the empty string. -org allows you to specify the organization STAF uses when registering. The default is the empty string. -acceptlicense indicates that you accept the terms of the license agreement for this software. If not specified, the license agreement will be displayed at the beginning of the installation. -option allows you to specify options for the installed components. The allowed name=value pairs are:
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (46 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+q q q
+
+q
+
+q
+
+q
+
+q
+
+q
+
+q
+
+q
+
+q
+
+q
+
+q
+
+q
+
+q
+
+TCP=IPV4 Specifies to use the IPV4-only TCP libraries. This is the default. TCP=IPV4_IPV6 Specifies to use the TCP libraries that support both IPv4 and IPv6. USE_PERL_VERSION=5.8 Specifies to use Perl 5.8 as the default Perl support for STAF. This is the default. This option is only applicable for those platforms on which STAF supports Perl 5.8. USE_PERL_VERSION=5.10 Specifies to use Perl 5.10 as the default Perl support for STAF. This option is only applicable for those platforms on which STAF supports Perl 5.10. USE_PERL_VERSION=5.6 Specifies to use Perl 5.6 as the default Perl support for STAF. This option is only applicable for those platforms on which STAF supports Perl 5.6. USE_PERL_SYSTEM_PATH=0 Specifies to not determine the version of Perl in the system PATH at install-time (if possible) and use that version of Perl by default. This is the default. Only valid on platforms with Perl support. USE_PERL_SYSTEM_PATH=1 Specifies to determine the version of Perl in the system PATH at install-time (if possible) and use that version of Perl by default. If there is no version of Perl in the system PATH (or if the output of "perl -v" returns an unexpected value, i.e. something other than "5.6.x", "5.8.x", or "5.10.x") then the default version of Perl (determined by the USE_PERL_VERSION option) will be used. Only valid on platforms with Perl support. USE_PYTHON_VERSION=2.2 Specifies to use Python 2.2 as the default Python support for STAF. This is the default (except for Mac OS X and FreeBSD). This option is only applicable for those platforms on which STAF support Python 2.2. USE_PYTHON_VERSION=2.3 Specifies to use Python 2.3 as the default Python support for STAF. This is the default for Mac OS X. This option is only applicable for those platforms on which STAF support Python 2.3. USE_PYTHON_VERSION=2.4 Specifies to use Python 2.4 as the default Python support for STAF. This is the default for FreeBSD. This option is only applicable for those platforms on which STAF support Python 2.4. USE_PYTHON_VERSION=2.5 Specifies to use Python 2.5 as the default Python support for STAF. This option is only applicable for those platforms on which STAF support Python 2.5. USE_PYTHON_VERSION=2.6 Specifies to use Python 2.6 as the default Python support for STAF. This option is only applicable for those platforms on which STAF support Python 2.6. USE_PYTHON_VERSION=2.7 Specifies to use Python 2.7 as the default Python support for STAF. This option is only applicable for those platforms on which STAF support Python 2.7. USE_PYTHON_SYSTEM_PATH=0 Specifies to not determine the version of Python in the system PATH at install-time (if possible) and use that version of Python by default. This is the default. Only valid on platforms with Python support. USE_PYTHON_SYSTEM_PATH=1 Specifies to determine the version of Python in the system PATH at install-time (if possible) and use that version of Python by default. If there is no version of Python in the system PATH (or if the output of "python -V" returns an unexpected value, i.e. something other than "2.2.x", "2.3.x", "2.4.x", "2.5.x", "2.6.x", "2.7", or "2.7.x") then the default version of Python (determined by the USE_PYTHON_VERSION option) will be used. Only valid on platforms with Python support.
+
+IMPORTANT! In order to start STAF or to use STAF, you must set some environment variables as described in section 7 "Environment Variable Settings". STAFInst does not update these environment variables for you. 5.2. Examples using STAFInst
+
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (47 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+For the following examples, assume the STAF installation image is in /tmp/STAF and your current directory is also /tmp/STAF. To take all the defaults, which will perform a recommended install of STAF into /usr/local/staf (or /Library/staf if installing on Mac OS X), you would simply enter ./STAFInst -acceptlicense To perform a recommended install of STAF into the default target directory, and have softlinks placed into /usr/bin and /usr/lib, you would enter ./STAFInst -acceptlicense -bin /usr/bin -lib /usr/lib To perform a minimum installation of STAF into /opt/staf, you would enter ./STAFInst -acceptlicense -target /opt/staf -type m To perform a preview of a full STAF installation into the default target directory, you would enter ./STAFInst -acceptlicense -type f -preview To perform a default install of STAF and provide your name and e-mail address for registration, you would enter ./STAFInst -acceptlicense -name "Your name" -email "Your e-mail address" To install STAF in the default locations but change read-only permissions to 440, read-execute permissions to 550, read-write privileges to 660, and directory permissions to 770, you would enter ./STAFInst -acceptlicense -ro 440 -rw 550 -rw 660 -dp 770 To install STAF, create the -lib links, and use Perl 5.10, you would enter ./STAFInst -acceptlicense -lib /usr/lib -option USE_PERL_VERSION=5.10 To install STAF and specify the USE_PERL_SYSTEM_PATH option, you would enter ./STAFInst -acceptlicense -option USE_PERL_SYSTEM_PATH=1 To install STAF, create the -lib links, and specify the USE_PERL_SYSTEM_PATH and USE_PERL_VERSION options, you would enter ./STAFInst -acceptlicense -lib /usr/lib -option USE_PERL_SYSTEM_PATH=1 -option USE_PERL_VERSION=5.10
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (48 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+To install STAF and specify the USE_PYTHON_SYSTEM_PATH and USE_PYTHON_VERSION options, you would enter ./STAFInst -acceptlicense -option USE_PYTHON_SYSTEM_PATH=1 -option USE_PYTHON_VERSION=2.6 5.3. STAFInst Uninstall When STAF is installed on Unix systems via STAFInst, a script called STAFUninst is created which can be used to uninstall STAF. This file is created in the directory where you installed STAF. All STAF features will be uninstalled; you cannot choose which features to uninstall. However, only the files and softlinks that the STAF install created will be removed. Any files created after STAF was installed will not be removed.
+
+6. Platform Installation Notes
+6.1. Linux installation 6.2. AIX installation 6.3. HP-UX IA64 64-bit installation 6.4. IBM i 32-bit (previously known as i5/OS or OS/400) installation 6.5. z/OS installation 6.6. FreeBSD installation 6.7. Mac OS X installation 6.8. Solaris installation 6.1. Linux installation Note, when you are running STAF on Linux RedHat 9.0 or later, you may encounter a Segmentation Fault every time you execute the STAF executable. To work around this problem, set the following environment variable: LD_ASSUME_KERNEL=<kernel-version> The following versions can be specified for <kernel-version>
+q q
+
+2.4.1 - Linuxthreads with floating stacks 2.2.5 - Linuxthreads without floating stacks
+
+For information on Linux operating system library compatibility, see section 10 "Operating System Library Compatability (Linux)". When installing using IA on RHEL5 and other recent Linux distributions, when attempting to launch the STAF installer, the following error may be seen: "The installer is unable to run in graphical mode." or "java.lang.UnsatisfiedLinkError: awt (libXp.so.6: cannot open shared object file: No such file or directory)". On RHEL5 and other recent Linux distributions, the libraries required to run a Swing based Java application (such as our STAF installers) may not be installed by default. See this InstallAnywhere article for more information. To resolve the problem, install the required X libraries on the Linux
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (49 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+system. For example, for RHEL5, download libXp-1.0.0-8.1.el5.i386.rpm and install it via RPM. Starting with STAF V3.3.3, the STAF InstallAnywhere bundled JVM installers for Linux use Java 5.0. SLES8 does not support Java 5.0, so you will not be able to use the STAF InstallAnywhere bundled JVM installer on SLES8 (if you try to install using the bundled JVM installer on SLES8 you will get error "version GLIBC_2.3 not found"). You can either use the STAFInst installer on SLES8, or use the InstallAnywhere NoJVM installer (using an earlier version of Java, such as Java 1.4). 6.2. AIX installation The STAF InstallAnywhere installer for AIX is bundled with a Java 5.0 JVM. Java 5.0 is only supported on AIX 5.2 or later. To install STAF on AIX 5.1, you can either use the STAFInst installer or use the InstallAnywhere NoJVM installer (using an earlier version of Java, such as Java 1.4). 6.3. HP-UX IA64 64-bit installation Note, if you plan to use Java services, or STAF-enabled Java applications with the 64-bit version of STAF for HP-UX IA64, you must use Java 1.4.1 or later. 6.4. IBM i 32-bit (previously known as i5/OS or OS/400) installation STAF requires V5R2 or later of IBM i. Note that IBM i was previously known as i5/OS or OS/400. STAF for IBM i runs in PASE, an AIX runtime environment on the IBM i operating system, so you will use the aix and/or aix64 STAF installer files to install STAF on IBM i. To install STAF on a IBM i system, perform the following steps: 1. Create a directory /QIBM/stafinst on your IBM i system (or use whatever directory name you prefer). This will be a temporary directory where you'll untar the STAF installer file. 2. Download latest version of STAF for IBM i (e.g. STAF34x-aix.tar.gz or STAF34x-aix64.tar.gz) from the Download STAF website to directory / QIBM/stafinst. 3. You must install STAF from the IBM i Portable Application Solutions Environment (IBM i PASE). IBM i PASE provides an AIX runtime environment on the IBM i operating system. Start an IBM i PASE interactive terminal session by using the QP2TERM() program by typing the following from the IBM i command line. CALL QP2TERM The QP2TERM command writes the default Korn shell prompt (/QOpenSys/usr/bin/sh) to the screen. 4. Unzip the STAF34x-aix.tar.gz or STAF34x-aix64.tar.gz file and run the STAFInst executable to install STAF to location /QIBM/staf (or to whatever location you prefer). See section 5 "Using STAFInst to install STAF" for more information on STAFInst. For example: cd /QIBM/stafinst gunzip STAF34x-aix.tar.gz tar xf STAF34x-aix.tar cd staf
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (50 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+. ./STAFInst -target /QIBM/staf -acceptlicense Notes:
+q
+
+q
+
+If gunzip is not available on your IBM i machine and you have access to a AIX machine, you can use the AIX gunzip executable on the IBM i machine. If STAF is already installed in /QIBM/staf, and you want to upgrade to a new version of STAF, you should backup your STAF.cfg file and then run STAFUninst to uninstall STAF before running STAFInst, and then restore your backed up STAF.cfg file. For example, assuming you've already unzipped the STAF installer tar.gz file in /QIBM/stafinst, here are the steps to upgrade STAF: cd /QIBM/staf cp bin/STAF.cfg bin/STAF.cfg_save . ./STAFUninst cd /QIBM/stafinst/staf . ./STAFInst -target /QIBM/staf -acceptlicense cd /QIBM/staf cp bin/STAF.cfg_save bin/STAF.cfg
+
+5. You can now delete the temporary directory where you unzipped the STAF installer file, if desired. Follow these instructions to start STAFProc: 1. Start an IBM i PASE interactive terminal session by using the QP2TERM() program by typing the following from the IBM i command line. Skip this step if you have already started an IBM i PASE interactive terminal session. You must run STAF in the IBM i PASE environment. CALL QP2TERM The QP2TERM command writes the default Korn shell prompt (/QOpenSys/usr/bin/sh) to the screen. 2. Change to the directory where you installed STAF and run STAFEnv.sh to set the necessary environment variables to use STAF: cd /QIBM/staf . ./STAFEnv.sh If you installed the 32-bit version of STAF, running STAFEnv.sh should set the following environment variables needed to use STAF: export export export export export export PATH=/QIBM/staf/bin:$PATH LIBPATH=/QIBM/staf/lib:$LIBPATH CLASSPATH=/QIBM/staf/lib/JSTAF.jar:{CLASSPATH} STAFCONVDIR=/QIBM/staf/codepage QIBM_MULTI_THREADED=Y QIBM_JAVA_PASE_STARTUP=/usr/lib/start32
+
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (51 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+If you installed the 64-bit version of STAF, the environment variables will be the same except for: export QIBM_JAVA_PASE_STARTUP=/usr/lib/start64 3. Type "STAFProc &" to launch STAF in the background. Note probably you'll want to start STAFProc using nohup so that when you exit your connection to the IBM i machine, STAFProc will still be running. When using nohup, the output from STAFProc (including information on if an error occurred starting STAFProc) will be redirected to file nohup.out in the current directory (or you can specify to redirect the output to another file). nohup STAFProc & Note that the default shell for processes is /bin/sh. If you need to use the "qsh" shell for the IBM i PASE environment, then you will either need to specify SHELL "/QOpenSys/usr/bin/qsh -c %C" for PROCESS START requests, or change the default shell by adding the following line to your STAF.cfg file: SET DEFAULTSHELL "/QOpenSys/usr/bin/qsh -c %C" You must shutdown and restart STAFProc for any changes to the STAF.cfg file to take effect. 6.5. z/OS installation Note: STAF will only run on z/OS V1.4 or newer. STAF's Java support on z/OS requires JDK 1.4.1 or newer. To install STAF on z/OS, you should follow the steps described in section 5 "Using STAFInst to install STAF". It is critical that you remember to make set the _CEE_RUNOPTS environment variable. Failure to set this variable will prevent STAF from working properly. The proper setting should be _CEE_RUNOPTS="posix(on)" If you did not install STAF in the default target directory (/usr/local/staf), STAFCONVDIR must be set to the STAF codepage directory. 6.6. FreeBSD installation
+
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (52 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+Support for the following programming languages is provided in the STAF installer files for FreeBSD:
+q
+
+q
+
+FreeBSD 6.1+ i386 (STAF33x-freebsd.tar.gz) r Java 1.5+ support provided (compiled using Diablo Caffe JDK 1.5.0-7 for FreeBSD 6.1/i386) r Python support provided (compiled using Python 2.4.4) r No Perl or Tcl support FreeBSD 4.10+ i386 (STAF33x-freebsd410.tar.gz) r Python support provided (compiled using Python 2.3.3) r No Java, Perl or Tcl support provided
+
+6.7. Mac OS X installation To use the .zip InstallAnywhere installer for Mac OS X, download the .zip file to the Mac OS X system, and double click on the .zip file. This will unzip the zip file and create a STAF333setup file in the directory containing the .zip file. To start the installation, double click on the STAF333setup file. Note that silent and console installs for Mac OS X using the .zip InstallAnywhere installer are not currently supported. To perform a silent or console install, use the .bin InstallAnywhere installer. 6.8. Solaris installation On Solaris Sparc 64-bit platforms if you get the following error when starting STAFProc: /usr/sfw/lib/libstdc++.so.6: wrong ELF class: ELFCLASS32 The solution is to include "/usr/sfw/lib/sparcv9" in LD_LIBRARY_PATH: LD_LIBRARY_PATH=/usr/sfw/lib/sparcv9:$LD_LIBRARY_PATH export LD_LIBRARY_PATH STAFProc & /usr/sfw/lib/sparcv9 contains the 64-bit Solaris Sparc libraries. Note that on Solaris, running "uname -a" on both x86 32-bit systems and AMD64/Opteron x64 systems will report "i86pc i386 i86pc". To determine whether you should use the Solaris x86 32-bit version of STAF or the Solaris AMD64/Opteron x64 version of STAF, you can run "isainfo -b". If the output is "32", then you need to use the Solaris x86 32-bit version of STAF. If the output is "64", then you need to use the Solaris AMD64/Opteron x64 version of STAF. Note that you can use the "psrinfo -pv" command to get more detailed information about the system architecture.
+
+7. Environment Variable Settings
+
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (53 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+7.1. Environment Variable Settings 7.2. Windows 7.3. Unix 7.4. Mac OS X 7.5. IBM i (previously known as i5/OS or OS/400) 7.1. Environment Variable Settings STAF requires setting some environment variables to run. If you performed an InstallAnywhere install and selected an option to have the install update the environment variables, these environment variables should already be updated for STAF. Otherwise, you must set these environment variables yourself. In most cases, you'll probably want to set these environments for the system so that they are always set even after logging out or rebooting. However, if you are going to be running two or more versions of STAF on the same machine, the install creates STAFEnv script files that you can use to easily switch environment settings for each version of STAF. See section 8, "Running Multiple Instances of STAFProc" for more information on using the STAFEnv script files when running multiple instances of STAF on the same machine. 7.2. Windows q PATH must contain the STAF bin directory in order to start STAFProc or to communicate with STAF (e.g. C:\STAF\bin). Also, if you're going to be communicating with STAF from Java programs or registering STAF Java services, PATH should also contain the Java bin directory (e.g. C: \j2sdk1.4.2_05\bin). q CLASSPATH must contain the JSTAF.jar file (e.g. C:\STAF\bin\JSTAF.jar). JSTAF.jar contains the STAF Java APIs to communicate with STAF from Java programs and is also required to register STAF services written in Java. q STAFCONVDIR must be set to the STAF codepage directory if you did not install STAF in the default C:\STAF directory. q STAFCODEPAGE must be set on systems which don't return a valid value from nl_langinfo(CODESET) (specifically if that call returns NULL or the empty string). The value of this variable should contain the codepage being used by the system. See codepage/alias.txt for valid values. If you are unsure, use "LATIN_1". 7.3. Unix
+q
+
+q
+
+q
+
+q q
+
+q
+
+PATH must contain the STAF bin directory in order to start STAFProc (e.g. /usr/local/staf/bin). Other windows need only have the STAF bin directory in the PATH if you did not allow softlinks to be created in the default system directories. Also, if you're going to be communicating with STAF from Java programs or registering STAF Java services, PATH should also contain the Java bin directory (e.g. /opt/IBMJava2-142/bin). LD_LIBRARY_PATH (LIBPATH on AIX, IBM i, and z/OS systems, SHLIB_PATH on HP-UX systems, DYLD_LIBRARY_PATH on Mac OS X) must contain the STAF lib directory (e.g. /usr/local/staf/lib), unless you allowed softlinks to be installed in the default system directories CLASSPATH must contain the JSTAF.jar file (e.g. /usr/local/staf/lib/JSTAF.jar). JSTAF.jar contains the STAF Java APIs to communicate with STAF from Java programs and is also required to register STAF services written in Java. STAFCONVDIR must be set to the STAF codepage directory if you did not install STAF in the default target directory (e.g. /usr/local/staf). STAFCODEPAGE must be set on systems which don't return a valid value from nl_langinfo(CODESET) (specifically if that call returns NULL or the empty string). This is known to be true on Solaris 2.6. The value of this variable should contain the codepage being used by the system. See codepage/alias.txt for valid values. If you are unsure, use "LATIN_1". (z/OS only) _CEE_RUNOPTS must be set to "posix(on)".
+
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (54 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+7.4. Mac OS X q PATH must contain the STAF bin directory in order to start STAFProc (e.g. /Library/staf/bin). q DYLD_LIBRARY_PATH must contain the STAF lib directory (e.g. /Library/staf/lib), unless you allowed softlinks to be installed in the default system directories q CLASSPATH must contain the JSTAF.jar file (e.g. /Library/staf/lib/JSTAF.jar). JSTAF.jar contains the STAF Java APIs to communicate with STAF from Java programs and is also required to register STAF services written in Java. q STAFCONVDIR must be set to the STAF codepage directory if you did not install STAF in the default target directory (e.g. /Library/staf). q STAFCODEPAGE must be set on systems which don't return a valid value from nl_langinfo(CODESET) (specifically if that call returns NULL or the empty string). The value of this variable should contain the codepage being used by the system. See codepage/alias.txt for valid values. If you are unsure, use "LATIN_1". 7.5. IBM i (previously known as i5/OS or OS/400) q PATH must contain the STAF bin directory in order to start STAFProc or to communicate with STAF (e.g. /QIBM/staf/bin). Also, if you're going to be communicating with STAF from Java programs or registering STAF Java services, PATH should also contain the Java bin directory. q LIBPATH must contain the STAF lib directory (e.g. /QIBM/staf/lib). q CLASSPATH must contain the JSTAF.jar file (e.g. /QIBM/staf/lib/JSTAF.jar). JSTAF.jar contains the STAF Java APIs to communicate with STAF from Java programs and is also required to register STAF services written in Java. q STAFCONVDIR must be set to the STAF codepage directory (e.g. /QIBM/staf/codepage) q STAFCODEPAGE must be set to LATIN_1. q QIBM_MULTI_THREADED must be set to Y so that STAF can be accessed from the QSH (Qshell) shell. This environment variable is required since STAF is multi-threaded. If this environment variable is not set, the QSH STAF request will hang. q QIBM_JAVA_PASE_STARTUP must be set to /usr/lib/start32 if you are using the 32-bit version of STAF, or set to /usr/lib/start64 if you are using the 64-bit version of STAF. This environment variable indicates to start a 32-bit or 64-bit IBM i PASE environment (needed when accessing the STAF Java support in QSH). If this environment variable is not set, an error such as the following will occur: java.lang.ExceptionInInitializerError at java.lang.Throwable.<init>(Throwable.java:180) at java.lang.Error.<init>(Error.java:37) at java.lang.ExceptionInInitializerError.<init>(ExceptionInInitializerError.java:61) at echo.main(echo.java:10) Caused by: java.lang.NullPointerException at java.lang.ClassLoader.loadLibrary0(ClassLoader.java:1640) at java.lang.ClassLoader.loadLibrary(ClassLoader.java:1564) at java.lang.Runtime.loadLibrary0(Runtime.java:788) at java.lang.System.loadLibrary(System.java:834) at com.ibm.staf.STAFHandle.<clinit>(STAFHandle.java:100) ... 1 more
+
+8. Installing Multiple Instances of STAF
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (55 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+8.1. Installing Multiple Instances of STAF 8.1. Installing Multiple Instances of STAF You can install different versions of STAF on the same machine in different locations. You can also run multiple instances of the same or different versions of STAF at the same time on a single machine. See section "Running Multiple Instances of STAFProc" in the STAF User's Guide for more information on running multiple instances of STAF on a single machine.
+
+9. Install/Uninstall Problems
+9.1. Install Problems 9.2. Uninstall Problems 9.1. Install Problems If you have a problem while installing STAF, please check the STAF V3 FAQ, particularly section "STAF Install Questions". If you have a problem starting STAFProc, please be sure that the necessary environment variables have been set for STAF (see section 7 "Environment Variable Settings"). Also, check the STAF V3 FAQ. If you are getting an error such as "Error while loading shared libraries: libstdc++.so.6: cannot open shared object file: No such file or directory" when starting STAFProc on Linux, then see section 10 "Operating System Library Compatability (Linux)". 9.2. Uninstall Problems There is a known intermittent problem where if you run the InstallAnywhere uninstaller, the uninstall will complete successfully and report no errors, but the STAF files have not been uninstalled (and on Windows the Start menu items for STAF have not been removed). If you are doing an upgrade install (which means that the uninstaller is executed prior to installing any new files), this does not cause the install to fail, since the files are overwritten. However, on Windows, you may end up with multiple Start menu entries. So if you upgrade from STAF 3.3.0 to STAF 3.4.3 on a system that has this problem, STAF 3.4.3 will be installed, and will work as expected. However, the STAF 3.3.0 entries in the Start menu ("Start STAF 3.3.0", "Shutdown STAF 3.3.0", "STAF 3.3.0") will still exist, in addition to the newly added "Start STAF 3.4.3", "Shutdown STAF 3.4.3", "STAF 3.4.3" entries. The old Start menu entries can just be deleted. This is a known issue with InstallAnywhere due to a corrupt global registry. The problem can be resolved by renaming the InstallAnywhere registry file as documented here: "Q000085: INFO: Possible Causes for Common Uninstaller Problems" After using the workaround, when you intsall STAF again, you should be able to successfully uninstall STAF. Note that on Windows you will need to manually delete any old Start menu entries for STAF.
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (56 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+10. Operating System Library Compatability (Linux)
+10.1. Operating System Library Compatability (Linux) 10.1. Operating System Library Compatability (Linux) Some platforms (such as Linux) on which we build and provide STAF are linked to C++/GCC operating system libraries. In previous versions of STAF, these operating system library files were packaged/installed with STAF. However, these library files could cause some incompatibility issues with the operating system and other native applications. Starting in STAF V3.2.0, these library files will no longer be packaged/installed with STAF. However, in order to run STAF on these platforms, you will need these library files or compatible library files. As a STAF user, what this means is that you may need to make some one-time setup/configuration changes on your test machine(s) in order to get STAF V3.2.0 or later working correctly. There are several possible user scenarios:
+q q
+
+q
+
+q
+
+STAFProc starts successfully on your platform. This means that the operating system currently has compatible C++/GCC library support. When attempting to start "STAFProc" or "staf", you receive a message such as: "Error while loading shared libraries: libstdc++.so.6: cannot open shared object file: No such file or directory", "STAFProc: /usr/lib/libstdc++.so.6: no version information available (required by STAFProc)", or "STAFProc: relocation error: /usr/local/staf/lib/libSTAF.so: undefined symbol: _ZNSs4_Rep20_S_empty_rep_storageE" This means that the operating system does not have compatible C++/GCC libraries. There are several ways to resolve this problem: r Use the library files from our STAF build machines in the table below. It is up to the user to decide how to install the files on their operating system(s). In previous versions of STAF, these files were installed in /STAF/Config/STAFRoot}/lib (and the files were accessible due to this directory being included in the LD_LIBRARY_PATH environment variable). r Install the compatibility libraries for your operating system. The steps to install these libraries will vary depending upon the operating system and level. For example, on RHEL4, using the install media, under "Package Group Selection", select "Development" and then select "Legacy Software Development". r Build STAF on your operating system. Follow the instructions in the "STAF V3 Developer's Guide" (http://staf.sourceforge.net/current/ stafdg.html). When attempting to start "STAFProc" or "staf", you receive a message such as: "/lib64/libgcc_s.so1: version `GCC_4.2.0` not found (required by / usr/local/staf/lib/libstdc++.so.6)". This means that the operating system has incompatible C++/GCC libraries in the library path. There are several ways to resolve this problem: e.g. Remove the /usr/local/staf/lib/... libraries if present. When using STAF for zlinux-32 or zlinux-64 on SLES11, if you are using IBM Java 1.4.2 for a STAF Java service or a Java application that uses the STAF Java APIs, the JVM may crash with an error similar to: JVMDG217: JVMDG303: JVMDG304: JVMDG215: Dump Handler is Processing Signal 4 - Please Wait. JVM Requesting Java core file Java core file written to /javacore.20100115.163302.24679.txt Dump Handler has Processed Exception Signal 4.
+
+To resolve the problem, install the libstdc++.so.6 files for zlinux-32 or zlinux-64 in the table below to the STAF lib directory (for example, /usr/ local/staf/lib).
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (57 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+Here are the affected operating systems and details about the specific platforms on which we build STAF: OS Name STAF OS Details Installers STAF34xsetuplinux.bin STAF34xsetuplinuxNoJVM. bin STAF34xlinux.tar. gz STAF34xsetuplinuxamd64. bin Red Hat Enterprise Linux AS release 4 (Nahant Update 8) libstdc+ gcc version 3.4.6 20060404 (Red Hat 3.4.6-11) Linux 2.6.9-34.ELsmp #1 SMP Fri Feb 24 16:54:53 EST 2006 i686 i686 i386 GNU/Linux +.so.6. GNU C Library stable release version 2.3.4 Compiled by GNU CC version 3.4.6 20060404 (Red Hat 3.4.6-10). libgcc_s. Compiled on a Linux 2.4.20 system on 2009-01-09. so.1. Library file(s)
+
+Linux IA32
+
+Red Hat Enterprise Linux AS release 4 (Nahant Update 7) gcc version 3.4.6 20060404 (Red Hat 3.4.6-10), GNU Make 3.80 STAF34xLinux 2.6.9-78.0.17.ELsmp x86_64 x86_64 x86_64 GNU/Linux setupGNU C Library stable release version 2.3.4 Linux linuxCompiled by GNU CC version 3.4.6 AMD64 amd6420060404 (Red Hat 3.4.6-10) NoJVM. Compiled on a Linux 2.4.20 system on 2009-01-13 bin STAF34xlinuxamd64.tar. gz
+
+libstdc+ +.so.6.
+
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (58 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+STAF34xsetuplinux-ia64. bin
+
+Linux IA64
+
+Red Hat Enterprise Linux AS release 3 (Taroon Update 6) gcc version 3.2.3 20030502 (Red Hat Linux 3.2.3-53) STAF34xLinux 2.4.21-20.EL ia64 ia64 ia64 GNU/Linux setupGNU C Library stable release version 2.3.2 linuxCompiled by GNU CC version 3.2.3 20030502 ia64(Red Hat Linux 3.2.3-53). NoJVM. Compiled on a Linux 2.4.20 system on 2005-09-16. bin STAF34xlinux-ia64. tar.gz STAF34xsetuplinuxppc64-32. bin
+
+libstdc+ +.so.5.
+
+SUSE LINUX Enterprise Server 9 (ppc) VERSION=9 PATCHLEVEL=4 gcc version 3.3.3 (SuSE Linux) STAF34xLinux Linux 2.6.5-7.321-pseries64 ppc64 ppc64 ppc64 GNU/Linux PPC64 setupGNU C Library stable release version 2.3.5 (32-bit linux(20050720) Configured for ppc-suse-linux. ppc64-32Java Compiled by GNU CC version 3.3.3 (SuSE Linux). support) NoJVM. Compiled on a Linux 2.6.5 system on 2009-10-27. bin STAF34xlinuxppc64-32. tar.gz
+
+libstdc+ +.so.5. libgcc_s. so.1.
+
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (59 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+SUSE LINUX Enterprise Server 9 (ppc) VERSION=9 PATCHLEVEL=4 gcc version 3.3.3 (SuSE Linux) Linux STAF34xLinux 2.6.5-7.321-pseries64 ppc64 ppc64 ppc64 GNU/Linux PPC64 setupGNU C Library stable release version 2.3.5 (64-bit linux(20050720) Configured for ppc-suse-linux. Java ppc64-64Compiled by GNU CC version 3.3.3 (SuSE Linux). support) NoJVM. Compiled on a Linux 2.6.5 system on 2009-10-27. bin STAF34xlinuxppc64-64. tar.gz STAF34xsetupzlinux-32. bin SUSE Linux Enterprise Server 10 (s390x) VERSION = 10 gcc version 4.1.0 (SUSE Linux) zLinux STAF34x- Linux 2.6.16.21-0.8-default s390x s390x s390x GNU/Linux GNU C Library development release version 2.4 setup31-bit (zlinux- zlinux-32- (20060616) Configured for s390-suse-linux. 32) NoJVM. Compiled by GNU CC version 4.1.0 (SUSE Linux). Compiled on a Linux 2.6.16 system on 2006-06-16. bin STAF34xzlinux-32. tar.gz
+
+STAF34xsetuplinuxppc64-64. bin
+
+libstdc+ +.so.5. libgcc_s. so.1.
+
+libstdc+ +.so.6.
+
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (60 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+STAF34xsetupzlinux-64. bin SUSE Linux Enterprise Server 10 (s390x) VERSION = 10 gcc version 4.1.0 (SUSE Linux) zLinux STAF34x- Linux 2.6.16.21-0.8-default s390x s390x s390x GNU/Linux GNU C Library development release version 2.4 64-bit setup(zlinux- zlinux-64- (20060616) Configured for s390-suse-linux. 64) NoJVM. Compiled by GNU CC version 4.1.0 (SUSE Linux). Compiled on a Linux 2.6.16 system on 2006-06-16. bin STAF34xzlinux-64. tar.gz
+
+libstdc+ +.so.6.
+
+11. Starting STAF during system reboot
+11.1. Unix 11.2. Mac OS X 11.3. Windows 11.1. Unix You can have STAF start automatically during reboot on Unix machines by using a script file similar to the following: #!/bin/sh PATH=/usr/local/staf/bin:$PATH export PATH LD_LIBRARY_PATH=/usr/local/staf/lib export LD_LIBRARY_PATH CLASSPATH=/usr/local/staf/lib/JSTAF.jar:/usr/local/staf/samples/demo/STAFDemo.jar export CLASSPATH STAFCONVDIR=/usr/local/staf/codepage export STAFCONVDIR STAFCODEPAGE=LATIN_1 export STAFCODEPAGE nohup /usr/local/staf/bin/STAFProc > /usr/local/staf/stafproc.out & As an alternative, you can use a script file that simply executes the startSTAFProc.sh script, which will set the appropriate environment variables and start STAFProc via nohup:
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (61 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+#!/bin/sh /usr/local/staf/startSTAFProc.sh & See the STAFEnv.sh and startSTAFProc.sh files provided in the STAF root directory (e.g. /usr/local/staf). The STAFEnv.sh file contains the correct environment variables settings for STAF for your machine. If you did not install STAF to the default directory (/usr/local/staf), then you would need to specify the non-default installation directory in the script file. Note that on AIX, you need to replace LD_LIBRARY_PATH with LIBPATH, and on HP-UX, you need to replace LD_LIBRARY_PATH with SHLIB_PATH. Note that if your Unix operating system does not support the "nohup" command, then remove it from the last line in the script: /usr/local/staf/bin/STAFProc > /usr/local/staf/stafproc.out & The console output from STAFProc will be stored in the /usr/local/staf/stafproc.out file. The usage of this script file varies depending on the specific Unix operating system:
+q
+
+On Linux, there are multiple ways that you can start applications during the system boot process. In general, we recommend that you create a file called /etc/rc.staf with contents: #!/bin/sh /usr/local/staf/startSTAFProc.sh & Make the file executeable (755 is most likely sufficient) chmod 777 /etc/rc.staf Next add the following line to /etc/inittab: staf:5:boot:/etc/rc.staf Other methods of starting STAFProc may cause system programs located in /sbin (such as "fdisk", "ifconfig", etc.) to work incorrectly when executed via STAF, which is why we recommend using /etc/rc.staf and /etc/inittab as documented above. Other ways to start STAF during boot on Linux include adding the script lines to the /etc/rc.d/rc.local file, or on Linux SuSe, adding the script lines to the /etc/init.d/boot.local file. You should select the method that works best for your environment. Note that we recommend starting STAFProc under the root user id. To start STAFProc under the root user id, change the last line above to the
+
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (62 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+following: su -c '/usr/local/staf/bin/STAFProc' - root & If starting STAFProc under the root user id, you may also need to modify /root/.bash_profile by adding /usr/local/staf/bin to the PATH environment variable as follows: PATH=$PATH:$HOME/bin:/usr/local/staf/bin
+q
+
+On Solaris, follow these steps: Run the following command, and keep track of the path returned: which sh For example, the path might be /usr/bin/sh. Create a file in the /etc/init.d directory called something like "startSTAF". Note that the file should not end in .sh or anything else. Edit your file and add the script lines to it (using the "sh" path from the previous step as the first line in the script): #!/usr/bin/sh PATH=/usr/local/staf/bin:/jdk1.3.1/bin:${PATH:-}; export PATH CLASSPATH=/usr/local/staf/lib/JSTAF.jar:${CLASSPATH:-}; export CLASSPATH STAFCONVDIR=/usr/local/staf/codepage; export STAFCONVDIR LD_LIBRARY_PATH=/usr/local/staf/lib:${LD_LIBRARY_PATH:-}; export LD_LIBRARY_PATH /usr/local/staf/bin/STAFProc & Make the file executeable (755 is most likely sufficient) chmod 777 /etc/init.d/startSTAF Symlink the file to the rc3.d directory and start STAF (being sure to use nohup): ln -s /etc/init.d/startSTAF /etc/rc3.d/S98startSTAF nohup /etc/rc3.d/S98startSTAF start Notes:
+r r
+
+The prefix S means default state Started for Solaris 98 is just some number
+
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (63 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+r
+
+The suffix is the filename from init.d
+
+q
+
+On AIX, create a /etc/rc.xxxx file (such as /etc/rc.staf), which contains the script lines. For example: #!/bin/sh PATH=/usr/local/staf/bin:$PATH export PATH LIBPATH=/usr/local/staf/lib export LIBPATH CLASSPATH=/usr/local/staf/lib/JSTAF.jar:/usr/local/staf/samples/demo/STAFDemo.jar export CLASSPATH STAFCONVDIR=/usr/local/staf/codepage export STAFCONVDIR STAFCODEPAGE=LATIN_1 export STAFCODEPAGE /usr/local/staf/bin/STAFProc > /usr/local/staf/stafproc.out Then add an entry to the /etc/inittab file so that the rc.staf file will execute during the boot. For example, add the following line to the end of /etc/ inittab: staf:2:boot:/etc/rc.staf See the AIX documentation for more information on updating the /etc/inittab file. Note that if you are using STAF Java services, then you must make sure the file system where the JVM is located is available during the AIX system boot. For example, if STAF is installed to /usr/local/staf, but the JVM being used for the STAF Java services is in the /opt file system, then the /opt file system may not be mounted when the rc.staf file is executed, and the stafproc.out file may contain an error such as: 27:Error constructing service, JSTAF, Result: Error starting a process for the JVM using JVMName: STAFJVM1, JVM: /opt/aix64java/jre/bin/java, JVMOptions: -Xmx5 12m , RC: 10, Result: Invalid command: /opt/aix64java/jre/bin/java The command is not a file or does not have execute permissions. OS RC 2 Make sure /opt/aix64java/ jre/bin/java exists. To prevent this error, make sure that the JVM resides in a file system (such as /usr) that will be available during system boot. On HP-UX, create a file /sbin/init.d (give the file whatever name you want, maybe "staf'), and add the script lines to the file. Then you must put a file called "staf" (the same name used in /sbin/init.d, containing a variable declaration, like STAF=1) in /etc/rc.config.d. Finally, you have to create a symbolic link to your /sbin/init.d/staf, called S84staf, in /sbin/rc3.d.
+
+q
+
+You may get the following error message:
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (64 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+STAFProcess::processMonitorThread: error opening /dev/tty, errno: 6 However, STAFProc does start despite this message, and functions normally. 11.2. Mac OS X Note that there are multiple ways to configure a Mac OS X system to start an application during the boot process. This sections shows an example of one way to start STAF during reboot on Mac OS X (this example assumes that the steps are done via the root/admin userid). In directory /Library/LaunchDaemons create a file called com.ibm.staf.plist. In the com.ibm.staf.plist file add: <?xml version="1.0" encoding="UTF-8"?> <!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"> <plist version="1.0"> <dict> <key>Label</key> <string>com.ibm.staf</string> <key>Program</key> <string>/Library/staf/startSTAFProc.sh</string> <key>RunAtLoad</key> <true/> <key>StandardOutPath</key> <string>/Library/staf/com.ibm.staf.out</string> <key>StandardErrorPath</key> <string>/Library/staf/com.ibm.staf.out</string> </dict> </plist> Of, course, change /Library/staf to the actual location where you installed STAF, if you didn't use the default install location. When the system is rebooted, STAFProc should be started, and the STAFProc output will be in file /Library/staf/com.ibm.staf.out. Note that if the com.ibm.staf.out file shows the "Machine" and "Machine nickname" as "localhost" instead of the actual hostname (and STAF variables STAF/Config/Machine and STAF/Config/MachineNickname are set to "localhost"), then the network services most likely had not completed configuring when STAF was started during the reboot. To resolve this issue, add "ipconfig waitall" to the startSTAFProc.sh script, prior to where it starts STAFProc. Here is the updated startSTAFProc.sh: #!/bin/sh
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (65 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+# Sets up the STAF environment variables and starts STAFProc # in the background, logging STAFProc output to nohup.out ipconfig waitall . /Library/staf/STAFEnv.sh nohup /Library/staf/bin/STAFProc & Note that if you make this change, you will probably want to create you own copy of startSTAFProc.sh, and update the "Program" key to reference the copy of the script (since the /Library/staf/startSTAFProc.sh file will be overwritten if you reinstall/upgrade STAF). 11.3. Windows If you wish to have STAFProc start automatically on Windows when the operating system is rebooted (without requiring a user to log on to Windows), you can install STAF as a Windows service. These instructions assume you have copied INSTSRV.EXE and SVRANY.EXE (available from the Windows Resource Kit) into C:\WINNT\SYSTEM32. 1. Create a base STAF service which by default is started automatically when the system boots. instsrv STAF c:\winnt\system32\srvany.exe 2. Start the Windows Registry Editor by typing regedit and find: My Computer\HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Services\STAF 3. Create a new string value with the name Description. Set the value to Automatically start STAF service. 4. Create a new Key with name Parameters. Inside the new key, create a new string value with the name Application and set the value to c:\staf\bin \stafproc.exe. 5. Close the Registry Editor. 6. If on Windows 2000, open the following program: Start > Programs > Administrative Tools > Services 7. If on Windows 2000 Terminal Server, open the following program: Start > Programs > Administrative Tools > Management Console (Windows 2000 Terminal Server) Services and Applications > Services
+
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (66 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+8. If on Windows XP Professional, open the following program: Start > Settings > Control Panel > Administrative Tools > Services 9. Locate STAF, right click on the STAF entry, and select Properties. 10. From the 'Log On' tab, click 'Allow service to interact with desktop', then click on Apply and then click on OK. 11. Next, type: net start staf 12. Check that STAF is now running from a command prompt: staf local ping ping 13. Note that when running STAF as a Windows service, you should not have STAFProc automatically start when users log on to Windows. You should either deselect the "Start STAF on user login" option when installing STAF, or delete STAF from Start > Programs > Startup folder. 14. Note that STAF should not be started or shutdown with the commands on the start menu when STAF is configured as a service. 15. Note that if you have STAF Java services configured in your STAF.cfg file when STAF is started as a Windows service and you log off the user id that you were logged on as when starting the STAF Windows service, you may find that STAF Java service requests will then fail with RC 6 (because the java.exe used to run the STAF Java services was terminated). If so, then you will need to pass the -Xrs parameter to the JVM used for your Java services (to tell the JVM to ignore the logoff signal/event). You can do this by updating your STAF.cfg file to add "OPTION J2=-Xrs" when registering a STAF Java service that creates a new JVM. For example: SERVICE STAX LIBRARY JSTAF EXECUTE {STAF/Config/STAFRoot}/services/stax/STAX.jar \ OPTION JVMName=STAX OPTION J2=-Xrs Then you can restart the STAF Windows service and this problem should no longer occur if you logoff. As an alternative to configuring STAFProc as a Windows service, you can start STAFProc as a scheduled task. This works for Windows 2000 or later. This is especially useful for Windows 2003 64-bit machines which do not support srvany.exe in the Windows Toolkit (used when starting STAF as a Windows service). Note that when starting STAFProc as a scheduled task, it does not display any dialog. The following instructions are for starting STAFProc as a scheduled task on Windows 2003. 1. From the Start menu, select Control Panel > Scheduled Tasks > Add Scheduled Tasks. 2. In the "Scheduled Task Wizard", click on "Next" on the first panel.
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (67 of 68)9/27/2010 6:27:04 PM
+
+STAF Installation Guide
+
+3. In the list of applications, scroll to "Start STAF 3.3.5" (or whatever version you have installed) and select it. Note that "Start STAF x.x.x" should appear on the list of applications if you performed a recommended install of STAF using the defaults. If it is not in the list, click on "Browse" to select your STAFProc executable. Click on "Next". 4. On the next panel give the task a name, select "When my computer starts", and click on "Next". 5. For "Enter the user name:", enter "NT Authority\System" (without the double quotes, and remember that there is a space between "NT" and "Authority" and leave the password fields blank (otherwise you have to reset the password every time the controlling user resets their password). No password is required in this panel, but you need to be an administrator to set it up. Click on "Next". 6. Select "Open advanced properties for this task when I click Finish" and then click on "Finish". 7. In the "Settings" tab, de-select "Stop the task if it runs for...". Click on "Apply" and then "OK". 8. When you install STAF on a system where you plan to run it as a Scheduled Task, you should de-select the option that says "Start STAF when a user logs in". Otherwise, when a user logs in, it will try to start STAFProc again which causes problems. If you have already installed STAF, remove it from Start > Programs > Startup for all users to prevent STAFProc from starting again when a user logs in. 9. Reboot the machine and STAFProc should automatically start (without any command dialogs or anyone having to log in). You can view the tasks that you have scheduled by selecting Control Panel > Scheduled Tasks. In the submenu you should see the names of the scheduled tasks.
+
+file:///C|/build/obj/win32/staf/retail/docs/staf/installguide/STAFInstall.htm (68 of 68)9/27/2010 6:27:04 PM
+
+
