@@ -65,8 +65,10 @@ class DocumentSystem(object):
         return doc.namepath[:len(self.focus_namepath)] == self.focus_namepath
 
     def parse(self):
-        for doc in self.docs.itervalues(): doc.parse()
-        
+        for doc in self.docs.itervalues():
+            if not self._in_focus(doc): continue
+            doc.parse()
+
         for doc in self.docs.itervalues():
             if not self._in_focus(doc): continue
             doc.fix_broken_links()

@@ -1,10 +1,21 @@
 = Appium =
 
+Appium 唸做 '`æpiәm'。目前看似在勢頭上，因為 Source Labs 跟 TestingBot 都有支援：
+
+ * link:saucelabs/saucelabs.html[Sauce Labs: Appium]
+ * http://testingbot.com/support/getting-started/appium.html[TestingBot: Appium]
+
+// 雖然 Appium 走 JSON Wire Protocol 無法完全發揮 UI Automator 的功能，但 WebDriver API 本來就是在做黑箱測試，如果可以操作到很底層的東西，反而會有爭議...
+// 有些操作可以靠 monkeyrunner 來互補（例如 long press、操作 notification area 等），反觀 appium 的強項是 verification。（這時候 Jython 就變得很重要）
+
 == 延伸閱讀 ==
 
  * link:install.html[Installation]
  * link:start.html[Getting Started]
+ * link:android/android.html[Android]
+ * link:ios/ios.html[iOS]
  * link:server.html[Appium Server]
+ * link:appium-app.html[Appium.app]
  * link:../mobile/test/automation.html[Mobile Test Automation]
 
 == 參考資料 ==
@@ -14,41 +25,83 @@
  * http://appium.io/[Appium: Mobile App Automation Made Awesome.]
 
 ////////////////////////////////////////////////////////////////////////////////
-** Appium is an open source test automation framework for use with native and hybrid mobile apps. It drives iOS and Android apps using the WebDriver JSON wire protocol. 還是走 WebDriver 的 subset 這條路，真的適合套在 mobile apps 嗎??
-** Appium is built on the idea that testing native apps shouldn't require including an SDK or recompiling your app. 這個方向絕對是對的!!
-** And that you should be able to use your preferred test practices, frameworks, and tools. Appium is an open source project and has made design and tool decisions to encourage a vibrant contributing community.
-** Appium aims to automate any mobile app from any language and any test framework, with full access to back-end APIs and DBs from test code.
-** Write tests with your favorite dev tools using all the above programming languages, and probably more (with the Selenium WebDriver API and language-specific client libraries).
-** iOS - Mac OSX 10.7+ XCode 4.5+ w/ Command Line Tools
+** Appium is an open source test automation framework for use with native and hybrid mobile apps. It drives iOS and Android apps using the WebDriver JSON wire protocol. 還是走 WebDriver 的 subset 這條路，真的適合套在 mobile apps 嗎?? 不過 SourceLab 跟 TestingBot 都已採用 Appium，似乎已經擋不住了？
+** Appium is built on the idea that testing native apps shouldn't require including an SDK or recompiling your app. 這個方向絕對是對的，但連 SDK 都不用，實際上好像不是這樣?? 或許這裡想講的是測試人員不用實際接觸到 SDK，至於 Appium 背後得靠 SDK 去做一些事則是免不了的
+** And that you should be able to use your preferred test practices, frameworks, and tools. Appium is an open source project and has made design and tool decisions to encourage a vibrant contributing community. Appium aims to automate any mobile app from any language and any test framework, with full access to back-end APIs and DBs from test code. 可以用不同的語言的來寫，絕對是成功的關鍵。
+** Write tests with your favorite dev tools using all the above programming languages, and probably more (with the Selenium WebDriver API and language-specific client iOS)。Appium 只是實作了自己的 WebDriver server，背後轉向 iOS 的 UI Automation 或是 Android 的 UI Automator，而 programming languages 則完全延用現有的 Selenium 2/WebDriver。簡而言之，Appium 就是透過 WebDriver API 來操控 iOS 或 Android，因此對 WebDriver API 要有一定程度的瞭解才行。
+** libraries - Mac OSX 10.7+ XCode 4.5+ w/ Command Line Tools 明明就需要用到 SDK...
 ** Android Mac OSX 10.7+ or Windows 7+ or Linux, Android SDK ≥ 16 (SDK < 16 in Selendroid mode) 什麼是 Selendriod mode??
 ////////////////////////////////////////////////////////////////////////////////
 
+ * https://github.com/appium/appium/wiki[Appium Wiki]
+ * https://github.com/appium/appium/tree/master/docs[Appium Docs]
  * https://github.com/appium/appium[appium/appium (GitHub)]
- * https://saucelabs.com/appium[Sauce Labs: Appium]
 --
 
 .社群
 --
+ * https://twitter.com/AppiumDevs[Appium Devs (AppiumDevs) on Twitter]
  * https://groups.google.com/forum/#!forum/appium-discuss[Appium-discuss - Google Groups]
+ * http://stackoverflow.com/questions/tagged/appium[Newest 'appium' Questions - Stack Overflow]
 --
 
 .文件
 --
- * http://www.youtube.com/watch?v=1J0aXDbjiUE[GTAC 2013: Appium: Automation for Mobile Apps - YouTube] (2013-04-29)
- * https://github.com/appium/appium/wiki/JSON-Wire-Protocol:-Supported-Methods[JSON Wire Protocol: Supported Methods]
+ * http://www.infoq.com/news/2013/05/appium-android[Sauce Labs Appium Now Can Test Android and Firefox OS Apps] (2013-05-14)
+ * http://www.makeuseof.com/tag/appium-take-the-pain-out-of-testing-ios-android-mobile-apps/[Appium: Take The Pain Out Of Testing iOS & Android Mobile Apps] (2013-05-26) - 內含 Appium 主要的 3 段影片
+
+ * http://zooskdev.wordpress.com/2013/05/03/automating-mobile-testing-with-selenium-using-appium/[Automating Mobile Testing With Selenium Using Appium | zooskdev] (2013-05-03)
 
 ////////////////////////////////////////////////////////////////////////////////
-** 從這張表可以看到一堆 Not Yet Implemented，當然很多操作對 native apps 是沒有意義的，但這也顯示出硬把 WebDriver 套到 mobile app 上是一件很勉強的事??
-** 這些 methods 跟 WebDriver API 的對應關係是什麼?? 又裡面的 ":id" 要怎麼寫？怎麼同時適用 iOS 跟 Android??
-** 要在 Android/iOS/WebDriver 三者之間 "異中求同"，結果就只是證明了簡單的操作可以共用一套 code，但要更進一步時就會發現綁手綁腳...
-** This is the initial subset of the Selenium WebDriver wire protocol that is currently supported in Appium. This provides the minimal set of navigation and element interactions to perform an automation test. Future versions will support more of the wire protocol.
-** We’ll be matching WebDriver commands to those available in Apple’s UIAutomation documentation as close as possible. 感覺 Android UI Automator 是相對被忽視的??
+** These early tools all had major drawbacks. They all required you to modify your application to support testing, usually by embedding an HTTP server in your app. Most of them only supported coding in their APIs, which rarely supported multiple languages. They also were doing things that were hacks or workarounds and not sanctioned by the guys making the OS. 但做 OS 的人就認同 Appium 嗎??
+** A mistake in an iOS release will take days to correct. If you have a crash, once you figure it out and fix it, there’s a multi-day app-store approval process on the other end. It’s different than the web because you can’t just do another deploy and fix the problem; you must suffer the consequences for days even with an expedited review. 這是為什麼 iOS 的測試要更加用心的原因!!
+** There are 4 principles that guide Appium development Test the same app you put in the marketplace. Write tests in the language you want to. Use a standard automation specification Keep it open-source and free
+** Appium is an implementation of the Selenium-WebDriver Protocol (the most popular web automation toolset) that supports controlling Android and iOS applications on devices and simulators. Coding an Appium test is identical to coding a Selenium test. 主要的差異在於 desired capabilities
+** Under the hood, it uses the sanctioned automation APIs, UIAutomation for iOS and UIAutomation and Instrumentation for Android.
 ////////////////////////////////////////////////////////////////////////////////
---
 
-.其他文件
---
- * http://www.slideshare.net/mobiletestsummit/setting-apples-ui-automation-free-with-appium[Setting Apple's UI Automation Free with Appium] (2012-11-14)
+ * http://www.youtube.com/watch?v=1J0aXDbjiUE[GTAC 2013: Appium: Automation for Mobile Apps - YouTube] (2013-04-29; http://www.slideshare.net/saucelabs/appium-basic-20296603[Slides]) - 很精采的演說，有許多是官方文件沒提到或是沒說清楚的，除了 Android 跟 iOS 之外，也展示了 Firefox OS。
+
+////////////////////////////////////////////////////////////////////////////////
+** where is mobile automation/CI
+** (02:39) multi-platform age -> 但 iOS/Android 兩者有非常不同旳 UX 或 UI，要共用 test code 不太容易，但至少要 share 同一個 API -> write once, run both 有個大前題
+** Hybrid, WebView, native wrapper
+** (03:45) the performance of hybrid apps is not always what we would want it to be
+** (05:10) supports pure web testing
+** (05:25) supports simulators, emulators, and real devices
+** (06:40) 4 rules of principles:
+   *** Test the same app you submit to the market place
+   *** Write your test in any language, using any framework
+   *** Use a standard automation specification and API (大家都已習慣 Selenium WebDriver API)
+   *** Build a large and thriving open-source community effort.
+** (11:31) iOS/Android 跟現有 solutions 的比較。Selendroid -> instruments -> available from within Appium
+** Cross platform = keep the same API. 呼應了一開始的想法，因為要共用 test code 需要開發時就投入心力讓不同平台上的 app 變得一致，但這麼做並不一定比較好，因為 Android/iOS 使用者有著不同的操作習慣。
+** (12:48) comparison, R1 ~ R4, 比較了 calabash-ios, Frank, UIAutomation, ios-driver, KeepItFunctional (KIF), calabash-android, MonkeyTalk, Robotium, UiAutomator, selendroid, 其中 ios-driver 幾乎滿分。
+** (13:26) R3 - 為何延用 WebDriver API
+** (14:03) 承認 web/app 之間確實有差異。situated? extension
+** (15:30) Appium under the hood
+   *** web server, handle WebDriver sessions, like a Selenium server.
+   *** (16:47) iOS -> proxies commands to UI Automation. (18:08) bootstrap.js -> infinite loop -> call out shell command -> launch unix socket client? 這跟之前 Kane 的實作方式很類似。
+   *** (20:30) Android -> proxies commands to UI Automator -> bootstrap.jar -> TCP server on the device (跟 iOS 剛好相反)
+** (22:35) one test, two mobile platforms
+** (23:23) 以 WOVEN 的 app 為例 (用 JavaScript 寫) android 直接叫出 app，跳過 home screen.
+** (24:53) iOS/Android 的差異，尤其是 Selenium selectors。作者透過 configuration 將這樣的差異包裝起來 (類似 UI Mapping 的概念；26:10)，但如果 iOS/Android 兩者的操作流程也有差異，可能就沒輒了。
+** .elementByName() 是對應 Android 的 content descript.
+** (27:09) 用 Python 改寫
+** (27:10) Demo
+** (29:37) app's state is reset automatically. 是因為採用 simulator/emulator 的關係??
+** run appium 的方法 - CLI, NPM, 還有 appium.app (GUI) - Appium Inspector, record/play ... 這使得 appium.app 很像是 Selenium IDE for Appium
+** (32:10) Appium 不能 scaling up for use in CI 的原因是 Mac 一次只能有一個 iPhone, siumlator 或 real device 連接 (但 Android 沒這個問題)，上 Sauce Labs 是個解法...
+** (33:51) Firefox OS, 底層就考慮到 automation，也選 Selenium WebDriver 做為 protocol??
+** (37:16) neat trick to reuse WebDriver protocol to enable testing native applications.
+** (37:24) embeded WebView, 有個 window handles command 可以 set that to be your window，接下來的 commands 就會送往該 webview。之後可以再用另一個 command 回到 native layer??
+** (38:26) cross-app。提到 iOS 的 instrument's context 在切換到其他 app 時就會斷掉 (technical limitation)。但 Android 的 UI Automator 可以控制整個 device，所以沒有這個問題。
+** (39:35) cross-platform 的前題是兩者有相同的 hierarcy，做了 structure is probably very similar 的假設。提到 name 對應 Android 的 content description，或是 iOS 的 accessibility label。
+** (40:48) Appium 某種程度上可以說是 NativeDriver 的 spiritual successor。
+** (41:15) Appium 支持 Jelly Bean 以前的版本，靠的是 Dominik Dary 所寫的 Selendroid。測試時只要 ask for Selendroid as a device，就可以改用 Selendroid 做為 backend，而非預設的 UI Automator。事實上 WebView 也是透過它來支援，因為 UI Automator 目前尚不支援 WebView。
+////////////////////////////////////////////////////////////////////////////////
+
+ * https://www.3pillarglobal.com/blog/appium-cross-browser-mobile-automation-tool[Appium: A Cross-browser Mobile Automation Tool] (2013-04-14)
 --
 
 ////////////////////////////////////////////////////////////////////////////////

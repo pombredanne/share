@@ -1,6 +1,6 @@
 = monkeyrunner =
 
-NOTE: monkeyrunner 跟會送出亂數 events 的 http://developer.android.com/guide/developing/tools/monkey.html[Monkey] 不同。monkeyrunner 是透過 API 送出特定的 command/event。
+NOTE: monkeyrunner 跟會送出亂數 events 的 http://developer.android.com/tools/help/monkey.html[Monkey] 不同。monkeyrunner 是透過 API 送出特定的 command/event。
 
  * monkeyrunner 提供 Python API 來操控 device/emulator，主要用來做 functional test。
  * monkeyrunner 的底層是用 link:api/hierarchy-viewer.html[Hierarchy Viewer] 跟 link:chimpchat/delegation.html[ChimpChat]。
@@ -8,32 +8,33 @@ NOTE: monkeyrunner 跟會送出亂數 events 的 http://developer.android.com/gu
 == 延伸閱讀 ==
 
  * link:versus-robotium.html[跟 Robotium 有什麼不同？]
- * link:screen-orientation.html[偵測／改變螢幕的轉向]
+ * link:recipes/screen-orientation.html[偵測／改變螢幕的轉向]
 
 == 參考資料 ==
 
 .網站
 --
  * http://developer.android.com/tools/help/monkeyrunner_concepts.html[monkeyrunner | Android Developers]
+
+////////////////////////////////////////////////////////////////////////////////
+** The monkeyrunner tool provides an API for writing programs that control an Android device or emulator from outside of Android code. 注意這裡 "outside of Android code" 的說法，這也是有別於 instrumentation 的地方
+** The monkeyrunner tool is primarily designed to test applications and devices at the functional/framework level and for running unit test suites, but you are free to use it for other purposes. 這裡 "running unit test suites" 指的是什麼??
+** The monkeyrunner tool is not related to the UI/Application Exerciser Monkey, also known as the monkey tool. The monkey tool runs in an adb shell directly on the device or emulator and generates pseudo-random streams of user and system events. In comparison, the monkeyrunner tool controls devices and emulators from a workstation by sending specific commands and events from an API.
+** Multiple device control: The monkeyrunner API can apply one or more test suites across multiple devices or emulators. You can physically attach all the devices or start up all the emulators (or both) at once, connect to each one in turn programmatically, and then run one or more tests. You can also start up an emulator configuration programmatically, run one or more tests, and then shut down the emulator.
+** Functional testing: monkeyrunner can run an automated start-to-finish test of an Android application. You provide input values with keystrokes or touch events, and view the results as screenshots. Regression testing - monkeyrunner can test application stability by running an application and comparing its output screenshots to a set of screenshots that are known to be correct. 因為是 "outside of Android code"，所以輸入是 keystrokes 跟 touch events (只能給定特定的座標)，而驗證也只能靠 screenshots。但用整個 screenshot 做比對並不務實，因為畫面上可能會有時間、廣告等會變動的東西
+////////////////////////////////////////////////////////////////////////////////
+
  * http://androidxref.com/source/xref/sdk/monkeyrunner/[/sdk/monkeyrunner - Android XRef]
+ * http://stackoverflow.com/[Newest 'monkeyrunner' Questions - Stack Overflow]
  * http://dtmilano.blogspot.com/search/label/monkeyrunner[Diego Torres Milano's blog: monkeyrunner]
 --
 
 .其他文件
 --
- * http://www.infoq.com/news/2011/09/Android-Testing[Automated Testing Solutions for Android] (2011-09-30) - 提到 MonkeyRunner 可以 "run a test package against an application"，跟 instrumentation 也扯上關係了？
- * http://blog.csdn.net/jianguo_liao19840726/article/details/7230640[android 自动化测试 monkeyrunner - 廖建国的专栏 - 博客频道 - CSDN.NET] (2012-02-03)
- * http://www.haogongju.net/art/792311[android實用測試方法之Monkey與MonkeyRunner - 好工具站長分享平台] (2011-11-12) - 同時介紹到 Monkey、MonkeyRunner 還有 recorder
+ * http://www.infoq.com/news/2011/09/Android-Testing[Automated Testing Solutions for Android] (2011-09-30)
+
+////////////////////////////////////////////////////////////////////////////////
+** run a test package against an application. MonkeyRunner uses the `InstrumentationTestRunner` class to run tests by defining test cases with `ActivityInstrumentationTestCase2`, `ProviderTestCase`, `ServiceTestCase`, `SingleLaunchActivityTestCase`, and others. 這指的應該就是 monkeyrunner 可以用來執行 unit test suites
+////////////////////////////////////////////////////////////////////////////////
 --
-
-////////////////////////////////////////////////////////////////////////////////
-
- * 不同於 monkey 透過 `adb shell` 送亂數的 command/event，但 monkeyrunner 是透過 API 送特定的 command/event。聽說這個 API 是 Android 2.1 之後就支援的??
- * Regression testing - monkeyrunner can test application stability by running an application and comparing its output screenshots to a set of screenshots that are known to be correct. 但用整個 screenshot 做比對並不務實，因為畫面上可能會有時間、廣告等會變動的東西
- * 可以同時控制多台 emulator/device，叫起 emulator 時，還能套用不同的 configuration。
- * 安裝並執行 application 或 test package、送出 keystrokes 或 touch events、截圖等。
- * 執行期用 Jython，可以同時叫用 Java/Python library，輔以呼叫外部程式 `adb`，可以做的事情就更多了。
- * 用 `MonkeyRunner` 連接設備，再透過回傳的 `MonkeyDevice` 操作，過程中完全用坐標來定位，這是它最大的弱點。
-
-////////////////////////////////////////////////////////////////////////////////
 

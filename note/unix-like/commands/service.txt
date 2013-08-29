@@ -9,11 +9,37 @@
 
 其中 'SCRIPT' 對應 `/etc/init.d/SCRIPT`，而 'COMMAND' 跟 'OPTIONS' 則會原封不動地傳給 init script。
 
-每個 init script 都至少要支援兩個 command - `start` 跟 `stop`，另外有個特殊的 command `--full-restart`，會連續呼叫 init script，分別傳 `start` 跟 `stop` 進去。（通常 init script 會實作 `restart` 這個 command，但看來這並不會標準？）
+每個 init script 都至少要支援兩個 command - `start` 跟 `stop`，另外有個特殊的 command `--full-restart`，會連續呼叫 init script 兩次，分別傳 `start` 跟 `stop` 進去。（通常 init script 也會實作 `restart` 或 `reload` 等，但看來這些並不是標準？）
 
-如果要查看目前所有 init scripts 的狀態，但前面的 `+/-/?` 分別代表什麼??
- 
+另外 `server` 還有一個特別的用法，可以查看目前所有 init scripts 的狀態：
+
+ service --status-all
+
+其實就是按字母順序對所有 init scripts 執行 `status` command。例如：（怪的是 `status` 也不是必要的 command）
+
+[source,console]
+--------------------------------------------------------------------------------
+$ sudo service --status-all
+ [ - ]  apache2
+ [ - ]  apparmor
+ [ ? ]  apport
+ [ ? ]  atd
+ [ - ]  bootlogd
+ [ + ]  carbon-cache
+ [ + ]  collectd
+...
+--------------------------------------------------------------------------------
+
+前面的 `[ + ]` 跟 `[ - ]` 應該分別表示 service 現在有沒有啟用，但 `[ ? ]` 表示什麼?? 不支援 `status` command 嗎??
+
 == 參考資料 ==
 
  * http://manpages.debian.net/cgi-bin/man.cgi?query=service[service - Debian Hypertext Man Pages]
+
+////////////////////////////////////////////////////////////////////////////////
+** The `SCRIPT` parameter specifies a System V init script, located in `/etc/init.d/SCRIPT`. The supported values of `COMMAND` depend on the invoked script. service passes `COMMAND` and `OPTIONS` to the init script unmodified.
+** All scripts should support at least the `start` and `stop` commands. As a special case, if `COMMAND` is `--full-restart`, the script is run twice, first with the `stop` command, then with the `start` command.
+** `service --status-all` runs all init scripts, in alphabetical order, with the `status` command. 但不一定都支援 `status`。
+** `/etc/init.d` The directory containing System V init scripts.
+////////////////////////////////////////////////////////////////////////////////
 

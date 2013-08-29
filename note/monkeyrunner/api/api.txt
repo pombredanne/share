@@ -62,9 +62,90 @@ com.android.monkeyrunner.MonkeyRunner.waitForConnection
 
 .文件
 --
+ * http://developer.android.com/tools/help/monkeyrunner_concepts.html[monkeyrunner | Android Developers]
+
+////////////////////////////////////////////////////////////////////////////////
+** Extensible automation - Since monkeyrunner is an API toolkit, you can develop an entire system of Python-based modules and programs for controlling Android devices. Besides using the monkeyrunner API itself, you can use the standard Python `os` and `subprocess` modules to call Android tools such as Android Debug Bridge. You can also add your own classes to the monkeyrunner API. This is described in more detail in the section Extending monkeyrunner with plugins. 如果可以把 ADB 的存取包裝成 python module 會更方便
+** The monkeyrunner tool uses Jython, a implementation of Python that uses the Java programming language. Jython allows the monkeyrunner API to interact easily with the Android framework. With Jython you can use Python syntax to access the constants, classes, and methods of the API. `$ANDROID_HOME/tools/lib/jython-standalone-2.5.3.jar`
+** Here is a simple monkeyrunner program that connects to a device, creating a `MonkeyDevice` object. Using the `MonkeyDevice` object, the program installs an Android application package, runs one of its activities, and sends key events to the activity. The program then takes a screenshot of the result, creating a `MonkeyImage` object. From this object, the program writes out a `.png` file containing the screenshot. 很典型的用法
+** The monkeyrunner API is contained in three modules in the package `com.android.monkeyrunner`:
+   *** `MonkeyRunner`: A class of utility methods for monkeyrunner programs. This class provides a method for connecting monkeyrunner to a device or emulator. It also provides methods for creating UIs for a monkeyrunner program and for displaying the built-in help. 工具如果要使用者輸入或做一些決定時很方便。
+   *** `MonkeyDevice`: Represents a device or emulator. This class provides methods for installing and uninstalling packages, starting an Activity, and sending keyboard or touch events to an application. You also use this class to run test packages.
+   *** `MonkeyImage`: Represents a screen capture image. This class provides methods for capturing screens, converting bitmap images to various formats, comparing two `MonkeyImage` objects, and writing an image to a file. 由於只能靠 screenshots 來驗證，所以這部份的支援還滿足夠的
+////////////////////////////////////////////////////////////////////////////////
+
  * http://developer.android.com/tools/help/MonkeyRunner.html[MonkeyRunner | Android Developers]
+
+////////////////////////////////////////////////////////////////////////////////
+** A monkeyrunner class that contains static utility methods.
+** `void sleep ( float seconds )` - Pauses the current program for the specified number of seconds.
+** `MonkeyDevice waitForConnection (float timeout, string deviceId)` - Tries to make a connection between the monkeyrunner backend and the specified device or emulator.
+   *** `timeout` - The number of seconds to wait for a connection. The default is to wait forever.
+   *** `deviceId` - A regular expression that specifies the serial number of the device or emulator.
+////////////////////////////////////////////////////////////////////////////////
+
  * http://developer.android.com/tools/help/MonkeyDevice.html[MonkeyDevice | Android Developers]
+
+////////////////////////////////////////////////////////////////////////////////
+** A monkeyrunner class that represents a device or emulator accessible by the workstation running monkeyrunner. This class is used to control an Android device or emulator.
+** You normally do not have to create an instance of `MonkeyDevice`. Instead, you use `MonkeyRunner.waitForConnection()` to create a new object from a connection to a device or emulator.
+** `string DOWN` - `press()` or `touch()` value. Specifies that a `DOWN` event type should be sent to the device, corresponding to pressing down on a key or touching the screen.
+** `string UP` - `press()` or `touch()` value. Specifies that an `UP` event type should be sent to the device, corresponding to releasing a key or lifting up from the screen.
+** `string DOWN_AND_UP` - `press()`, `touch()` or `type()` value. Specifies that a `DOWN` event type followed by an `UP` event type should be sent to the device, corresponding to typing a key or clicking the screen.
+** `void drag ( tuple start, tuple end, float duration, integer steps)` - Simulates a drag gesture (touch, hold, and move) on this device's screen.
+    *** `duration` - The duration of the drag gesture in seconds. The default is 1.0 seconds.
+    *** `steps` - The number of steps to take when interpolating points. The default is 10. 跟 `duration` 搭配可以控制 D&D 的細度??
+** `object getProperty (string key)` - Given the name of a "system environment variable", returns its value for this device.
+   *** `key` - The name of the system environment variable. 注意這跟 Java/Android 的 system properties 無關
+   *** (return) The value of the variable. The data format varies according to the variable requested.
+** `object getSystemProperty (string key)` - Synonym for `getProperty()`. - 但跟 system properties 無關？少用??
+** `void installPackage (string path)` - Installs the Android application or test package contained in packageFile onto this device. If the application or test package is already installed, it is replaced.
+   *** `path` - The fully-qualified path and filename of the `.apk` file to install.
+** `dictionary instrument ( string className, dictionary args)` - Runs the specified component with Android instrumentation, and returns the results in a dictionary whose exact format is dictated by the component being run. The component must already be present on this device. Use this method to start a test case that uses one of Android's test case classes. 取代 ADB command??
+** `void press (string name, integer type)` - Sends the key event specified by type to the key specified by keycode.
+   *** `name` - The name of the keycode to send. See `KeyEvent` for a list of keycode names. Use the keycode name, not its integer value. 注意是 "keycode name" 而非 "keycode"
+   *** `type` - The type of key event to send. The allowed values are `DOWN`, `UP`, and `DOWN_AND_UP`.
+** `void reboot (string bootloadType)` - Reboots this device into the bootloader specified by `bootloadType`.
+   ** `bootloadType` - The type of bootloader to reboot into. The allowed values are "bootloader", "recovery", or "None". 有什麼差別?? 又如何偵測已經開機完成??
+** `void removePackage (string package)` - Deletes the specified package from this device, including its data and cache. 如果只是要清楚資料，只能自己用 ADB command 了。
+   *** `package` - The Android package name of an `.apk` file on this device.
+** `object shell (string cmd)` - Executes an adb shell command and returns the result, if any.
+   *** `cmd` - The command to execute in the adb shell.
+   *** (return) The results of the command, if any. The format of the results is determined by the command.
+** `void startActivity ( string uri, string action, string data, string mimetype, iterable categories dictionary extras, component component, iterable flags)` - Starts an `Activity` on this device by sending an `Intent` constructed from the supplied arguments.
+** `MonkeyImage takeSnapshot ()` - Captures the entire screen buffer of this device, yielding a screen capture of the current display.
+   *** (return) A `MonkeyImage` object containing the image of the current display.
+** `void touch ( integer x, integer y, string type)` - Sends a touch event specified by type to the screen location specified by `x` and `y`. 也就是 tap 的動作
+** `void type (string message)` - Sends the characters contained in message to this device, as if they had been typed on the device's keyboard. This is equivalent to calling `press()` for each keycode in message using the key event type `DOWN_AND_UP`.
+** `void wake ()` - Wakes the screen of this device. 只是開啟螢幕，但無法自動解鎖
+** `build.brand` - The carrier or provider for which the OS is customized.
+** `build.model` - The end-user-visible name for the device.
+** `build.product` - The overall product name.
+** `build.manufacturer` - The product/hardware manufacturer.
+** `build.version.release` - The user-visible name of this version of the software.
+** `build.version.sdk` - The user-visible SDK version associated with this version of the OS.
+** The `am.current` keys return information about the currently-running `Activity`. 除了 `am.current.package` 之外，其他 keys 都是針對觸發這個 activity 的源頭（"that started the current Activity"）。
+** `am.current.package` - The Android package name of the currently running package.
+////////////////////////////////////////////////////////////////////////////////
+
  * http://developer.android.com/tools/help/MonkeyImage.html[MonkeyImage | Android Developers]
+
+////////////////////////////////////////////////////////////////////////////////
+** A monkeyrunner class to hold an image of the device or emulator's screen. The image is copied from the "screen buffer" during a screenshot. This object's methods allow you to convert the image into various storage formats, write the image to a file, copy parts of the image (方便只儲存或比對畫面的局部), and compare this object to other `MonkeyImage` objects.
+** `string convertToBytes ( string format)` - Converts the current image to a particular format and returns it as a string that you can then access as an iterable of binary bytes.
+   *** `format` - The desired output format. All of the common "raster output formats"?? are supported. The default value is `"png"` (Portable Network Graphics).
+** `MonkeyImage getSubImage (tuple rect)` - Creates a new `MonkeyImage` object from a rectangular selection of the current image.
+   *** `rect` - A `tuple (x, y, w, h)` specifying the selection. `x` and `y` specify the 0-based pixel position of the upper left-hand corner of the selection. `w` specifies the width of the region, and `h` specifies its height, both in units of pixels. The image's orientation is the same as the screen orientation at the time the screenshot was made.
+   *** (return) A new `MonkeyImage` object containing the selection.
+** `boolean sameAs ( MonkeyImage otherImage, float percent )` - Compares this `MonkeyImage` object to another and returns the result of the comparison. The `percent` argument specifies the percentage difference that is allowed for the two images to be "equal".
+   *** `other` - Another `MonkeyImage` object to compare to this one.
+   *** `percent` - A float in the range 0.0 to 1.0, inclusive, indicating the percentage of pixels that need to be the same for the method to return `true`. The default is 1.0, indicating that all the pixels must match. 相似度至少要多少才視為相同。
+   *** (return) Boolean `true` if the images match, or boolean `false` otherwise.
+** `void writeToFile (string filename, string format)` - Writes the current image to the file specified by filename, in the format specified by format.
+   *** `path` - The fully-qualified filename and extension of the output file.
+   *** `format` - The output format to use for the file. If no format is provided, then the method tries to guess the format from the filename's extension. If no extension is provided and no format is specified, then the default format of `"png"` (Portable Network Graphics) is used. 比 `convertToBytes()` 都了自動從副檔名判斷 format 的功能
+////////////////////////////////////////////////////////////////////////////////
+
  * http://developer.android.com/reference/android/view/InputEvent.html[KeyEvent | Android Developers]
 --
 
