@@ -1,0 +1,153 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[NRPE] NRPE Plugin - 在電梯裡遇見雙胞胎 | 傑洛米 Jeremy</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<!--link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" /-->
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="https://www.facebook.com/jeremy.kao.92" target="_blank">Jeremy Kao - 傑洛米·高</a></div>
+  <div><a href="../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <!--div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div-->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <!--a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a--></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="nrpe.html">NRPE</a> / Plugin</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>NRPE plugin 會被安裝在 <code>/usr/lib/nagios/plugins/check_nrpe</code>：</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span class="gp">$</span> dpkg -L nagios-nrpe-plugin
+<span class="go">/.</span>
+<span class="go">/usr</span>
+<span class="go">/usr/share</span>
+<span class="go">/usr/share/doc</span>
+<span class="go">/usr/share/doc/nagios-nrpe-plugin</span>
+<span class="go">/usr/share/doc/nagios-nrpe-plugin/NEWS.Debian.gz</span>
+<span class="go">/usr/share/doc/nagios-nrpe-plugin/changelog.Debian.gz</span>
+<span class="go">/usr/share/doc/nagios-nrpe-plugin/copyright</span>
+<span class="go">/usr/lib</span>
+<span class="go">/usr/lib/nagios</span>
+<span class="go">/usr/lib/nagios/plugins</span>
+<span class="go">/usr/lib/nagios/plugins/check_nrpe</span>
+<span class="go">/etc</span>
+<span class="go">/etc/nagios-plugins</span>
+<span class="go">/etc/nagios-plugins/config</span>
+<span class="go">/etc/nagios-plugins/config/check_nrpe.cfg</span>
+</pre></div></div></div>
+<div class="paragraph"><p>其中 <code>check_nrpe.cfg</code> 內容如下：</p></div>
+<div class="listingblock">
+<div class="title"><code>/etc/nagios-plugins/config/check_nrpe.cfg</code></div>
+<div class="content">
+<pre><code># this command runs a program $ARG1$ with arguments $ARG2$
+define command {
+        command_name    check_nrpe
+        command_line    /usr/lib/nagios/plugins/check_nrpe -H $HOSTADDRESS$ -c $ARG1$ -a $ARG2$
+}
+
+# this command runs a program $ARG1$ with no arguments
+define command {
+        command_name    check_nrpe_1arg
+        command_line    /usr/lib/nagios/plugins/check_nrpe -H $HOSTADDRESS$ -c $ARG1$
+}</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="check_nrpe"><code>check_nrpe</code> 完整的用法</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre><code>$ /usr/lib/nagios/plugins/check_nrpe -h
+
+NRPE Plugin for Nagios
+Copyright (c) 1999-2008 Ethan Galstad (nagios@nagios.org)
+Version: 2.12
+Last Modified: 03-10-2008
+License: GPL v2 with exemptions (-l for more info)
+SSL/TLS Available: Anonymous DH Mode, OpenSSL 0.9.6 or higher required
+
+Usage: check_nrpe -H &lt;host&gt; [-n] [-u] [-p &lt;port&gt;] [-t &lt;timeout&gt;] [-c &lt;command&gt;] [-a &lt;arglist...&gt;]
+
+Options:
+ -n         = Do no use SSL
+ -u         = Make socket timeouts return an UNKNOWN state instead of CRITICAL
+ &lt;host&gt;     = The address of the host running the NRPE daemon
+ [port]     = The port on which the daemon is running (default=5666)
+ [timeout]  = Number of seconds before connection times out (default=10)
+ [command]  = The name of the command that the remote daemon should run
+ [arglist]  = Optional arguments that should be passed to the command.  Multiple
+              arguments should be separated by a space.  If provided, this must be
+              the last option supplied on the command line.
+ -h,--help    Print this short help.
+ -l,--license Print licensing information.
+ -n,--no-ssl  Do not initial an ssl handshake with the server, talk in plaintext.
+
+Note:
+This plugin requires that you have the NRPE daemon running on the remote host.
+You must also have configured the daemon to associate a specific plugin command
+with the [command] option you are specifying here.  Upon receipt of the
+[command] argument, the NRPE daemon will run the appropriate plugin command and
+send the plugin output and return code back to *this* plugin.  This allows you
+to execute plugins on remote hosts and 'fake' the results to make Nagios think
+the plugin is being run locally.</code></pre>
+</div></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2013-09-06 19:01:03 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<!--script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script-->
+</body>
+</html>

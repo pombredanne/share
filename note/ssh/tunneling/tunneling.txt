@@ -1,0 +1,32 @@
+= link:../ssh.html[SSH] / Tunnels =
+:title: [SSH] Tunnels
+
+ local$ ssh -L <local-port-to-listen>:<remote-host>:<remote-port> <gateway>
+
+它們之間的關係是：
+ 
+ local:local-port-to-listen ---> tunnel ---> gateway:22 --> remote-host:remote-port
+
+[source,console]
+--------------------------------------------------------------------------------
+work$ sudo ssh -L 22:localhost:22 [<username>]@<gateway>
+--------------------------------------------------------------------------------
+ 
+== 參考資料 ==
+
+ * http://chamibuddhika.wordpress.com/2012/03/21/ssh-tunnelling-explained/[SSH Tunneling Explained | Source Open] (2012-03-21) - 講得很清楚！
+
+////////////////////////////////////////////////////////////////////////////////
+** A SSH tunnel consists of an encrypted tunnel created through a SSH protocol connection. A SSH tunnel can be used to transfer unencrypted traffic over a network through an encrypted channel.
+** SSH tunnels also provide a means to bypass firewalls that prohibits or filter certain internet services.
+** If users can connect to an external SSH server, they can create a SSH tunnel to forward a given port on their local machine to port 80 on remote web-server via the external SSH server. 只要連得到某個 SSH server，就可以將它當做 "跳板" 到其他地方；從這個角度來看，開放 outbound 的 22 port 還是有危險性。
+** To set up a SSH tunnel a given port of one machine needs to be forwarded (of which I am going to talk about in a little while) to a port in the other machine which will be the other end of the tunnel. Once the SSH tunnel has been established, the user can connect to earlier specified port at first machine to access the network service. 當 tunnel 建立起來之後，只要接到其中一端，就可以透通到另外一端。
+** SSH tunnels can be created in several ways using different kinds of port forwarding mechanisms. Ports can be forwarded in three ways. Local port forwarding, Remote port forwarding,  Dynamic port forwarding
+** Here the first technique will be used in creating an SSH tunnel. When a client application connects to the local port (local endpoint) of the SSH tunnel and transfer data these data will be forwarded to the remote end by translating the host and port values to that of the remote end of the channel.
+** Let’s name my machine at the university as ‘work’ and my home machine as ‘home’. ‘home’ needs to have a public IP for this to work. And I am running a SSH server on my home machine.
+** To create the SSH tunnel execute following from ‘work’ machine. 1ssh -L 9001:yahoo.com:80 home The ‘L’ switch indicates that a local port forward is need to be created. The switch syntax is as follows. 1-L <local-port-to-listen>:<remote-host>:<remote-port>
+** Now the SSH client at ‘work’ will connect to SSH server running at ‘home’ (usually running at port 22) binding port 9001 of ‘work’ to listen for local requests thus creating a SSH tunnel between ‘home’ and ’work’. At the ‘home’ end it will create a connection to ‘yahoo.com’ at port 80. So ‘work’ doesn’t need to know how to connect to yahoo.com. Only ‘home’ needs to worry about that. The channel between ‘work’ and ‘home’ will be encrypted while the connection between ‘home’ and ‘yahoo.com’ will be unencrypted.
+** Now it is possible to browse yahoo.com by visiting http://localhost:9001 in the web browser at ‘work’ computer. The ‘home’ computer will act as a gateway which would accept requests from ‘work’ machine and fetch data and tunnelling it back. So the syntax of the full command would be as follows. 1ssh -L <local-port-to-listen>:<remote-host>:<remote-port> <gateway>
+** It is also possible to specify a port in the ‘home’ computer itself instead of connecting to an external host. This is useful if I were to set up a VNC session between ‘work’ and ‘home’. Then the command line would be as follows. 1ssh -L 5900:localhost:5900
+////////////////////////////////////////////////////////////////////////////////
+

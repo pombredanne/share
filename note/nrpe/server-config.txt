@@ -1,0 +1,31 @@
+= link:nrpe.html[NRPE] / Configuration =
+:title: [NRPE] Configuration
+
+NRPE 主要的組態檔是 `/etc/nagios/nrpe.cfg`，它會額外引入 `/etc/nagios/nrpe_local.cfg` 跟 `/etc/nagios/nrpe.d/`。
+
+常用的組態有：
+
+ * `server_port` - 指定 link:server.html[NRPE server] 的 port，預設是 5666。
+ * `server_address` - 限定 NRPE server 只能 bind 哪個 IP；這個設定預設是被註解掉的，表示要 bind 所有的 interfaces。
+ * `nrpe_user`, `nrpe_group` - NRPE daemon 的執行身份。預設是 `nagios`，安裝 server 的過程中會自動建立。
+ * `allowed_hosts` - 設定可以跟 NRPE server 溝通的來源 IP，也就是 link:plugin.html[NRPE plugin] 執行所在的機器。
+ * `debug` - 是否要將 debugging messages 送往 sysloag，預設是 `0`，改為 `1` 就可以啟用。
+
+由於 NRPE server 內建幾個 commands，剛好可以用來檢查 NRPE plugin 跟 NRPE server 之間的連線。
+
+.`/etc/nagios/nrpe.cfg`
+--------------------------------------------------------------------------------
+command[check_users]=/usr/lib/nagios/plugins/check_users -w 5 -c 10
+command[check_load]=/usr/lib/nagios/plugins/check_load -w 15,10,5 -c 30,25,20
+command[check_hda1]=/usr/lib/nagios/plugins/check_disk -w 20% -c 10% -p /dev/hda1
+command[check_zombie_procs]=/usr/lib/nagios/plugins/check_procs -w 5 -c 10 -s Z
+command[check_total_procs]=/usr/lib/nagios/plugins/check_procs -w 150 -c 200 
+--------------------------------------------------------------------------------
+
+例如：
+
+--------------------------------------------------------------------------------
+# /usr/lib/nagios/plugins/check_nrpe -H <server_address> -c check_load
+OK - load average: 0.10, 0.12, 0.20|load1=0.100;15.000;30.000;0; load5=0.120;10.000;25.000;0; load15=0.200;5.000;20.000;0;
+--------------------------------------------------------------------------------
+

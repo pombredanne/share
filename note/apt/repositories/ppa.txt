@@ -1,0 +1,74 @@
+= link:repositories.html[APT / Repositories] / PPA (Personal Package Archive) =
+:title: [APT] PPA (Personal Package Archive)
+
+ add-apt-repository ppa:<user>/<ppa-name>
+
+以 Git 為例，Ubuntu 內建的版本通常落後於官方發佈的最新版，可以利用 `git-core/ppa` 安裝相對較新的版本：
+
+[source,console]
+--------------------------------------------------------------------------------
+$ sudo add-apt-repository ppa:git-core/ppa
+You are about to add the following PPA to your system:
+ The most current stable version of Git for Ubuntu.
+
+For release candidates, go to https://launchpad.net/~git-core/+archive/candidate .
+ More info: https://launchpad.net/~git-core/+archive/ppa
+Press [ENTER] to continue or ctrl-c to cancel adding it
+
+gpg: keyring `/tmp/tmp8AaegG/secring.gpg' created
+gpg: keyring `/tmp/tmp8AaegG/pubring.gpg' created
+gpg: requesting key E1DF1F24 from hkp server keyserver.ubuntu.com
+gpg: /tmp/tmp8AaegG/trustdb.gpg: trustdb created
+gpg: key E1DF1F24: public key "Launchpad PPA for Ubuntu Git Maintainers" imported <1>
+gpg: Total number processed: 1
+gpg:               imported: 1  (RSA: 1)
+OK
+
+$ apt-key list | grep -A 1 E1DF1F24 <1>
+pub   1024R/E1DF1F24 2009-01-22
+uid                  Launchpad PPA for Ubuntu Git Maintainers
+
+$ cat /etc/apt/sources.list.d/git-core-ppa-precise.list <1>
+deb http://ppa.launchpad.net/git-core/ppa/ubuntu precise main
+deb-src http://ppa.launchpad.net/git-core/ppa/ubuntu precise main
+--------------------------------------------------------------------------------
+<1> 過程中會自動將 GPG public key 加到 APT keyring。
+<2> 多出 `sources.list.d/git-core-ppa-precise.list`，裡面包含展開後的 deb line。
+
+== 參考資料 ==
+
+.網站
+--
+ * https://launchpad.net/ubuntu/+ppas[Personal Package Archives for Ubuntu] - 可以用關鍵字找 PPA。
+--
+
+.文件
+--
+ * https://help.launchpad.net/Packaging/PPA[Packaging/PPA - Launchpad Help]
+
+////////////////////////////////////////////////////////////////////////////////
+** Using a Personal Package Archive (PPA), you can distribute software and updates directly to Ubuntu users. Create your source package, upload it and Launchpad will build binaries and then host them in your own apt repository. That means Ubuntu users can install your packages in just the same way they install standard Ubuntu packages and they'll automatically receive updates as and when you make them. 上傳 source package，然後 Launchpad 就會幫忙 build 出 binary packages。
+** Every individual and team in Launchpad can have one or more PPAs, each with its own URL.
+** When Launchpad builds a source package in a PPA, it creates binaries for: x86, AMD64
+** We use the Xen virtualization system for security during the build process, ensuring that each build has a clean build environment and different developers cannot impact on one another's builds accidentally.
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://en.wikipedia.org/wiki/Personal_Package_Archive[Personal Package Archive - Wikipedia, the free encyclopedia]
+
+////////////////////////////////////////////////////////////////////////////////
+** A Personal Package Archive (PPA) is a special software repository for uploading source packages to be built and published as an APT repository by Launchpad or a similar application.
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://www.makeuseof.com/tag/ubuntu-ppa-technology-explained/[What Is An Ubuntu PPA & Why Would I Want To Use One? [Technology Explained&#93;] (2010-12-29)
+
+////////////////////////////////////////////////////////////////////////////////
+** if a new version of your favorite software comes out you may have to wait until the next version of Ubuntu comes out to try it.
+** The solution to this is the PPA. This is a repository, provided by Canonical (the company behind Ubuntu), that allows developers and enthusiasts to offer up-to-date versions of software to all Ubuntu users. Originally PPAs were limited to programmers and testers, but Canonical opened PPAs to everyone in late 2007. 所以 PPA 是 Ubuntu 特有的東西，Debian 不能用??
+** A PPA, or Personal Package Archive, is a collection of software not included in Ubuntu by default. Typically these repositories focus on a single program, but they can include more depending on the person maintaining them. A PPA might focus on an unreleased piece of software, such as Hotot, the best Linux Twitter client out there. It also might include updates for software already in Ubuntu, such as Firefox.
+** PPAs provide updates for your favorite software at a much quicker rate than Ubuntu itself. This is great, because you can decide which software you want to keep up to date and leave the rest to Ubuntu.
+** This is fantastic, because it means all of your updates come through a single interface. No Windows-style popups from every single program you’ve installed! 沒錯，這是 Windows 的亂象...
+** adding a PPA is easy, but you will need to use the command line a little. `sudo add-apt-repository` followed by the name of your PPA.
+** Adding too many PPAs may result in an unstable system, but one or two usually doesn’t hurt anything.
+////////////////////////////////////////////////////////////////////////////////
+--
+

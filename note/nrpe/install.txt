@@ -1,0 +1,35 @@
+= link:nrpe.html[NRPE] / Installation =
+:title: [NRPE] Installation
+
+分兩部份來看：
+
+ * Monitor server 上要裝 link:plugin.html[NRPE plugin]。
++
+--
+ apt-get --no-install-recommends install nagios-nrpe-plugin
+
+由於 NRPE plugin 不一定得搭配 link:../nagios/nagios.html[Nagios] 使用，但 `nagios-nrpe-plugin` 預設會將 Nagios 一併安裝，可以用 `--no-install-recommends` 來避開這個問題。
+--
++
+ * 被 monitor 的機器上要裝 link:server.html[NRPE server]，並link:server-config.html[將設定做過調整]。
++
+--
+ apt-get install nagios-nrpe-server
+--
+
+== 參考資料 ==
+
+ * https://wiki.icinga.org/display/howtos/Setting+up+NRPE+with+Icinga[Setting up NRPE with Icinga - HowTos - Icinga Wiki]
+
+////////////////////////////////////////////////////////////////////////////////
+** Client: `apt-get install nagios-nrpe-server`
+** `allowed_hosts = icinga master`
+** `debug=1` for testing and setupping
+** Make sure Port 5666 tcp is reachable from your Icinga Master.
+** Put every custom command into an own file like proposed in Debian with `nrpe_local.cfg` or append it to `nrpe.cfg`
+** If you require sudo permissions for a command# `visudo`
+   *** `nagios ALL=NOPASSWD: /usr/lib/nagios/plugins/check_logfiles`
+** `service nagios-nrpe-server start`
+** Master: `# apt-get --no-install-recommends install nagios-nrpe-plugin` 注意是 `nagios-nrpe-plugin`，加 `--no-install-recommends` 是為了避免安裝 `nagios` 這個 recommends
+////////////////////////////////////////////////////////////////////////////////
+
