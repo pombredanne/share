@@ -1,0 +1,61 @@
+= link:commands.html[Graphviz / Commands] / `dot` =
+:title: [Graphviz] Command Line - dot
+
+[NOTE]
+================================================================================
+雖然這裡談論的是 `dot`，但 `neato`、`twopi`、`circo`、`fdp`、`sfdp` 的用法並無不同，原因是這些指令背後其實都是指回 `dot` (symbolic links)。
+
+ $ ls /usr/bin -l | grep '\-> dot'
+
+雖然 `dot` 支援 `-K<layout>` 指定 link:../layouts.html[layout algorithm]，但在實務上卻很少用到，因為 `dot` 預設會用指令名稱做為 layout algorithm，所以直接叫用這些指令跟使用 `-K<layout>` 有相同的效果，用起來也比較直覺。
+
+// 另外還有個 `osage` 指向 `dot`，那是什麼??
+================================================================================
+
+ dot -T<format> [<options>] [<dot_files>]
+
+`dot` 可以將一或多 'dot_files' (`.dot`) 轉換成 'format' 格式。常見的用法有：
+
+ * `dot -Tpng -O input.dot` - 將 `input.dot` 轉換成 `input.dot.png`。
+ * `dot -Tsvg -ooutput.svg input.dot` - 將 `input.dot` 轉換成 `output.svg`。
+ * `echo '' | dot -Tpng | display`
+
+常用的 options 有：
+
+`-T<format>`:: 指定輸出的格式 'format'，可以是 `png`、`svg`、`pdf` 等。
+
+`-O`:: 自動拿來源 `.dot` 的檔名串上 'format' 標準的副檔名，做為輸出的檔名。
++
+--
+注意是拿 `.dot` 的檔名，而非主檔名，所以 `input.dot` 會生出 `input.dot.png` 而非 `input.png`。
+--
+
+`-o<outfile>`:: 自訂輸出的檔名為 'outfile'。
+
+`-V`:: 輸入 Graphviz 的版號。
+
+另外，`dot` 預設會以 stdin 跟 stdout 做為輸出入，搭配 ImageMagick 的 link:../../imagemagick/tools/display.html[`display`] 可以快速驗證 dot graph 繪製出來的結果是否正常，最棒的是不會殘留過渡的檔案。例如：
+
+ echo "digraph { Hello -> World }" | dot -Tpng | display
+
+當然建個 link:../../bash/functions.html[function] 會更方便：（沒有用 link:../../bash/aliases.html[alias] 是因為它不支援參數的置換）
+
+ $ function dot-graph() { echo "graph { $1 }" | dot -Tpng | display; }
+ $ function dot-digraph() { echo "digraph { $1 }" | dot -Tpng | display; }
+ $ export -f dot-graph dot-digraph
+
+久後就可以用 `dot-digraph 'Hello -> World'` 產生跟上面相同的圖形。
+
+== 參考資料 ==
+
+.手冊
+--
+ * http://www.graphviz.org/cgi-bin/man?dot[`dot`]
+--
+
+.文件
+--
+ * http://www.graphviz.org/content/command-line-invocation[Command-line Invocation | Graphviz]
+ * http://www.graphviz.org/content/output-formats[Output Formats | Graphviz]
+--
+

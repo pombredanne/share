@@ -1,0 +1,47 @@
+= link:commands.html[Unix-like / Commands] / `deluser`, `delgroup` =
+:title: [Unix-like] deluser, delgroup
+
+`deluser`, `delgroup` - remove a user or group from the system
+
+TIP: 按照 man pages 的說法，`deluser` 做為一個 friendlier front end，建議不要直接使用 `userdel` 或 `groupdel`。
+
+常見的用法有：
+
+ * `deluser [--remove-home] <user>`
++
+--
+刪除 'user' （如果 primary group 沒有其他成員，也會被刪除），加 `--remove-home` 則會連同 home directory 也一併刪除。
+--
++
+ * `delgroup [--only-if-empty] <group>`
++
+--
+刪除 'group'，加 `--only-if-empty` 可以避免刪掉還有其他成員的 group。
+--
+
+TIP: `delgroup` 其實是指向 `deluser` 的 symbolic link，事實上 `delgroup` 等同於 `deluser --group` 的用法。
+
+常用的 options 有：
+
+`--remove-home`:: `deluser` 預設會保留 home directory，加上這個 option 會將它一併刪除。
+
+`--only-if-empty`:: group 還有其他 member 時不能刪除。
+
+== 參考資料 ==
+
+ * http://manpages.debian.net/cgi-bin/man.cgi?query=deluser[deluser - Debian Hypertext Man Pages]
+
+////////////////////////////////////////////////////////////////////////////////
+** `deluser`, `delgroup` - remove a user or group from the system
+** `deluser` and `delgroup` remove users and groups from the system according to command line options and configuration information in `/etc/deluser.conf` and `/etc/adduser.conf`. 這兩支 `.conf` 是做什麼用的??
+** They are friendlier front ends to the `userdel` and `groupdel` programs, removing the home directory as option or even all files on the system owned by the user to be removed.
+** If called with one non-option argument and without the `--group` option, `deluser` will remove a normal user. By default, `deluser` will remove the user without removing the home directory, the mail spool or any other files on the system owned by the user. Removing the home directory and mail spool can be achieved using the `--remove-home` option.
+** The `--remove-all-files` option removes all files on the system owned by the user. Note that if you activate both options `--remove-home` will have no effect because all files including the home directory and mail spool are already covered by the `--remove-all-files` option.
+** If `deluser` is called with the `--group` option, or `delgroup` is called, a group will be removed. Warning: The primary group of an existing user cannot be removed. If the option `--only-if-empty` is given, the group won't be removed if it has any members left.
+** Remove a user from a specific group If called with two non-option arguments, deluser will remove a user from a specific group. 應該有專用的 command 吧??
+** `--system` Only delete if user/group is a system user/group. This avoids accidentally deleting non-system users/groups.
+** `--group` Remove a group. This is the default action if the program is invoked as `delgroup`.
+** `--remove-home` Remove the home directory of the user and its mailspool.
+** `--remove-all-files` Remove all files from the system owned by this user.
+////////////////////////////////////////////////////////////////////////////////
+

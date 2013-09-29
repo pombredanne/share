@@ -1,0 +1,84 @@
+= link:plugins.html[Nagios / Plugins] / API =
+:title: [Nagios][Plugin] API
+
+要成為 Nagios Plugin，除了可執行（executable）之外，至少要符合下面兩點要求：[[contact]]
+
+ * 透過 return code 傳回 OK (0)、WARNING (1)、CRITICAL (2) 或 UNKNOWN (3)。
+ * 至少要輸出一行文件到 STDOUT；這一行字會出現在 Web UI 上的 "Status Information"。
+
+.`check_now`
+[source,python]
+--------------------------------------------------------------------------------
+#!/usr/bin/env python
+import sys
+from datetime import datetime
+
+STATES = ['OK', 'WARNING', 'CRITICAL', 'UNKNOWN']
+
+now = datetime.now().time()
+return_code = now.second / 15
+text = '%s -> %s' % (now.strftime('%H:%M:[%S]'), STATES[return_code])
+
+print text
+sys.exit(return_code)
+--------------------------------------------------------------------------------
+
+[source,console]
+--------------------------------------------------------------------------------
+$ ./check_now; echo $?
+18:01:[29] -> WARNING
+1
+./check_now; echo $?
+18:01:[34] -> CRITICAL
+2
+--------------------------------------------------------------------------------
+
+== 參考資料 ==
+
+.文件
+--
+ * http://nagios.sourceforge.net/docs/nagioscore/3/en/pluginapi.html[Nagios Plugin API]
+
+////////////////////////////////////////////////////////////////////////////////
+** Scripts and executables must do two things (at a minimum) in order to function as Nagios plugins: 
+   *** Exit with one of several possible return values
+   *** Return at least one line of text output to STDOUT (這一點尤其容易被遺漏)
+   *** 還有一點沒被提到，做 service check 時，performance data 要用 `|` 來隔開，擺放的位置有很特別的要求
+** The inner workings of your plugin are unimportant to Nagios. Your plugin could check the status of a TCP port, run a database query, check disk free space, or do whatever else it needs to check something. The details will depend on what needs to be checked - that's up to you.
+** Nagios determines the status of a host or service by evaluating the return code from plugins. The following tables shows a list of valid return codes, along with their corresponding service or host states. 注意同一 plugin 的 return coee，在 service/host check 有不同的解釋。
+   *** Service Check - 0 = OK, 1 = WARNING, 2 = CRITICAL, 3 = UNKNOWN
+   *** Host Check - 0/1 = UP, 1/2/3 = DOWN/UNREACHABLE 注意 1 可能被解讀成 UP 或 DOWN
+** Note: If the `use_aggressive_host_checking` option is enabled, return codes of 1 will result in a host state of DOWN or UNREACHABLE. Otherwise return codes of 1 will result in a host state of UP. The process by which Nagios determines whether or not a host is DOWN or UNREACHABLE is discussed http://nagios.sourceforge.net/docs/nagioscore/3/en/networkreachability.html[here].
+** At a minimum, plugins should return at least one of text output. Beginning with Nagios 3, plugins can optionally return multiple lines of output. Plugins may also return optional "performance data" that can be processed by "external applications". 這裡的 performance data 怎麼應用?? 又 external application 怎麼介入??
+** The performance data (shown in orange) is optional. If a plugin returns performance data in its output, it must separate the performance data from the other text output using a pipe (|) symbol. Additional lines of long text output (shown in blue) are also optional. 注意 PERFDATA 的位置很怪
++
+--------------------------------------------------------------------------------
+TEXT OUTPUT | OPTIONAL PERFDATA
+LONG TEXT LINE 1
+LONG TEXT LINE 2
+...
+LONG TEXT LINE N | PERFDATA LINE 2
+PERFDATA LINE 3
+...
+PERFDATA LINE N
+--------------------------------------------------------------------------------
++
+** If this plugin was used to perform a service check, the entire line of output will be stored in the `$SERVICEOUTPUT$` macro. 言下之意，這裡的 performance data 只適用於 service check，對 host check 沒意義??
+** A plugin can return optional performance data for use by external applications. To do this, the performance data must be separated from the text output with a pipe (|) symbol
+** If this plugin was used to perform a service check, the  red  portion of output (left of the pipe separator) will be stored in the `$SERVICEOUTPUT$` macro and the  orange  portion of output (right of the pipe separator) will be stored in the `$SERVICEPERFDATA$` macro.
+** If this plugin was used to perform a service check, the red portion of first line of output (left of the pipe separator) will be stored in the `$SERVICEOUTPUT$` macro. The orange portions of the first and subsequent lines are concatenated (with spaces) are stored in the `$SERVICEPERFDATA$` macro. The blue portions of the 2nd - 5th lines of output will be concatenated (with escaped newlines) and stored in `$LONGSERVICEOUTPUT$` the macro.
+** You can return performance data only in subsequent lines (after the first) You can return performance data in both the first line and subsequent lines (as shown above) 很怪的格式...
+** Nagios will only read the first 4 KB of data that a plugin returns. This is done in order to prevent runaway plugins from dumping megs or gigs of data back to Nagios.
+** If you're looking for some example plugins to study, I would recommend that you download the official Nagios plugins and look through the code for various C, Perl, and shell script plugins.
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://nagiosplug.sourceforge.net/developer-guidelines.html[Nagios plug-in development guidelines]
+--
+
+.其他文件
+--
+ * https://www.digitalocean.com/community/articles/how-to-create-nagios-plugins-with-bash-on-ubuntu-12-10[How To Create Nagios Plugins With Bash On Ubuntu 12.10 | DigitalOcean]
+ * http://tuxers.com/main/writing-custom-nagios-check-scripts-plugins/[Writing custom nagios check scripts (plugins) |] (2012-05-14)
+ * http://www.question-defense.com/2009/12/11/nrpe-nagios-plugin-to-check-the-number-of-files-in-a-directory[Question Defense » NRPE Nagios Plugin To Check The Number Of Files In A Directory] (2009-12-11)
+--
+

@@ -328,54 +328,20 @@
 <node CREATED="1271729966333" ID="ID_1597062810" MODIFIED="1271730141972" TEXT="&#x4f8b;&#x5982; CentOS 5.4 &#x5c07; Hard Drive &#x5207;&#x6210; /dev/sda1 (101MB, ext3, /boot) &#x8207; /dev/sda2 (8087MB, LVM PV, VolGroup00). &#x771f;&#x6b63;&#x639b;&#x5230; / &#x8207; swap &#x7684;&#x5176;&#x5be6;&#x662f;&#x5f9e; VolGroup00 &#x5206;&#x51fa;&#x4f86;&#x7684; Volumns: LogVol00 (/, ext3) &#x8207; LogVol01 (swap)"/>
 </node>
 </node>
-<node CREATED="1270012846747" FOLDED="true" ID="ID_1566600772" MODIFIED="1270012852724" POSITION="right" TEXT="Archives">
-<node CREATED="1268976327771" FOLDED="true" ID="ID_1939093660" MODIFIED="1269218093197" TEXT="tar">
-<node CREATED="1268979484885" FOLDED="true" ID="ID_1869864472" MODIFIED="1269026274849" TEXT="Usage">
-<node CREATED="1268979528726" FOLDED="true" ID="ID_1938428913" MODIFIED="1270692367657" TEXT="Create (-c)">
-<node CREATED="1270692346672" ID="ID_619052178" MODIFIED="1270692371527" TEXT="--create; create a new archive "/>
-<node CREATED="1268977157708" ID="ID_1537409217" MODIFIED="1269035075379" TEXT="&#x628a;&#x591a;&#x500b;&#x6a94;&#x6848;&#x6216;&#x76ee;&#x9304;&#x5c01;&#x88dd; (Archive) &#x8d77;&#x4f86;&#x70ba;&#x55ae;&#x4e00;&#x652f;&#x6a94;&#x6848; tarfile; &#x5176;&#x4e2d; pathname &#x9810;&#x8a2d;&#x5305;&#x542b;&#x5b50;&#x76ee;&#x9304; (Recursive)"/>
-<node CREATED="1270689751228" FOLDED="true" ID="ID_1180343589" MODIFIED="1270690627061" TEXT="&#x9810;&#x8a2d;&#x6703;&#x5c07; pathname &#x8abf;&#x6574;&#x904e;">
-<node CREATED="1270690627614" ID="ID_1770266962" MODIFIED="1270690642614" TEXT="&#x4f8b;&#x5982; &quot;/tmp/files&quot; &#x8207; &quot;/tmp/../tmp/files&quot; &#x90fd;&#x6703;&#x88ab;&#x8abf;&#x6574;&#x6210; &quot;tmp/files&quot; (&#x5be6;&#x969b;&#x8a18;&#x9304;&#x5728; tarfile &#x88e1;&#x7684;&#x8def;&#x5f91;). &#x900f;&#x904e; -P &#x53ef;&#x4ee5;&#x5728; tarfile &#x88e1;&#x8a18;&#x9304;&#x8ddf; argument &#x5b8c;&#x5168;&#x4e00;&#x6a23;&#x7684; pathname."/>
-<node CREATED="1269030345963" ID="ID_1911879002" MODIFIED="1270177906511" TEXT="tar: Removing leading `/&apos; from member names (&#x4e8b;&#x5f8c;&#x53ef;&#x4ee5;&#x7528; -t &#x4f86;&#x67e5;&#x770b;&#x5b58;&#x9032; .tar &#x6a94;&#x7684;&#x8def;&#x5f91;)&#xa;tar: Archive contains file names with leading prefixes removed.&#xa;tar: Verification may fail to locate original files."/>
-</node>
-<node CREATED="1270692071495" ID="ID_624350506" MODIFIED="1270785139519" TEXT="&#x9810;&#x5230; Symbolic Link &#x6642;, &#x9810;&#x8a2d;&#x53ea;&#x6703;&#x5099;&#x4efd; Link &#x672c;&#x8eab; (&#x4e0d;&#x6703; Follow), &#x53ef;&#x4ee5;&#x900f;&#x904e; --dereference &#x5c07; Target Files &#x5099;&#x4efd;&#x8d77;&#x4f86;"/>
-<node CREATED="1269034546708" FOLDED="true" ID="ID_827609" MODIFIED="1269034550411" TEXT="Examples">
-<node CREATED="1268976403307" ID="ID_138042727" MODIFIED="1269031500965" TEXT="tar -cvf archive.tar --verify pathname... 1&gt;/tmp/progress"/>
-<node CREATED="1268976403307" ID="ID_1100194785" MODIFIED="1270690873892" TEXT="tar -czvf archive.tar.gz pathname... 1&gt;/tmp/progress; tar -dvf archive.tar.gz"/>
-<node CREATED="1269026015200" ID="ID_134877475" MODIFIED="1269031520066" TEXT="tar -cvf archive.tar --verify pathname... 1&gt;/tmp/progress; gzip archive.tar"/>
-<node CREATED="1268979575801" ID="ID_1652733473" MODIFIED="1270690880182" TEXT="tar -cjvf archive.tar.bz2 pathname... 1&gt;/tmp/progress; tar -dvf archive.tar.gz"/>
-<node CREATED="1268979575801" ID="ID_229440371" MODIFIED="1270691116338" TEXT="tar -cvf archive.tar --verify pathname... 1&gt;/tmp/progress; bzip2 archive.tar"/>
-</node>
-</node>
-<node CREATED="1268979564497" FOLDED="true" ID="ID_12135853" MODIFIED="1270691508448" TEXT="Extract (-x)">
-<node CREATED="1270692386805" ID="ID_977723550" MODIFIED="1270692406603" TEXT="--extract, --get; extract files from an archive"/>
-<node CREATED="1269026382363" ID="ID_1741308580" MODIFIED="1269026538494" TEXT="&#x96d6;&#x7136;&#x900f;&#x904e; -z &#x6216; -j &#x58d3;&#x7e2e;&#x51fa;&#x4f86;&#x7684;&#x6a94;&#x6848;&#x8207;&#x4e8b;&#x5f8c;&#x518d;&#x5c0d; .tar &#x505a;&#x58d3;&#x7e2e;&#x7684;&#x7d50;&#x679c;&#x4e0d;&#x592a;&#x4e00;&#x6a23;, &#x4f46;&#x5169;&#x8005;&#x90fd;&#x53ef;&#x4ee5;&#x76f4;&#x63a5;&#x7528; -xz &#x6216; -xj &#x89e3;&#x958b;."/>
-<node CREATED="1269034557661" FOLDED="true" ID="ID_1947811649" MODIFIED="1269034559405" TEXT="Examples">
-<node CREATED="1268979323340" ID="ID_811384637" MODIFIED="1268979337294" TEXT="tar -xvf archive.tar"/>
-<node CREATED="1268979337819" ID="ID_632545951" MODIFIED="1268979345431" TEXT="tar -xzvf archive.tar.gz"/>
-<node CREATED="1268979337819" ID="ID_91521214" MODIFIED="1268979621972" TEXT="tar -xjvf archive.tar.bz2"/>
-</node>
-</node>
-<node CREATED="1269026119726" FOLDED="true" ID="ID_1035317155" MODIFIED="1270691504876" TEXT="Listing (-t)">
-<node CREATED="1270692422127" ID="ID_481964516" MODIFIED="1270692426647" TEXT="--list; list the contents of an archive"/>
-<node CREATED="1269026123411" ID="ID_59324157" MODIFIED="1269026198714" TEXT="tar -tf archive.tar (&#x4e0d;&#x7528;&#x52a0; -z &#x6216; -j)"/>
-</node>
-<node CREATED="1270689646797" FOLDED="true" ID="ID_932073133" MODIFIED="1270692497263" TEXT="Diff (-d)">
-<node CREATED="1270692445955" ID="ID_1256107298" MODIFIED="1270692467700" TEXT="--diff, --compare; find differences between archive and file system"/>
-<node CREATED="1270689665352" ID="ID_15588199" MODIFIED="1270692477935" TEXT="tar -df archive.tar.gz"/>
-<node CREATED="1270692470237" ID="ID_290395096" MODIFIED="1270692472995" TEXT="&#x8ddf; --verify &#x4e00;&#x6a23;, &#x4e0d;&#x904e;&#x5b83;&#x53ef;&#x4ee5;&#x5957;&#x7528;&#x5728; Compressed Archive &#x4e0a;"/>
-</node>
-<node CREATED="1270711069909" FOLDED="true" ID="ID_1306292870" MODIFIED="1270711071795" TEXT="Backup">
-<node CREATED="1270711825499" FOLDED="true" ID="ID_1858207440" MODIFIED="1270711828207" TEXT="backup.sh">
+<node CREATED="1270012846747" ID="ID_1566600772" MODIFIED="1379815092018" POSITION="right" TEXT="Archives">
+<node CREATED="1268976327771" ID="ID_1939093660" MODIFIED="1379815094326" TEXT="tar">
+<node CREATED="1268979484885" ID="ID_1869864472" MODIFIED="1379815101782" TEXT="Usage">
+<node CREATED="1270711069909" ID="ID_1306292870" MODIFIED="1379842237081" TEXT="Backup">
+<node CREATED="1270711825499" ID="ID_1858207440" MODIFIED="1379842240424" TEXT="backup.sh">
 <node CREATED="1270711779516" ID="ID_682343717" MODIFIED="1270738766737" TEXT="#!/bin/sh&#xa;&#xa;mysqldump -uroot -ppass mantis_magical &gt; /tmp/mantis_magical.sql&#xa;mysqldump -uroot -ppass mantis_bitstrut &gt; /tmp/mantis_bitstrut.sql&#xa;mysqldump -uroot -ppass mantis_sandbox &gt; /tmp/mantis_sandbox.sql&#xa;mysqldump -uroot -ppass bamboo &gt; /tmp/bamboo.sql&#xa;mysqldump -uroot -ppass dawn &gt; /tmp/dawn.sql&#xa;mysqldump -uroot -ppass pasta &gt; /tmp/pasta.sql&#xa;mysqldump -uroot -ppass mysql &gt; /tmp/mysql.sql&#xa;&#xa;TARGET=/var/backups-remote/`hostname`_`date +\%F`.tar.gz&#xa;tar -cPzf $TARGET --files-from backup.lst; tar -dPf $TARGET&#xa;&#xa;rm /tmp/*.sql&#xa;"/>
 </node>
-<node CREATED="1270711813329" FOLDED="true" ID="ID_1908894222" MODIFIED="1270711816465" TEXT="backup.lst">
+<node CREATED="1270711813329" ID="ID_1908894222" MODIFIED="1379842239365" TEXT="backup.lst">
 <node CREATED="1270711816980" ID="ID_1588396045" MODIFIED="1270711821438" TEXT="/etc/hosts&#xa;/etc/hostname&#xa;/etc/network/interfaces&#xa;&#xa;/etc/crontab&#xa;/etc/fstab&#xa;&#xa;/etc/apache2/httpd.conf&#xa;/etc/apache2/ports.conf&#xa;/etc/apache2/envvars&#xa;..."/>
 </node>
 </node>
 </node>
-<node CREATED="1269027718890" FOLDED="true" ID="ID_1074284265" MODIFIED="1269034395415" TEXT="Options">
-<node CREATED="1269027750153" FOLDED="true" ID="ID_1195008238" MODIFIED="1269027770018" TEXT="-C, --directory DIR">
+<node CREATED="1269027718890" ID="ID_1074284265" MODIFIED="1379815099709" TEXT="Options">
+<node CREATED="1269027750153" FOLDED="true" ID="ID_1195008238" MODIFIED="1379842231015" TEXT="-C, --directory DIR">
 <node CREATED="1269034862846" ID="ID_1839837970" MODIFIED="1270690568198" TEXT="change the working directory in the middle of a list of file names (&#x4e0d;&#x9069;&#x5408;&#x8ddf; --verify &#x6216; --diff &#x540c;&#x6642;&#x4f7f;&#x7528;)"/>
 <node CREATED="1269027797806" ID="ID_1973050478" MODIFIED="1269035148859" TEXT="&#x5b89;&#x63d2;&#x5728; pathname &#x9805;&#x76ee;&#x4e4b;&#x9593;, &#x7528;&#x4ee5;&#x6539;&#x8b8a; pathname &#x76f8;&#x5c0d;&#x7684;&#x8d77;&#x9ede; (&#x56e0;&#x6b64;&#x591a;&#x500b; pathname &#x4e4b;&#x9593;&#x7684;&#x9806;&#x5e8f;&#x662f;&#x6709;&#x610f;&#x7fa9;&#x7684;); &#x5176;&#x4e2d; DIR &#x53ef;&#x4ee5;&#x662f;&#x63a1;&#x7528;&#x7d55;&#x5c0d;&#x6216;&#x76f8;&#x5c0d;&#x8def;&#x5f91;&#x7684;&#x8868;&#x793a;&#x6cd5; (&#x76f8;&#x5c0d;&#x65bc; Last Working Directory)"/>
 <node CREATED="1269027842495" ID="ID_650840417" MODIFIED="1269027982645" TEXT="&#x4f8b;&#x5982;&#x8981;&#x5c07; a/afiles/* &#x8207; b/bfiles/* &#x5c01;&#x88dd;&#x8d77;&#x4f86;, &#x5728; Archive &#x88e1;&#x53ea;&#x770b;&#x5f97;&#x5230; afiles &#x8207; bfiles, &#x53ef;&#x4ee5;&#x7528; tar -cvf archive.tar -C a afiles -C ../b bfiles &#x4f86;&#x9054;&#x6210;"/>
@@ -386,76 +352,24 @@
 <font BOLD="true" NAME="Monospaced" SIZE="12"/>
 </node>
 </node>
-<node CREATED="1269030335455" FOLDED="true" ID="ID_1205570341" MODIFIED="1269030341657" TEXT="-W, --verify">
-<node CREATED="1270693703961" ID="ID_1177990217" MODIFIED="1270693708527" TEXT="attempt to verify the archive after writing it (&#x4e5f;&#x5c31;&#x662f;&#x4e00;&#x822c;&#x60f3;&#x5230;&#x7684; -t &#x9078;&#x9805;)"/>
-<node CREATED="1269033668431" ID="ID_1465088973" MODIFIED="1270690318794" TEXT="&#x6240;&#x8b02;&#x7684; Verify &#x5c31;&#x662f;&#x4f9d; tarfile &#x88e1;&#x9762;&#x8a18;&#x8f09;&#x7684; pathname (&#x53ef;&#x4ee5;&#x7528; tar -tf &#x67e5;&#x770b;) &#x5f9e; Working Directory &#x5f80;&#x4e0b;&#x627e; File System &#x88e1;&#x9762;&#x7684;&#x6a94;&#x6848;&#x4f86;&#x505a;&#x6bd4;&#x5c0d;"/>
-<node CREATED="1270689325514" ID="ID_1508777694" MODIFIED="1270690350798" TEXT="&#x642d;&#x914d; -C &#x5207;&#x63db; Current Directory, &#x5728;&#x5c01;&#x88dd;&#x5b8c;&#x6210;&#x958b;&#x59cb;&#x9a57;&#x8b49;&#x4e4b;&#x524d;, Working Directory &#x6703;&#x56de;&#x5230;&#x6700;&#x521d;&#x7684;&#x4f4d;&#x7f6e;, &#x5c31;&#x6703;&#x56e0;&#x70ba;&#x5f9e; Working Directory &#x5f80;&#x4e0b;&#x627e;&#x4e0d;&#x5230;&#x7279;&#x5b9a;&#x7684;&#x6a94;&#x6848;&#x6216;&#x76ee;&#x9304;&#x800c;&#x7121;&#x6cd5;&#x5b8c;&#x6210;&#x9a57;&#x8b49;."/>
-<node CREATED="1269025608755" ID="ID_790634594" MODIFIED="1271637208019" TEXT="Cannot verify compressed archives. &#x5982;&#x679c;&#x60f3;&#x8981;&#x6aa2;&#x67e5;&#x6a94;&#x6848;&#x5167;&#x5bb9;&#x662f;&#x5426;&#x4e00;&#x81f4;, &#x5c31;&#x53ea;&#x80fd;&#x5148;&#x505a;&#x5b8c; tar &#x4e4b;&#x5f8c;&#x518d;&#x5c0d; .tar &#x505a;&#x58d3;&#x7e2e;. &#x53c8;&#x6216;&#x8005; tar -czvf archive.tar.gz pathname...; tar -dvf archive.tar.gz &#x62c6;&#x6210;&#x5169;&#x500b;&#x6b65;&#x9a5f;"/>
-</node>
-<node CREATED="1269030328633" FOLDED="true" ID="ID_1242326121" MODIFIED="1269030334097" TEXT="-v, --verbose">
+<node CREATED="1269030328633" FOLDED="true" ID="ID_1242326121" MODIFIED="1379842230140" TEXT="-v, --verbose">
 <node CREATED="1269031047407" ID="ID_328171686" MODIFIED="1269031235998" TEXT="&#x901a;&#x5e38;&#x6211;&#x5011;&#x6703;&#x56e0;&#x70ba;&#x60f3;&#x8981;&#x77e5;&#x9053;&#x58d3;&#x7e2e;&#x6216;&#x89e3;&#x58d3;&#x7e2e;&#x7684;&#x9032;&#x5ea6;&#x800c;&#x4f7f;&#x7528;&#x9019;&#x500b; Option, &#x4f46;&#x5b83;&#x53ef;&#x80fd;&#x8b93;&#x6211;&#x5011;&#x7121;&#x6cd5;&#x770b;&#x6e05;&#x904e;&#x7a0b;&#x4e2d;&#x6709;&#x4ec0;&#x9ebc;&#x932f;&#x8aa4;; &#x5efa;&#x8b70;&#x7528; 1&gt;/tmp/progress &#x5c07; Verbose &#x7684;&#x8f38;&#x51fa;&#x5c0e;&#x5230;&#x5916;&#x90e8;&#x6a94;&#x6848; (&#x53ef;&#x4ee5;&#x958b;&#x53e6;&#x4e00;&#x500b; Console, &#x7528; tail -f /tmp/progress &#x4f86;&#x89c0;&#x5bdf;&#x9032;&#x5ea6;), &#x8b93;&#x771f;&#x6b63;&#x7684;&#x932f;&#x8aa4;&#x53ef;&#x4ee5;&#x76f4;&#x63a5;&#x63d0;&#x793a;&#x5728; Console &#x88e1;"/>
 </node>
-<node CREATED="1269030700974" FOLDED="true" ID="ID_176277056" MODIFIED="1269030706663" TEXT="-P, --absolute-names">
+<node CREATED="1269030700974" FOLDED="true" ID="ID_176277056" MODIFIED="1379842229654" TEXT="-P, --absolute-names">
 <node CREATED="1270693241600" ID="ID_1843117539" MODIFIED="1270693253145" TEXT="don&#x2019;t strip leading &#x2018;/&#x2019;s from file names; &#x5b83;&#x6709; Preserve Pathname &#x7684;&#x610f;&#x601d;, &#x4e5f;&#x5c31;&#x662f;&#x5728; tarfile &#x88e1;&#x8a18;&#x9304;&#x8ddf; Argument &#x5b8c;&#x5168;&#x4e00;&#x6a23;&#x7684; Pathname &#x800c;&#x8a00;."/>
 <node CREATED="1269218099919" ID="ID_419886255" MODIFIED="1269218148908" TEXT="&#x7528;&#x4f86;&#x505a;&#x7cfb;&#x7d71;&#x5099;&#x4efd;&#x9084;&#x6eff;&#x65b9;&#x4fbf;&#x7684;, &#x56e0;&#x70ba;&#x6574;&#x500b;&#x6a39;&#x72c0;&#x8cbc;&#x56de;&#x53bb;&#x5c31;&#x597d;&#x4e86;."/>
 <node CREATED="1270717496182" ID="ID_236921342" MODIFIED="1270717568378" TEXT="&#x5982;&#x679c;&#x5efa;&#x7acb; Archive &#x6642;&#x5982;&#x679c;&#x6709;&#x52a0; -P &#x7684;&#x8a71;, &#x4e8b;&#x5f8c;&#x7528; -d &#x6bd4;&#x5c0d;&#x6642;&#x4e5f;&#x8981;&#x8a18;&#x5f97;&#x52a0; -P &#x624d;&#x884c;"/>
 </node>
-<node CREATED="1270177995472" FOLDED="true" ID="ID_390065157" MODIFIED="1270177996541" TEXT="--exclude=PATTERN">
-<node CREATED="1270178134193" ID="ID_742407240" MODIFIED="1270178157948" TEXT="&#x6392;&#x9664;&#x6a94;&#x540d;&#x5177;&#x6709;&#x67d0;&#x4e9b;&#x7279;&#x5fb5;&#x7684;&#x6a94;&#x6848;"/>
-<node CREATED="1270178054163" ID="ID_1236666363" MODIFIED="1270694402841" TEXT="&#x5176;&#x4e2d; PATTERN &#x63a1;&#x7528; Shell Wildcards, &#x81f3;&#x65bc; Slash (/) &#x662f;&#x5426;&#x8981;&#x88ab;&#x8996;&#x70ba; Wildcards &#x7684;&#x4e00;&#x90e8;&#x4efd; (Matching), &#x5247;&#x7531; --no-wildcards-match-slash &#x6216; --wildcards-match-slash (&#x9810;&#x8a2d;&#x503c;) &#x4f86;&#x63a7;&#x5236;"/>
-<node CREATED="1270178194065" ID="ID_1856075002" MODIFIED="1270178228317" TEXT="&#x53ef;&#x4ee5;&#x4f7f;&#x7528;&#x591a;&#x6b21;, &#x4f8b;&#x5982; --exclude=&apos;*.pyc&apos; --exclude=&apos;*.bak&apos;"/>
-</node>
-<node CREATED="1270692209284" FOLDED="true" ID="ID_1372265058" MODIFIED="1270692216195" TEXT="-h, --dereference">
-<node CREATED="1270692221765" ID="ID_1550593756" MODIFIED="1270692222551" TEXT="don&#x2019;t dump symlinks; dump the files they point to"/>
-</node>
-<node CREATED="1270692819613" FOLDED="true" ID="ID_324344313" MODIFIED="1270692820196" TEXT="--newer-mtime DATE">
-<node CREATED="1270692825683" ID="ID_627549169" MODIFIED="1270692827759" TEXT="only store files whose contents have changed after DATE"/>
-</node>
-<node CREATED="1270693148362" FOLDED="true" ID="ID_1040750859" MODIFIED="1270693149360" TEXT="--owner O">
-<node CREATED="1270693156835" ID="ID_641607568" MODIFIED="1270694844864" TEXT="set owner to O while adding files"/>
-</node>
-<node CREATED="1270693173892" FOLDED="true" ID="ID_1084498437" MODIFIED="1270693183573" TEXT="--mode M">
-<node CREATED="1270693190170" ID="ID_386450727" MODIFIED="1270693198926" TEXT="set permissions to M while adding files"/>
-</node>
-<node CREATED="1270693318169" FOLDED="true" ID="ID_1567785863" MODIFIED="1270693327909" TEXT="-S, --sparse">
-<node CREATED="1270693328622" ID="ID_401816650" MODIFIED="1270693328622" TEXT="handle sparse(&#x96f6;&#x661f;&#x7684;) files efficiently"/>
-</node>
-<node CREATED="1270693564955" FOLDED="true" ID="ID_323821763" MODIFIED="1270693565668" TEXT="-T, --files-from F">
+<node CREATED="1270693564955" FOLDED="true" ID="ID_323821763" MODIFIED="1379842232121" TEXT="-T, --files-from F">
 <node CREATED="1270693591434" ID="ID_126083712" MODIFIED="1270694902576" TEXT="&#x767d;&#x540d;&#x55ae;; get names to extract or archive from file F"/>
 <node CREATED="1270693603704" ID="ID_1841962267" MODIFIED="1270694898096" TEXT="&#x8a9e;&#x6cd5;&#x8ddf;&#x76f4;&#x63a5;&#x4e0b;&#x5728;&#x547d;&#x4ee4;&#x5217;&#x5f8c;&#x9762;&#x7684;&#x65b9;&#x5f0f;&#x4e00;&#x6a23;, &#x4e00;&#x884c;&#x4e00;&#x500b;&#x9805;&#x76ee;, &#x53ef;&#x4ee5;&#x662f;&#x7d55;&#x5c0d;&#x6216;&#x76f8;&#x5c0d;&#x8def;&#x5f91;&#x7684;&#x8868;&#x793a;&#x6cd5;. &#x4e2d;&#x9593;&#x4e5f;&#x53ef;&#x4ee5;&#x7a7f;&#x63d2; -C &#x4f86;&#x6539;&#x8b8a; Current Directory."/>
 <node CREATED="1270705885880" ID="ID_787126554" MODIFIED="1270706607050" TEXT="&#x5e73;&#x5e38;&#x5c31;&#x8981;&#x990a;&#x6210;&#x7fd2;&#x6163;&#x7dad;&#x8b77;&#x9700;&#x8981;&#x5099;&#x4efd;&#x7684;&#x6a94;&#x6848;&#x76ee;&#x9304;&#x6e05;&#x55ae;, &#x5982;&#x679c;&#x4e8b;&#x5f8c;&#x624d;&#x60f3;&#x5230;&#x7684;&#x8a71;, &#x53ef;&#x4ee5;&#x7528; find &#x627e;&#x51fa;&#x6240;&#x6709;&#x7cfb;&#x7d71;&#x5b89;&#x88dd;&#x904e;&#x5f8c;&#x6709;&#x88ab;&#x7570;&#x52d5;&#x904e;&#x7684;&#x6a94;&#x6848;. &#x53ef;&#x4ee5;&#x53c3;&#x8003; /cdrom &#x7684; Modification Time. &#x4f8b;&#x5982; find / -newer /cdrom &#x6216; find /etc /var -newer /cdrom"/>
 </node>
-<node CREATED="1270693756822" FOLDED="true" ID="ID_1455195601" MODIFIED="1270693767641" TEXT="-X, --exclude-from=FILE">
+<node CREATED="1270693756822" FOLDED="true" ID="ID_1455195601" MODIFIED="1379842232552" TEXT="-X, --exclude-from=FILE">
 <node CREATED="1270693768023" ID="ID_1545041171" MODIFIED="1270693778951" TEXT="&#x9ed1;&#x540d;&#x55ae;; exclude files matching patterns listed in FILE"/>
 </node>
-<node CREATED="1270692604637" FOLDED="true" ID="ID_359785924" MODIFIED="1270692617798" TEXT="-j, --bzip2">
-<node CREATED="1270692619032" ID="ID_1974384726" MODIFIED="1270692619032" TEXT="filter archive through bzip2,  use  to  decompress  .bz2  files."/>
-</node>
-<node CREATED="1270693794797" FOLDED="true" ID="ID_413210768" MODIFIED="1270693832904" TEXT="-z, --gzip, --gunzip, --ungzip">
-<node CREATED="1270693842968" ID="ID_1528099632" MODIFIED="1270694433928" TEXT="filter the archive through gzip."/>
-<node CREATED="1270694434381" ID="ID_567437786" MODIFIED="1270694434989" TEXT="&#x9019;&#x8207;&#x5148;&#x7528; tar &#x5408;&#x4f75;, &#x518d;&#x7528; gzip &#x58d3;&#x7e2e;&#x7684;&#x7d50;&#x679c;&#x4e0d;&#x540c;, &#x4f46;&#x6700;&#x5f8c;&#x7684;&#x6a94;&#x6848;&#x5927;&#x5c0f;&#x5dee;&#x4e0d;&#x591a;"/>
-</node>
-<node CREATED="1270694045773" FOLDED="true" ID="ID_465879629" MODIFIED="1270694342504" TEXT="--no-wildcards-match-slash">
-<node CREATED="1270694052169" ID="ID_1214652947" MODIFIED="1270694092487" TEXT="don&#x2019;t let wildcards match &quot;/&quot; when excluding files"/>
-</node>
-<node CREATED="1270694106297" FOLDED="true" ID="ID_824279355" MODIFIED="1270694116036" TEXT="--wildcards-match-slash">
-<node CREATED="1270694116662" ID="ID_1540240789" MODIFIED="1270694121164" TEXT="allow wildcards to match &quot;/&quot; (the default)"/>
 </node>
 </node>
-<node CREATED="1268977332134" ID="ID_708423661" MODIFIED="1270692973510" TEXT="tar &#x56fa;&#x5b9a;&#x6703;&#x5c07; Permission&#x3001;mtime &#x53ca; Owner/Group &#x7684;&#x8cc7;&#x8a0a;&#x5305;&#x9032;&#x53bb;, &#x89e3;&#x958b;&#x6642; Permission &#x8207; mtime &#x4e5f;&#x6703;&#x56de;&#x5230;&#x539f;&#x59cb;&#x7684;&#x72c0;&#x614b;, &#x4e0d;&#x904e; Owner/Group &#x7684;&#x90e8;&#x4efd;&#x7531;&#x65bc;&#x6d89;&#x53ca;&#x78c1;&#x789f;&#x914d;&#x984d;&#x7684;&#x554f;&#x984c;, &#x53ea;&#x6709; root &#x505a;&#x89e3;&#x958b;&#x6642;&#x624d;&#x6703;&#x56de;&#x5fa9;&#x539f;&#x4f86;&#x7684;&#x8a2d;&#x5b9a;, &#x5176;&#x4ed6;&#x4eba;&#x89e3;&#x958b;&#x6642;&#x7684; Ower/Group &#x90fd;&#x56fa;&#x5b9a;&#x6703;&#x662f;&#x81ea;&#x5df1;."/>
-<node CREATED="1269027014504" ID="ID_952196825" MODIFIED="1271637829843" TEXT="tar &#x6c92;&#x6709; Test Integrity &#x7684;&#x529f;&#x80fd;, &#x9664;&#x4e86;&#x6aa2;&#x67e5;&#x5167;&#x5bb9;&#x662f;&#x5426;&#x8207;&#x6a94;&#x6848;&#x7cfb;&#x7d71;&#x4e00;&#x81f4;&#x4e4b;&#x5916;, &#x5efa;&#x8b70;&#x9032;&#x4e00;&#x6b65;&#x5c07; .tar &#x9032;&#x884c;&#x58d3;&#x7e2e; (gzip &#x6216; bzip2). &#x50b3;&#x9001;&#x5230;&#x5b83;&#x8655;&#x4e4b;&#x5f8c;, &#x624d;&#x80fd;&#x7528; gzip -t &#x6216; bzip2 -t &#x5c0d;&#x58d3;&#x7e2e;&#x6a94; Integrity &#x7684;&#x6e2c;&#x8a66;."/>
-</node>
-<node CREATED="1269026253190" FOLDED="true" ID="ID_1062856494" MODIFIED="1269026254835" TEXT="gzip">
-<node CREATED="1269026879752" FOLDED="true" ID="ID_1612443163" MODIFIED="1269026999379" TEXT="Test Integrity">
-<node CREATED="1269027000083" ID="ID_1631544908" MODIFIED="1269027000083" TEXT="gzip -t archive.tar.gz"/>
-</node>
-</node>
-<node CREATED="1269027238562" FOLDED="true" ID="ID_1155979950" MODIFIED="1269027240651" TEXT="bzip2">
-<node CREATED="1269026879752" FOLDED="true" ID="ID_101764432" MODIFIED="1269027247935" TEXT="Test Integrity">
-<node CREATED="1269027000083" ID="ID_1729891794" MODIFIED="1269027256199" TEXT="bzip2 -t archive.tar.bz"/>
-</node>
-</node>
-<node CREATED="1269043733534" ID="ID_1901600715" MODIFIED="1269043737422" TEXT="unzip"/>
 <node CREATED="1271670751505" FOLDED="true" ID="ID_1767918720" MODIFIED="1271670754513" TEXT="7z">
 <node CREATED="1271670755167" ID="ID_1789980920" MODIFIED="1271670759798" TEXT="sudo apt-get install p7zip-full"/>
 </node>

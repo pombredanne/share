@@ -1,0 +1,44 @@
+= link:xbindkeys.html[XBindKeys] / Configuration Files =
+:title: [XBindKeys] 組態檔
+
+XBindKeys 的組合鍵都定義在組態檔裡，而 link:xbindkeys-cli.html[`xbindkeys`] 預設會載入 `~/.xbindkeysrc`。
+
+TIP: 由於 `~/.xbindkeysrc` 在link:install.html#auto[登入時會自動載入]，建議只將 "適用所有狀況" 的組合鍵定義在裡面，其他組合鍵則可以根據用途定義在不同的檔案裡，需要時再用 `xbindkeys -f <rc_file>` 個別載入。
+
+組態檔主要是在定義 "按下某些組合鍵時，要執行的 command line"：
+
+--------------------------------------------------------------------------------
+"command line"
+    keybinding
+--------------------------------------------------------------------------------
+
+例如：
+
+--------------------------------------------------------------------------------
+"xdotool search "VLC media player" key equal" <1><2>
+    Control + equal
+--------------------------------------------------------------------------------
+<1> 表示按下 `Ctrl + =` 時會執行 `xdotool search "VLC media player" key equal`。
+<2> 雖然 command line 整個被雙引號框起來，但裡頭如果有雙引號也 "不需要" 做跳脫。 
+
+以下是搭配 XBindKeys 跟 link:../xdotool/xdotool.html[xdotool] 來控制 link:../vlc/vlc.html[VLC Media Player] 的例子：
+
+--------------------------------------------------------------------------------
+# VLC Media Player for "Listen and Write"
+"xdotool search "VLC media player" key equal" # faster <1>
+    Control + equal
+"xdotool search "VLC media player" key minus" # slower
+    Control + minus
+"xdotool search "VLC media player" key space" # play/pause
+    Control + Escape
+"xdotool search "VLC media player" key shift+Left" # backwards jump
+    Control + 9
+--------------------------------------------------------------------------------
+<1> `#` 後面可以寫註解。
+
+如果不知道怎麼寫組態檔，或許 `xbindkeys --defaults` 可以幫上忙：
+
+ $ xbindkeys --defaults > ~/.xbindkeysrc
+
+另外，Debian 另外有一個 `xbindkeys-config` 套件，提供圖形化的介面編輯組態檔，可以減少摸索的時間。但要注意，`xbindkeys-config` 對組態檔裡面的寫法做了一些假設，所以之前手動寫的組態檔不一定符合它的要求，直接載入編輯可能會亂掉。
+

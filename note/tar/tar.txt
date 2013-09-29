@@ -1,0 +1,322 @@
+= Tar =
+
+`tar` -- The GNU version of the tar archiving utility
+
+ tar <function> [<options>] -f <filename> [[-C <basedir>] [<pathname>...]]...
+
+tar 源自 'Tape ARchive'，它既是工具的名稱（`tar`），也是一種 file format。早期用在磁帶備份，現在則多應用在將多個檔案打包成單一個大檔，方便交換或歸檔，除了檔案內容與目錄結構之外，也會記錄權限、mtime 等 metadata。常見的用法有：
+
+ * `tar -czf <filename> [-v] [-C <basedir>] .`
++
+--
+將 current directory 或 'basedir' 的內容（包含隱藏檔跟子目錄）打包壓縮成 'filename' (`.tar.gz` 或 `.tgz`)。
+--
++
+ * `tar -czf <filename> [-v] -C <basedir1> <dir> -C <basedir2> <dir2> ...`
++
+--
+將 'basedir1/dir1' 跟 'basedir2/dir2' 的內容（`dir1/*`, `dir2/*`）打包成 'filename'。
+--
++
+ * `tar -czf <filename> [-v] --files-from=<includes_file> [--exclude-from=<excludes_file>]`
++
+--
+將 'includes_file' 提供的檔案清單（排除 'excludes_file' 內的檔案）打包成 'filename'。
+
+TIP: 這種由外部檔案提供檔案清單的做法，尤其適用於大批檔案的定期備份，日後只要調整檔案清單，就可以改變備份的範圍。
+--
++
+ * `tar -tf <filename> [-v]`
++
+--
+列出 'filename' 裡面包含哪些檔案，加上 `-v` 會額外顯示 mode bits、owner/group、mtime 等一併記錄在 tarball 裡面的 metadata。
+--
++
+ * `tar -xf <filename> [-v] [-C <outdir>]`
++
+--
+將 'filename' 解開到 current directory 或 'outdir'（必須事先建立好）。
+--
++
+ * `tar -df <filename> [-C <dir>]`
++
+--
+檢查 'filename' 的內容是否與 current directory 或 'dir' 相符，比對的項目除了檔案內容之外，也包括 tarball 記錄的其他 metadata，例如 mode bits、owner/group、mtime 等。
+
+TIP: 建立 tarball 的人有原始檔案搭配 `-d` 來檢查 tarball 有沒有問題，但其他拿到 tarball 的人要怎麼檢查 integrity 呢？建議進一步將對 `.tar` 進行壓縮（搭配 `-z` 或 `-j`），其他人就可以用 `gzip -t` 或 `bzip2 -t` 檢查 tarball 的 integrity。
+--
+
+常用的 function 有：
+
+`-c, --create`:: 建立一個新的 tarball。
+`-d, --diff, --compare`:: 檢查 tarball 跟檔案系統的內容是否一致。
+`-t, --list`:: 列出 tarball 的內容。
+`-x, --extract, --get`:: 解開 tarball 的內容。
+
+常用的 options 有：
+
+`--owner=<username>`:: 在 tarball 裡記錄檔案的 owner 是 'username'。
+
+`--group=<groupname>`:: 在 tarball 裡記錄檔案的 group 是 'groupname'。
+
+`-h, --dereference`:: 遇到 symlink 時，預設只會保存 symlink 本身。搭配這個 option 時，如果 target 是個檔案，會直接保存 target 的內容，如果 target 是個目錄時，則會往下展開（follow）目錄的內容。也就是說，將來解開 tarball 時，原本的 symlink 會變成一般的檔案或目錄，不再是個 symlink。
+
+`--hard-dereference`:: 遇到 hard link 時，如果 tarball 裡已經保存有相同 inode 的內容，預設會被標示為 hard link，因此解開 tarball 時還能讓多個檔案指向同一個 inode。搭配這個 option 時，則不管 tarball 是否已經保存過同一個 inode 的內容，直接再保存一份。
+
+`-f, --file <filename>`:: 指定 tarball 的檔名。
++
+NOTE: 儘可能給定完整路徑，否則會被解讀成相對於 current directory 或 `-C <basedir>` 中的 'basedir'，結果就是過程中產生的 tarball 又被包進 tarball 裡。
+
+`-j, --bzip2`:: 指定用 bzip2 壓縮 tarball。
+
+`-v, --verbose`:: 用在 create (`-c`) 或 extract (`-x`) 時，會依進度顯示目前在處理的檔案。用在 list (`-t`) 時，則會額外顯示 mode bits、owner/group、mtime 等一併記錄在 tarball 裡面的 metadata。
+
+`-z, --gzip`:: 指定用 gzip 壓縮 tarball。
+
+`-C, --directory <basedir>`:: 'pathname' 預設是相對於 current directory 的路徑名稱，透過這個 option，可以讓緊接著的一或多個 'pathname' 被解讀成相對於 'basedir' 的相對路徑（直到遇到另一個 `-C`）。
+
+`--exclude=<pattern>`:: 排除檔名符合 glob 'pattern' 的檔案，這個 option 可以使用多次。例如 `--exclude='*.pyc' --exclude='*.class'` 可以排除 `.pyc` 跟 `.class` 檔。
+
+`-T, --files-from <includes_file>`:: 由 'inclues_file' 提供要加到 tarball 的檔案清單。例如 `-T includes`：
++
+.`includes`
+--------------------------------------------------------------------------------
+-C/tmp <1>
+data
+data_ext
+--directory=/path/to/other/directory
+dir1
+dir2
+--------------------------------------------------------------------------------
+<1> 注意 `-C` 跟 `/tmp` 是連在一起的，也可以寫成 `--directory=/tmp`（等號兩側一樣不能有空白）。
+
+`-X, --exclude-from <excludes_file>`:: 由 'excludes_file' 提供要排除的檔案清單（可以使用 glob pattern）。例如 `-X excludes`：
++
+.`excludes`
+--------------------------------------------------------------------------------
+*.pyc
+*.class
+--------------------------------------------------------------------------------
+
+== 使用範例 ==
+
+假設目錄結構如下，裡面刻意安排了兩個平行的目錄（`/tmp/data` 跟 `/tmp/data_ext`），以及其間 symbolic 跟 hard links 的相互參照：
+
+[source,console]
+--------------------------------------------------------------------------------
+$ tree -apugDF --inodes --dirsfirst --noreport /tmp/data /tmp/data_ext
+/tmp/data
+├── [2771804 drwxrwxr-x jeremy   jeremy   Sep 22 13:27]  dir/
+│   ├── [2771806 drwxrwxr-x jeremy   jeremy   Sep 22 10:30]  subdir/
+│   │   └── [2771809 -rw-rw-r-- jeremy   jeremy   Sep 22 10:30]  file_dir_subdir
+│   ├── [2771825 lrwxrwxrwx jeremy   jeremy   Sep 22 13:27]  file3_symlink -> ../ext/file3
+│   ├── [2771826 -rw-rw-r-- jeremy   jeremy   Sep 22 12:19]  file4_hardlink   <1>
+│   └── [2771807 -rw-rw-r-- jeremy   jeremy   Sep 22 10:30]  file_dir
+├── [2771823 lrwxrwxrwx jeremy   jeremy   Sep 22 11:10]  ext -> ../data_ext//
+├── [2771800 -rw-r--r-- root     jeremy   Sep 22 12:19]  file1 <2>
+├── [2771803 -rw-rw-r-- jeremy   jeremy   Sep 22 12:19]  file2
+└── [2771829 -rw-rw-r-- jeremy   jeremy   Sep 22 11:12]  .hidden_file
+/tmp/data_ext
+├── [2771825 -rw-rw-r-- jeremy   jeremy   Sep 22 12:19]  file3
+└── [2771826 -rw-rw-r-- jeremy   jeremy   Sep 22 12:19]  file4                <1>
+--------------------------------------------------------------------------------
+<1> `/tmp/data/dir/file4_hardlink` 跟 `/tmp/data_ext/file4` 指向同一個 link:../unix-like/filesystem/inodes.html[inode]。
+<2> `file1` 的權限比較特別，用來觀察 tarball 在打包／解開的過程中能否完整保存 mode bits 跟 owner/group。
+
+[source,console]
+--------------------------------------------------------------------------------
+$ tar -czf /tmp/data.tar.gz -C /tmp/data .
+$ tar -tvf /tmp/data.tar.gz
+drwxrwxr-x jeremy/jeremy     0 2013-09-22 11:12 ./
+-rw-r--r-- root/jeremy       6 2013-09-22 12:19 ./file1 <3>
+-rw-rw-r-- jeremy/jeremy     0 2013-09-22 11:12 ./.hidden_file
+drwxrwxr-x jeremy/jeremy     0 2013-09-22 13:27 ./dir/
+-rw-rw-r-- jeremy/jeremy     0 2013-09-22 10:30 ./dir/file_dir
+lrwxrwxrwx jeremy/jeremy     0 2013-09-22 13:27 ./dir/file3_symlink -> ../ext/file3 <1>
+drwxrwxr-x jeremy/jeremy     0 2013-09-22 10:30 ./dir/subdir/
+-rw-rw-r-- jeremy/jeremy     0 2013-09-22 10:30 ./dir/subdir/file_dir_subdir
+-rw-rw-r-- jeremy/jeremy     6 2013-09-22 12:19 ./dir/file4_hardlink                <1>
+lrwxrwxrwx jeremy/jeremy     0 2013-09-22 11:10 ./ext -> ../data_ext/               <1>
+-rw-rw-r-- jeremy/jeremy     6 2013-09-22 12:19 ./file2
+
+$ mkdir /tmp/_data
+$ tar -xf /tmp/data.tar.gz -C /tmp/_data
+$ tree -apugDF --inodes --dirsfirst --noreport /tmp/_data
+/tmp/_data
+├── [2771847 drwxrwxr-x jeremy   jeremy   Sep 22 13:27]  dir/
+│   ├── [2771872 drwxrwxr-x jeremy   jeremy   Sep 22 10:30]  subdir/
+│   │   └── [2771873 -rw-rw-r-- jeremy   jeremy   Sep 22 10:30]  file_dir_subdir
+│   ├── [2771825 lrwxrwxrwx jeremy   jeremy   Sep 22 13:27]  file3_symlink -> ../ext/file3
+│   ├── [2771874 -rw-rw-r-- jeremy   jeremy   Sep 22 12:19]  file4_hardlink   <2>
+│   └── [2771848 -rw-rw-r-- jeremy   jeremy   Sep 22 10:30]  file_dir
+├── [2771823 lrwxrwxrwx jeremy   jeremy   Sep 22 11:10]  ext -> ../data_ext//
+├── [2771842 -rw-r--r-- jeremy   jeremy   Sep 22 12:19]  file1 <3>
+├── [2771876 -rw-rw-r-- jeremy   jeremy   Sep 22 12:19]  file2
+└── [2771844 -rw-rw-r-- jeremy   jeremy   Sep 22 11:12]  .hidden_file
+$ diff /tmp/_data/dir/file4_hardlink /tmp/data/dir/file4_hardlink          # <2>
+$ tar -df /tmp/data.tar.gz -C /tmp/_data # <4>
+./file1: Uid differs
+$ echo $?
+1
+$
+$ rm -rf /tmp/_data/*
+$ sudo tar -xf /tmp/data.tar.gz -C /tmp/_data # <5>
+$ tree -apugDF --inodes --dirsfirst --noreport /tmp/_data
+/tmp/_data
+├── [2771847 drwxrwxr-x jeremy   jeremy   Sep 22 13:27]  dir/
+│   ├── [2771872 drwxrwxr-x jeremy   jeremy   Sep 22 10:30]  subdir/
+│   │   └── [2771873 -rw-rw-r-- jeremy   jeremy   Sep 22 10:30]  file_dir_subdir
+│   ├── [2771825 lrwxrwxrwx jeremy   jeremy   Sep 22 13:27]  file3_symlink -> ../ext/file3
+│   ├── [2771874 -rw-rw-r-- jeremy   jeremy   Sep 22 12:19]  file4_hardlink
+│   └── [2771848 -rw-rw-r-- jeremy   jeremy   Sep 22 10:30]  file_dir
+├── [2771823 lrwxrwxrwx jeremy   jeremy   Sep 22 11:10]  ext -> ../data_ext//
+├── [2771842 -rw-r--r-- root     jeremy   Sep 22 12:19]  file1 <5>
+├── [2771876 -rw-rw-r-- jeremy   jeremy   Sep 22 12:19]  file2
+└── [2771844 -rw-rw-r-- jeremy   jeremy   Sep 22 11:12]  .hidden_file
+--------------------------------------------------------------------------------
+<1> 過程中遇到 symlink 時，預設只會保存 symlink 本身，也不會展開（follow）指向其他目錄的 symlink。至於 hard link 則不受影響（單純地將 inode 的內容保存起來）。
+<2> 由於 `file4_hardlink` 是第一次在 tarball 裡出現，因此並沒有被標示成 hard link。 雖然內容一樣，但 inode number 已經跟原始檔案不同。
+<3> tarball 裡確實完整記錄了 mode bits 跟 owner/group，但卡在磁碟配額的關係，解開時卻只有 mode bits 被保留，owner/group 都固定是自己。
+<4> 此時用 diff/compare 也可以檢查出這個差異，而且 return code 會以 non-zero 來表示。
+<5> 重新以 superuser 的身份解開時（此時 `-p` 會生效），owser/group 也一併保留下來了。
+
+[TIP]
+================================================================================
+如果 owner/group 不重要，或是不想要特定的 username 或 group name 被記錄在 tarball 裡，可以用 `--owner` 跟 `--group` 改寫：
+
+[source,console]
+--------------------------------------------------------------------------------
+$ tar -czf /tmp/data.tar.gz --owner=root --group=root -C /tmp/data .
+$ tar -tvf /tmp/data.tar.gz
+drwxrwxr-x root/root         0 2013-09-22 11:12 ./
+-rw-r--r-- root/root         6 2013-09-22 12:19 ./file1
+-rw-rw-r-- root/root         0 2013-09-22 11:12 ./.hidden_file
+drwxrwxr-x root/root         0 2013-09-22 13:27 ./dir/
+-rw-rw-r-- root/root         0 2013-09-22 10:30 ./dir/file_dir
+lrwxrwxrwx root/root         0 2013-09-22 13:27 ./dir/file3_symlink -> ../ext/file3
+drwxrwxr-x root/root         0 2013-09-22 10:30 ./dir/subdir/
+-rw-rw-r-- root/root         0 2013-09-22 10:30 ./dir/subdir/file_dir_subdir
+-rw-rw-r-- root/root         6 2013-09-22 12:19 ./dir/file4_hardlink
+lrwxrwxrwx root/root         0 2013-09-22 11:10 ./ext -> ../data_ext/
+-rw-rw-r-- root/root         6 2013-09-22 12:19 ./file2
+--------------------------------------------------------------------------------
+================================================================================
+
+其實就這個例子而言，最好的方式就是將 `/tmp/data` 跟 `/tmp/data_ext` 同時打包到 tarball 裡，如此一來 symlink 跟 hard link 都可以維持住。
+
+[source,console]
+--------------------------------------------------------------------------------
+$ tar -czf /tmp/data.tar.gz -C /tmp data data_ext      # <1>
+$ tar -tvf /tmp/data.tar.gz
+drwxrwxr-x jeremy/jeremy     0 2013-09-22 11:12 data/    <1>
+-rw-rw-r-- jeremy/jeremy     6 2013-09-22 12:19 data/file1
+-rw-rw-r-- jeremy/jeremy     0 2013-09-22 11:12 data/.hidden_file
+drwxrwxr-x jeremy/jeremy     0 2013-09-22 13:27 data/dir/
+-rw-rw-r-- jeremy/jeremy     0 2013-09-22 10:30 data/dir/file_dir
+lrwxrwxrwx jeremy/jeremy     0 2013-09-22 13:27 data/dir/file3_symlink -> ../ext/file3
+drwxrwxr-x jeremy/jeremy     0 2013-09-22 10:30 data/dir/subdir/
+-rw-rw-r-- jeremy/jeremy     0 2013-09-22 10:30 data/dir/subdir/file_dir_subdir
+-rw-rw-r-- jeremy/jeremy     6 2013-09-22 12:19 data/dir/file4_hardlink                        <2>
+lrwxrwxrwx jeremy/jeremy     0 2013-09-22 11:10 data/ext -> ../data_ext/
+-rw-rw-r-- jeremy/jeremy     6 2013-09-22 12:19 data/file2
+drwxrwxr-x jeremy/jeremy     0 2013-09-22 14:38 data_ext/ <1>
+-rw-rw-r-- jeremy/jeremy     6 2013-09-22 12:19 data_ext/file3
+hrw-rw-r-- jeremy/jeremy     0 2013-09-22 12:19 data_ext/file4 link to data/dir/file4_hardlink <2>
+
+$ rm -rf /tmp/_data/*
+$ tar -xf /tmp/data.tar.gz -C /tmp/_data
+$ tree -apugF --inodes --dirsfirst --noreport /tmp/_data
+/tmp/_data
+├── [2771842 drwxrwxr-x jeremy   jeremy  ]  data/
+│   ├── [2771853 drwxrwxr-x jeremy   jeremy  ]  dir/
+│   │   ├── [2771874 drwxrwxr-x jeremy   jeremy  ]  subdir/
+│   │   │   └── [2771875 -rw-rw-r-- jeremy   jeremy  ]  file_dir_subdir
+│   │   ├── [2771958 lrwxrwxrwx jeremy   jeremy  ]  file3_symlink -> ../ext/file3
+│   │   ├── [2771876 -rw-rw-r-- jeremy   jeremy  ]  file4_hardlink <3>
+│   │   └── [2771872 -rw-rw-r-- jeremy   jeremy  ]  file_dir
+│   ├── [2771957 lrwxrwxrwx jeremy   jeremy  ]  ext -> ../data_ext//
+│   ├── [2771847 -rw-rw-r-- jeremy   jeremy  ]  file1
+│   ├── [2771892 -rw-rw-r-- jeremy   jeremy  ]  file2
+│   └── [2771848 -rw-rw-r-- jeremy   jeremy  ]  .hidden_file
+├── [2771957 drwxrwxr-x jeremy   jeremy  ]  data_ext/
+│   ├── [2771958 -rw-rw-r-- jeremy   jeremy  ]  file3
+│   └── [2771876 -rw-rw-r-- jeremy   jeremy  ]  file4              <3>
+└── [2771844 -rw-rw-r-- jeremy   jeremy  ]  .hidden_file
+--------------------------------------------------------------------------------
+<1> 建立 tarball 時所給的 'pathname'，會成為 tarball 裡目錄結構的起點（prefix），也就是說解壓縮時也會有這一層目錄。
+<2> 由於同一 inode 的內容已經在處理 `data/dir/file4_hardlink` 時保存到 tarball 裡，所以 `data_ext/file4` 被標示為 hard link。
+<3> 果然，解開 tarball 之後，`data/dir/file4_hardlink` 跟 `data_ext/file4` 指向同一個 inode。
+
+== 參考資料 ==
+
+.手冊
+--
+ * http://manpages.debian.net/cgi-bin/man.cgi?query=tar[tar - Debian Hypertext Man Pages]
+--
+
+.網站
+--
+ * http://www.gnu.org/software/tar/[Tar - GNU Project - Free Software Foundation (FSF)]
+--
+
+.文件
+--
+ * http://en.wikipedia.org/wiki/Tar_(computing)[tar (computing) - Wikipedia, the free encyclopedia]
+
+////////////////////////////////////////////////////////////////////////////////
+** tar (derived from tape archive) is both a file format (in the form of a type of archive bitstream) and the name of a program used to handle such files.
+** Initially developed to write data to sequential I/O devices for tape backup purposes, tar is now commonly used to collect many files into one larger file for distribution or archiving, while preserving file system information such as user and group permissions, dates, and directory structures.
+** A tar archive consists of a series of file objects. Each file object includes any file data, and is preceded by a 512-byte header record. The file data is written unaltered except that its length is rounded up to a multiple of 512 bytes and the extra space is filled with zero bytes. The end of an archive is marked by at least two consecutive zero-filled records. 也就是說 tar 本身沒有壓縮的功能
+** The file header record contains metadata about a file. To ensure portability across different architectures with different byte orderings, the information in the header record is encoded in ASCII.
+** Unix filesystems support multiple links (names) for the same file. If several such files appear in a tar archive, only the first one is archived as a normal file; the rest are archived as hard links, with the "name of linked file" field set to the first one's name. On extraction, such hard links should be recreated in the file system. 同一個 inode 出現兩次以上時，第一次直接保存，第二次則指回第一次保存的那一份。
+** Another weakness of the tar format compared to other archive formats (like DAR (Disk Archiver)) is that there is no centralized location for the information about the contents of the file (a "table of contents" of sorts). So to list the names of the files that are in the archive, one must read through the entire archive and look for places where files start. Also, to extract one small file from the archive, instead of being able to look up the offset in a table and go directly to that location, like other archive formats, with tar, one has to read through the entire archive, looking for the place where the desired file starts. For large tar archives, this causes a big performance penalty, making tar archives unsuitable for situations that often require random access of individual files.
+** Another issue with tar format is that it allows several (possibly different) files in archive to have identical path and filename. When extracting such archive, usually the latter version of a file overwrites the former. 我想這是建立 tarball 的人自己要注意的地方
+** tar archive files usually have the extension `.tar`, as in `somefile.tar`. The pun, tarball, is used to refer to a tar file.
+** A tar archive file contains uncompressed byte streams of the files which it contains. To achieve archive compression, a variety of compression programs are available, such as gzip, bzip2, xz, lzip, lzma, or compress, which compress the entire tar archive. Typically, the compressed form of the archive receives a filename by appending the format-specific compressor suffix to the archive file name. For example, a tar archive `archive.tar`, is named `archive.tar.gz`, when it is compressed by gzip.
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://www.gnu.org/software/tar/manual/html_section/verify.html[Verifying Data as It is Stored - GNU tar]
+
+ * http://www.gnu.org/software/tar/manual/html_node/files.html[Reading Names from a File - GNU tar]
+
+////////////////////////////////////////////////////////////////////////////////
+** Instead of giving the names of files or archive members on the command line, you can put the names into a file, and then use the `--files-from=file-of-names` (`-T file-of-names`) option to tar. Give the name of the file which contains the list of files to include as the argument to `--files-from`. In the list, the file names should be separated by newlines.
+** You will frequently use this option when you have generated the list of files to archive with the `find` utility.
+** Any number of `-T` options can be given in the command line.
+** The following example shows how to use find to generate a list of files smaller than 400K in length and put that list into a file called `small-files`. You can then use the `-T` option to tar to specify the files from that file, `small-files`, to create the archive `little.tgz`.
+** In the file list given by `-T` option, any file name beginning with `-` character is considered a tar option and is processed accordingly. For example, the common use of this feature is to change to another directory by specifying `-C` option: 似乎也只有這個 option 會用在 includes file 裡了...
++
+--------------------------------------------------------------------------------
+$ cat list
+-C/etc
+passwd
+hosts
+-C/lib
+libc.a
+--------------------------------------------------------------------------------
++
+** In this example, tar will first switch to `/etc` directory and add files `passwd` and `hosts` to the archive. Then it will change to `/lib` directory and will archive the file `libc.a`.
+** Notice that the option parsing algorithm used with `-T` is stricter than the one used by shell. Namely, when specifying option arguments, you should observe the following rules:
+   *** When using short (single-letter) option form, its argument must immediately follow the option letter, without any intervening whitespace. For example: `-Cdir`.
+   *** When using long option form, the option argument must be separated from the option by a single equal sign. No whitespace is allowed on any side of the equal sign. For example: `--directory=dir`.
+   *** For both short and long option forms, the option argument can be given on the next line after the option name, e.g.:
++
+--------------------------------------------------------------------------------
+--directory
+dir
+-C
+dir
+--------------------------------------------------------------------------------
++
+** If you happen to have a file whose name starts with `-`, precede it with `--add-file` option to prevent it from being recognized as an option. For example: `--add-file=--my-file`.
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://www.gnu.org/software/tar/manual/html_node/exclude.html[Excluding Some Files - GNU tar]
+
+////////////////////////////////////////////////////////////////////////////////
+** To avoid operating on files whose names match a particular pattern, use the `--exclude` or `--exclude-from` options.
+** `--exclude=pattern` Causes tar to ignore files that match the pattern. The `--exclude=pattern` option prevents any file or member whose name matches the shell wildcard (pattern) from being operated on. For example, to create an archive with all the contents of the directory `src` except for files whose names end in `.o`, use the command `tar -cf src.tar --exclude='*.o' src`. You may give multiple `--exclude` options.
+** `--exclude-from=file` `-X file` Causes tar to ignore files that match the patterns listed in file. Use the `--exclude-from` option to read a list of patterns, one per line, from file; tar will ignore files matching those patterns. Thus if tar is called as `tar -c -X foo .` and the file `foo` contains a single line `*.o`, no files whose names end in `.o` will be added to the archive.
+////////////////////////////////////////////////////////////////////////////////
+--
+

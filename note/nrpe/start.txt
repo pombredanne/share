@@ -1,0 +1,56 @@
+= link:nrpe.html[NRPE] / Getting Started =
+:title: [NRPE] Getting Started
+
+首先安裝好 link:plugin.html#install[NRPE plugin] 跟 link:server.html#install[NRPE server]。
+
+由於 NRPE server 內建幾個 commands，剛好可以用來檢查 NRPE plugin 跟 NRPE server 之間的連線。
+
+.`/etc/nagios/nrpe.cfg`
+--------------------------------------------------------------------------------
+command[check_users]=/usr/lib/nagios/plugins/check_users -w 5 -c 10
+command[check_load]=/usr/lib/nagios/plugins/check_load -w 15,10,5 -c 30,25,20
+command[check_hda1]=/usr/lib/nagios/plugins/check_disk -w 20% -c 10% -p /dev/hda1
+command[check_zombie_procs]=/usr/lib/nagios/plugins/check_procs -w 5 -c 10 -s Z
+command[check_total_procs]=/usr/lib/nagios/plugins/check_procs -w 150 -c 200 
+--------------------------------------------------------------------------------
+
+例如：
+
+--------------------------------------------------------------------------------
+# /usr/lib/nagios/plugins/check_nrpe -H <server_address> -c check_load
+OK - load average: 0.10, 0.12, 0.20|load1=0.100;15.000;30.000;0; load5=0.120;10.000;25.000;0; load15=0.200;5.000;20.000;0;
+--------------------------------------------------------------------------------
+
+== 參考資料 ==
+
+ * https://wiki.icinga.org/display/howtos/Setting+up+NRPE+with+Icinga[Setting up NRPE with Icinga - HowTos - Icinga Wiki]
+
+////////////////////////////////////////////////////////////////////////////////
+** Client: `apt-get install nagios-nrpe-server`
+** `allowed_hosts = icinga master`
+** `debug=1` for testing and setupping
+** Make sure Port 5666 tcp is reachable from your Icinga Master.
+** Put every custom command into an own file like proposed in Debian with `nrpe_local.cfg` or append it to `nrpe.cfg`
+** If you require sudo permissions for a command# `visudo`
+   *** `nagios ALL=NOPASSWD: /usr/lib/nagios/plugins/check_logfiles`
+** `service nagios-nrpe-server start`
+** Master: `# apt-get --no-install-recommends install nagios-nrpe-plugin` 注意是 `nagios-nrpe-plugin`，加 `--no-install-recommends` 是為了避免安裝 `nagios` 這個 recommends
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://devincharge.com/quick-dirty-setup-nrpe-ubuntu/[Quick and easy setup of and connection to NRPE on Ubuntu] (2013-02-06)
+
+////////////////////////////////////////////////////////////////////////////////
+** NRPE (Nagios Remote Plugin Executor) is a useful tool that allows you to execute scripts on remote servers and return the output for ingestion by some form of monitoring software.
+** `apt-get install nagios-nrpe-server nagios-plugins-basic nagios-plugins nagios-plugins-extra`
+** Next we need to edit the main nrpe config file to be found @ `/etc/nagios/nrpe.cfg`.
+** set the `dont_blame_nrpe` value to 1??
+** You will also want to look for some lines that are refererd to as “COMMAND DEFINITIONS”
+** You can go ahead and comment these out as we will be adding our own definitions shortly. The main reason for removing these is that we will be configuring some specific scripts for our own use later that allow you to configure your requirements and thereshold from within your Nagios/Icinga config.
+** Here you can see that we have set up 2 different check commands. The first is a simple command requiring only one argument of `$ARG1$` which would be the name of the command we want to run on the remote server. The second command is almost identical except for the fact it takes a second argument which allows you to input a series of “arguments” to be passed to the command on your remote server. each argument should be separated by a space.
+** `include=/etc/nagios/nrpe_local.cfg` if it doesn’t have a line like that then add it and edit the `/etc/nagios/nrpe_local.cfg file`
+** These translate to your “check_nrpe” commands like so
+   *** `$ARG1$` = everything inside the square brackets `[ ]`
+   *** `$ARG2$` = each of the `$ARG?$` keys as a single string separated by a space
+** It really is that simple. Do bear in mind that because you can pass arbitrary arguments into nrpe this was you could leave yourself vulnerable to a bit of maliciousness so its a good idea to make sure your firewall restricts port 5666 (the default port) to IPs you trust.
+////////////////////////////////////////////////////////////////////////////////
+

@@ -1,0 +1,81 @@
+= link:dot.html[Graphviz / DOT Graph] / Language =
+:title: [Graphviz] DOT Language
+
+--------------------------------------------------------------------------------
+graph      ::= 'strict'? ( 'graph' | 'digraph' )? ID? '{' stmt_list '}'
+stmt_list  ::= ( stmt ';'? stmt_list? )? <1>
+stmt       ::= node_stmt | edge_stmt | attr_stmt | ID '=' ID | subgraph
+attr_stmt  ::= ( 'graph' | 'node' | 'edge' ) attr_list
+attr_list  ::= '[' a_list? ']' attr_list?
+a_list     ::= ID '=' ID ','? a_list? <1>
+edge_stmt  ::= ( node_id | subgraph ) edgeRHS attr_list?
+edgeRHS    ::= edgeop ( node_id | subgraph ) edgeRHS?
+edgeop     ::= '--' | '->'
+node_stmt  ::= node_id attr_list?
+node_id    ::= ID port?
+port       ::= ':' ID ( ':' compass_pt )?
+             | ':' compass_pt
+subgraph   ::= ( subgraph ID? )? '{' stmt_list '}'
+compass_pt ::= ( 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w' | 'nw' | 'c' | '_' )
+--------------------------------------------------------------------------------
+<1> statement 之間的分號，還有 attribute 之間的逗號都是可以省略的。
+
+註解用 `/* ... */` 跟 `//`，斷行可以用 "`\` + 換行" 來達成。
+
+// A -- B -- C 連續描述關係
+
+== 參考資料 ==
+
+.文件
+--
+ * http://www.graphviz.org/content/dot-language[The DOT Language | Graphviz]
+
+////////////////////////////////////////////////////////////////////////////////
+** The keywords `node`, `edge`, `graph`, `digraph`, `subgraph`, and `strict`?? are case-independent.
+** Note also that the allowed compass point?? values are not keywords, so these strings can be used elsewhere as ordinary identifiers and, conversely, the parser will actually accept any identifier. 會有 "accept any identifier" 的說法，是因為 id 用雙引號框起來的話，就沒有字元的限制，也不怕跟 keywords 衝突。
+** Any string of alphabetic (`[a-zA-Z\200-\377]`) characters, underscores ('_') or digits ([0-9]), not beginning with a digit; 這裡的 `\200` 跟 `\377` 指的是什麼？跟中文字有關嗎??
+** a numeral `[-]?(.[0-9]+ | [0-9]+(.[0-9]*)? );` 用整數就算了，什麼情況下會用到小數點。如果要充當項目編號，字串的用法會不會比較直覺...
+** any double-quoted string (`"..."`) possibly containing escaped quotes (`\"`);
+** an HTML string (`<...>`). 還是搞不懂為什麼會有 HTML 做為 ID 的需求??
+** An ID is just a string; the lack of quote characters in the first two forms is just for simplicity. There is no semantic difference between abc_2 and "abc_2", or between 2.34 and "2.34". Obviously, to use a keyword as an ID, it must be quoted.
+** Note that, in HTML strings, angle brackets must occur in matched pairs, and unescaped newlines are allowed. In addition, the content must be legal XML, so that the special XML escape sequences for ", &, <, and > may be necessary in order to embed these characters in attribute values or raw text??
+** An 'edgeop' is `->` in directed graphs and `--` in undirected graphs. 注意沒有 `<-` 這種東西，不過箭頭的方向倒是可以透過 `dir` 來調整，而且奎 directed graph 裡是不能用 `--` 的??
+** In addition, a line beginning with a '#' character is considered a line output from a C preprocessor (e.g., # 34 to indicate line 34 ) and discarded. 但這種用法並不常見
+** The language supports C++-style comments: `/* */` and `//`. 一定要在行首嗎??
+** Semicolons aid readability but are not required except in the rare case 乾脆有問題的時候再加
+** any amount of whitespace may be inserted between terminals. 方便排版
+** As another aid for readability, dot allows single logical lines to span multiple physical lines using the standard C convention of a backslash immediately preceding a newline character. 由於 attribute 本來就可以寫在不同行，這裡應該是針對 attribute value 例如字串太長時（裡面可以用 `\n` 來表示換行）
+** Subgraphs play three roles in Graphviz. First, a subgraph can be used to represent graph structure, indicating that certain nodes and edges should be grouped together. This is the usual role for subgraphs and typically specifies semantic information about the graph components. 這裡的 semantic 指的是不會因 group 就被加上外框??
+** In the second role, a subgraph can provide a context for setting attributes. For example, a subgraph could specify that blue is the default color for all nodes defined in it. 透過 `(graph | node | edge) [ ... ]` 來定義 default attribute，但也把範圍控制在 subgraph 裡。越來越覺得 subgroup 是虛的（例如設定 subgroup 的 `color` 並不會有作用）而 cluster subgroup 才是實的??
+** This (anonymous) subgraph specifies that the nodes A, B and C should all be placed on the same rank if drawn using dot. `subgraph { rank = same; A; B; C; }` 這是很特別的用法，就 `rank = same` 這麼一個 attribute，就可以將其他 nodes 拉到平等的地位。
+** The third role for subgraphs directly involves how the graph will be laid out by certain layout engines. If the name of the subgraph begins with `cluster`, Graphviz notes the subgraph as a special cluster subgraph. If supported, the layout engine will do the layout so that the nodes belonging to the cluster are drawn together, with the entire drawing of the cluster contained within a bounding rectangle. 跟單純的 subgraph 不同，會在外圍畫出一個方框
+** Note that, for good and bad, cluster subgraphs are not part of the DOT language, but solely a syntactic convention adhered to by certain of the layout engines. 顯然 DOT 是個標準，但 layout engine/program 會做一些擴充??
+** If a default attribute is defined using a `node`, `edge`, or `graph` statement, or by an attribute assignment not attached to a node or edge, any object of the appropriate type defined "afterwards" will inherit this attribute value. This holds until the default attribute is set to a new value, from which point the new value is used. Objects defined before a default attribute is set will have an empty string value attached to the attribute once the default attribute definition is made. 由上往下處理 dot graph，此後的 default attributes 才會受影響，在這之前的不受影響
+** Note, in particular, that a subgraph receives the attribute settings of its parent graph at the time of its definition. This can be useful; for example, one can assign a font to the root graph and all subgraphs will also use the font. 但 graph 本身不是沒有任何呈現嗎，而且 node 跟 edge 也不會吃 graph 的設定不是嗎??
+** If an edge belongs to a cluster, its endpoints belong to that cluster. Thus, where you put an edge can effect a layout, as clusters are sometimes laid out recursively??
+** at present, the names of a graph and it subgraphs share the same namespace. Thus, each subgraph must have a unique name. 也就是說 subgraph 並不會創造另一個 namespace，這也滿合理的啊，我倒不覺得是 restriction
+** although nodes can belong to any number of subgraphs, it is assumed clusters form a strict hierarchy when viewed as subsets of nodes and edges?? 由於 node 可以歸入多個 subgraphs，證實了 "subgraph 是虛的" 的說法。
+** The DOT language assumes at least the ascii character set. Quoted strings, both ordinary and HTML-like, may contain non-ascii characters. In most cases, these strings are uninterpreted: they simply serve as unique identifiers or values passed through untouched. 這裡講的正是 ID，這也是為什麼 "什麼字串都可以當做 ID"，因為它不會呈現出來。
+** Labels, however, are meant to be displayed, which requires that the software be able to compute the size of the text and determine the appropriate glyphs. For this, it needs to know what character encoding is used. By default, DOT assumes the UTF-8 character encoding. 既然是用 UTF-8，就沒什麼好擔心的了。
+** In quoted strings in DOT, the only escaped character is double-quote ("). That is, in quoted strings, the dyad `\"` is converted to "; all other characters are left unchanged. In particular, `\\` remains `\\`. Layout engines may apply additional escape sequences.
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://en.wikipedia.org/wiki/DOT_(graph_description_language)[DOT (graph description language) - Wikipedia, the free encyclopedia]
+
+////////////////////////////////////////////////////////////////////////////////
+** DOT is a plain text graph description language. It is a simple way of describing graphs that both humans and computer programs can use.
+** DOT graphs are typically files that end with the `.gv` (or `.dot`) extension. The .gv extension is preferred in cases where there could be confusion with the `.dot` file extension used by early (pre-2007) versions of Microsoft Word. 沒想到 `.gv` 是比較建議的副檔名
+** Various programs can process DOT files. Most programs are part of the Graphviz package or use it internally. 不只是 Graphviz，但 DOT 跟 Graphviz 的關係甚密，兩者是什麼關係??
+** At its simplest, DOT can be used to describe an undirected graph. An undirected graph shows simple relations between objects, such as friendship between people. The graph keyword is used to begin a new graph, and nodes are described within curly braces. A double-hyphen (`--`) is used to show relations between the nodes.
+** Similar to undirected graphs, DOT can describe directed graphs, such as flowcharts and dependency trees. The syntax is the same as for undirected graphs, except the digraph keyword is used to begin the graph, and an arrow (`->`) is used to show relationships between nodes.
+** Various attributes can be applied to graphs, nodes and edges in DOT files. These attributes can control aspects such as color, shape, and line styles.
+** For nodes and edges, one or more attribute-value pairs are placed in square brackets (`[]`) after a statement and before the semicolon.
+** Graph attribute are specified as direct attribute-value pairs under graph element. 不會被底下的 nodes 跟 edges 繼承
+** Multiple attributes are separated by a comma and a space. 應該是 "comma OR a space"，因為中間的逗號是可以省略的 Node attributes are placed after a statement containing only the name of the node, and no relations. 這裡 "no relations" 指的是什麼?? 因為在 `--` 或 `->` 給定 attributes，是套在 edge 本身而非 node。
+** Dot supports C and C++ style single line and multiple line comments. In addition, it ignores lines with a number sign symbol (`#`) as their first character.
+** The DOT language defines a graph, but does not provide facilities for rendering the graph. 因此不只 Graphviz 可以處理而已，也之所有才會有 LANGUAGE 的說法，任何程式都可以去 render 它。
+** It is possible to specify "layout details" with DOT, although not all tools that implement the DOT language pay attention to the position attributes. Thus, depending on the tools used, users must rely on automated layout algorithms (potentially resulting in unexpected output) or tediously hand-positioned nodes. 所以目前還是 Graphviz 提供的 tools 對 DOT 還是最到位
+** This can be fixed with Inkscape or other SVG editors. In some cases, this can also be fixed by using the `pos` attribute to specify a position. 輸出 SVG 再做調整，聽起來有點 Er..
+////////////////////////////////////////////////////////////////////////////////
+--
+

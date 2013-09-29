@@ -1,0 +1,59 @@
+= BNF (Backus–Naur Form) =
+
+== 參考資料 ==
+
+.工具
+--
+ * http://railroad.my28msec.com/rr/ui[Railroad Diagram Generator] - 將 EBNF 轉換成類似 http://www.json.org/[json.org] 首頁的 railroad diagram。
+--
+
+.文件
+--
+ * http://en.wikipedia.org/wiki/Backus%E2%80%93Naur_Form[Backus–Naur Form - Wikipedia, the free encyclopedia]
+
+////////////////////////////////////////////////////////////////////////////////
+** In computer science, BNF (Backus Normal Form or Backus–Naur Form) is one of the two main notation techniques for context-free grammars, often used to describe the syntax of languages used in computing, such as computer programming languages, document formats
+** Many extensions and variants of the original Backus–Naur notation are used; some are exactly defined, including Extended Backus–Naur Form (EBNF) and Augmented Backus–Naur Form (ABNF). 其中又以 EBNF 較為常見
+** A BNF specification is a set of derivation rules, written as `<symbol> ::= __expression__`
+** where `<symbol>` is a nonterminal, and the `__expression__` consists of one or more sequences of symbols (中間用空白隔開); more sequences are separated by the vertical bar, `'|'`, indicating a choice, the whole being a possible substitution for the symbol on the left. Symbols that never appear on a left side are terminals. On the other hand, symbols that appear on a left side are non-terminals and are always enclosed between the pair `<>`. The `'::='` means that the symbol on the left must be replaced with the expression on the right. 也就是說 <symbol> 有 terminal/nonterminal 之分，從未出現 `::=` 在左側者，就是 nonterminal。
+** Note that many things (such as the format of a first-name, apartment specifier, ZIP-code, and Roman numeral) are left unspecified here. If necessary, they may be described using additional BNF rules.
+** Note that `""` is empty string, i.e. no whitespace. The original BNF did not use quotes as shown in `<literal>` rule. This assumes that no whitespace is necessary for proper interpretation of the rule. 除了 empty string 之外，BNF 並沒有要求 literal 要加單／雙引號？但為什麼範例都有加??
+** There are many variants and extensions of BNF, generally either for the sake of simplicity and succinctness, or to adapt it to a specific application. One common feature of many variants is the use of regular expression repetition operators such as `*` and `+`. The Extended Backus–Naur Form (EBNF) is a common one.
+** Many BNF specifications found online today are intended to be human readable and are non-formal. These often include many of the following syntax rules and extensions: 到底是 BNF 或 EBNF 都搞不清楚了，下面的規則應該趨近 EBNF 了
+   *** Optional items enclosed in square brackets: `[<item-x>]`. 預設是 required
+   *** Items repeating 0 or more times are enclosed in curly brackets or suffixed with an asterisk ('*'), such as `"<word> ::= <letter> {<letter>}"` or `"<word> ::= <letter> <letter>*"`, respectively. 其中 `{}` 不要誤解釋成 required
+   *** Items repeating 1 or more times are suffixed with an addition (plus) symbol ('+').
+   *** Terminals may appear in bold rather than italics, and nonterminals in plain text rather than angle brackets. 意思是 nonterminal 沒有用角括號框起來時，terminal 就要用粗體來表示，nonterminal 會用斜體表示??
+   *** Alternative choices in a production are separated by the ‘|’ symbol: `<alternative-A> | <alternative-B>`.
+   *** Where items are grouped, they are enclosed in simple parentheses.
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_Form[Extended Backus–Naur Form - Wikipedia, the free encyclopedia]
+
+////////////////////////////////////////////////////////////////////////////////
+** In computer science, Extended Backus–Naur Form (EBNF) is a family of metasyntax notations, any of which can be used to express a context-free grammar. EBNF is used to make a formal description of a formal language which can be a computer programming language. They are extensions of the basic Backus–Naur Form (BNF) metasyntax notation. 這裡 metasyntax 的說法類似於 metadata，也就是 "描述 syntax 的 syntax"。
+** However, many variants of EBNF are in use. The International Organization for Standardization has adopted an EBNF standard (ISO/IEC 14977).
+** EBNF is a code that expresses the grammar of a formal language. An EBNF consists of terminal symbols and non-terminal production rules which are the restrictions governing how terminal symbols can be combined into a legal sequence.
+** The EBNF defines production rules where sequences of symbols are respectively assigned to a nonterminal: `digit excluding zero = "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ; digit = "0" | digit excluding zero ;` 為什麼不延用 BNF 的 `::=`??
+** terminal symbols are enclosed with quotation marks (反倒是 BNF 沒有這樣要求；通常用單引號，遇到內容有單引號時才改用雙引號)
+** A production rule can also include a sequence of terminals or nonterminals, each separated by a comma: `twelve = "1", "2" ;` 用逗號隔開，這種用法好像沒看過??
+** Expressions that may be omitted or repeated can be represented through curly braces `{ ... }`: `natural number = digit excluding zero, { digit } ;` 這種用法好像也不常見，反倒是 `?`、`*`、`+` 的用法比較常見。
+** An option can be represented through squared brackets `[ ... ]`. That is, everything that is set within the square brackets may be present just once, or not at all: 這種用法也被 `?` 取代了
+** EBNF also provides, among other things, the syntax to describe repetitions of a specified number of times, to exclude some part of a production, or to insert comments in an EBNF grammar. 但 comment 的標準語法是什麼??
+** Any grammar defined in EBNF can also be represented in BNF though representations in the latter are generally lengthier. The same constructs can still be used in EBNF. 這是否意謂著 EBNF 裡也可以用 `::=` 來取代平淡的 `=`??
+** The BNF uses the symbols `(<, >, |, ::=)` for itself, but does not include quotes around terminal strings. This prevents these characters from being used in the languages, and requires a special symbol for the empty string. In EBNF, terminals are strictly enclosed within quotation marks (`"..."` or `'...'`). The angle brackets (`"<...>"`) for nonterminals can be omitted. 角括號拿掉之後可讀性好像會變低？但 empty string 還不是得用 `""` 或 `''` 來表示??
+** BNF syntax can only represent a rule in one line, whereas in EBNF a terminating character, the semicolon, marks the end of a rule. 用分號將多行合併在一起好像不常見，可讀性反而會降低
+** Each meta-identifier of Extended BNF is written as one or more words joined together by hyphens
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://en.wikipedia.org/wiki/Syntax_diagram[Syntax diagram - Wikipedia, the free encyclopedia]
+--
+
+.其他文件
+--
+ * http://programmers.stackexchange.com/questions/179801/how-are-json-org-like-specs-graphs-called-and-how-can-i-generate-them[syntax - How are "Json.org"-like specs graphs called and how can I generate them? - Programmers Stack Exchange] (2012-12-17)
+ * http://superuser.com/questions/372019/program-for-creating-language-syntax-grammar-railroad-diagrams[software rec - Program for creating language syntax/grammar "railroad" diagrams? - Super User] (2011-12-27)
+ * http://stackoverflow.com/questions/796824/tool-for-generating-railroad-diagram-used-on-json-org[bnf - Tool for generating railroad diagram used on json.org - Stack Overflow] (2009-04-28)
+--
+
+

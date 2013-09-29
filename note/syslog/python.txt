@@ -1,0 +1,53 @@
+= link:syslog.html[Syslog] / Python =
+:title: [Syslog] Python
+
+[source,python]
+--------------------------------------------------------------------------------
+import logging
+from logging.handlers import SysLogHandler
+
+_logger = logging.getLogger(__name__)
+_logger.setLevel(logging.DEBUG)
+_logger.addHandler(SysLogHandler(address='/dev/log') # <1>
+
+_logger.debug('this is a message from python logging.')
+--------------------------------------------------------------------------------
+<1> 加一個 syslog 專用的 handler (`logging.handlers.SysLogHandler`) 就可以將 logging message 送到 syslog。
++
+--
+這裡 address 傳入 `/dev/log`，正是 syslogd 接收 logging messages 的 domain socket （Mac 下要改用 `/var/run/syslog`）。
+--
+
+可以在 `/var/log/syslog` 看到類似下面的 message：（`SysLogHandler` 預設用用 user facility，通常會被 route 到 `/var/log/syslog`）
+
+ Sep 25 14:24:41 your-hostname this is a message from python logging.
+
+== 參考資料 ==
+
+.文件
+--
+ * http://docs.python.org/2/library/syslog.html[syslog — Unix syslog library routines]
+ * http://docs.python.org/2/library/logging.handlers.html[logging.handlers > SysLogHandler — Logging handlers]
+
+////////////////////////////////////////////////////////////////////////////////
+** The `SysLogHandler` class, located in the `logging.handlers` module, supports sending logging messages to a remote or local Unix syslog. 其中 local/remote 是靠 `address` 來區隔
+** `SysLogHandler(address=('localhost', SYSLOG_UDP_PORT), facility=LOG_USER, socktype=socket.SOCK_DGRAM)`
+   *** Returns a new instance of the `SysLogHandler` class intended to communicate with a remote Unix machine whose address is given by `address` in the form of a `(host, port)` tuple. If address is not specified, `('localhost', 514)` is used. The address is used to open a socket.
+   *** An alternative to providing a `(host, port)` tuple is providing an address as a string, for example `/dev/log`. In this case, a Unix "domain socket" is used to send the message to the syslog.
+   *** If `facility` is not specified, `LOG_USER` is used. The type of socket opened depends on the `socktype` argument, which defaults to `socket.SOCK_DGRAM` and thus opens a UDP socket. To open a TCP socket (for use with the newer syslog daemons such as rsyslog), specify a value of `socket.SOCK_STREAM`.
+** check what address you should be using for a domain socket - it’s system dependent. For example, on Linux it’s usually `/dev/log` but on OS/X it’s `/var/run/syslog`. You’ll need to check your platform and use the appropriate address (you may need to do this check at runtime if your application needs to run on several platforms). On Windows, you pretty much have to use the UDP option.
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://www.gnu.org/software/libc/manual/html_node/Overview-of-Syslog.html[Overview of Syslog - The GNU C Library]
+
+////////////////////////////////////////////////////////////////////////////////
+To deal with these messages, most Unix systems have a facility called "Syslog." It is generally based on a daemon called “Syslogd” Syslogd listens for messages on a Unix domain socket named `/dev/log`. Based on classification information in the messages and its configuration file (usually `/etc/syslog.conf`), Syslogd routes them in various ways.
+////////////////////////////////////////////////////////////////////////////////
+--
+
+.其他文件
+--
+ * http://stackoverflow.com/questions/14050081/python-syslog-syslog-vs-sysloghandler[logging - python syslog.syslog vs SysLogHandler - Stack Overflow] (2012-12-27)
+ * http://stackoverflow.com/questions/3968669/how-to-configure-logging-to-syslog-in-python[How to configure logging to syslog in python? - Stack Overflow] (2010-10-19)
+--
+

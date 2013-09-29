@@ -1,0 +1,37 @@
+= link:commands.html[Unix-like / Commands] / `adduser`, `addgroup` =
+:title: [Unix-like] adduser, addgroup
+
+== 參考資料 ==
+
+ * http://manpages.debian.net/cgi-bin/man.cgi?query=adduser[adduser - Debian Hypertext Man Pages]
+
+////////////////////////////////////////////////////////////////////////////////
+** `adduser`, `addgroup` - add a user or group to the system
+** `adduser` and `addgroup` add users and groups to the system according to command line options and configuration information in `/etc/adduser.conf`.
+** They are friendlier front ends to the low level tools like `useradd`, `groupadd` and `usermod` programs, by default choosing Debian policy conformant UID and GID values, creating a home directory with skeletal configuration, running a custom script, and other features.
+** If called with one non-option argument and without the `--system` or `--group` options, `adduser` will add a normal user. `adduser` will choose the first available UID from the range specified for normal users in the configuration file. The UID can be overridden with the `--uid` option. 注意 `--group` 是用來加 group?? 而不是指定 user 的 primary group。
+** By default, each user in Debian GNU/Linux is given a corresponding group with the same name. Usergroups allow group writable directories to be easily maintained by placing the appropriate users in the new group, setting the set-group-ID bit?? in the directory, and ensuring that all users use a umask of 002. If this option is turned off by setting `USERGROUPS` to `no`, all users' GIDs are set to `USERS_GID`.
+** Users' primary groups can also be overridden from the command line with the `--gid` or `--ingroup` options to set the group by id or name, respectively. 兩者的差別只是 id 跟 name 而已，都是針對 primary group。
+** `adduser` will create a home directory subject to `DHOME`, `GROUPHOMES`, and `LETTERHOMES`. The home directory can be overridden from the command line with the `--home` option, and the shell with the `--shell` option. 原來 home directory 不一定長得像 `/home/username`!!
+** The home directory's set-group-ID bit is set if `USERGROUPS` is `yes` so that any files created in the user's home directory will have the correct group.
+** `adduser` will copy files from `SKEL` into the home directory and prompt for finger (gecos) information and a password. The gecos may also be set with the `--gecos` option. 多個欄位怎麼給?? 其中 `SKEL` 預設指向 `/etc/skel`
+** With the `--disabled-login` option, the account will be created but will be disabled until a password is set. The `--disabled-password` option will not set a password, but login is still possible (for example with SSH RSA keys). 其中 disable login 是怎麼辦到的??
+** If called with one non-option argument and the `--system` option, `adduser` will add a system user.
+** `adduser` will choose the first available UID from the range specified for system users in the configuration file (`FIRST_SYSTEM_UID` and `LAST_SYSTEM_UID`). If you want to have a specific UID, you can specify it using the `--uid` option. 預設是 100 ~ 999
+** By default, system users are placed in the `nogroup` group. To place the new system user in an already existing group, use the `--gid` or `--ingroup` options. To place the new system user in a new group with the same ID, use the `--group` option.
+** A home directory is created by the same rules as for normal users. The new system user will have the shell `/bin/false` (unless overridden with the `--shell` option), and have logins disabled. Skeletal configuration files are not copied. 顯見 normal user 跟 system user 大不同!!
+** If `adduser` is called with the `--group` option and without the `--system` option, or `addgroup` is called respectively, a user group will be added. A GID will be chosen from the range specified for system GIDS in the configuration file (`FIRST_GID`, `LAST_GID`). To override that mechanism you can give the GID using the `--gid` option.
+** If `addgroup` is called with the `--system` option, a system group will be added. A GID will be chosen from the range specified for system GIDS in the configuration file (`FIRST_SYSTEM_GID`, `LAST_SYSTEM_GID`). To override that mechanism you can give the GID using the `--gid` option.
+** If called with two non-option arguments, `adduser` will add an existing user to an existing group. 用 `usermod` 來做會比較正統嗎??
+** `--disabled-login` Do not run `passwd` to set the password. The user won't be able to use her account until the password is set.
+** `--disabled-password` Like `--disabled-login`, but logins are still possible (for example using SSH RSA keys) but not using password authentication.
+** `--gecos` GECOS Set the gecos field for the new entry generated. adduser will not ask for finger information if this option is given.
+** `--gid` ID When creating a group, this option forces the new groupid to be the given number. When creating a user, this option will put the user in that group.
+** `--group` When combined with `--system`, a group with the same name and ID as the system user is created. If not combined with `--system`, a group with the given name is created. This is the default action if the program is invoked as `addgroup`.
+** `--home DIR` Use `DIR` as the user's home directory, rather than the default specified by the configuration file. If the directory does not exist, it is created and skeleton files are copied.
+** `--shell SHELL` Use `SHELL` as the user's login shell, rather than the default specified by the configuration file.
+** `--ingroup GROUP` This affects the users primary group.
+** `--system` Create a system user or group.
+** `--uid ID` Force the new userid to be the given number.
+////////////////////////////////////////////////////////////////////////////////
+

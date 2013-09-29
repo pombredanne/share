@@ -1,0 +1,547 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>Tar - 在電梯裡遇見雙胞胎 | 傑洛米 Jeremy</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<!--link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" /-->
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="https://www.facebook.com/jeremy.kao.92" target="_blank">Jeremy Kao - 傑洛米·高</a></div>
+  <div><a href="../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <!--div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div-->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <!--a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a--></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1>Tar</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p><code>tar</code>&#8201;&#8212;&#8201;The GNU version of the tar archiving utility</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>tar &lt;function&gt; [&lt;options&gt;] -f &lt;filename&gt; [[-C &lt;basedir&gt;] [&lt;pathname&gt;...]]...</code></pre>
+</div></div>
+<div class="paragraph"><p>tar 源自 <em>Tape ARchive</em>，它既是工具的名稱（<code>tar</code>），也是一種 file format。早期用在磁帶備份，現在則多應用在將多個檔案打包成單一個大檔，方便交換或歸檔，除了檔案內容與目錄結構之外，也會記錄權限、mtime 等 metadata。常見的用法有：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<code>tar -czf &lt;filename&gt; [-v] [-C &lt;basedir&gt;] .</code>
+</p>
+<div class="openblock">
+<div class="content">
+<div class="paragraph"><p>將 current directory 或 <em>basedir</em> 的內容（包含隱藏檔跟子目錄）打包壓縮成 <em>filename</em> (<code>.tar.gz</code> 或 <code>.tgz</code>)。</p></div>
+</div></div>
+</li>
+<li>
+<p>
+<code>tar -czf &lt;filename&gt; [-v] -C &lt;basedir1&gt; &lt;dir&gt; -C &lt;basedir2&gt; &lt;dir2&gt; ...</code>
+</p>
+<div class="openblock">
+<div class="content">
+<div class="paragraph"><p>將 <em>basedir1/dir1</em> 跟 <em>basedir2/dir2</em> 的內容（<code>dir1/*</code>, <code>dir2/*</code>）打包成 <em>filename</em>。</p></div>
+</div></div>
+</li>
+<li>
+<p>
+<code>tar -czf &lt;filename&gt; [-v] --files-from=&lt;includes_file&gt; [--exclude-from=&lt;excludes_file&gt;]</code>
+</p>
+<div class="openblock">
+<div class="content">
+<div class="paragraph"><p>將 <em>includes_file</em> 提供的檔案清單（排除 <em>excludes_file</em> 內的檔案）打包成 <em>filename</em>。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">這種由外部檔案提供檔案清單的做法，尤其適用於大批檔案的定期備份，日後只要調整檔案清單，就可以改變備份的範圍。</td>
+</tr></table>
+</div>
+</div></div>
+</li>
+<li>
+<p>
+<code>tar -tf &lt;filename&gt; [-v]</code>
+</p>
+<div class="openblock">
+<div class="content">
+<div class="paragraph"><p>列出 <em>filename</em> 裡面包含哪些檔案，加上 <code>-v</code> 會額外顯示 mode bits、owner/group、mtime 等一併記錄在 tarball 裡面的 metadata。</p></div>
+</div></div>
+</li>
+<li>
+<p>
+<code>tar -xf &lt;filename&gt; [-v] [-C &lt;outdir&gt;]</code>
+</p>
+<div class="openblock">
+<div class="content">
+<div class="paragraph"><p>將 <em>filename</em> 解開到 current directory 或 <em>outdir</em>（必須事先建立好）。</p></div>
+</div></div>
+</li>
+<li>
+<p>
+<code>tar -df &lt;filename&gt; [-C &lt;dir&gt;]</code>
+</p>
+<div class="openblock">
+<div class="content">
+<div class="paragraph"><p>檢查 <em>filename</em> 的內容是否與 current directory 或 <em>dir</em> 相符，比對的項目除了檔案內容之外，也包括 tarball 記錄的其他 metadata，例如 mode bits、owner/group、mtime 等。</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">建立 tarball 的人有原始檔案搭配 <code>-d</code> 來檢查 tarball 有沒有問題，但其他拿到 tarball 的人要怎麼檢查 integrity 呢？建議進一步將對 <code>.tar</code> 進行壓縮（搭配 <code>-z</code> 或 <code>-j</code>），其他人就可以用 <code>gzip -t</code> 或 <code>bzip2 -t</code> 檢查 tarball 的 integrity。</td>
+</tr></table>
+</div>
+</div></div>
+</li>
+</ul></div>
+<div class="paragraph"><p>常用的 function 有：</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>-c, --create</code>
+</dt>
+<dd>
+<p>
+建立一個新的 tarball。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-d, --diff, --compare</code>
+</dt>
+<dd>
+<p>
+檢查 tarball 跟檔案系統的內容是否一致。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-t, --list</code>
+</dt>
+<dd>
+<p>
+列出 tarball 的內容。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-x, --extract, --get</code>
+</dt>
+<dd>
+<p>
+解開 tarball 的內容。
+</p>
+</dd>
+</dl></div>
+<div class="paragraph"><p>常用的 options 有：</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>--owner=&lt;username&gt;</code>
+</dt>
+<dd>
+<p>
+在 tarball 裡記錄檔案的 owner 是 <em>username</em>。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--group=&lt;groupname&gt;</code>
+</dt>
+<dd>
+<p>
+在 tarball 裡記錄檔案的 group 是 <em>groupname</em>。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-h, --dereference</code>
+</dt>
+<dd>
+<p>
+遇到 symlink 時，預設只會保存 symlink 本身。搭配這個 option 時，如果 target 是個檔案，會直接保存 target 的內容，如果 target 是個目錄時，則會往下展開（follow）目錄的內容。也就是說，將來解開 tarball 時，原本的 symlink 會變成一般的檔案或目錄，不再是個 symlink。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--hard-dereference</code>
+</dt>
+<dd>
+<p>
+遇到 hard link 時，如果 tarball 裡已經保存有相同 inode 的內容，預設會被標示為 hard link，因此解開 tarball 時還能讓多個檔案指向同一個 inode。搭配這個 option 時，則不管 tarball 是否已經保存過同一個 inode 的內容，直接再保存一份。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-f, --file &lt;filename&gt;</code>
+</dt>
+<dd>
+<p>
+指定 tarball 的檔名。
+</p>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/note.png" alt="Note" />
+</td>
+<td class="content">儘可能給定完整路徑，否則會被解讀成相對於 current directory 或 <code>-C &lt;basedir&gt;</code> 中的 <em>basedir</em>，結果就是過程中產生的 tarball 又被包進 tarball 裡。</td>
+</tr></table>
+</div>
+</dd>
+<dt class="hdlist1">
+<code>-j, --bzip2</code>
+</dt>
+<dd>
+<p>
+指定用 bzip2 壓縮 tarball。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-v, --verbose</code>
+</dt>
+<dd>
+<p>
+用在 create (<code>-c</code>) 或 extract (<code>-x</code>) 時，會依進度顯示目前在處理的檔案。用在 list (<code>-t</code>) 時，則會額外顯示 mode bits、owner/group、mtime 等一併記錄在 tarball 裡面的 metadata。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-z, --gzip</code>
+</dt>
+<dd>
+<p>
+指定用 gzip 壓縮 tarball。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-C, --directory &lt;basedir&gt;</code>
+</dt>
+<dd>
+<p>
+<em>pathname</em> 預設是相對於 current directory 的路徑名稱，透過這個 option，可以讓緊接著的一或多個 <em>pathname</em> 被解讀成相對於 <em>basedir</em> 的相對路徑（直到遇到另一個 <code>-C</code>）。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>--exclude=&lt;pattern&gt;</code>
+</dt>
+<dd>
+<p>
+排除檔名符合 glob <em>pattern</em> 的檔案，這個 option 可以使用多次。例如 <code>--exclude='*.pyc' --exclude='*.class'</code> 可以排除 <code>.pyc</code> 跟 <code>.class</code> 檔。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-T, --files-from &lt;includes_file&gt;</code>
+</dt>
+<dd>
+<p>
+由 <em>inclues_file</em> 提供要加到 tarball 的檔案清單。例如 <code>-T includes</code>：
+</p>
+<div class="listingblock">
+<div class="title"><code>includes</code></div>
+<div class="content">
+<pre><code>-C/tmp <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+data
+data_ext
+--directory=/path/to/other/directory
+dir1
+dir2</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+注意 <code>-C</code> 跟 <code>/tmp</code> 是連在一起的，也可以寫成 <code>--directory=/tmp</code>（等號兩側一樣不能有空白）。
+</td></tr>
+</table></div>
+</dd>
+<dt class="hdlist1">
+<code>-X, --exclude-from &lt;excludes_file&gt;</code>
+</dt>
+<dd>
+<p>
+由 <em>excludes_file</em> 提供要排除的檔案清單（可以使用 glob pattern）。例如 <code>-X excludes</code>：
+</p>
+<div class="listingblock">
+<div class="title"><code>excludes</code></div>
+<div class="content">
+<pre><code>*.pyc
+*.class</code></pre>
+</div></div>
+</dd>
+</dl></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_使用範例">使用範例</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>假設目錄結構如下，裡面刻意安排了兩個平行的目錄（<code>/tmp/data</code> 跟 <code>/tmp/data_ext</code>），以及其間 symbolic 跟 hard links 的相互參照：</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span class="gp">$</span> tree -apugDF --inodes --dirsfirst --noreport /tmp/data /tmp/data_ext
+<span class="go">/tmp/data</span>
+<span class="go">├── [2771804 drwxrwxr-x jeremy   jeremy   Sep 22 13:27]  dir/</span>
+<span class="go">│   ├── [2771806 drwxrwxr-x jeremy   jeremy   Sep 22 10:30]  subdir/</span>
+<span class="go">│   │   └── [2771809 -rw-rw-r-- jeremy   jeremy   Sep 22 10:30]  file_dir_subdir</span>
+<span class="go">│   ├── [2771825 lrwxrwxrwx jeremy   jeremy   Sep 22 13:27]  file3_symlink -&gt; ../ext/file3</span>
+<span class="go">│   ├── [2771826 -rw-rw-r-- jeremy   jeremy   Sep 22 12:19]  file4_hardlink   <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></span>
+<span class="go">│   └── [2771807 -rw-rw-r-- jeremy   jeremy   Sep 22 10:30]  file_dir</span>
+<span class="go">├── [2771823 lrwxrwxrwx jeremy   jeremy   Sep 22 11:10]  ext -&gt; ../data_ext//</span>
+<span class="go">├── [2771800 -rw-r--r-- root     jeremy   Sep 22 12:19]  file1 <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></span>
+<span class="go">├── [2771803 -rw-rw-r-- jeremy   jeremy   Sep 22 12:19]  file2</span>
+<span class="go">└── [2771829 -rw-rw-r-- jeremy   jeremy   Sep 22 11:12]  .hidden_file</span>
+<span class="go">/tmp/data_ext</span>
+<span class="go">├── [2771825 -rw-rw-r-- jeremy   jeremy   Sep 22 12:19]  file3</span>
+<span class="go">└── [2771826 -rw-rw-r-- jeremy   jeremy   Sep 22 12:19]  file4                <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></span>
+</pre></div></div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+<code>/tmp/data/dir/file4_hardlink</code> 跟 <code>/tmp/data_ext/file4</code> 指向同一個 <a href="../unix-like/filesystem/inodes.html">inode</a>。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+<code>file1</code> 的權限比較特別，用來觀察 tarball 在打包／解開的過程中能否完整保存 mode bits 跟 owner/group。
+</td></tr>
+</table></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span class="gp">$</span> tar -czf /tmp/data.tar.gz -C /tmp/data .
+<span class="gp">$</span> tar -tvf /tmp/data.tar.gz
+<span class="go">drwxrwxr-x jeremy/jeremy     0 2013-09-22 11:12 ./</span>
+<span class="go">-rw-r--r-- root/jeremy       6 2013-09-22 12:19 ./file1 <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></span>
+<span class="go">-rw-rw-r-- jeremy/jeremy     0 2013-09-22 11:12 ./.hidden_file</span>
+<span class="go">drwxrwxr-x jeremy/jeremy     0 2013-09-22 13:27 ./dir/</span>
+<span class="go">-rw-rw-r-- jeremy/jeremy     0 2013-09-22 10:30 ./dir/file_dir</span>
+<span class="go">lrwxrwxrwx jeremy/jeremy     0 2013-09-22 13:27 ./dir/file3_symlink -&gt; ../ext/file3 <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></span>
+<span class="go">drwxrwxr-x jeremy/jeremy     0 2013-09-22 10:30 ./dir/subdir/</span>
+<span class="go">-rw-rw-r-- jeremy/jeremy     0 2013-09-22 10:30 ./dir/subdir/file_dir_subdir</span>
+<span class="go">-rw-rw-r-- jeremy/jeremy     6 2013-09-22 12:19 ./dir/file4_hardlink                <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></span>
+<span class="go">lrwxrwxrwx jeremy/jeremy     0 2013-09-22 11:10 ./ext -&gt; ../data_ext/               <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></span>
+<span class="go">-rw-rw-r-- jeremy/jeremy     6 2013-09-22 12:19 ./file2</span>
+
+<span class="gp">$</span> mkdir /tmp/_data
+<span class="gp">$</span> tar -xf /tmp/data.tar.gz -C /tmp/_data
+<span class="gp">$</span> tree -apugDF --inodes --dirsfirst --noreport /tmp/_data
+<span class="go">/tmp/_data</span>
+<span class="go">├── [2771847 drwxrwxr-x jeremy   jeremy   Sep 22 13:27]  dir/</span>
+<span class="go">│   ├── [2771872 drwxrwxr-x jeremy   jeremy   Sep 22 10:30]  subdir/</span>
+<span class="go">│   │   └── [2771873 -rw-rw-r-- jeremy   jeremy   Sep 22 10:30]  file_dir_subdir</span>
+<span class="go">│   ├── [2771825 lrwxrwxrwx jeremy   jeremy   Sep 22 13:27]  file3_symlink -&gt; ../ext/file3</span>
+<span class="go">│   ├── [2771874 -rw-rw-r-- jeremy   jeremy   Sep 22 12:19]  file4_hardlink   <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></span>
+<span class="go">│   └── [2771848 -rw-rw-r-- jeremy   jeremy   Sep 22 10:30]  file_dir</span>
+<span class="go">├── [2771823 lrwxrwxrwx jeremy   jeremy   Sep 22 11:10]  ext -&gt; ../data_ext//</span>
+<span class="go">├── [2771842 -rw-r--r-- jeremy   jeremy   Sep 22 12:19]  file1 <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></span>
+<span class="go">├── [2771876 -rw-rw-r-- jeremy   jeremy   Sep 22 12:19]  file2</span>
+<span class="go">└── [2771844 -rw-rw-r-- jeremy   jeremy   Sep 22 11:12]  .hidden_file</span>
+<span class="gp">$</span> diff /tmp/_data/dir/file4_hardlink /tmp/data/dir/file4_hardlink          <span class="c"># <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></span>
+<span class="gp">$</span> tar -df /tmp/data.tar.gz -C /tmp/_data <span class="c"># <img src="../../_asciidoc/images/icons/callouts/4.png" alt="4" /></span>
+<span class="go">./file1: Uid differs</span>
+<span class="gp">$</span> <span class="nb">echo</span> <span class="nv">$?</span>
+<span class="go">1</span>
+<span class="gp">$</span>
+<span class="gp">$</span> rm -rf /tmp/_data/*
+<span class="gp">$</span> sudo tar -xf /tmp/data.tar.gz -C /tmp/_data <span class="c"># <img src="../../_asciidoc/images/icons/callouts/5.png" alt="5" /></span>
+<span class="gp">$</span> tree -apugDF --inodes --dirsfirst --noreport /tmp/_data
+<span class="go">/tmp/_data</span>
+<span class="go">├── [2771847 drwxrwxr-x jeremy   jeremy   Sep 22 13:27]  dir/</span>
+<span class="go">│   ├── [2771872 drwxrwxr-x jeremy   jeremy   Sep 22 10:30]  subdir/</span>
+<span class="go">│   │   └── [2771873 -rw-rw-r-- jeremy   jeremy   Sep 22 10:30]  file_dir_subdir</span>
+<span class="go">│   ├── [2771825 lrwxrwxrwx jeremy   jeremy   Sep 22 13:27]  file3_symlink -&gt; ../ext/file3</span>
+<span class="go">│   ├── [2771874 -rw-rw-r-- jeremy   jeremy   Sep 22 12:19]  file4_hardlink</span>
+<span class="go">│   └── [2771848 -rw-rw-r-- jeremy   jeremy   Sep 22 10:30]  file_dir</span>
+<span class="go">├── [2771823 lrwxrwxrwx jeremy   jeremy   Sep 22 11:10]  ext -&gt; ../data_ext//</span>
+<span class="go">├── [2771842 -rw-r--r-- root     jeremy   Sep 22 12:19]  file1 <img src="../../_asciidoc/images/icons/callouts/5.png" alt="5" /></span>
+<span class="go">├── [2771876 -rw-rw-r-- jeremy   jeremy   Sep 22 12:19]  file2</span>
+<span class="go">└── [2771844 -rw-rw-r-- jeremy   jeremy   Sep 22 11:12]  .hidden_file</span>
+</pre></div></div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+過程中遇到 symlink 時，預設只會保存 symlink 本身，也不會展開（follow）指向其他目錄的 symlink。至於 hard link 則不受影響（單純地將 inode 的內容保存起來）。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+由於 <code>file4_hardlink</code> 是第一次在 tarball 裡出現，因此並沒有被標示成 hard link。 雖然內容一樣，但 inode number 已經跟原始檔案不同。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+tarball 裡確實完整記錄了 mode bits 跟 owner/group，但卡在磁碟配額的關係，解開時卻只有 mode bits 被保留，owner/group 都固定是自己。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/4.png" alt="4" /></td><td>
+此時用 diff/compare 也可以檢查出這個差異，而且 return code 會以 non-zero 來表示。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/5.png" alt="5" /></td><td>
+重新以 superuser 的身份解開時（此時 <code>-p</code> 會生效），owser/group 也一併保留下來了。
+</td></tr>
+</table></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../_asciidoc/images/icons/tip.png" alt="Tip" />
+</td>
+<td class="content">
+<div class="paragraph"><p>如果 owner/group 不重要，或是不想要特定的 username 或 group name 被記錄在 tarball 裡，可以用 <code>--owner</code> 跟 <code>--group</code> 改寫：</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span class="gp">$</span> tar -czf /tmp/data.tar.gz --owner<span class="o">=</span>root --group<span class="o">=</span>root -C /tmp/data .
+<span class="gp">$</span> tar -tvf /tmp/data.tar.gz
+<span class="go">drwxrwxr-x root/root         0 2013-09-22 11:12 ./</span>
+<span class="go">-rw-r--r-- root/root         6 2013-09-22 12:19 ./file1</span>
+<span class="go">-rw-rw-r-- root/root         0 2013-09-22 11:12 ./.hidden_file</span>
+<span class="go">drwxrwxr-x root/root         0 2013-09-22 13:27 ./dir/</span>
+<span class="go">-rw-rw-r-- root/root         0 2013-09-22 10:30 ./dir/file_dir</span>
+<span class="go">lrwxrwxrwx root/root         0 2013-09-22 13:27 ./dir/file3_symlink -&gt; ../ext/file3</span>
+<span class="go">drwxrwxr-x root/root         0 2013-09-22 10:30 ./dir/subdir/</span>
+<span class="go">-rw-rw-r-- root/root         0 2013-09-22 10:30 ./dir/subdir/file_dir_subdir</span>
+<span class="go">-rw-rw-r-- root/root         6 2013-09-22 12:19 ./dir/file4_hardlink</span>
+<span class="go">lrwxrwxrwx root/root         0 2013-09-22 11:10 ./ext -&gt; ../data_ext/</span>
+<span class="go">-rw-rw-r-- root/root         6 2013-09-22 12:19 ./file2</span>
+</pre></div></div></div>
+</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>其實就這個例子而言，最好的方式就是將 <code>/tmp/data</code> 跟 <code>/tmp/data_ext</code> 同時打包到 tarball 裡，如此一來 symlink 跟 hard link 都可以維持住。</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span class="gp">$</span> tar -czf /tmp/data.tar.gz -C /tmp data data_ext      <span class="c"># <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></span>
+<span class="gp">$</span> tar -tvf /tmp/data.tar.gz
+<span class="go">drwxrwxr-x jeremy/jeremy     0 2013-09-22 11:12 data/    <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></span>
+<span class="go">-rw-rw-r-- jeremy/jeremy     6 2013-09-22 12:19 data/file1</span>
+<span class="go">-rw-rw-r-- jeremy/jeremy     0 2013-09-22 11:12 data/.hidden_file</span>
+<span class="go">drwxrwxr-x jeremy/jeremy     0 2013-09-22 13:27 data/dir/</span>
+<span class="go">-rw-rw-r-- jeremy/jeremy     0 2013-09-22 10:30 data/dir/file_dir</span>
+<span class="go">lrwxrwxrwx jeremy/jeremy     0 2013-09-22 13:27 data/dir/file3_symlink -&gt; ../ext/file3</span>
+<span class="go">drwxrwxr-x jeremy/jeremy     0 2013-09-22 10:30 data/dir/subdir/</span>
+<span class="go">-rw-rw-r-- jeremy/jeremy     0 2013-09-22 10:30 data/dir/subdir/file_dir_subdir</span>
+<span class="go">-rw-rw-r-- jeremy/jeremy     6 2013-09-22 12:19 data/dir/file4_hardlink                        <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></span>
+<span class="go">lrwxrwxrwx jeremy/jeremy     0 2013-09-22 11:10 data/ext -&gt; ../data_ext/</span>
+<span class="go">-rw-rw-r-- jeremy/jeremy     6 2013-09-22 12:19 data/file2</span>
+<span class="go">drwxrwxr-x jeremy/jeremy     0 2013-09-22 14:38 data_ext/ <img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></span>
+<span class="go">-rw-rw-r-- jeremy/jeremy     6 2013-09-22 12:19 data_ext/file3</span>
+<span class="go">hrw-rw-r-- jeremy/jeremy     0 2013-09-22 12:19 data_ext/file4 link to data/dir/file4_hardlink <img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></span>
+
+<span class="gp">$</span> rm -rf /tmp/_data/*
+<span class="gp">$</span> tar -xf /tmp/data.tar.gz -C /tmp/_data
+<span class="gp">$</span> tree -apugF --inodes --dirsfirst --noreport /tmp/_data
+<span class="go">/tmp/_data</span>
+<span class="go">├── [2771842 drwxrwxr-x jeremy   jeremy  ]  data/</span>
+<span class="go">│   ├── [2771853 drwxrwxr-x jeremy   jeremy  ]  dir/</span>
+<span class="go">│   │   ├── [2771874 drwxrwxr-x jeremy   jeremy  ]  subdir/</span>
+<span class="go">│   │   │   └── [2771875 -rw-rw-r-- jeremy   jeremy  ]  file_dir_subdir</span>
+<span class="go">│   │   ├── [2771958 lrwxrwxrwx jeremy   jeremy  ]  file3_symlink -&gt; ../ext/file3</span>
+<span class="go">│   │   ├── [2771876 -rw-rw-r-- jeremy   jeremy  ]  file4_hardlink <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></span>
+<span class="go">│   │   └── [2771872 -rw-rw-r-- jeremy   jeremy  ]  file_dir</span>
+<span class="go">│   ├── [2771957 lrwxrwxrwx jeremy   jeremy  ]  ext -&gt; ../data_ext//</span>
+<span class="go">│   ├── [2771847 -rw-rw-r-- jeremy   jeremy  ]  file1</span>
+<span class="go">│   ├── [2771892 -rw-rw-r-- jeremy   jeremy  ]  file2</span>
+<span class="go">│   └── [2771848 -rw-rw-r-- jeremy   jeremy  ]  .hidden_file</span>
+<span class="go">├── [2771957 drwxrwxr-x jeremy   jeremy  ]  data_ext/</span>
+<span class="go">│   ├── [2771958 -rw-rw-r-- jeremy   jeremy  ]  file3</span>
+<span class="go">│   └── [2771876 -rw-rw-r-- jeremy   jeremy  ]  file4              <img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></span>
+<span class="go">└── [2771844 -rw-rw-r-- jeremy   jeremy  ]  .hidden_file</span>
+</pre></div></div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+建立 tarball 時所給的 <em>pathname</em>，會成為 tarball 裡目錄結構的起點（prefix），也就是說解壓縮時也會有這一層目錄。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+由於同一 inode 的內容已經在處理 <code>data/dir/file4_hardlink</code> 時保存到 tarball 裡，所以 <code>data_ext/file4</code> 被標示為 hard link。
+</td></tr>
+<tr><td><img src="../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+果然，解開 tarball 之後，<code>data/dir/file4_hardlink</code> 跟 <code>data_ext/file4</code> 指向同一個 inode。
+</td></tr>
+</table></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="openblock">
+<div class="title">手冊</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://manpages.debian.net/cgi-bin/man.cgi?query=tar">tar - Debian Hypertext Man Pages</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">網站</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.gnu.org/software/tar/">Tar - GNU Project - Free Software Foundation (FSF)</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://en.wikipedia.org/wiki/Tar_(computing)">tar (computing) - Wikipedia, the free encyclopedia</a>
+</p>
+</li>
+</ul></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.gnu.org/software/tar/manual/html_section/verify.html">Verifying Data as It is Stored - GNU tar</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.gnu.org/software/tar/manual/html_node/files.html">Reading Names from a File - GNU tar</a>
+</p>
+</li>
+</ul></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.gnu.org/software/tar/manual/html_node/exclude.html">Excluding Some Files - GNU tar</a>
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2013-09-25 10:14:57 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<!--script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script-->
+</body>
+</html>

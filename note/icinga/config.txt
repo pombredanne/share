@@ -1,6 +1,23 @@
 = link:icinga.html[Icinga] / Configuration =
 :title: [Icinga] Configuration
 
+////////////////////////////////////////////////////////////////////////////////
+ * main configuration directory (`/etc/icinga/`), main configuration file (`icinga.cfg`)
+ * object definition files
+ * resource files - user-defined macros, sensitive configuration information
+   ** hosts, services, hostgroups, contacts, contactgroups, commands, ... 之間在 runtime 是怎麼串起來的
+////////////////////////////////////////////////////////////////////////////////
+
+`event_handler_timeout=<timeout>`:: 當 event handler 被觸發時，最多只能跑 'timeout' 秒，如果超過這個時間，該 process 就會被砍掉。
+
+`host_check_timeout=<timeout>`:: 當 host 的 `check_command` 被觸發時，最多只能跑 'timeout' 秒，如果超過這個時間，該 process 就會被砍掉。
+
+`interval_length=<unit>`:: 決定 object definition 裡關於時間的設定（例如 `check_interval`、`first_notification_delay` 等），每一個時間單位（unit interval）是 'unit' 秒。預設是 60 秒，例如 `check_interval 5` 指的就是 "每 5 分鐘檢查一次"。
+
+`retain_state_information=<retained>`:: 設定在 Icinga 的啟動／停止之間，要不要保留 host/service check 的結果（state information）。其中 'retained' 可以是 `0` （不保留） 或 `1` （保留），預設是 `1`。
+
+`state_retention_file=<retention_file>`:: 當 `retain_state_information` 設為 `1` 時，state information 會在 Icinga 停止時寫到 'retention_file'，下次啟動 Icinga 時會再讀取回來。
+
 == 參考資料 ==
 
  * http://docs.icinga.org/latest/en/config.html[3.1. Configuration Overview]
@@ -9,9 +26,9 @@
 ** Be patient! Configuring Icinga can take quite a while, especially if you're first-time user. Once you figure out how things work, it'll all be well worth your time. :-) 一堆 terms!!
 ** Names and locations of these configuration files are all up to you but it is commonly accepted to have files called `icinga.cfg`, `resource.cfg`, and `cgi.cfg` in the main config directory (通常是 `/etc/icinga`).
 ** The names of the object definition files may show the type of definitions (`contacts.cfg`, `commands.cfg`, `timeperiods.cfg`, `notifications.cfg`), the type of hardware (`printer.cfg`, `switch.cfg`), or the object which is described (`localhost.cfg`).
-** the files may be in separate folders per geographical location (country, branch, ...) and a file per physical or logical unit (room, rack, application, development, ...), or the concept which seems to suit your needs best. 依適合自己的方式劃分 folders
-** The main configuration file contains a number of directives that affect how the Icinga daemon operates and links to several other files. This config file is read by both the Icinga daemon and the CGIs. (`cgi.cfg` 裡可以指定 `main_config_file`)
-** Resource files can be used to store user-defined macros (可以代換文字，用起來像是變數?? resource files 該不會只是用來定義 macros 而已吧??). The main point of having resource files is to use them to store sensitive configuration information (like passwords), without making them available to the CGIs. 聽起來，就算是走 CGI，背後也是轉給 Icinga daemon 處理??
+** the files may be in separate folders per geographical location (country, branch, ...) and a file per physical or logical unit (room, rack, application, development, ...), or the concept which seems to suit your needs best. 依適合自己的方式劃分 sub-folders (通常在 `conf.d/` 底下)，執行期會被合併起來。
+** The main configuration file contains a number of directives that affect how the Icinga daemon operates and links to several other files. 最重要的是將 `conf.d/` 引進來 This config file is read by both the Icinga daemon and the CGIs. (`cgi.cfg` 裡可以指定 `main_config_file`)
+** Resource files can be used to store user-defined macros (可以代換文字，用起來像是變數). The main point of having resource files is to use them to store sensitive configuration information (like passwords), without making them available to the CGIs. 可以將 resource file 的權限開成只有 daemon 可以讀取，結果就是除了 root 以外的人都看不到內容。聽起來，就算是走 CGI，背後也是轉給 Icinga daemon 處理??
 ** Object definition files are used to define hosts, services, hostgroups, contacts, contactgroups, commands, etc. This is where you define all the things you want to monitor and how you want to monitor them. You can specify one or more object definition files by using the `cfg_file` and/or `cfg_dir` directives in your main configuration file, but it is advisable to stick to one type of directive (either `cfg_dir` or `cfg_file` until you understand the implications using both at a time). 看來 object definitions 會是最花時間的部份!! 注意 `cgf_file` 或 `cfg_dir` 只跟 object definition files 有關。
 ** Your object definition files can in turn include other files using the `include_file` or `include_dir` directives. These can only occur outside of the actual object definitions, and behave very much like the `cfg_file=` and `cfg_dir=` directives in the main configuration file. 在實務上很少用，因為 `cfg_dir` 自然就會將 `*.cfg` 納進來。
 ** The CGI configuration file contains a number of directives that affect the operation of the CGIs. It also contains a reference to the main configuration file, so the CGIs know how you've configured Icinga and where your object definitions are stored.

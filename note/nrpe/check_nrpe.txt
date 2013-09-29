@@ -1,0 +1,71 @@
+= link:nrpe.html[NRPE] / `check_nrpe` =
+:title: [NRPE] check_nrpe
+
+ check_nrpe -H <nrpe_server> [-p <port>] [<options>] [-c <command>] [-a <arglist...>]
+
+常用的 options 有：
+
+`-H <nrpe_server>`:: link:server.html[NRPE server] 的位置。
+
+`-p <port>`:: 指定 NRPE server 在 'port' 埠服務，預設是 5666。
+
+`-u`:: 發生 connection timeout 時，預設的 return code 是 3 (CRITICAL)，加上這個 option 會改傳回 4 (UNKNOWN)。
++
+[source,console]
+--------------------------------------------------------------------------------
+$ /usr/lib/nagios/plugins/check_nrpe -H 192.168.1.1 -c check_load
+CHECK_NRPE: Socket timeout after 10 seconds.
+$ echo $?
+2
+
+$ /usr/lib/nagios/plugins/check_nrpe -H 192.168.1.1 -c check_load -u
+CHECK_NRPE: Socket timeout after 10 seconds.
+$ echo $?
+3
+--------------------------------------------------------------------------------
+
+`-t <timeout>`:: 設定 'timeout' 秒內無法成功連上 NRPE server 就視為 connection timeout，預設是 10 秒。
+
+`-c <command>`:: 要求 NRPE server 代為執行 NRPE link:commands.html['command']。
+
+`-a <arglist...>`:: 要傳給 NRPE command 的參數。
+
+== 完整的用法 ==
+
+[source,console]
+--------------------------------------------------------------------------------
+$ /usr/lib/nagios/plugins/check_nrpe -h
+
+NRPE Plugin for Nagios
+Copyright (c) 1999-2008 Ethan Galstad (nagios@nagios.org)
+Version: 2.12
+Last Modified: 03-10-2008
+License: GPL v2 with exemptions (-l for more info)
+SSL/TLS Available: Anonymous DH Mode, OpenSSL 0.9.6 or higher required
+
+Usage: check_nrpe -H <host> [-n] [-u] [-p <port>] [-t <timeout>] [-c <command>] [-a <arglist...>]
+
+Options:
+ -n         = Do no use SSL
+ -u         = Make socket timeouts return an UNKNOWN state instead of CRITICAL
+ <host>     = The address of the host running the NRPE daemon
+ [port]     = The port on which the daemon is running (default=5666)
+ [timeout]  = Number of seconds before connection times out (default=10)
+ [command]  = The name of the command that the remote daemon should run
+ [arglist]  = Optional arguments that should be passed to the command.  Multiple
+              arguments should be separated by a space.  If provided, this must be
+              the last option supplied on the command line.
+ -h,--help    Print this short help.
+ -l,--license Print licensing information.
+ -n,--no-ssl  Do not initial an ssl handshake with the server, talk in plaintext.
+
+Note:
+This plugin requires that you have the NRPE daemon running on the remote host.
+You must also have configured the daemon to associate a specific plugin command
+with the [command] option you are specifying here.  Upon receipt of the
+[command] argument, the NRPE daemon will run the appropriate plugin command and
+send the plugin output and return code back to *this* plugin.  This allows you
+to execute plugins on remote hosts and 'fake' the results to make Nagios think
+the plugin is being run locally.
+--------------------------------------------------------------------------------
+

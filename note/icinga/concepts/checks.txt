@@ -1,0 +1,120 @@
+= link:concepts.html[Icinga] / Host/Service Checks =
+:title: [Icinga] Host/Service Checks
+
+// scheduled check, on-demand check
+
+== 參考資料 ==
+
+ * http://docs.icinga.org/latest/en/hostchecks.html[5.4. Host Checks]
+
+////////////////////////////////////////////////////////////////////////////////
+** Hosts are checked by the Icinga daemon:
+   *** At regular intervals, as defined by the `check_interval` and `retry_interval` options in your host definitions.
+   *** On-demand when a service associated with the host changes state. 想確認 service 出狀況是不是因為 host 本身已經掛了??
+   *** On-demand as needed as part of the host reachability logic.
+   *** On-demand as needed for predictive host dependency checks?? 這裡的 host dependency 跟 host reachability 有什麼不同??
+** Regularly scheduled host checks are optional. If you set the `check_interval` option in your host definition to zero (0), Icinga will not perform checks of the hosts on a regular basis. It will, however, still perform on-demand checks of the host as needed for other parts of the monitoring logic. 這跟把 `active_checks_enabled` 設成 `0` 會同時將 scheduled 跟 on-demand 停掉的效果不同
+** On-demand checks are made when a service associated with the host changes state because Icinga needs to know whether the host has also changed state. Services that change state are often an indicator that the host may have also changed state.
+** On-demand checks of hosts are also made as part of the host reachability logic. Icinga is designed to detect network outages as quickly as possible, and distinguish between DOWN and UNREACHABLE host states. These are very different states and can help an admin quickly locate the cause of a network outage. 先解決 reachability 的問題，再看 host/service 是否真的有問題。
+** Scheduled host checks are run in parallel. When Icinga needs to run a scheduled host check, it will initiate the host check and then return to doing other work (running service checks, etc). The host check runs in a child process that was fork()ed from the main Icinga daemon. When the host check has completed, the child process will inform the main Icinga process (its parent) of the check results. The main Icinga process then handles the check results and takes appropriate action (running event handlers, sending notifications, etc.). 按照 "passive checks" 一文的說法，active/passive checks 的結果最後都會進到 result quene 等待處理。
+** When Icinga processes the results of scheduled and on-demand host checks, it may initiate (secondary) checks of other hosts. These checks can be initated for two reasons: predictive dependency checks and to determining the status of the host using the network reachability logic. The secondary checks that are initiated are usually run in parallel. However, there is one big exception that you should be aware of, as it can have negative effect on performance...
+** Hosts that are checked can be in one of three different states: `UP`, `DOWN`, `UNREACHABLE`
+** Host checks are performed by plugins, which can return a state of `OK`, `WARNING`, `UNKNOWN`, or `CRITICAL`. How does Icinga translate these plugin return codes into host states of `UP`, `DOWN`, or `UNREACHABLE`? 可見 plugin 本身並不知道自己會被用在 host check 還是 service check，固定回 API 要求的 4 種 return code，最後再由 Icinga 根據其他的狀況決定最後會成為 `UP`、`DOWN` 或 `UNREACHABLE` 其中的哪一個。
+   *** The table below shows how plugin return codes correspond with preliminary (初步的) host states. Some post-processing (which is described later) is done which may then alter the final host state. 這裡的 post-processing 指的是 `DOWN` 的狀況，可能最後被調整成 `UNREACHABLE`
+   *** OK -> UP, UNKNOWN/CRITICAL -> DOWN, WARNING -> UP/DOWN?
+   *** `WARNING` results usually means the host is `UP`. However, `WARNING` results are interpreted to mean the host is DOWN if the `use_aggressive_host_checking` option is enabled.
+   *** If the preliminary host state is `DOWN`, Icinga will attempt to see if the host is really `DOWN` or if it is `UNREACHABLE`. The distinction between `DOWN` and `UNREACHABLE` host states is important, as it allows admins to determine root cause of network outages faster.
+** hosts don't always stay in one state. Things break, patches get applied, and servers need to be rebooted. When Icinga checks the status of hosts, it will be able to detect when a host changes between `UP`, `DOWN`, and `UNREACHABLE` states and take appropriate action. These state changes result in different state types (HARD or SOFT), which can trigger event handlers to be run and notifications to be sent out. Detecting and dealing with state changes is what Icinga is all about.
+** When hosts change state too frequently they are considered to be "flapping". Icinga can detect when hosts start flapping, and can suppress notifications until flapping stops and the host's state stabilizes.
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://docs.icinga.org/latest/en/servicechecks.html[5.5. Service Checks]
+
+////////////////////////////////////////////////////////////////////////////////
+** Services are checked by the Icinga daemon: 概念上跟 host check 很像
+   *** At regular intervals, as defined by the `check_interval` and `retry_interval` options in your service definitions.
+   *** On-demand as needed for predictive service dependency checks. If you don't make use of service dependencies, Icinga won't perform any on-demand service checks. 沒有像 host check 有 reachability 的問題
+** Services that are checked can be in one of four different states: `OK`, `WARNING`, `UNKNOWN`, `CRITICAL`
+** Service checks are performed by plugins, which can return a state of `OK`, `WARNING`, `UNKNOWN`, or `CRITICAL`. These plugin states directly translate to service states. 沒有像 host check 一樣要經過轉換。
+** When Icinga checks the status of services, it will be able to detect when a service changes between `OK`, `WARNING`, `UNKNOWN`, and `CRITICAL` states and take appropriate action. These state changes result in different state types (HARD or SOFT), which can trigger event handlers to be run and notifications to be sent out. Service state changes can also trigger on-demand host checks. Detecting and dealing with state changes is what Icinga is all about.
+** When services change state too frequently they are considered to be "flapping". Icinga can detect when services start flapping, and can suppress notifications until flapping stops and the service's state stabilizes.
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://docs.icinga.org/latest/en/activechecks.html[5.6. Active Checks]
+
+////////////////////////////////////////////////////////////////////////////////
+** Icinga is capable of monitoring hosts and services in two ways: actively and passively. 也就是 pull 跟 push 的差別
+** Active checks are the most common method for monitoring hosts and services. The main features of actives checks as as follows:
+   *** Active checks are initiated by the Icinga process
+   *** Active checks are run on a regularly scheduled basis
+** Active checks are initiated by the check logic in the Icinga daemon. When Icinga needs to check the status of a host or service it will execute a plugin and pass it information about what needs to be checked. The plugin will then check the operational state of the host or service and report the results back to the Icinga daemon. Icinga will process the results of the host or service check and take appropriate action as necessary (e.g. send notifications, run event handlers, etc).
+** Active check are executed:
+   *** At regular intervals, as defined by the `check_interval` and `retry_interval` options in your host and service definitions
+   *** On-demand as needed 只要是從 Icinga 主動發出的 check 都叫 active
+** Regularly scheduled checks occur at intervals equaling either the `check_interval` or the `retry_interval` in your host or service definitions, depending on what type of state the host or service is in. If a host or service is in a HARD state, it will be actively checked at intervals equal to the `check_interval` option. If it is in a SOFT state, it will be checked at intervals equal to the `retry_interval` option. 這呼應了 host definition 裡 `retry_interval` 的說法，試過 `max_check_attempts` 次之後，如果狀況沒有好轉（進入 hard），就會回到 `check_interval` 的頻率，持續發 alert!!
+** On-demand checks are performed whenever Icinga sees a need to obtain the latest status information about a particular host or service. For example, when Icinga is determining the reachability of a host, it will often perform on-demand checks of parent and child hosts to accurately determine the status of a particular network segment. 所以 check command 可能在排定的時間以外被執行。
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://docs.icinga.org/latest/en/passivechecks.html[5.7. Passive Checks]
+
+////////////////////////////////////////////////////////////////////////////////
+** In most cases you'll use Icinga to monitor your hosts and services using regularly scheduled active checks. Active checks can be used to "poll" a device or service for status information every so often.
+** Icinga also supports a way to monitor hosts and services passively instead of actively. They key features of passive checks are as follows: 簡單地說，就是外部程式主動將結果寫入 Icinga 定期會去撈取結果的檔案。
+   *** Passive checks are initiated and performed external applications/processes
+   *** Passive check results are submitted to Icinga for processing 如果不在同一台機器上，需要透過 NSCA addon 的幫忙。
+** The major difference between active and passive checks is that active checks are initiated and performed by Icinga, while passive checks are performed by external applications.
+** Passive checks are useful for monitoring services that are:
+   *** Asynchronous in nature and cannot be monitored effectively by polling their status on a regularly scheduled basis 實際的狀況有點難想像??
+   *** Located behind a firewall and cannot be checked actively from the monitoring host 由於在 firewall 後面，所以 Icinga 無法主動監測，只能靠被監測的機器主動回報狀態。
+** Passive checks are also used when configuring distributed or redundant monitoring installations??
+** Here's how passive checks work in more detail...
+   *** An external application checks the status of a host or service.
+   *** The external application writes the results of the check to the external command file. 為什麼叫 "external command file" 而非 "external result file" 呢？因為裡面確實會放一個指令，要求把 passive check 的結果吃進 Icinga 裡。例如 `PROCESS_SERVICE_CHECK_RESULT` 或 `PROCESS_HOST_CHECK_RESULT`
+   *** The next time Icinga reads the external command file it will place the results of all passive checks into a queue for later processing. The same queue that is used for storing results from active checks is also used to store the results from passive checks. 從 external command file 讀進 result queue 之後，就看不出 active/passive check 的差異了。
+   *** Icinga will periodically execute a check result reaper (收割) event and scan the check result queue. Each service check result that is found in the queue is processed in the same manner - regardless of whether the check was active or passive. Icinga may send out notifications, log alerts, etc. depending on the check result information.
+** The processing of active and passive check results is essentially identical. This allows for seamless integration of status information from external applications with Icinga.
+** In order to enable passive checks in Icinga, you'll need to do the following:
+   *** Set `accept_passive_service_checks` directive is set to 1.
+   *** Set the `passive_checks_enabled` directive in your host and service definitions is set to 1.
+   *** If you want to disable processing of passive checks on a global basis, set the `accept_passive_service_checks` directive to 0.
+   *** If you would like to disable passive checks for just a few hosts or services, use the `passive_checks_enabled` directive in the host and/or service definitions to do so.
+** External applications can submit passive service check results to Icinga by writing a `PROCESS_SERVICE_CHECK_RESULT` external command to the external command file. The format of the command is as follows: `[<timestamp>] PROCESS_SERVICE_CHECK_RESULT;<host_name>;<svc_description>;<return_code>;<plugin_output>`
+** External applications can submit passive host check results to Icinga by writing a `PROCESS_HOST_CHECK_RESULT` external command to the external command file. The format of the command is as follows: `[<timestamp>] PROCESS_HOST_CHECK_RESULT;<host_name>;<host_status>;<plugin_output>`
+** Unlike with active host checks, Icinga does not (by default) attempt to determine whether or host is DOWN or UNREACHABLE with passive checks. Rather, Icinga takes the passive check result to be the actual state the host is in and doesn't try to determine the host's actual state using the reachability logic. 事實上是想做也沒法做，因為無法從 Icinga 直接 initiate。
+** You can tell Icinga to translate DOWN/UNREACHABLE passive check result states to their "proper" state by using the `translate_passive_host_checks` variable. 為什麼還要這一層轉換??
+** Passive host checks are normally treated as HARD states, unless the `passive_host_checks_are_soft` option is enabled. 由 remote host 親自報回來的結果，當然是肯定（hard）的
+** If an application that resides on the same host as Icinga is sending passive host or service check results, it can simply write the results directly to the external command file as outlined above. However, applications on remote hosts can't do this so easily.
+** In order to allow remote hosts to send passive check results to the monitoring host, the NSCA addon was developed. The NSCA addon consists of a daemon that runs on the Icinga hosts and a client that is executed from remote hosts. The daemon will listen for connections from remote clients, perform some basic validation on the results being submitted, and then write the check results directly into the external command file 簡單的說，NSCA 就是代 remote host 將 check result 寫到 external command file 裡。
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://docs.icinga.org/latest/en/statetypes.html[5.8. State Types]
+
+////////////////////////////////////////////////////////////////////////////////
+** The current state of monitored services and hosts is determined by two components: 注意 status/state 不同的說法，基本上 status 是 state 的一部份??
+   *** The status of the service or host (i.e. OK, WARNING, UP, DOWN, etc.)
+   *** Tye type of state the service or host is in
+** There are two state types in Icinga - SOFT states and HARD states. These state types are a crucial part of the monitoring logic, as they are used to determine when event handlers are executed and when notifications are initially sent out. 因為 soft state 可以設定成只 log 起來，不觸發 event handler，也不發出 notifications。簡單地說，hard error/recovery 是 100% 肯定的狀況，但 soft error/recovery 則不太肯定，還需要 retry 才能肯定（變成 hard）
+** In order to prevent false alarms from transient problems, Icinga allows you to define how many times a service or host should be (re)checked before it is considered to have a "real" problem. This is controlled by the `max_check_attempts` option in the host and service definitions. 原來 `max_check_attempts` 的意義這麼深遠!!
+** Soft states occur in the following situations...
+   *** When a service or host check results in a non-OK or non-UP state and the service check has not yet been (re)checked the number of times specified by the `max_check_attempts` directive in the service or host definition. This is called a soft error.
+   *** When a service or host recovers from a soft error. This is considered a soft recovery.
+** The following things occur when hosts or services experience SOFT state changes: 看似在 soft error/recovery 時，event handler 可能被觸發，但 notification 是絕對不會送出的??
+   *** The SOFT state is logged.
+   *** Event handlers are executed to handle the SOFT state.
+   *** SOFT states are ONLY logged if you enabled the `log_service_retries` or `log_host_retries` options in your main configuration file.
+   *** The only important thing that really happens during a soft state is the execution of event handlers. Using event handlers can be particularly useful if you want to try and proactively fix a problem before it turns into a HARD state. The `$HOSTSTATETYPE$` or `$SERVICESTATETYPE$` macros will have a value of "SOFT" when event handlers are executed, which allows your event handler scripts to know when they should take corrective action.
+** When a host or service check results in a non-UP or non-OK state and it has been (re)checked the number of times specified by the max_check_attempts option in the host or service definition. This is a hard error state.
+** Hard states occur for hosts and services in the following situations:
+   *** When a host or service transitions from one hard error state to another error state (e.g. WARNING to CRITICAL).
+   *** When a service check results in a non-OK state and its corresponding host is either DOWN or UNREACHABLE. 如果 host 有狀況，上然 service 的狀況當然是肯定的。
+   *** When a host or service recovers from a hard error state. This is considered to be a hard recovery. 剛從 hard 回復，再觀察一下下...
+   *** When a passive host check is received. Passive host checks are treated as HARD unless the `passive_host_checks_are_soft` option is enabled. 轉成 soft 就不會立即發通知。
+** The following things occur when hosts or services experience HARD state changes:
+   *** The HARD state is logged.
+   *** Event handlers are executed to handle the HARD state. 不像 soft sate，沒辧法調成只 log 不處理
+   *** Contacts are notifified of the host or service problem or recovery.
+   *** The `$HOSTSTATETYPE$` or `$SERVICESTATETYPE$` macros will have a value of "HARD" when event handlers are executed, which allows your event handler scripts to know when they should take corrective action.
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://docs.icinga.org/latest/en/checkscheduling.html[7.23. Service and Host Check Scheduling]
+

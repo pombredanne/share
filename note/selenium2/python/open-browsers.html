@@ -46,6 +46,24 @@ asciidoc.install();
 <div id="content">
 <div id="preamble">
 <div class="sectionbody">
+<div class="paragraph"><p>一旦取得 <a href="webdriver.html"><code>WebDriver</code></a> instance，接下來的操作幾乎不會因為操作的 browser 不同而有差異，但問題就在 "開啟瀏覽器" 這個動作，有很明顯的不同。</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="#phantomjs">PhantomJS</a>
+</p>
+</li>
+<li>
+<p>
+<a href="#firefox">Firefox</a>
+</p>
+</li>
+<li>
+<p>
+<a href="#remote">Remote WebDriver</a>
+</p>
+</li>
+</ul></div>
 <div class="listingblock">
 <div class="content"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">selenium</span> <span class="kn">import</span> <span class="n">webdriver</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">dir</span><span class="p">(</span><span class="n">webdriver</span><span class="p">)</span>
@@ -56,9 +74,120 @@ asciidoc.install();
 </div>
 </div>
 <div class="sect1">
-<h2 id="firefox">Firefox Driver</h2>
+<h2 id="phantomjs">PhantomJS</h2>
 <div class="sectionbody">
-<div class="literalblock">
+<div class="paragraph"><p>根據 Pyhton docstring 跟 Javadoc 的說法：</p></div>
+<div class="quoteblock">
+<div class="content">
+<div class="paragraph"><p>Creates a new instance of the PhantomJS / Ghostdriver.</p></div>
+<div class="paragraph"><p>Starts the service and then creates new instance of the driver.</p></div>
+</div>
+<div class="attribution">
+&#8212; <a href="https://code.google.com/p/selenium/source/browse/py/selenium/webdriver/phantomjs/webdriver.py#36"><code>webdriver.py</code></a>
+</div></div>
+<div class="quoteblock">
+<div class="content">
+<div class="paragraph"><p>A <code>WebDriver</code> implementation that controls a PhantomJS running in Remote WebDriver mode. This class is provided as a convenience for easily testing PhantomJS. The control server which each instance communicates with will live and die with the instance.</p></div>
+<div class="paragraph"><p>&#8230;</p></div>
+<div class="paragraph"><p>Instead, if you have a PhantomJS WebDriver process already running, you can instead use <code>RemoteWebDriver.RemoteWebDriver(java.net.URL, org.openqa.selenium.Capabilities)</code> to delegate the execution of your WebDriver/Selenium scripts to it. Of course, in that case you will than be in charge to control the life-cycle of the PhantomJS process.</p></div>
+</div>
+<div class="attribution">
+&#8212; <a href="https://github.com/detro/ghostdriver/blob/master/binding/java/src/main/java/org/openqa/selenium/phantomjs/PhantomJSDriver.java"><code>PhantomJSDriver.java</code></a>
+</div></div>
+<div class="paragraph"><p>可以發現要操控 <a href="../../phantomjs/phantomjs.html">PhantomJS</a> 有兩種做法：</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+透過 PhantomJS 專用的 driver，內部會自行帶出執行在 <a href="../drivers/phantomjs.html">WebDriver Mode</a> 的 PhantomJS instance。
+</p>
+</li>
+<li>
+<p>
+自行在外部啟動 PhantomJS (WebDriver Mode)，再透過 <a href="#remote">"Remote WebDriver"</a> 來操作。
+</p>
+</li>
+</ol></div>
+<div class="paragraph"><p>採用第一個方法的好處是，不用事先將 PhantomJS 執行起來，程式結束時也會自動將它關閉。</p></div>
+<div class="listingblock">
+<div class="title"><a href="http://selenium.googlecode.com/svn/trunk/docs/api/py/webdriver_phantomjs/selenium.webdriver.phantomjs.webdriver.html"><code>selenium.webdriver.phantomjs.webdriver</code></a></div>
+<div class="content">
+<pre><code>selenium.webdriver.phantomjs.webdriver.WebDriver(
+    executable_path="phantomjs", <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+    port=0,                      <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+    desired_capabilities=DesiredCapabilities.PHANTOMJS,
+    service_args=None,           <img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+    service_log_path=None)       <img src="../../../_asciidoc/images/icons/callouts/4.png" alt="4" /></code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+Driver 預設就是透過 <code>$PATH</code> 裡的 <code>phantomjs</code> 來帶出內部的 PhantomJS instance。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+<code>port</code> 指定 WebDriver Mode 要在哪個 port 服務，給 <code>0</code> 時表示內部會自動找出一個沒被佔用的 port。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+除了 <code>--webdriver=&lt;port&gt;</code> 之外，有其他要傳給 <code>phantomjs</code> 的 <a href="../../phantomjs/phantomjs-cli.html#arguments">command-line arguments</a>，可以透過 <code>service_args</code> 給定。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/4.png" alt="4" /></td><td>
+PhantomJS instance 所有的 logs <a href="https://code.google.com/p/selenium/source/browse/py/selenium/webdriver/phantomjs/service.py#48">預設會被寫到 working directory 的 <code>ghostdriver.log</code></a>，透過 <code>service_log_path</code> 可以自訂 logs 要寫到哪裡。
+</td></tr>
+</table></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">selenium.webdriver</span> <span class="kn">import</span> <span class="n">PhantomJS</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">driver</span> <span class="o">=</span> <span class="n">PhantomJS</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">driver</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;http://www.google.com&#39;</span><span class="p">)</span>
+</pre></div></div></div>
+<div class="paragraph"><p>這個時候，<code>ghostdriver.log</code> 會記錄類似的訊息：</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>PhantomJS is launching GhostDriver...
+[INFO  - 2013-09-26T03:25:51.443Z] GhostDriver - Main - running on port 59651
+[INFO  - 2013-09-26T03:25:52.235Z] Session [58a3dc20-265b-11e3-a3d2-5d33f414594d] - _decorateNewWindow - page.settings: {"XSSAuditingEnabled":false,"javascriptCanCloseWindows":true,"javascriptCanOpenWindows":true,"javascriptEnabled":true,"loadImages":true,"localToRemoteUrlAccessEnabled":false,"userAgent":"Mozilla/5.0 (Unknown; Linux x86_64) AppleWebKit/534.34 (KHTML, like Gecko) PhantomJS/1.9.2 Safari/534.34","webSecurityEnabled":true}
+[INFO  - 2013-09-26T03:25:52.235Z] Session [58a3dc20-265b-11e3-a3d2-5d33f414594d] - page.customHeaders:  - {}
+[INFO  - 2013-09-26T03:25:52.235Z] Session [58a3dc20-265b-11e3-a3d2-5d33f414594d] - CONSTRUCTOR - Desired Capabilities: {"platform":"ANY","browserName":"phantomjs","version":"","javascriptEnabled":true}
+[INFO  - 2013-09-26T03:25:52.235Z] Session [58a3dc20-265b-11e3-a3d2-5d33f414594d] - CONSTRUCTOR - Negotiated Capabilities: {"browserName":"phantomjs","version":"1.9.2","driverName":"ghostdriver","driverVersion":"1.0.4","platform":"linux-unknown-64bit","javascriptEnabled":true,"takesScreenshot":true,"handlesAlerts":false,"databaseEnabled":false,"locationContextEnabled":false,"applicationCacheEnabled":false,"browserConnectionEnabled":false,"cssSelectorsEnabled":true,"webStorageEnabled":false,"rotatable":false,"acceptSslCerts":false,"nativeEvents":true,"proxy":{"proxyType":"direct"}}
+[INFO  - 2013-09-26T03:25:52.235Z] SessionManagerReqHand - _postNewSessionCommand - New Session Created: 58a3dc20-265b-11e3-a3d2-5d33f414594d</code></pre>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<img src="../../../_asciidoc/images/icons/caution.png" alt="Caution" />
+</td>
+<td class="content">
+<div class="paragraph"><p><code>PhantomJS()</code> 這個動作偶爾會遇到 "<code>[Errno 13] Permission denied: 'ghostdriver.log'</code>"，那是因為執行身份對 working directory 沒有寫入的權限造成。例如：</p></div>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span class="gp">$</span> <span class="nb">cd</span> /
+<span class="gp">$</span> python
+<span class="gp">&gt;</span>&gt;&gt; from selenium.webdriver import PhantomJS
+<span class="gp">&gt;</span>&gt;&gt; <span class="nv">driver</span> <span class="o">=</span> PhantomJS<span class="o">()</span>
+<span class="go">Traceback (most recent call last):</span>
+<span class="go">  File &quot;&lt;stdin&gt;&quot;, line 1, in &lt;module&gt;</span>
+<span class="go">  File &quot;/usr/local/lib/python2.7/dist-packages/selenium/webdriver/phantomjs/webdriver.py&quot;, line 49, in __init__</span>
+<span class="go">    service_args=service_args, log_path=service_log_path)</span>
+<span class="go">  File &quot;/usr/local/lib/python2.7/dist-packages/selenium/webdriver/phantomjs/service.py&quot;, line 49, in __init__</span>
+<span class="go">    self._log = open(log_path, &#39;w&#39;)</span>
+<span class="go">IOError: [Errno 13] Permission denied: &#39;ghostdriver.log&#39;</span>
+</pre></div></div></div>
+<div class="paragraph"><p>要解決這個問題，最簡單的方法就是事先把 working directory 切到有寫入權限的地方，但這仍然避不開多個 PhantomJS instance 同時執行會相互覆寫 logs 的問題（這種事在 headless testing 很容易發生）。</p></div>
+<div class="paragraph"><p>一個可行的方式是動態產生一個<a href="../../python/files/temporary.html">暫存檔</a>，做為 logs 輸出的目標。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>&gt;&gt;&gt; import tempfile, os.path as path
+&gt;&gt;&gt; log_path = path.join(tempfile.mkdtemp(), 'ghostdriver.log')
+&gt;&gt;&gt;
+&gt;&gt;&gt; from selenium.webdriver import PhantomJS
+&gt;&gt;&gt; driver = PhantomJS(service_log_path = log_path)
+&gt;&gt;&gt; driver.get('http://www.google.com')</code></pre>
+</div></div>
+</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="firefox">Firefox</h2>
+<div class="sectionbody">
+<div class="listingblock">
 <div class="content">
 <pre><code>selenium.webdriver.firefox.webdriver.WebDriver(
     firefox_profile=None,
@@ -77,7 +206,7 @@ asciidoc.install();
 <div class="sect1">
 <h2 id="remote">Remote WebDriver</h2>
 <div class="sectionbody">
-<div class="literalblock">
+<div class="listingblock">
 <div class="content">
 <pre><code>selenium.webdriver.remote.webdriver.WebDriver(
     command_executor='http://127.0.0.1:4444/wd/hub',
@@ -136,6 +265,11 @@ Browser 會在這個時候被開啟。
 <a href="http://selenium.googlecode.com/svn/trunk/docs/api/py/webdriver_firefox/selenium.webdriver.firefox.webdriver.html">selenium.webdriver.firefox.webdriver — Selenium 2.0 documentation</a>
 </p>
 </li>
+<li>
+<p>
+<a href="http://selenium.googlecode.com/svn/trunk/docs/api/py/webdriver_phantomjs/selenium.webdriver.phantomjs.webdriver.html">selenium.webdriver.phantomjs.webdriver — Selenium 2.0 documentation</a>
+</p>
+</li>
 </ul></div>
 </div>
 </div>
@@ -154,7 +288,7 @@ dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
 <div id="footnotes"><hr /></div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2013-08-21 17:36:03 CST
+Last updated 2013-09-29 06:28:26 CST
 </div>
 </div>
 </div>

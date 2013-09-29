@@ -1,6 +1,62 @@
 = link:../icinga.html[Icinga] / Objects =
 :title: [Icinga] Objects
 
+////////////////////////////////////////////////////////////////////////////////
+ * object definitions (`*.cfg`)
+ * template format
+ * object inheritance
+ * host.check_command -> command (host check)
+ * 
+////////////////////////////////////////////////////////////////////////////////
+
+["graphviz","objects/objects.png"]
+--------------------------------------------------------------------------------
+digraph {
+  node [ shape = box ]
+  Host [ label = "Host\n(Group)" ]
+  Service [ label = "Service\n(Group)" ]
+  Contact [ label = "Contact\n(Group)" ]
+  Command
+  "Time Period"
+
+  subgraph { rank = same; Service; Host }
+  Host -> Command [ label = "host check" color = blue fontcolor = blue ]
+  Service -> Host [ label = "associated with" ]
+  Service -> Command [ label = "service check" color = blue fontcolor = blue ]
+  Command -> Contact [ label = "notify\n(state change)" color = red fontcolor = red ]
+}
+--------------------------------------------------------------------------------
+
+[graphviz]
+--------------------------------------------------------------------------------
+digraph {
+  node [ shape = box ]
+
+  Host -> Host [ label = "parents" ]
+  Host -> "Host Group" [ label = "hostgroups" ]
+  "Host Group" -> Host [ label = "members", style = dashed ]
+  Host -> Command [ label = "check_command" ]
+  Host -> Command [ label = "event_handler" ]
+  Host -> Contact [ label = "contacts" ]
+  Host -> "Contact Group" [ label = "contact_groups" ]
+  "Host Group" -> "Host Group" [ label = "hostgroup_members" ]
+  Service -> Host [ label = "host_name" ]
+  Service -> "Host Group" [ label = "hostgroup_name" ]
+  Service -> "Service Group" [ label = "servicegroups" ]
+  "Service Group" -> Service [ label = "members", style = dashed ]
+  Service -> Command [ label = "check_command" ]
+  Service -> Command [ label = "event_handler" ]
+  Service -> Contact [ label = "contacts" ]
+  Service -> "Contact Group" [ label = "contact_groups" ]
+  "Service Group" -> "Service Group" [ label = "servicegroup_members" ]
+  Contact -> "Contact Group" [ label = "contactgroups" ]
+  Contact -> Command [ label = "host_notification_commands" ]
+  Contact -> Command [ label = "service_notification_commands" ]
+  "Contact Group" -> Contact [ label = "members", style = dashed ]
+  "Contact Group" -> "Contact Group" [ label = "contactgroup_members" ]
+}
+--------------------------------------------------------------------------------
+
 == 參考資料 ==
 
  * http://docs.icinga.org/latest/en/configobject.html[3.3. Object Configuration Overview]
@@ -10,30 +66,20 @@
 ** Objects can be defined in one or more configuration files and/or directories that you specify using the `cfg_file` and/or `cfg_dir` directives in the main configuration file.
 ** An object definition file can include other object definition files with the use of the `include_file=<file_name>` and `include_dir=<directory_name>` directives. The former includes the single file specified, the latter will process all files ending in the `.cfg` extension in the directory specified. These directives may be repeated to include multiple files/directories.
 ** The directives are not allowed within the actual definition of an object, and should appear before, after, or in between any object definitions. They are closely related to the `cfg_file=` and `cfg_dir=` directives in the main configuration file.
-** Objects are defined in a flexible template format, which can make it much easier to manage your Icinga configuration in the long term. 這裡的 "template format" 指的是搭配 macros 使用嗎??
-** Once you get familiar with the basics of how to define objects, you should read up on object inheritance, as it will make your configuration more robust for the future. 通常用來改寫 commands??
-** Hosts are one of the central objects in the monitoring logic. Important attributes of hosts are as follows:
-   *** Hosts are usually physical devices on your network (servers, workstations, routers, switches, printers, etc).
-   *** Hosts have an address of some kind (e.g. an IP or MAC address).
-   *** Hosts have one or more more services associated with them. 知道某個 node 提供哪些 services、attributes
-   *** Hosts can have parent/child relationships with other hosts, often representing real-world network connections, which is used in the network reachability?? logic.
-** Services are one of the central objects in the monitoring logic. Services are associated with hosts and can be:
-   *** Attributes of a host (CPU load, disk usage, uptime, etc.)
-   *** Services provided by the host (HTTP, POP3, FTP, SSH, etc.) 
-   *** Other things associated with the host (DNS records, etc.) 為什麼這也被歸類為 services??
-** Contacts are people involved in the notification process:
-   *** Contacts have one or more notification methods (cellphone, pager, email, instant messaging, etc.)
-   *** Contacts receive notifications for hosts and service they are responsible for 依權責劃分!!
-** Timeperiods are are used to control:
-   *** When hosts and services can be monitored 為什麼監測的對象會跟時間有關??
-   *** When contacts can receive notifications 可以對應執班表
-** Commands are used to tell Icinga what programs, scripts, etc. it should execute to perform:
-   *** Host and service checks
-   *** Notifications 直接通知? 通知什麼??
-   *** Event handlers?? and more...
+** Objects are defined in a flexible template format, which can make it much easier to manage your Icinga configuration in the long term. 這裡的 "template format" 指的是搭配 macros 使用
+** Once you get familiar with the basics of how to define objects, you should read up on object inheritance, as it will make your configuration more robust for the future.
 ////////////////////////////////////////////////////////////////////////////////
 
  * http://docs.icinga.org/latest/en/objectdefinitions.html[3.4. Object Definitions]
+
+////////////////////////////////////////////////////////////////////////////////
+** One of the features of Icingas object configuration format is that you can create object definitions that inherit properties from other object definitions.
+** Lines that start with a '#' character are taken to be comments and are not processed Directive names are case-sensitive
+** Characters that appear after a semicolon (;) in configuration lines are treated as comments and are not processed 這是 object definition 跟 main configuration 不同的地方
+** It is important to point out that several directives in host, service, and contact definitions may not be picked up by Icinga when you change them in your configuration files. Object directives that can exhibit this behaviour are marked with an asterisk (`*`). The reason for this behaviour is due to the fact that Icinga chooses to honour values stored in the "state retention file" over values found in the config files, assuming you have state retention enabled on a program-wide basis and the value of the directive is changed during runtime with an external command. One way to get around this problem is to disable the retention of non-status information using the `retain_nonstatus_information` directive in the host, service, and contact definitions. Disabling this directive will cause Icinga to take the initial values for these directives from your config files, rather than from the state retention file when it (re)starts. 不是說 "state retention file" 嗎，為什麼控制的開關又叫做 "nonstatus"?? 可以統一從 main config 的 `retain_state_information` 關閉。
+////////////////////////////////////////////////////////////////////////////////
+
  * http://docs.icinga.org/latest/images/logofullsize.png[7.26. Object Inheritance]
  * http://docs.icinga.org/latest/en/objecttricks.html[7.27. Time-Saving Tricks For Object Definitions]
+ * http://docs.icinga.org/latest/en/customobjectvars.html[3.5. Custom Object Variables]
 

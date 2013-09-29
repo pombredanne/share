@@ -1,0 +1,46 @@
+= Linux-PAM (Pluggable Authentication Module) =
+
+== 參考資料 ==
+
+.網站
+--
+ * http://www.linux-pam.org/[Linux-PAM]
+--
+
+.文件
+--
+ * http://www.linux-pam.org/whatispam.html[What is Linux-PAM?]
+
+////////////////////////////////////////////////////////////////////////////////
+** Basically, it is a flexible mechanism for authenticating users.
+** Since the beginnings of UNIX, authenticating a user has been accomplished via the user entering a password and the system checking if the entered password corresponds to the encrypted official password that is stored in `/etc/passwd`. The idea being that the user *is* really that user if and only if they can correctly enter their secret password.
+** Since then, a number of new ways of authenticating users have become popular. Including more complicated replacements for the `/etc/passwd` file, and hardware devices Smart cards etc.. The problem is that each time a new authentication scheme is developed, it requires all the necessary programs (login, ftpd etc...) to be rewritten to support it. 這就是 PAM 要解決的問題
+** PAM provides a way to develop programs that are independent of authentication scheme. These programs need "authentication modules" to be attatched to them at run-time (= pluggable) in order to work. Which authentication module is to be attatched is dependent upon the local system setup and is at the discretion of the local system administrator.
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://www.linux-pam.org/Linux-PAM-html/sag-introduction.html[Chapter 1. Introduction - The Linux-PAM Administration and Developer Guides]
+
+////////////////////////////////////////////////////////////////////////////////
+** Linux-PAM (Pluggable Authentication Modules for Linux) is a suite of shared libraries that enable the local system administrator to choose how applications authenticate users. In other words, without (rewriting and) recompiling a PAM-aware application, it is possible to switch between the authentication mechanism(s) it uses. Indeed, one may entirely upgrade the local authentication system without touching the applications themselves.
+** It is the purpose of the Linux-PAM project to separate the development of "privilege granting software" from the development of secure and appropriate authentication schemes.
+** This is accomplished by providing a library of functions that an application may use to request that a user be authenticated. This PAM library is configured locally with a system file, `/etc/pam.conf` (or a series of configuration files located in `/etc/pam.d/`) to authenticate a user request via the locally available authentication modules. The modules themselves will usually be located in the directory `/lib/security` or `/lib64/security` and take the form of dynamically loadable object files (see dlopen(3)).
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://www.linux-pam.org/Linux-PAM-html/sag-overview.html[Chapter 3. Overview - The Linux-PAM Administration and Developer Guides]
+
+////////////////////////////////////////////////////////////////////////////////
+** Login does two things, it first establishes that the requesting user is whom they claim to be and second provides them with the requested service
+** Traditionally, the former step is achieved by the login application prompting the user for a password and then verifying that it agrees with that located on the system; hence verifying that as far as the system is concerned the user is who they claim to be. This is the task that is delegated to Linux-PAM. From the perspective of the application programmer (in this case the person that wrote the login application), Linux-PAM takes care of this authentication task -- verifying the identity of the user. Linux-PAM 就是要幫忙 application 做掉驗證 user is who they claim to be 的這一段
+** The flexibility of Linux-PAM is that you, the system administrator, have the freedom to stipulate which authentication scheme is to be used. You have the freedom to set the scheme for any/all PAM-aware applications on your Linux system. That is, you can authenticate from anything as naive as simple trust (pam_permit) to something as paranoid as a combination of a retinal scan, a voice print and a one-time password! 而且 application 不需要變動
+** Linux-PAM deals with four separate types of (management) task. These are: authentication management; account management; session management; and password management. The association of the preferred management scheme with the behavior of an application is made with entries in the relevant Linux-PAM configuration file. The management functions are performed by modules specified in the configuration file. 某個 application 要用什麼方式驗證，由 Linux-PAM 的組態檔來決定
+** By way of explanation, the left of the figure represents the application; application X. Such an application interfaces with the Linux-PAM library and knows none of the specifics of its configured authentication method. 內部綁定 Linux-PAM 的 API，但對於最後會用什麼方式來驗證卻一無所知 The Linux-PAM library (in the center) consults the contents of the PAM configuration file and loads the modules that are appropriate for application-X. (只載入跟 application 相關的部份) These modules fall into one of four management groups (lower-center) and are stacked in the order they appear in the configuration file. These modules, when called by Linux-PAM, perform the various authentication tasks for the application. 依序評估 4 個 stack，而每個 stack 由上而下檢查不同的 rules??
+** Textual information, required from/or offered to the user, can be exchanged through the use of the application-supplied `conversation` function. 意指 API 有個 conversation 要實作，提供問答的字句? 這不就意謂著 application 還是得事先知道要支援哪些驗證方式??
+** If a program is going to use PAM, then it has to have PAM functions explicitly coded into the program. If you have access to the source code you can add the appropriate PAM functions. If you do not have access to the source code, and the binary does not have the PAM functions included, then it is not possible to use PAM. 這就是所謂的 PAM-aware
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://en.wikipedia.org/wiki/Pluggable_authentication_module[Pluggable authentication module - Wikipedia, the free encyclopedia]
+ * http://en.wikipedia.org/wiki/Linux_PAM[Linux PAM - Wikipedia, the free encyclopedia]
+ * http://en.wikipedia.org/wiki/OpenPAM[OpenPAM - Wikipedia, the free encyclopedia]
+ * http://www.rjsystems.nl/en/2100-pam-debian.php[PAM configuration guide for Debian]
+--
+

@@ -1,0 +1,54 @@
+= link:objects.html[Icinga / Objects] / Services =
+:title: [Icinga] Services
+
+--------------------------------------------------------------------------------
+define service {
+  host_name           <host_short_name>
+  hostgroup_name      <hostgroup_short_name>
+  service_description <short_name>
+  display_name        <descriptive_name>
+  check_command       <command_short_name>
+  check_interval      <check_inverval_units>
+  retry_interval      <retry_interval_units>
+  max_check_attempts  <max_retry_attempts>
+}
+--------------------------------------------------------------------------------
+
+// 可以用 web 的 Command Expander 檢查
+
+== 參考資料 ==
+
+ * http://docs.icinga.org/latest/en/configobject.html[3.3. Object Configuration Overview]
+
+////////////////////////////////////////////////////////////////////////////////
+** Services are one of the central objects in the monitoring logic. Services are associated with hosts and can be:
+   *** Attributes of a host (CPU load, disk usage, uptime, etc.)
+   *** Services provided by the host (HTTP, POP3, FTP, SSH, etc.) 
+   *** Other things associated with the host (DNS records, etc.) 會影響 service 的種種（something），都叫 service
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://docs.icinga.org/latest/en/objectdefinitions.html[3.4. Object Definitions > Service Definition]
+
+////////////////////////////////////////////////////////////////////////////////
+** A service definition is used to identify a "service" that runs on a host. The term "service" is used very loosely. It can mean an actual service that runs on the host (POP, SMTP, HTTP, etc.) or some other type of metric associated with the host (response to a ping, number of logged in users, free disk space, etc.). 因為 Icinga 自己並不知道 commands 內部在檢查什麼東西，只能透過 return code 得知測試的結果而已。
+** Please note that some directives may be inherited from the host definition. For details refer to implied inheritance. 這還滿特別的??
+** `host_name`: This directive is used to specify the short name(s) of the host(s) that the service "runs" on or is "associated with". Multiple hosts should be separated by commas.
+** `hostgroup_name`: This directive is used to specify the short name(s) of the hostgroup(s) that the service "runs" on or is associated with. Multiple hostgroups should be separated by commas. The `hostgroup_name` may be used instead of, or in addition to, the `host_name` directive.
+** `service_description`: This directive is used to define the description of the service, which may contain spaces, dashes, and colons (semicolons, apostrophes, and quotation marks should be avoided). 跟 `display_name` 沒有重複，別人引用時必須採用 `host_name` + `service_description` 的組合
+** No two services associated with the same host can have the same description. Services are uniquely identified with their `host_name` and `service_description` directives. 聽起來 `service_name` 其實就是 `host_name` + `service_description` 的組合，像是 compounded key 的概念。不過這也合理，同樣是 serviceA，但執行在 host1 跟 host2 上面的就是不太一樣!!
+** `display_name`: This directive is used to define an alternate name that should be displayed in the web interface for this service. If not specified, this defaults to the value you specify for the `service_description` directive.
+** `servicegroups`: This directive is used to identify the short name(s) of the servicegroup(s) that the service belongs to. Multiple servicegroups should be separated by commas. This directive may be used as an alternative to using the `members` directive in servicegroup definitions.
+** `check_command`: This directive is used to specify the short name of the command that Icinga will run in order to check the status of the service. The maximum amount of time that the service check command can run is controlled by the `service_check_timeout` option.
+** `initial_state`: By default Icinga will assume that all services are in OK states when in starts. You can override the initial state for a service by using this directive. Valid options are: `o` = OK, `w` = WARNING, `u` = UNKNOWN, and `c` = CRITICAL. 注意 service status 跟 host status 不太一樣
+** `notification_options`: This directive is used to determine when notifications for the service should be sent out. Valid options are a combination of one or more of the following: `w` = send notifications on a WARNING state, `u` = send notifications on an UNKNOWN state, `c` = send notifications on a CRITICAL state, `r` = send notifications on recoveries (OK state), `f` = send notifications when the service starts and stops flapping, and `s` = send notifications when scheduled downtime starts and ends. If you specify `n` (none) as an option, no service notifications will be sent out. If you do not specify any notification options, Icinga will assume that you want notifications to be sent out for all possible states.
+** `contacts`: This is a list of the short names of the contacts that should be notified whenever there are problems (or recoveries) with this service. Multiple contacts should be separated by commas. Useful if you want notifications to go to just a few people and don't want to configure contact groups.
+** `contact_groups`: This is a list of the short names of the contact groups that should be notified whenever there are problems (or recoveries) with this service. Multiple contact groups should be separated by commas.
+** A service group definition is used to group one or more services together for simplifying configuration with object tricks or display purposes in the CGIs.
+** `servicegroup_name`: This directive is used to define a short name used to identify the service group.
+** `alias`: This directive is used to define is a longer name or description used to identify the service group. It is provided in order to allow you to more easily identify a particular service group.
+** `members`: This is a list of the descriptions of services (and the names of their corresponding hosts) that should be included in this group. Host and service names should be separated by commas. This directive may be used as an alternative to the `servicegroups` directive in service definitions. The format of the member directive is as follows (note that a host name must precede a service name/description):
+   *** `members=<host1>,<service1>,<host2>,<service2>,...,<hostn>,<servicen>` 這種 host_name + service_description 間隔寫法很特別，儘可能還是從 service definition 標示，也比較在不同環境間切換
+   *** Starting with Icinga 1.2 it is possible to use `"*"` as a wildcard for all hosts. 可惜 `*` 只能單獨使用??
+** `servicegroup_members`: This optional directive can be used to include services from other "sub" service groups in this service group. Specify a comma-delimited list of short names of other service groups whose members should be included in this group.
+////////////////////////////////////////////////////////////////////////////////
+

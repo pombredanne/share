@@ -1,0 +1,182 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[NRPE] check_nrpe - 在電梯裡遇見雙胞胎 | 傑洛米 Jeremy</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<!--link rel="Stylesheet" href="http://www.diigo.com/stylesheets/link_rolls_standard.css" title="style_standard" type="text/css" media="screen" /-->
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body>
+<div id="layout-menu-box">
+<div id="layout-menu">
+  <div><a href="https://www.facebook.com/jeremy.kao.92" target="_blank">Jeremy Kao - 傑洛米·高</a></div>
+  <div><a href="../../index.html">首頁</a> | <a href="http://www.diigo.com/user/imsardine" target="_blank">閱讀</a> | <a href="../../note/index.html">筆記</a></div>
+  <div>
+    <img src="http://www.gravatar.com/avatar/ca5d67276ca1ff3e5391438d7865ddf2" width="32" style="border:none"/>
+    <a href="http://imsardine.wordpress.com/" target="_blank"><img src="http://s.wordpress.org/about/images/logos/wordpress-logo-32-blue.png" style="border:none"/></a>
+  </div>
+  <iframe src="http://githubbadge.appspot.com/badge/imsardine?s=1" style="border: 0;height: 142px;width: 200px;overflow: hidden;" frameBorder=0></iframe>
+  <!--div class="addthis_toolbox addthis_floating_style addthis_counter_style" style="left:140px;top:230px;">
+  <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
+  <a class="addthis_button_tweet" tw:count="vertical"></a>
+  <a class="addthis_button_google_plusone" g:plusone:size="tall"></a>
+  <a class="addthis_counter"></a>
+  </div-->
+</div>
+</div>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description">腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡... <!--a href="http://www.diigo.com" onclick="var s=document.createElement('script');s.type='text/javascript';s.src='http://www.diigo.com/javascripts/webtoolbar/diigolet_b_h_b.js';document.body.appendChild(s);return false;"><img style="border:none" alt="Add to Diigo" src="http://www.diigo.com/images/diigo-icon/16.png" /></a--></div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="nrpe.html">NRPE</a> / <code>check_nrpe</code></h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="literalblock">
+<div class="content">
+<pre><code>check_nrpe -H &lt;nrpe_server&gt; [-p &lt;port&gt;] [&lt;options&gt;] [-c &lt;command&gt;] [-a &lt;arglist...&gt;]</code></pre>
+</div></div>
+<div class="paragraph"><p>常用的 options 有：</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<code>-H &lt;nrpe_server&gt;</code>
+</dt>
+<dd>
+<p>
+<a href="server.html">NRPE server</a> 的位置。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-p &lt;port&gt;</code>
+</dt>
+<dd>
+<p>
+指定 NRPE server 在 <em>port</em> 埠服務，預設是 5666。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-u</code>
+</dt>
+<dd>
+<p>
+發生 connection timeout 時，預設的 return code 是 3 (CRITICAL)，加上這個 option 會改傳回 4 (UNKNOWN)。
+</p>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span class="gp">$</span> /usr/lib/nagios/plugins/check_nrpe -H 192.168.1.1 -c check_load
+<span class="go">CHECK_NRPE: Socket timeout after 10 seconds.</span>
+<span class="gp">$</span> <span class="nb">echo</span> <span class="nv">$?</span>
+<span class="go">2</span>
+
+<span class="gp">$</span> /usr/lib/nagios/plugins/check_nrpe -H 192.168.1.1 -c check_load -u
+<span class="go">CHECK_NRPE: Socket timeout after 10 seconds.</span>
+<span class="gp">$</span> <span class="nb">echo</span> <span class="nv">$?</span>
+<span class="go">3</span>
+</pre></div></div></div>
+</dd>
+<dt class="hdlist1">
+<code>-t &lt;timeout&gt;</code>
+</dt>
+<dd>
+<p>
+設定 <em>timeout</em> 秒內無法成功連上 NRPE server 就視為 connection timeout，預設是 10 秒。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-c &lt;command&gt;</code>
+</dt>
+<dd>
+<p>
+要求 NRPE server 代為執行 NRPE <a href="commands.html"><em>command</em></a>。
+</p>
+</dd>
+<dt class="hdlist1">
+<code>-a &lt;arglist...&gt;</code>
+</dt>
+<dd>
+<p>
+要傳給 NRPE command 的參數。
+</p>
+</dd>
+</dl></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_完整的用法">完整的用法</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span class="gp">$</span> /usr/lib/nagios/plugins/check_nrpe -h
+
+<span class="go">NRPE Plugin for Nagios</span>
+<span class="go">Copyright (c) 1999-2008 Ethan Galstad (nagios@nagios.org)</span>
+<span class="go">Version: 2.12</span>
+<span class="go">Last Modified: 03-10-2008</span>
+<span class="go">License: GPL v2 with exemptions (-l for more info)</span>
+<span class="go">SSL/TLS Available: Anonymous DH Mode, OpenSSL 0.9.6 or higher required</span>
+
+<span class="go">Usage: check_nrpe -H &lt;host&gt; [-n] [-u] [-p &lt;port&gt;] [-t &lt;timeout&gt;] [-c &lt;command&gt;] [-a &lt;arglist...&gt;]</span>
+
+<span class="go">Options:</span>
+<span class="go"> -n         = Do no use SSL</span>
+<span class="go"> -u         = Make socket timeouts return an UNKNOWN state instead of CRITICAL</span>
+<span class="go"> &lt;host&gt;     = The address of the host running the NRPE daemon</span>
+<span class="go"> [port]     = The port on which the daemon is running (default=5666)</span>
+<span class="go"> [timeout]  = Number of seconds before connection times out (default=10)</span>
+<span class="go"> [command]  = The name of the command that the remote daemon should run</span>
+<span class="go"> [arglist]  = Optional arguments that should be passed to the command.  Multiple</span>
+<span class="go">              arguments should be separated by a space.  If provided, this must be</span>
+<span class="go">              the last option supplied on the command line.</span>
+<span class="go"> -h,--help    Print this short help.</span>
+<span class="go"> -l,--license Print licensing information.</span>
+<span class="go"> -n,--no-ssl  Do not initial an ssl handshake with the server, talk in plaintext.</span>
+
+<span class="go">Note:</span>
+<span class="go">This plugin requires that you have the NRPE daemon running on the remote host.</span>
+<span class="go">You must also have configured the daemon to associate a specific plugin command</span>
+<span class="go">with the [command] option you are specifying here.  Upon receipt of the</span>
+<span class="go">[command] argument, the NRPE daemon will run the appropriate plugin command and</span>
+<span class="go">send the plugin output and return code back to *this* plugin.  This allows you</span>
+<span class="go">to execute plugins on remote hosts and &#39;fake&#39; the results to make Nagios think</span>
+<span class="go">the plugin is being run locally.</span>
+</pre></div></div></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2013-09-30 07:15:00 CST
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+<!--script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script-->
+</body>
+</html>

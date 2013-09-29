@@ -1,5 +1,5 @@
-= link:../ssh.html[SSH] / Tunnels =
-:title: [SSH] Tunnels
+= link:../ssh.html[SSH] / Tunneling =
+:title: [SSH] 窮人的 VPN - SSH Tunneling
 
  local$ ssh -L <local-port-to-listen>:<remote-host>:<remote-port> <gateway>
 
@@ -14,19 +14,61 @@ work$ sudo ssh -L 22:localhost:22 [<username>]@<gateway>
  
 == 參考資料 ==
 
+.文件
+--
+ * http://www.linuxjournal.com/content/ssh-tunneling-poor-techies-vpn[SSH Tunneling - Poor Techie's VPN | Linux Journal] (2012-03-28)
+
+////////////////////////////////////////////////////////////////////////////////
+** This post is on SSH tunneling, or as I like to call it 'Poor Man's VPN'. 這個說法真不賴!!
+** When I'm out and about I will tunnel my http traffic through ssh on my rooted droid to my home server. If I'm on my laptop/netbook I'll open an ssh tunnel and route http traffic via socks5 so that all of my traffic is encrypted via ssh then back out to me. 對公眾網路極度地不信任
+** Other examples of ssh tunneling include X11 applications tunneled via SSH, and VNC sessions.
+** In this case you create a tunnel from a server that is behind a firewall with no SSH servers to an SSH server. Then when you log into that SSH server you can re-establish the connection. I do this very rarely as I feel this is bad juju, bypassing all the rules setup on my firewall and VPN is usually a last resort.
+** `-N` = Do not execute a remote command
+** I tend to use other external SSH ports to keep skript kiddies from hitting my home SSH server. 至少可以遶過 firewall 單純對 port number 的封鎖。
+** `-L 2110:localhost:110 -L 2025:localhost:25` 原來 `-L` 可以使用多次。
+** (`-g` Allows remote hosts to connect to local forwarding ports)??
+** This is one that I use whenever I'm out of town or in a place that I don't trust the wifi. On an android I'll use my https://play.google.com/store/apps/details?id=org.sshtunnel[SSHTunnel] app, but if I'm on my laptop I use the following SSH command `ssh -D 5222 bob@mylinuxserver.xxx -N` After you make a connection, then set your browser of choice (or any application that allows proxy) to `localhost:5222`. This will create a dynamic port forward and tunnel all the application traffic through your SSH server, both encrypting your data and bypassing content filters.
+** Remember when you added `X11Forwarding yes` to your sshd_config? This is where tunneling X comes in. `ssh -X -p 2022 bob@mylinuxserver.xxx`
+** You guessed it, `-X` tunnels X. Remember though, this will tunnel X apps from your remote machine to your client machine running Linux. If you somehow find you're on a Microsoft Windows machine and want to tunnel, just install Cygwin/X (http://x.cygwin.com/) on your guest OS. 很神奇的體驗，跟 VNC 有什麼不同??
+** Connecting via VNC is as straight forward as any of the other services: `ssh -p 2022 bob@mylinuxserver.xxx -L 5900:localhost:5900`
+** Once you setup the forward you can open up your vnc client of choice and type: `localhost:0` at which point you should be connected via vnc to your remote desktop. If you used 5901, then it would be `localhost:1`, and so on and so forth. 為什麼有 `:0` 跟 `:1` 這種表示法??
+** a reverse tunnel is when you are behind a firewall that has no SSH server, but need to access it at a later date (be it minutes/hours/days later) but don't want or have the ability to VPN in. You would connect to your SSH server from that machine, then reverse the tunnel by connecting to that open connection. 這裡的 reverse tunnel 指的就是 remote port forwarding。
+** From time to time against a server, or even with friends and family with reverse VNC sessions via SSH tunnels. In this case they execute a putty saved session that logs into my ssh server as a certain user with no rights. Once the tunnel is established, I can vnc to their machine in order to remote to them. No more having them setup their firewall
+** `ssh -R remoteport:localhost:22 username@servername`
+** `ssh -R 2048:localhost:22 bob@mylinuxserver.xxx` -> `ssh -p 2048 localhost` 留一條路進到 SSH，真可怕!!
+////////////////////////////////////////////////////////////////////////////////
+
  * http://chamibuddhika.wordpress.com/2012/03/21/ssh-tunnelling-explained/[SSH Tunneling Explained | Source Open] (2012-03-21) - 講得很清楚！
 
 ////////////////////////////////////////////////////////////////////////////////
 ** A SSH tunnel consists of an encrypted tunnel created through a SSH protocol connection. A SSH tunnel can be used to transfer unencrypted traffic over a network through an encrypted channel.
 ** SSH tunnels also provide a means to bypass firewalls that prohibits or filter certain internet services.
-** If users can connect to an external SSH server, they can create a SSH tunnel to forward a given port on their local machine to port 80 on remote web-server via the external SSH server. 只要連得到某個 SSH server，就可以將它當做 "跳板" 到其他地方；從這個角度來看，開放 outbound 的 22 port 還是有危險性。
-** To set up a SSH tunnel a given port of one machine needs to be forwarded (of which I am going to talk about in a little while) to a port in the other machine which will be the other end of the tunnel. Once the SSH tunnel has been established, the user can connect to earlier specified port at first machine to access the network service. 當 tunnel 建立起來之後，只要接到其中一端，就可以透通到另外一端。
-** SSH tunnels can be created in several ways using different kinds of port forwarding mechanisms. Ports can be forwarded in three ways. Local port forwarding, Remote port forwarding,  Dynamic port forwarding
-** Here the first technique will be used in creating an SSH tunnel. When a client application connects to the local port (local endpoint) of the SSH tunnel and transfer data these data will be forwarded to the remote end by translating the host and port values to that of the remote end of the channel.
+** If users can connect to an external SSH server, they can create a SSH tunnel to forward a given port on their local machine to port 80 on remote web-server via the external SSH server. 只要能登入 SSH server 就會形成一個有 local/remote 兩個端點的 tunnel。一邊負責 listening，另一邊做 port forwarding （也就是將 traffic 導到其他地方），兩邊角色互換就會形成 local port forwarding 跟 remote port forwarding。從這個角度來看，開放 outbound 的 22 port 還是有危險性。
+** To set up a SSH tunnel a given port of one machine needs to be forwarded (of which I am going to talk about in a little while) to a port in the other machine which will be the other end of the tunnel. Once the SSH tunnel has been established, the user can connect to earlier specified port at first machine to access the network service. 當 tunnel 建立起來之後，只要接到 listen 的那一端，就可以透通到另外一端。
+** SSH tunnels can be created in several ways using different kinds of port forwarding mechanisms. Ports can be forwarded in three ways. Local port forwarding, Remote port forwarding, Dynamic port forwarding
+** Here the first technique will be used in creating an SSH tunnel. When a client application connects to the local port (local endpoint) of the SSH tunnel and transfer data these data will be forwarded to the remote end by translating the host and port values to that of the remote end of the channel. 注意這裡的 "translating" 是發生在另一端，因此 `remote-host:remote-port` 是以 remote host 為 "出發點"。
 ** Let’s name my machine at the university as ‘work’ and my home machine as ‘home’. ‘home’ needs to have a public IP for this to work. And I am running a SSH server on my home machine.
-** To create the SSH tunnel execute following from ‘work’ machine. 1ssh -L 9001:yahoo.com:80 home The ‘L’ switch indicates that a local port forward is need to be created. The switch syntax is as follows. 1-L <local-port-to-listen>:<remote-host>:<remote-port>
+** To create the SSH tunnel execute following from ‘work’ machine. `ssh -L 9001:yahoo.com:80 home` The `L` switch indicates that a local port forward is need to be created. The switch syntax is as follows. `-L <local-port-to-listen>:<remote-host>:<remote-port>`
 ** Now the SSH client at ‘work’ will connect to SSH server running at ‘home’ (usually running at port 22) binding port 9001 of ‘work’ to listen for local requests thus creating a SSH tunnel between ‘home’ and ’work’. At the ‘home’ end it will create a connection to ‘yahoo.com’ at port 80. So ‘work’ doesn’t need to know how to connect to yahoo.com. Only ‘home’ needs to worry about that. The channel between ‘work’ and ‘home’ will be encrypted while the connection between ‘home’ and ‘yahoo.com’ will be unencrypted.
 ** Now it is possible to browse yahoo.com by visiting http://localhost:9001 in the web browser at ‘work’ computer. The ‘home’ computer will act as a gateway which would accept requests from ‘work’ machine and fetch data and tunnelling it back. So the syntax of the full command would be as follows. 1ssh -L <local-port-to-listen>:<remote-host>:<remote-port> <gateway>
 ** It is also possible to specify a port in the ‘home’ computer itself instead of connecting to an external host. This is useful if I were to set up a VNC session between ‘work’ and ‘home’. Then the command line would be as follows. 1ssh -L 5900:localhost:5900
+** Let’s say it is required to connect to an internal university website from home. The university firewall is blocking all incoming traffic. How can we connect from ‘home’ to internal network so that we can browse the internal site? A VPN setup is a good candidate here. However for this example let’s assume we don’t have this facility. Enter SSH reverse tunnelling..
+** As in the earlier case we will initiate the tunnel from ‘work’ computer behind the firewall. This is possible since only incoming traffic is blocking and outgoing traffic is allowed. However instead of the earlier case the client will now be at the ‘home’ computer. Instead of -L option we now define -R which specifies a reverse tunnel need to be created.
+** ssh -R 9001:intra-site.com:80 home (Executed from 'work') Once executed the SSH client at ‘work’ will connect to SSH server running at home creating a SSH channel. Then the server will bind port 9001 on ‘home’ machine to listen for incoming requests which would subsequently be routed through the created SSH channel between ‘home’ and ‘work’.
+** As nice all of these would be still you need to create another tunnel if you need to connect to another site in both cases. Wouldn’t it be nice if it is possible to proxy traffic to any site using the SSH channel created? That’s what dynamic port forwarding is all about.
 ////////////////////////////////////////////////////////////////////////////////
+--
+
+.其他文件
+--
+ * http://serverfault.com/questions/360616/most-secure-settings-for-user-dedicated-for-ssh-tunnel[security - Most secure settings for user dedicated for SSH Tunnel - Server Fault] (2012-02-15)
+
+////////////////////////////////////////////////////////////////////////////////
+** I want to lock this user (on server) so that others couldn't do anything other than SSH tunneling (even if password gets compromised). With this user, I only want to login (with password) & do SSH tunneling.. nothing more!
+** you could set the `no-pty`, `no-X11-forwarding` options to prevent the user from getting a shell or doing any X11 forwarding.
+** You could set up the initial SSH session/tunnel without RSA keys and the `-L` (bind forwarded address to local address) and `-N` command (do not execute any commands) ie: 為什麼有 "without" RSA keys 的說法??
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://www.revsys.com/writings/quicktips/ssh-tunnel.html[HOWTO: SSH Tunneling Made Easy]
+--
 

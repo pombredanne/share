@@ -1,6 +1,12 @@
 = link:python.html[Selenium 2/WebDriver / API / Python] / Open Browsers =
 :title: [Selenium][WebDriver][Python] 啟動瀏覽器
 
+一旦取得 link:webdriver.html[`WebDriver`] instance，接下來的操作幾乎不會因為操作的 browser 不同而有差異，但問題就在 "開啟瀏覽器" 這個動作，有很明顯的不同。
+
+ * <<phantomjs,PhantomJS>>
+ * <<firefox,Firefox>>
+ * <<remote,Remote WebDriver>>
+
 [source,pycon]
 --------------------------------------------------------------------------------
 >>> from selenium import webdriver
@@ -10,15 +16,111 @@
  'TouchActions', ...]
 --------------------------------------------------------------------------------
 
-[[firefox]]
-== Firefox Driver ==
+[[phantomjs]]
+== PhantomJS ==
 
- selenium.webdriver.firefox.webdriver.WebDriver(
-     firefox_profile=None,
-     firefox_binary=None,
-     timeout=30,
-     capabilities=None,
-     proxy=None)
+根據 Pyhton docstring 跟 Javadoc 的說法：
+
+[quote,'https://code.google.com/p/selenium/source/browse/py/selenium/webdriver/phantomjs/webdriver.py#36[`webdriver.py`]']
+________________________________________________________________________________
+Creates a new instance of the PhantomJS / Ghostdriver.
+
+Starts the service and then creates new instance of the driver.
+________________________________________________________________________________
+
+[quote,'https://github.com/detro/ghostdriver/blob/master/binding/java/src/main/java/org/openqa/selenium/phantomjs/PhantomJSDriver.java[`PhantomJSDriver.java`]']
+________________________________________________________________________________
+A `WebDriver` implementation that controls a PhantomJS running in Remote WebDriver mode. This class is provided as a convenience for easily testing PhantomJS. The control server which each instance communicates with will live and die with the instance.
+
+...
+
+Instead, if you have a PhantomJS WebDriver process already running, you can instead use `RemoteWebDriver.RemoteWebDriver(java.net.URL, org.openqa.selenium.Capabilities)` to delegate the execution of your WebDriver/Selenium scripts to it. Of course, in that case you will than be in charge to control the life-cycle of the PhantomJS process.
+________________________________________________________________________________
+
+可以發現要操控 link:../../phantomjs/phantomjs.html[PhantomJS] 有兩種做法：
+
+ 1. 透過 PhantomJS 專用的 driver，內部會自行帶出執行在 link:../drivers/phantomjs.html[WebDriver Mode] 的 PhantomJS instance。
+ 2. 自行在外部啟動 PhantomJS (WebDriver Mode)，再透過 <<remote,"Remote WebDriver">> 來操作。
+
+採用第一個方法的好處是，不用事先將 PhantomJS 執行起來，程式結束時也會自動將它關閉。
+
+.http://selenium.googlecode.com/svn/trunk/docs/api/py/webdriver_phantomjs/selenium.webdriver.phantomjs.webdriver.html[`selenium.webdriver.phantomjs.webdriver`]
+--------------------------------------------------------------------------------
+selenium.webdriver.phantomjs.webdriver.WebDriver(
+    executable_path="phantomjs", <1>
+    port=0,                      <2>
+    desired_capabilities=DesiredCapabilities.PHANTOMJS,
+    service_args=None,           <3>
+    service_log_path=None)       <4>
+--------------------------------------------------------------------------------
+<1> Driver 預設就是透過 `$PATH` 裡的 `phantomjs` 來帶出內部的 PhantomJS instance。
+<2> `port` 指定 WebDriver Mode 要在哪個 port 服務，給 `0` 時表示內部會自動找出一個沒被佔用的 port。
+<3> 除了 `--webdriver=<port>` 之外，有其他要傳給 `phantomjs` 的 link:../../phantomjs/phantomjs-cli.html#arguments[command-line arguments]，可以透過 `service_args` 給定。
+<4> PhantomJS instance 所有的 logs https://code.google.com/p/selenium/source/browse/py/selenium/webdriver/phantomjs/service.py#48[預設會被寫到 working directory 的 `ghostdriver.log`]，透過 `service_log_path` 可以自訂 logs 要寫到哪裡。
+
+[source,pycon]
+--------------------------------------------------------------------------------
+>>> from selenium.webdriver import PhantomJS
+>>> driver = PhantomJS()
+>>> driver.get('http://www.google.com')
+--------------------------------------------------------------------------------
+
+這個時候，`ghostdriver.log` 會記錄類似的訊息：
+
+--------------------------------------------------------------------------------
+PhantomJS is launching GhostDriver...
+[INFO  - 2013-09-26T03:25:51.443Z] GhostDriver - Main - running on port 59651
+[INFO  - 2013-09-26T03:25:52.235Z] Session [58a3dc20-265b-11e3-a3d2-5d33f414594d] - _decorateNewWindow - page.settings: {"XSSAuditingEnabled":false,"javascriptCanCloseWindows":true,"javascriptCanOpenWindows":true,"javascriptEnabled":true,"loadImages":true,"localToRemoteUrlAccessEnabled":false,"userAgent":"Mozilla/5.0 (Unknown; Linux x86_64) AppleWebKit/534.34 (KHTML, like Gecko) PhantomJS/1.9.2 Safari/534.34","webSecurityEnabled":true}
+[INFO  - 2013-09-26T03:25:52.235Z] Session [58a3dc20-265b-11e3-a3d2-5d33f414594d] - page.customHeaders:  - {}
+[INFO  - 2013-09-26T03:25:52.235Z] Session [58a3dc20-265b-11e3-a3d2-5d33f414594d] - CONSTRUCTOR - Desired Capabilities: {"platform":"ANY","browserName":"phantomjs","version":"","javascriptEnabled":true}
+[INFO  - 2013-09-26T03:25:52.235Z] Session [58a3dc20-265b-11e3-a3d2-5d33f414594d] - CONSTRUCTOR - Negotiated Capabilities: {"browserName":"phantomjs","version":"1.9.2","driverName":"ghostdriver","driverVersion":"1.0.4","platform":"linux-unknown-64bit","javascriptEnabled":true,"takesScreenshot":true,"handlesAlerts":false,"databaseEnabled":false,"locationContextEnabled":false,"applicationCacheEnabled":false,"browserConnectionEnabled":false,"cssSelectorsEnabled":true,"webStorageEnabled":false,"rotatable":false,"acceptSslCerts":false,"nativeEvents":true,"proxy":{"proxyType":"direct"}}
+[INFO  - 2013-09-26T03:25:52.235Z] SessionManagerReqHand - _postNewSessionCommand - New Session Created: 58a3dc20-265b-11e3-a3d2-5d33f414594d
+--------------------------------------------------------------------------------
+
+[CAUTION]
+================================================================================
+`PhantomJS()` 這個動作偶爾會遇到 "`[Errno 13] Permission denied: 'ghostdriver.log'`"，那是因為執行身份對 working directory 沒有寫入的權限造成。例如：
+
+[source,console]
+--------------------------------------------------------------------------------
+$ cd /
+$ python
+>>> from selenium.webdriver import PhantomJS
+>>> driver = PhantomJS()
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "/usr/local/lib/python2.7/dist-packages/selenium/webdriver/phantomjs/webdriver.py", line 49, in __init__
+    service_args=service_args, log_path=service_log_path)
+  File "/usr/local/lib/python2.7/dist-packages/selenium/webdriver/phantomjs/service.py", line 49, in __init__
+    self._log = open(log_path, 'w')
+IOError: [Errno 13] Permission denied: 'ghostdriver.log'
+--------------------------------------------------------------------------------
+
+要解決這個問題，最簡單的方法就是事先把 working directory 切到有寫入權限的地方，但這仍然避不開多個 PhantomJS instance 同時執行會相互覆寫 logs 的問題（這種事在 headless testing 很容易發生）。
+
+一個可行的方式是動態產生一個link:../../python/files/temporary.html[暫存檔]，做為 logs 輸出的目標。
+
+--------------------------------------------------------------------------------
+>>> import tempfile, os.path as path
+>>> log_path = path.join(tempfile.mkdtemp(), 'ghostdriver.log')
+>>>
+>>> from selenium.webdriver import PhantomJS
+>>> driver = PhantomJS(service_log_path = log_path)
+>>> driver.get('http://www.google.com')
+--------------------------------------------------------------------------------
+================================================================================
+
+[[firefox]]
+== Firefox ==
+
+--------------------------------------------------------------------------------
+selenium.webdriver.firefox.webdriver.WebDriver(
+    firefox_profile=None,
+    firefox_binary=None,
+    timeout=30,
+    capabilities=None,
+    proxy=None)
+--------------------------------------------------------------------------------
 
 [source,pycon]
 --------------------------------------------------------------------------------
@@ -30,10 +132,12 @@
 [[remote]]
 == Remote WebDriver ==
 
- selenium.webdriver.remote.webdriver.WebDriver(
-     command_executor='http://127.0.0.1:4444/wd/hub',
-     desired_capabilities=None,
-     browser_profile=None)
+--------------------------------------------------------------------------------
+selenium.webdriver.remote.webdriver.WebDriver(
+    command_executor='http://127.0.0.1:4444/wd/hub',
+    desired_capabilities=None,
+    browser_profile=None)
+--------------------------------------------------------------------------------
 
 首先啟動 link:../../selenium-server/selenium-server.html[Selenium Server]，過程會提示 Remote WebDriver 要連接的位置：
 
@@ -67,4 +171,5 @@ Selenium Server 也會顯示對應的訊息：
 
  * http://selenium.googlecode.com/svn/trunk/docs/api/py/webdriver_remote/selenium.webdriver.remote.webdriver.html[selenium.webdriver.remote.webdriver — Selenium 2.0 documentation]
  * http://selenium.googlecode.com/svn/trunk/docs/api/py/webdriver_firefox/selenium.webdriver.firefox.webdriver.html[selenium.webdriver.firefox.webdriver — Selenium 2.0 documentation]
+ * http://selenium.googlecode.com/svn/trunk/docs/api/py/webdriver_phantomjs/selenium.webdriver.phantomjs.webdriver.html[selenium.webdriver.phantomjs.webdriver — Selenium 2.0 documentation]
 

@@ -1,0 +1,73 @@
+= link:../puppet.html[Puppet] / Configurations =
+:title: [Puppet] Configurations
+
+ * `puppet { agent | master | apply } [--environment <environment>] --configprint {<setting> | all}`
+ * `puppet { agent | master | apply } --genconfig`
+
+常見的 settings 有：
+
+`runinterval`:: agent 幾秒鐘要自動跟 master 拿最新的設定並加以套用，預設是 1800 秒（30 分）。
+
+== 參考資料 ==
+
+.手冊
+--
+ * http://docs.puppetlabs.com/references/stable/configuration.html[Configuration Reference — Documentation — Puppet Labs]
+
+////////////////////////////////////////////////////////////////////////////////
+** `external_nodes`
+   *** An external command that can produce node information. The command’s output must be a YAML dump of a hash (指 key-value pairs), and that hash must have a `classes` key and/or a `parameters` key, where `classes` is an array or hash and `parameters` is a hash. For unknown nodes, the command should exit with a non-zero exit code.
+   *** This command makes it straightforward to store your node mapping information in other data sources like databases. 但如果只是同一個 role 要生出多個 nodes，例如 web-01, web-02... 等，應該用 node definition 搭配 regular expression 就可以了不是嗎??
+   *** 應該會傳入 hostname，但為什麼文件沒提到??
+////////////////////////////////////////////////////////////////////////////////
+--
+
+.文件
+--
+ * http://docs.puppetlabs.com/guides/configuring.html[Configuring Puppet — Documentation — Puppet Labs]
+
+////////////////////////////////////////////////////////////////////////////////
+** Puppet’s behavior can be customized with a rather large collection of settings. Most of these can be safely ignored, but you’ll almost definitely have to modify some of them. 真的很多，還好這裡有列出幾個一定要知道的 configs
+** When retrieving the value for a given setting, Puppet follows a simple lookup path, stopping at the first value it finds. (從 more-specific 到 less-specific，結果就是有 override 的效果) In order, it will check:
+   *** Values specified on the command line
+   *** Values in environment blocks in `puppet.conf`
+   *** Values in run mode blocks in `puppet.conf`
+   *** Values in the main block of `puppet.conf`
+   *** The default values
+** `certname` — The locally unique name for this node. If you aren’t using DNS names to identify your nodes, you’ll need to set it yourself.
+*** `server` — The puppet master server to request configurations from. If your puppet master server isn’t reachable at the default hostname of `puppet`, you’ll need to set this yourself.
+** `modulepath` — The search path for Puppet modules. Defaults to `/etc/puppet/modules:/usr/share/puppet/modules`.
+** `environment` — On agent nodes, the environment to request configuration in??
+** `node_terminus` (終點?) — How puppet master should get "node definitions"; if you use an ENC, you’ll need to set this to “exec” on the master (or on all nodes if running in a standalone arrangement; 同時是 agent 跟 master 的狀況).
+** `external_nodes` — The script to run for node definitions (if `node_terminus` is set to “exec”).
+** `confdir` — One of Puppet’s main working directories, which usually contains config files, manifests, modules, and certificates. 放在這裡的 certificate 應該是 master 在用的??
+** `vardir` — Puppet’s other main working directory, which usually contains cached data and configurations, reports, and file backups.
+** Puppet’s main config file is `puppet.conf`, which is located in Puppet’s `confdir`.
+** Puppet Enterprise’s `confdir` is `/etc/puppetlabs/puppet`. Most open source Puppet distributions use `/etc/puppet` as Puppet’s `confdir`. If you are unsure where the `confdir` is, run sudo `puppet agent --configprint confdir` to locate it.
+** `puppet.conf` uses an INI-like format, with `[config blocks]` containing indented groups of `setting = value` lines. Comment lines `# start with an octothorpe;` partial-line comments are not allowed. 注意不能在設定結尾加上 comment
+** You can interpolate the value of a setting by using its name as a `$variable`. (Note that `$environment` has special behavior: most of the Puppet applications will interpolate their own environment, but puppet master will use the environment of the agent node it is serving.) 跟 facts 的狀況一樣
+** If a setting has multiple values, they should be a comma-separated list. “Path”-type settings made up of multiple directories should use the system path separator (colon, on most Unices). Finally, for settings that accept only a single file or directory, you can set the owner, group, and/or mode by putting their desired states in curly braces after the value. 例如 `vardir = /Volumes/zfs/vardir {owner = puppet, mode = 644}` 會自動產生 folder??
+** Settings in different config blocks take effect under varying conditions. Settings in a more specific block can override those in a less specific block, as per the lookup path described above.
+** The `[main]` config block is the least specific. Settings here are always effective, unless overridden by a more specific block.
+** `[agent]`, `[master]`, and `[user]` Blocks These three blocks correspond to Puppet’s run modes (原來這就是 run mode). Settings in `[agent]` will only be used by `puppet agent`; settings in `[master]` will be used by `puppet master` and `puppet cert` (因為 certificates 是由 master 發的); and settings in `[user]` will only be used by `puppet apply` (因此 `puppet apply` 跟 `puppet agent` 還是有差別的!!). The `faces` subcommands (有這個 subcommand 嗎??) introduced in Puppet 2.7 default to the user run mode, but their mode can be changed at run time with the `--mode` option.
+** Note that not every setting makes sense for every run mode, but specifying a setting in a block where it is irrelevant has no observable effect. 這就是 tricky 的地方 (還有 environment block 也是一樣)，最好的方式還是先用 `puppet [--environment <environment>] --mode <mode> <setting>` 先檢查修改的設定是否有套到
+** Blocks named for environments are the most specific, and can override settings in the run mode blocks. Only a small number of settings (specifically: `modulepath`, `manifest`, `manifestdir`, and `templatedir`) can be set in a per-environment block; any other settings will be ignored and read from a run mode or main block.
+** Like with the `$environment` variable, puppet master treats environments differently from the other run modes: instead of using the block corresponding to its own environment setting, it will use the block corresponding to each agent node’s environment. The puppet master’s own environment setting is effectively inert.
+** You can override any config setting at runtime by specifying it as a command-line option to almost any Puppet application. (Puppet `doc` is the main exception.) Boolean settings are handled a little differently: use a bare option for a true value, and add a prefix of `no-` for false: 例如 `puppet agent --listen` (true) 跟 `puppet agent --no-listen` (false)
+** For non-boolean settings, just follow the option with the desired value: 例如 `puppet agent --certname magpie.example.com` 或 `puppet agent --certname=magpie.example.com` (中間的等號可以省略)
+** Puppet `agent`, `apply`, and `master` all accept the `--configprint <setting>` option, which makes them print their local value of the requested setting and exit. 很怪的是，這個 option 在各自的 man page 上找不到
+** you can view all settings by passing `all` instead of a specific setting.
+** Puppet `agent`, `apply`, and `master` also accept a `--genconfig` option, which behaves similarly to `--configprint all` but outputs a complete `puppet.conf` file, with descriptive comments for each setting, default values explicitly declared, and settings irrelevant to the requested run mode commented out. 這個工具幫助很大，尤其可以把無用的設定標示出來!!
+** You can also inspect settings for specific environments with the `--environment` option: `$ puppet agent --environment testing --configprint modulepath`
+** In addition to the main configuration file, there are five special-purpose config files you might need to interact with: `auth.conf`, `fileserver.conf`, `tagmail.conf`, `autosign.conf`, and `device.conf`.
+** Access to Puppet’s HTTP API is configured in `auth.conf`, the location of which is determined by the `rest_authconfig` setting. (Default: `/etc/puppet/auth.conf`.) It consists of a series of ACL stanzas, and behaves quite differently from `puppet.conf`. 看來 "acl stanzas" 這個說法還滿通用的
+** The `puppetdb.conf` file contains the hostname and port of the PuppetDB server. It is only used if you are using PuppetDB and have connected your puppet master to it.
+** The `autosign.conf` file (located at `/etc/puppet/autosign.conf` by default, and configurable with the autosign setting) is a list of certnames or certname globs (one per line) whose certificate requests will automatically be signed.
+** Note that certname globs do not function as normal globs: an asterisk can only represent one or more subdomains at the front of a certname that resembles a fully-qualified domain name. (That is, if your certnames don’t look like FQDNs, you can’t use autosign.conf to full effect.
+** As any host can provide any certname, autosigning should only be used with great care, and only in situations where you essentially trust any computer able to connect to the puppet master.
+** By default, `fileserver.conf` isn’t necessary, provided that you only need to serve files from modules. (也就是 agent 要跟 master 拿 `puppet:///...` 之類的 resource 時會用到) If you want to create additional fileserver mount points, you can do so in `/etc/puppet/fileserver.conf` (or whatever is set in the `fileserverconfig` setting). `fileserver.conf` consists of a collection of mount-point stanzas, and looks like a hybrid of `puppet.conf` and `auth.conf`: 這裡的 mount point 指的是什麼??
+** Note that certname globs do not function as normal globs: an asterisk can only represent one or more subdomains at the front of a certname that resembles a fully-qualified domain name. (That is, if your certnames don’t look like FQDNs, you can’t use autosign.conf to full effect. 原來 `autosign.conf` 跟 `fileserver.conf` 都可以用 certname globs.
+** Your puppet master server can send targeted emails to different admin users whenever certain resources are changed. 這比通知 config 有變動有用，因為實質上真的產生異動了
+////////////////////////////////////////////////////////////////////////////////
+--
+

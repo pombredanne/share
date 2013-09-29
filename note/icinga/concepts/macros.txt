@@ -1,0 +1,36 @@
+= link:concepts.html[Icinga / Concepts] / Macros =
+:title: [Icinga] Macros
+
+常用的 standard macros 有：
+
+ * `$ARGn$`
+ * `$USERn$` - user-defined macros
+ * `$HOSTADDRESS$`
+
+== 參考資料 ==
+
+ * http://docs.icinga.org/latest/en/macros.html[5.2. Understanding Macros and How They Work]
+
+////////////////////////////////////////////////////////////////////////////////
+** One of the main features that make Icinga so flexible is the ability to use macros in command definitions. 看來 macro 只能用在 command definition 裡，但 command 則可以用在 host check, service check, notifications, event handlers 等
+** Before Icinga executes a command, it will replace any macros it finds in the command definition with their corresponding values. This macro substitution occurs for all types of commands that Icinga executes - host and service checks, notifications, event handlers, etc.
+** Certain macros may themselves contain other macros. These include the `$HOSTNOTES$`, `$HOSTNOTESURL$`, `$HOSTACTIONURL$`, `$SERVICENOTES$`, `$SERVICENOTESURL$`, and `$SERVICEACTIONURL$` macros.??
+** When you use host and service macros in command definitions, they refer to values for the host or service for which the command is being run. 也就是 "哪個 host" 或 "那個 service 所屬的 host" 
+** `check_command check_ping` -> `command_line /usr/local/icinga/libexec/check_ping -H $HOSTADDRESS$ -w 100.0,25% -c 200.0,50%`
+** The beauty in this is that you can use a single command definition to check an unlimited number of hosts.
+** You can pass arguments to commands as well, which is quite handy if you'd like to keep your command definitions rather generic. Arguments are specified in the object (i.e. host or service) definition, by separating them from the command name with exclamation marks (`!`)
+** `check_command check_ping!200.0,25%!400.0,50%` -> `command_line /usr/local/icinga/libexec/check_ping -H $HOSTADDRESS$ -w $ARG1$ -c $ARG2$`
+** In the example above, the service check command has two arguments (which can be referenced with `$ARGn$` macros). The `$ARG1$` macro will be `"200.0,25%"` and `$ARG2$` will be `"400.0,50%"` (both without quotes).
+** If you need to pass bang (`!`) characters in your command arguments, you can do so by escaping them with a backslash (`\`). If you need to include backslashes in your command arguments, they should also be escaped with a backslash. (`\\`)
+** If you need to pass a semicolon (`;`) character in your command arguments, you cannot write the character in the definition because it is handled as the start of a comment. You define a `$USER$`-variable in the resource file instead and use that variable in your definition.
+** `$USER255$=;` -> `command_line $USER1$/your_plugin "some text with a semicolon ($USER255$)"` 用了 `$USER255$`，可讀性整個掉下來了，難道不能自訂變數名稱嗎??
+** Most macros are made available as environment variables for easy reference by scripts or commands that are executed by Icinga. For purposes of security and sanity, `$USERn$` and "on-demand" host and service macros are not made available as environment variables. Environment variables that contain standard macros are named the same as their corresponding macro names (listed here), with `"ICINGA_"` prepended to their names. For example, the `$HOSTNAME$` macro would be available as an environment variable named `"ICINGA_HOSTNAME"`. 如果 script 用了這些 environment variables 測試可能變得不方便，而且這種做法適用 NRPE 嗎??
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://docs.icinga.org/latest/en/macrolist.html[5.3. Standard Macros in Icinga]
+
+////////////////////////////////////////////////////////////////////////////////
+** Although macros can be used in all commands you define, not all macros may be "valid" in a particular type of command. For example, some macros may only be valid during service notification commands, whereas other may only be valid during host check commands.
+** If a macro is used in a command in which it is invalid, it is replaced with an empty string. It should be noted that macros consist of all uppercase characters and are enclosed in `$` characters.
+////////////////////////////////////////////////////////////////////////////////
+

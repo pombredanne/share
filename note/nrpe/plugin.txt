@@ -1,6 +1,66 @@
 = link:nrpe.html[NRPE] / Plugin =
 :title: [NRPE] NRPE Plugin
 
+NRPE plugin 會在 `/ect/nagios-plugins/config/` 底下安裝 `check_nrpe.cfg`，裡面定義了兩個 link:../icinga/objects/commands.html[(Nagios) commands] - `check_nrpe` 跟 `check_nrpe_1arg`：
+
+.`/etc/nagios-plugins/config/check_nrpe.cfg`
+--------------------------------------------------------------------------------
+# this command runs a program $ARG1$ with arguments $ARG2$
+define command {
+        command_name    check_nrpe
+        command_line    /usr/lib/nagios/plugins/check_nrpe -H $HOSTADDRESS$ -c $ARG1$ -a $ARG2$
+}
+
+# this command runs a program $ARG1$ with no arguments
+define command {
+        command_name    check_nrpe_1arg
+        command_line    /usr/lib/nagios/plugins/check_nrpe -H $HOSTADDRESS$ -c $ARG1$
+}
+--------------------------------------------------------------------------------
+
+通常 link:../nagios/nagios.html[Nagios]（或 link:../icinga/icinga.html[Icinga]）預設會將 `/etc/nagios-plugins/config/` 底下的組態檔也一併引入，因此可以在 link:../icinga/concepts/checks.html[host/service check] 的 check command 裡直接調用 `check_nrpe` 或 `check_nrpe_1arg`。
+
+例如 `check_nrpe_1arg!check_load` 可以透過 NRPE plugin (`/usr/lib/nagios/plugins/check_nrpe`) 呼叫另一台機器上 `check_load` 這個 link:commands.html[NRPE command]。
+
+[NOTE]
+================================================================================
+注意這裡 "Nagios command" 跟 "NRPE command" 的不同，兩者的關係大概是這樣：
+
+["graphviz","plugin/nagios-nrpe-commands.png"]
+--------------------------------------------------------------------------------
+digraph {
+  rankdir = LR
+  node [ shape = box ]
+
+  subgraph cluster_Monitoring {
+    label = "Monitoring Host"
+    "Nagios Command" [ label = "Nagios\nCommand" ]
+    "NRPE Plugin" [ label = "NRPE Plugin\n(check_nrpe)" ]
+  }
+
+  subgraph cluster_Remote {
+    label = "Remote Host"
+    "NRPE Server"
+    "NRPE Command"
+  }
+
+  "Nagios Command" -> "NRPE Plugin" [ label = "command_line" ]
+  "NRPE Plugin" -> "NRPE Server" [ label = "command\n&\nargs" ]
+  "NRPE Server" -> "NRPE Command"
+}
+--------------------------------------------------------------------------------
+
+================================================================================
+
+[[install]]
+== 安裝 ==
+
+分link:nrpe.html#two-parts.html[兩部份]來看，'Monitoring Host' 上要裝 NRPE plugin。
+
+ apt-get --no-install-recommends install nagios-nrpe-plugin
+
+由於 NRPE plugin 不一定得搭配 link:../nagios/nagios.html[Nagios] 使用，但 `nagios-nrpe-plugin` 預設會將 Nagios 一併安裝，可以用 `--no-install-recommends` 來避開這個問題。
+
 NRPE plugin 會被安裝在 `/usr/lib/nagios/plugins/check_nrpe`：
 
 [source,console]
@@ -22,61 +82,5 @@ $ dpkg -L nagios-nrpe-plugin
 /etc/nagios-plugins
 /etc/nagios-plugins/config
 /etc/nagios-plugins/config/check_nrpe.cfg
---------------------------------------------------------------------------------
-
-其中 `check_nrpe.cfg` 內容如下：
-
-.`/etc/nagios-plugins/config/check_nrpe.cfg`
---------------------------------------------------------------------------------
-# this command runs a program $ARG1$ with arguments $ARG2$
-define command {
-        command_name    check_nrpe
-        command_line    /usr/lib/nagios/plugins/check_nrpe -H $HOSTADDRESS$ -c $ARG1$ -a $ARG2$
-}
-
-# this command runs a program $ARG1$ with no arguments
-define command {
-        command_name    check_nrpe_1arg
-        command_line    /usr/lib/nagios/plugins/check_nrpe -H $HOSTADDRESS$ -c $ARG1$
-}
---------------------------------------------------------------------------------
-
-[[check_nrpe]]
-== `check_nrpe` 完整的用法 ==
-
---------------------------------------------------------------------------------
-$ /usr/lib/nagios/plugins/check_nrpe -h
-
-NRPE Plugin for Nagios
-Copyright (c) 1999-2008 Ethan Galstad (nagios@nagios.org)
-Version: 2.12
-Last Modified: 03-10-2008
-License: GPL v2 with exemptions (-l for more info)
-SSL/TLS Available: Anonymous DH Mode, OpenSSL 0.9.6 or higher required
-
-Usage: check_nrpe -H <host> [-n] [-u] [-p <port>] [-t <timeout>] [-c <command>] [-a <arglist...>]
-
-Options:
- -n         = Do no use SSL
- -u         = Make socket timeouts return an UNKNOWN state instead of CRITICAL
- <host>     = The address of the host running the NRPE daemon
- [port]     = The port on which the daemon is running (default=5666)
- [timeout]  = Number of seconds before connection times out (default=10)
- [command]  = The name of the command that the remote daemon should run
- [arglist]  = Optional arguments that should be passed to the command.  Multiple
-              arguments should be separated by a space.  If provided, this must be
-              the last option supplied on the command line.
- -h,--help    Print this short help.
- -l,--license Print licensing information.
- -n,--no-ssl  Do not initial an ssl handshake with the server, talk in plaintext.
-
-Note:
-This plugin requires that you have the NRPE daemon running on the remote host.
-You must also have configured the daemon to associate a specific plugin command
-with the [command] option you are specifying here.  Upon receipt of the
-[command] argument, the NRPE daemon will run the appropriate plugin command and
-send the plugin output and return code back to *this* plugin.  This allows you
-to execute plugins on remote hosts and 'fake' the results to make Nagios think
-the plugin is being run locally.
 --------------------------------------------------------------------------------
 
