@@ -46,13 +46,29 @@ asciidoc.install();
 <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph"><p><code>appium</code> 用來啟動 Appium server，常用的 options 有：</p></div>
-<div class="ulist"><ul>
-<li>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<a id="full-reset"></a><code>--full-reset</code>
+</dt>
+<dd>
 <p>
-<code>--full-reset</code> - 不同的 sessions 間會移除 app，包括資料的部份。不過這對 Android 的 <a href="android/selendroid-mode.html">Selendroid Mode</a> 好像沒作用??
+(Android) 利用移除 app 的動作來清除 app data，而非透過 <code>clean.apk</code>。
 </p>
-</li>
-</ul></div>
+<div class="openblock">
+<div class="content">
+<div class="paragraph"><p><a id="fast-rest"></a>Appium 預設採用 <em>fast reset</em>，也就是 session 開始之前用 <code>clean.apk</code> 將 app data 清掉。不過這對 <a href="android/selendroid-mode.html">Selendroid Mode</a> 好像沒作用 ??</p></div>
+<div class="paragraph"><p>至於 <em>full reset</em> 則是在 session 的 "前後"，各執行一次移除 app 的動作以達成清除 app data 的目的。</p></div>
+</div></div>
+</dd>
+<dt class="hdlist1">
+<a id="no-reset"></a><code>--no-reset</code>
+</dt>
+<dd>
+<p>
+在不同 session 之間不要清除 app data。
+</p>
+</dd>
+</dl></div>
 </div>
 </div>
 <div class="sect1">
@@ -62,15 +78,19 @@ asciidoc.install();
 <div class="content">
 <pre><code>$ appium --help
 usage: appium [-h] [-v] [--app APP] [--ipa IPA] [-q] [-U UDID] [-a ADDRESS]
-              [-p PORT] [-k] [--no-session-override] [--full-reset]
-              [--no-reset] [-l] [-g LOG] [-G WEBHOOK]
+              [-p PORT] [-dp DEVICEPORT] [-k] [--no-session-override]
+              [--full-reset] [--no-reset] [-l] [-g LOG] [-G WEBHOOK]
               [--native-instruments-lib] [--app-pkg ANDROIDPACKAGE]
               [--app-activity ANDROIDACTIVITY]
               [--app-wait-activity ANDROIDWAITACTIVITY] [--avd AVD]
               [--device-ready-timeout ANDROIDDEVICEREADYTIMEOUT] [--safari]
               [--force-iphone] [--force-ipad] [--orientation ORIENTATION]
+              [--tracetemplate AUTOMATIONTRACETEMPLATEPATH]
               [--nodeconfig NODECONFIG] [-ra ROBOTADDRESS] [-rp ROBOTPORT]
-              [--selendroid-port SELENDROIDPORT]
+              [--selendroid-port SELENDROIDPORT] [--use-keystore]
+              [--keystore-path KEYSTOREPATH]
+              [--keystore-password KEYSTOREPASSWORD] [--key-alias KEYALIAS]
+              [--key-password KEYPASSWORD]
 
 
 A webdriver-compatible server for use with native and hybrid iOS and Android
@@ -89,6 +109,8 @@ Optional arguments:
   -a ADDRESS, --address ADDRESS
                         IP Address to listen on
   -p PORT, --port PORT  port to listen on
+  -dp DEVICEPORT, --device-port DEVICEPORT
+                        (Android-only) port to connect to device on
   -k, --keep-artifacts  (IOS-only) Keep Instruments trace directories
   --no-session-override
                         Disables session override
@@ -129,6 +151,8 @@ Optional arguments:
   --orientation ORIENTATION
                         (IOS-only) use LANDSCAPE or PORTRAIT to initialize
                         all requests to this orientation
+  --tracetemplate AUTOMATIONTRACETEMPLATEPATH
+                        (IOS-only) .tracetemplate file to use with Instruments
   --nodeconfig NODECONFIG
                         Configuration JSON file to register appium with
                         selenium grid
@@ -137,7 +161,16 @@ Optional arguments:
   -rp ROBOTPORT, --robot-port ROBOTPORT
                         port for robot
   --selendroid-port SELENDROIDPORT
-                        Local port used for communication with Selendroid</code></pre>
+                        Local port used for communication with Selendroid
+  --use-keystore        (Android-only) When set the keystore will be used to
+                        sign apks.
+  --keystore-path KEYSTOREPATH
+                        (Android-only) Path to keystore
+  --keystore-password KEYSTOREPASSWORD
+                        (Android-only) Password to keystore
+  --key-alias KEYALIAS  (Android-only) Key alias
+  --key-password KEYPASSWORD
+                        (Android-only) Key password</code></pre>
 </div></div>
 </div>
 </div>
@@ -161,14 +194,28 @@ Optional arguments:
 <div class="ulist"><ul>
 <li>
 <p>
-<a href="https://groups.google.com/forum/#!topic/appium-discuss/LJyobbdX02w/discussion">Starting Appium server in command line - Google Groups</a> (2013-05-17)
+<a href="http://stackoverflow.com/questions/16810587/how-to-do-android-unit-test-using-appium-in-ubuntu">python - How to do Android Unit Test using Appium in Ubuntu - Stack Overflow</a> (2013-05-29)
 </p>
 </li>
 </ul></div>
 <div class="ulist"><ul>
 <li>
 <p>
-<a href="http://stackoverflow.com/questions/16810587/how-to-do-android-unit-test-using-appium-in-ubuntu">python - How to do Android Unit Test using Appium in Ubuntu - Stack Overflow</a> (2013-05-29)
+<a href="https://github.com/appium/appium/issues/651">fast-reset DEPRECATED? · Issue #651 · appium/appium</a> (2013-05-25)
+</p>
+</li>
+</ul></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="https://groups.google.com/forum/#!topic/appium-discuss/b3t91rLK3Jg/discussion">confusing appium options for android - Google Groups</a> (2013-05-25)
+</p>
+</li>
+</ul></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="https://groups.google.com/forum/#!topic/appium-discuss/LJyobbdX02w/discussion">Starting Appium server in command line - Google Groups</a> (2013-05-17)
 </p>
 </li>
 </ul></div>
@@ -190,7 +237,7 @@ dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
 <div id="footnotes"><hr /></div>
 <div id="footer">
 <!--div id="footer-text">
-Last updated 2013-10-13 20:45:39 CST
+Last updated 2013-10-14 01:05:15 CST
 </div-->
 </div>
 </div>

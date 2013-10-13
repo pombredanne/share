@@ -3,22 +3,34 @@
 
 `appium` 用來啟動 Appium server，常用的 options 有：
 
- * `--full-reset` - 不同的 sessions 間會移除 app，包括資料的部份。不過這對 Android 的 link:android/selendroid-mode.html[Selendroid Mode] 好像沒作用??
+[[full-reset]]`--full-reset`:: (Android) 利用移除 app 的動作來清除 app data，而非透過 `clean.apk`。
++
+--
+[[fast-rest]]Appium 預設採用 'fast reset'，也就是 session 開始之前用 `clean.apk` 將 app data 清掉。不過這對 link:android/selendroid-mode.html[Selendroid Mode] 好像沒作用 ??
+
+至於 'full reset' 則是在 session 的 "前後"，各執行一次移除 app 的動作以達成清除 app data 的目的。
+--
+
+[[no-reset]]`--no-reset`:: 在不同 session 之間不要清除 app data。
 
 == 完整的用法 ==
 
 ----------------------------------------------------------------------
 $ appium --help
 usage: appium [-h] [-v] [--app APP] [--ipa IPA] [-q] [-U UDID] [-a ADDRESS]
-              [-p PORT] [-k] [--no-session-override] [--full-reset]
-              [--no-reset] [-l] [-g LOG] [-G WEBHOOK]
+              [-p PORT] [-dp DEVICEPORT] [-k] [--no-session-override]
+              [--full-reset] [--no-reset] [-l] [-g LOG] [-G WEBHOOK]
               [--native-instruments-lib] [--app-pkg ANDROIDPACKAGE]
               [--app-activity ANDROIDACTIVITY]
               [--app-wait-activity ANDROIDWAITACTIVITY] [--avd AVD]
               [--device-ready-timeout ANDROIDDEVICEREADYTIMEOUT] [--safari]
               [--force-iphone] [--force-ipad] [--orientation ORIENTATION]
+              [--tracetemplate AUTOMATIONTRACETEMPLATEPATH]
               [--nodeconfig NODECONFIG] [-ra ROBOTADDRESS] [-rp ROBOTPORT]
-              [--selendroid-port SELENDROIDPORT]
+              [--selendroid-port SELENDROIDPORT] [--use-keystore]
+              [--keystore-path KEYSTOREPATH]
+              [--keystore-password KEYSTOREPASSWORD] [--key-alias KEYALIAS]
+              [--key-password KEYPASSWORD]
               
 
 A webdriver-compatible server for use with native and hybrid iOS and Android 
@@ -37,6 +49,8 @@ Optional arguments:
   -a ADDRESS, --address ADDRESS
                         IP Address to listen on
   -p PORT, --port PORT  port to listen on
+  -dp DEVICEPORT, --device-port DEVICEPORT
+                        (Android-only) port to connect to device on
   -k, --keep-artifacts  (IOS-only) Keep Instruments trace directories
   --no-session-override
                         Disables session override
@@ -77,6 +91,8 @@ Optional arguments:
   --orientation ORIENTATION
                         (IOS-only) use LANDSCAPE or PORTRAIT to initialize 
                         all requests to this orientation
+  --tracetemplate AUTOMATIONTRACETEMPLATEPATH
+                        (IOS-only) .tracetemplate file to use with Instruments
   --nodeconfig NODECONFIG
                         Configuration JSON file to register appium with 
                         selenium grid
@@ -86,6 +102,15 @@ Optional arguments:
                         port for robot
   --selendroid-port SELENDROIDPORT
                         Local port used for communication with Selendroid
+  --use-keystore        (Android-only) When set the keystore will be used to 
+                        sign apks.
+  --keystore-path KEYSTOREPATH
+                        (Android-only) Path to keystore
+  --keystore-password KEYSTOREPASSWORD
+                        (Android-only) Password to keystore
+  --key-alias KEYALIAS  (Android-only) Key alias
+  --key-password KEYPASSWORD
+                        (Android-only) Key password
 ----------------------------------------------------------------------
 
 == 參考資料 ==
@@ -97,18 +122,34 @@ Optional arguments:
 
 .文件
 --
- * https://groups.google.com/forum/#!topic/appium-discuss/LJyobbdX02w/discussion[Starting Appium server in command line - Google Groups] (2013-05-17)
-
-////////////////////////////////////////////////////////////////////////////////
-** If you've installed appium with npm, you just run "appium" from anywhere on your system.
-** If you've cloned appium's source, you run "node server.js" from the directory where you cloned appium.
-////////////////////////////////////////////////////////////////////////////////
-
  * http://stackoverflow.com/questions/16810587/how-to-do-android-unit-test-using-appium-in-ubuntu[python - How to do Android Unit Test using Appium in Ubuntu - Stack Overflow] (2013-05-29)
 
 ////////////////////////////////////////////////////////////////////////////////
 ** The main thing I cannot understand is the connection between my Android project, Appium and Python script. 這正是官方文件沒講清楚的地方。關鍵在 Appium server 是個 "webdriver-compatible server"，實作了 WebDriver JSON Wire Protocol，對外就像是個 Selenium server，這樣 Selenium 2/WebDriver 的 client libraries 也可以用相同的方式跟它互動。
 ** appium & launches the appium server. Think of this as the equivalent of `java -jar selenium.jar` which would launch the selenium rc server.
+////////////////////////////////////////////////////////////////////////////////
+
+ * https://github.com/appium/appium/issues/651[fast-reset DEPRECATED? · Issue #651 · appium/appium] (2013-05-25)
+
+////////////////////////////////////////////////////////////////////////////////
+** fast reset the feature is not deprecated. it is default. fast reset the flag is deprecated since its inclusion is superfluous and since you can no longer set it to false. to not use fast reset, you use a new flag, `--full-reset`
+** It appears that `--no-reset` will skip uninstalling the apk. The help description is wrong. In the code it's used to set reset. 早期有一段時間 `fast-reset` 跟 `no-reset` 讓人混淆。
+////////////////////////////////////////////////////////////////////////////////
+
+ * https://groups.google.com/forum/#!topic/appium-discuss/b3t91rLK3Jg/discussion[confusing appium options for android - Google Groups] (2013-05-25)
+
+////////////////////////////////////////////////////////////////////////////////
+** `--fast-reset` (Android-only, DEPRECATED, see `--full-reset`) Reset app state using `clean.apk`
+** `--full-reset` (Android-only) Reset app state by uninstalling app instead of using `clean.apk`
+** `--no-reset` Reset app state after each session (IOS: delete plist; Android: install app before session and uninstall after session)
+** `no-rest` should not reset the app in any way. `full-reset` will reinstall the app. `fast-reset` will clear the app's data without having to uninstall it first and is the recommended way to reset state. 這應該是最清楚的解釋了!!
+////////////////////////////////////////////////////////////////////////////////
+
+ * https://groups.google.com/forum/#!topic/appium-discuss/LJyobbdX02w/discussion[Starting Appium server in command line - Google Groups] (2013-05-17)
+
+////////////////////////////////////////////////////////////////////////////////
+** If you've installed appium with `npm`, you just run `appium` from anywhere on your system.
+** If you've cloned appium's source, you run `node server.js` from the directory where you cloned appium.
 ////////////////////////////////////////////////////////////////////////////////
 --
 

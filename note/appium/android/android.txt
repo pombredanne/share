@@ -1,109 +1,43 @@
 = link:../appium.html[Appium] / Android =
 :title: [Appium] Android
 
-最酷的是一個 session 不一定限定在單一個 app 的操作!!
+// 最酷的是一個 session 不一定限定在單一個 app 的操作!!
 
+Android 基本的用法如下：
+
+[source,python]
 --------------------------------------------------------------------------------
 desired_caps = {}
-desired_caps['device'] = 'Android'
-desired_caps['browserName'] = ''
-desired_caps['version'] = '4.2'
-desired_caps['app-package'] = 'com.sec.android.app.popupcalculator'
-#desired_caps['app-activity'] = 'com.sec.android.app.popupcalculator.Calculator' # 兩種寫法都可以
-desired_caps['app-activity'] = '.Calculator'
+desired_caps['device'] = 'android' # <1>
+desired_caps['app'] = 'absolute-path-to-your-apk' # <2>
+desired_caps['app-package'] = 'com.yourdomain'
+desired_caps['app-activity'] = '.YourLauncher'
 
-driver = webdriver.Remote('http://localhost:4723/wd/hub', desired_caps)
-driver.execute_script('mobile: setCommandTimeout', {'timeout': 9999})
+driver = webdriver.Remote('http://localhost:4723/wd/hub', desired_caps) # <3>
+#driver.execute_script('mobile: setCommandTimeout', {'timeout': 9999})  # <4>
+driver.implicitly_wait(15)
+
+# ...
 --------------------------------------------------------------------------------
+<1> 如果要執行在 API 16+ 以前的平台，這裡要改填 `selendroid` (link:selendroid-mode.html[Selendroid Mode])。
+<2> 除了 `device` 之外，至少要給 `app`、`app-package` 跟 `app-activity` 這 3 個 link:../api/desired-capabilities.html[desired capabilities]。
+<3> link:../server.html[Appium server] 預設在 port 4723 服務。
+<4> 如果要在 interactive interpreter 做測試，`mobile: setCommandTimeout` 這個 link:../../mobile-commands.html[mobile command] 就不能少。
++
+--
+Appium 預設在 60 秒內沒有收到 command 時，就會強制中斷 session：（在 Selendroid Mode 下沒這個困擾）
 
---------------------------------------------------------------------------------
-desired_caps = {}
-desired_caps['device'] = 'Android'
-desired_caps['browserName'] = ''
-desired_caps['version'] = '4.2'
-#desired_caps['app'] = '/home/jeremy/Desktop/SafeSync_.apk'
-desired_caps['app-package'] = 'com.trendmicro.safesync4biz'
-desired_caps['app-activity'] = 'ui.SafeSync'
-# desired_caps['webdriver.remote.sessionid'] = 'a220d36a-93ed-49ee-9243-8bd0df6440b8'
+ info: ADB launched! Ready for commands (will time out in 60secs)
+ ...
+ info: Didn't get a new command in 60 secs, shutting down...
 
-driver = webdriver.Remote('http://localhost:4723/wd/hub', desired_caps)
---------------------------------------------------------------------------------
+為了避免 session 不斷地被中止，建議將 command timeout 拉長。
+--
 
---------------------------------------------------------------------------------
-desired_caps = {}
-desired_caps['device'] = 'Android'
-desired_caps['browserName'] = ''
-desired_caps['version'] = '4.2'
-desired_caps['app'] = '/home/jeremy/Desktop/ApiDemos-debug.apk'
-desired_caps['app-package'] = 'com.example.android.apis'
-desired_caps['app-activity'] = 'ApiDemos'
-driver = webdriver.Remote('http://localhost:4723/wd/hub', desired_caps)
---------------------------------------------------------------------------------
+== 延伸閱讀 ==
 
-info: ADB launched! Ready for commands (will time out in 60secs)
-...
-info: Didn't get a new command in 60 secs, shutting down...
-
- driver.execute_script('mobile: setCommandTimeout', {'timeout': 9999})
-
---------------------------------------------------------------------------------
-info: [ADB] Pressing the HOME button
-info: [ADB] Sending command to android: {"cmd":"shutdown"}
-info: [ANDROID] [info] Got data from client: {"cmd":"shutdown"}
-info: [ANDROID] [info] Got command of type SHUTDOWN
-info: [ANDROID] [info] Returning result: {"value":"OK, shutting down","status":0}
-info: [ANDROID] [info] Closed client connection
-info: [ADB STDOUT] INSTRUMENTATION_STATUS: current=1
-info: [ADB STDOUT] INSTRUMENTATION_STATUS: id=UiAutomatorTestRunner
-info: [ADB STDOUT] INSTRUMENTATION_STATUS: class=io.appium.android.bootstrap.Bootstrap
-info: [ADB STDOUT] INSTRUMENTATION_STATUS: stream=.
-info: [ADB STDOUT] INSTRUMENTATION_STATUS: numtests=1
-info: [ADB STDOUT] INSTRUMENTATION_STATUS: test=testRunServer
-info: [ADB STDOUT] INSTRUMENTATION_STATUS_CODE: 0
-info: [ADB] Received command result from bootstrap
-info: Sent shutdown command, waiting for ADB to stop...
-info: [ADB STDOUT] INSTRUMENTATION_STATUS: stream=
-info: [ADB STDOUT] Test results for UiAutomatorTestRunner=.
-info: [ADB STDOUT] Time: 62.761
-info: [ADB STDOUT] OK (1 test)
-info: [ADB STDOUT] OK (1 test)
-info: [ADB STDOUT] INSTRUMENTATION_STATUS_CODE: -1
-info: [ADB] Uninstalling app com.trendmicro.safesync4biz
-info: Uninstalling com.trendmicro.safesync4biz
-debug: App was uninstalled
-info: Clearing out appium devices
---------------------------------------------------------------------------------
-
---------------------------------------------------------------------------------
-import os
-from time import sleep
-
-from selenium import webdriver
-
-# Returns abs path relative to this file and not cwd
-PATH = lambda p: os.path.abspath(
-    os.path.join(os.path.dirname(__file__), p)
-)
-
-desired_caps = {} # <1>
-desired_caps['device'] = 'Android'
-desired_caps['browserName'] = ''
-desired_caps['version'] = '4.2'
-desired_caps['app'] = PATH(
-    '../../../sample-code/apps/ApiDemos/bin/ApiDemos-debug.apk'
-)
-desired_caps['app-package'] = 'com.example.android.apis'
-desired_caps['app-activity'] = 'ApiDemos'
-
-driver = webdriver.Remote('http://localhost:4723/wd/hub', desired_caps) # <2>
-
-print driver.get_window_size()
-elem = driver.find_element_by_name('Graphics')
-elem.click()
-elem = driver.find_element_by_name('Arcs')
-elem.click()
-driver.quit()
---------------------------------------------------------------------------------
+ * link:../api/locating-ui-elements.html[Locating UI Elements]
+ * link:../api/mobile-commands.html[Mobile Commands]
 
 == 參考資料 ==
 
