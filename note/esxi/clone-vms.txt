@@ -1,12 +1,26 @@
 = link:esxi.html[ESXi] / Clone Virtual Machines =
 :title: [ESXi] Clone Virtual Machines
 
+// 利用 vSphere Client 的 Export > Export OVF Template... 資料經過壓縮會更為省時，包含 snapshots??
+// 這麼說來，平常將不同 OS 的 .ovf 累積起來，之後就可以很方便地在不同在 ESXi 上重新架起 instance... (不知道 ESXi 不同版本間會不會有差異??)
+
 == 參考資料 ==
 
- * http://www.techexams.net/forums/virtualization/42358-cloning-vms-esxi-only.html[Cloning VMs in ESXi only] ^https://diigo.com/0zh64[閱讀]^ (2009-04-23)
+ * http://www.virtuallyghetto.com/2012/06/how-to-copy-vms-directly-between-esxi.html[virtuallyGhetto: How to Copy VMs Directly Between ESXi Hosts Without Shared Storage] (2012-06-21)
+
+ * http://serverfault.com/questions/389835/is-it-a-bad-idea-to-do-an-ovf-export-of-a-vm-with-snapshot-data[backup - Is it a bad idea to do an OVF Export of a VM with snapshot data? - Server Fault] (2012-05-16)
+
 ////////////////////////////////////////////////////////////////////////////////
-** ESX and ESXi do not support the cloning of VMs, only Virtual Center does, and this is by design. You can manually clone VMs using VI Client by creating folders in a datastore, copying .vmdk files to those folders, changing the name of the VM in the .vmx and .vmxf files, and associating the .vmdk files with new VMs.
-** Cloning requires making a copy of a parent VM's files into a separate folder in a datastore, changing the name of the VM in the .vmx file, removing a few lines from the .vmx file causing a new UUID and MAC address to be auto-generated when the clone is first started, and registering the cloned VM in the ESXi inventory. You also need to make sure that the parent VM is not running or paused during the cloning operation.
+** If I were to export an OVF backup of the VM, would I expect problems because it's got snapshot data? 為什麼這裡提到 OVF 裡有 snapshots，但實驗的結果是沒有??
 ////////////////////////////////////////////////////////////////////////////////
+
+
+ * http://www.techexams.net/forums/virtualization/42358-cloning-vms-esxi-only.html[Cloning VMs in ESXi only] (2009-04-23)
+
+////////////////////////////////////////////////////////////////////////////////
+** ESX and ESXi do not support the cloning of VMs, only Virtual Center does, and this is by design. You can manually clone VMs using VI Client by creating folders in a datastore, copying `.vmdk` files to those folders, changing the name of the VM in the .vmx and .vmxf files, and associating the .vmdk files with new VMs.
+** Cloning requires making a copy of a parent VM's files into a separate folder in a datastore, changing the name of the VM in the `.vmx` file, removing a few lines from the `.vmx` file causing a new UUID and MAC address to be auto-generated when the clone is first started, and registering the cloned VM in the ESXi inventory. You also need to make sure that the parent VM is not running or paused during the cloning operation.
+////////////////////////////////////////////////////////////////////////////////
+
  * http://www.dedoimedo.com/computers/vmware-esxi-clone-machine.html[How to clone virtual machines in VMware ESXi] (2009-04-08) - 用 datastore browser 將 VM folder 複製一份出來，再註冊成一個新的 VM（從 Datastore Browser 裡對 `.vmx` 檔按右鍵選 Add To Inventory）。
 

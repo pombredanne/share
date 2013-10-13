@@ -1,0 +1,49 @@
+= Network Routing =
+
+ * link:unix-like.html[Unix-like]
+ * link:windows.html[Windows]
+
+== 參考資料 ==
+
+ * http://technet.microsoft.com/en-us/library/cc957843.aspx[Routing Concepts - TechNet]
+
+////////////////////////////////////////////////////////////////////////////////
+** Routing is the process of transferring data across an internetwork from a source host to a destination host. Routing can be understood in terms of two processes: host routing and router routing. 這裡 "host/router routing" 的說法跟 routing table 的 "host/network route" 不同，前者在講 forward 這個動作發生在哪裡。
+** Host routing occurs when the sending host forwards a packet. Based on the destination network address, the sending host must decide whether to forward the packet to the destination or to a router. In Figure 1.2, the Source Host forwards the packet destined for the Destination Host to Router 1. 就算 host 最後決定送交 router，也稱做 host routing。
+** Router routing occurs when a router receives a packet that is to be forwarded. (不是要送給它自己時，就得往外 forward) The packet is forwarded between routers (when the destination network is not directly attached to the router) or between a router and the destination host (when the destination network is directly attached). In Figure 1.2, Router 1 forwards the packet to Router 2. Router 2 forwards the packet to the Destination Host. 不論 router 最後是 forward 給另一個 router 或 host，都稱做 router routing。
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://technet.microsoft.com/en-us/library/cc957846.aspx[Router Routing - TechNet]
+
+////////////////////////////////////////////////////////////////////////////////
+** When a router is forwarded a packet that is not destined for that router, the router must either deliver it to the destination host or to another router 如果不是要送給 router 本身，router 會再轉出去。
+** If the destination network matches a network to which the router is attached, the router forwards the packet to the destination host by addressing the packet to the destination host's physical address. The router performs a direct delivery to the destination. 注意這裡 "a network to which the router is attached" 的說法，這個 router 通常就是該 network 的 gateway。
+** Conversely, if the destination network is not directly attached, the router forwards the packet to an intermediate router. The intermediate router chosen is based on the forwarding address of the optimal route in the routing table. The router forwards the packet by addressing the packet to the intermediate router's physical address. The router performs an indirect delivery to the next router in the path to the destination. 這裡的 routing table 指的是 router 自己身上的那一份。
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://technet.microsoft.com/en-us/library/cc957855.aspx[Host Routing - TechNet]
+
+////////////////////////////////////////////////////////////////////////////////
+** When a host using a routable protocol wants to send data to another host, it must first obtain the internetwork address of the destination. Once the destination internetwork address has been obtained, the source network and the destination network addresses are compared. When the source and destination hosts are on the same network, the packets are sent directly to the destination host by the source without the use of a router (see Figure 1.3). The source host sends the packet to the destination by addressing the packet to the destination's physical address. This is known as a direct delivery.
+** Conversely, when the source and destination hosts are on different networks, the packets to the destination cannot be directly delivered by the source. Instead, the source delivers them to an intermediate router (see Figure 1.3) by addressing the packet to the router's physical address. This is known as an indirect delivery.
+** During an indirect delivery, the sending host forwards the packet to a router on its network by determining the router corresponding to the first hop (跳躍點) or by discovering the entire path from the source to the destination.
+** Host routing table - A routing table on the host yields the forwarding address of the router to be used to reach the desired destination network ID.
+** Default route - To simplify the configuration of hosts and routers and to reduce the overhead associated with each host having routes for all the networks in the internetwork, a sending host is configured with a single default route. The default route and its forwarding address to the default router are used when no other routes to the destination network are found. The Default Gateway for TCP/IP hosts is a default router. 原來 default gateway 是 networking 的說法，針對 TCP/IP 應該稱做 default router
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://technet.microsoft.com/en-us/library/cc957845.aspx[Routing Tables - TechNet]
+
+////////////////////////////////////////////////////////////////////////////////
+** During the routing process, the routing decisions of hosts and routers are aided by a database of routes known as the routing table. The routing table is not exclusive to a router. Depending on the routable protocol, hosts may also have a routing table that may be used to decide the best router for the packet to be forwarded. IP hosts have a routing table.
+** Network Route - A route to a specific Network ID in the internetwork. 往某個 network 都走這條 rule
+** Host Route - A route to a specific internetwork address (Network ID and Host ID). Instead of making a routing decision based on just the network ID, the routing decision is based on the combination of network ID and host ID. Host routes are typically used to create custom routes to control or optimize specific types of internetwork traffic. 往某個 host 都走這條 rule
+** Default Route - A route that is used when no other routes for the destination are found in the routing table. For example, if a router or end system cannot find a network route or host route for the destination, the default route is used. Rather than being configured with routes for all the Network IDs in the internetwork, the default route is used to simplify the configuration of end systems or routers.
+** Network ID - The Network ID field contains the identification number for a network route or an internetwork address for a host route.
+** Interface - The Interface field indicates the network interface that is used when forwarding packets to the network ID. This is a port number or other type of logical identifier. For example, the interface for a 3COM EtherLink III network interface card may be referred to as ELNK3 in the routing table. 有多張網卡時才會用到
+** Metric - The Metric field indicates the cost of a route. If multiple routes exist to a given destination network ID, the metric is used to decide which route is to be taken. The route with the lowest metric is the preferred route.  Metrics can indicate different ways of expressing a route preference: 原來 metric 背後可能代表不同的意義，但可以肯定的是 "數字越小者優於數字大者"。
+   *** Hop Count - A common metric. Indicates the number of routers (hops) in the path to the network ID.
+   *** Delay - A measure of time that is required for the packet to reach the network ID.
+   *** Throughput - The effective amount of data that can be sent along the path per second.
+   *** Reliability - A measure of the path constancy. Some types of links are more prone to link failures than others.
+////////////////////////////////////////////////////////////////////////////////
+

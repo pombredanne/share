@@ -1,22 +1,41 @@
 = Appium =
 
-Appium 唸做 '`æpiәm'。目前看似在勢頭上，因為 Source Labs 跟 TestingBot 都有支援：
+////////////////////////////////////////////////////////////////////////////////
+ * iOS 一樣是透過 `UIAHost.performTaskWithPathArgumentsTimeout()` 來達成。
+ * 至於 Android 要求 API Level 17+，應該也是用 UIAutomation
+ * 雖然 Appium 走 JSON Wire Protocol 無法完全發揮 UI Automator 的功能，但 WebDriver API 本來就是在做黑箱測試，如果可以操作到很底層的東西，反而會有爭議...
+ * 有些操作可以靠 monkeyrunner 來互補（例如 long press、操作 notification area 等），反觀 appium 的強項是 verification。（這時候 Jython 就變得很重要）
+////////////////////////////////////////////////////////////////////////////////
 
- * link:saucelabs/saucelabs.html[Sauce Labs: Appium]
- * http://testingbot.com/support/getting-started/appium.html[TestingBot: Appium]
+Appium 唸做 '`æpiәm'，要瞭解它是什麼，建議先看過 http://www.youtube.com/watch?v=1J0aXDbjiUE[GTAC 2013: Appium: Automation for Mobile Apps] 的介紹。
 
-// 雖然 Appium 走 JSON Wire Protocol 無法完全發揮 UI Automator 的功能，但 WebDriver API 本來就是在做黑箱測試，如果可以操作到很底層的東西，反而會有爭議...
-// 有些操作可以靠 monkeyrunner 來互補（例如 long press、操作 notification area 等），反觀 appium 的強項是 verification。（這時候 Jython 就變得很重要）
+簡單地說，它讓你可以透過同一套 link:api/api.html[API] (link:../selenium2/api/api.html[Selenium 2/WebDriver API])，操控 link:android/android.html[Android]、link:ios/ios.html[iOS] 跟 link:firefox-os/firefox-os.html[Firefox OS] 設備（或模擬器），藉以實現手機的自動化測試。
+
+["graphviz","appium/arch.png"]
+--------------------------------------------------------------------------------
+digraph {
+  rankdir = LR
+  node [ shape = box, width = 1.5 ]
+  "Test" -> "Appium\nServer" [ 
+    label = "WebDriver\nAPI",
+     headlabel = "*:4723", labelangle = "30", labeldistance = 3
+    ]
+
+  "Appium\nServer" -> "Android 2.3.3+\nAPI 10+" [ label = "Selendroid" ]
+  "Appium\nServer" -> "Android 4.1+\nAPI 16+" [ label = "UI Automator" ]
+  "Appium\nServer" -> iOS [ label = "UI Automation" ]
+  "Appium\nServer" -> "Firefox OS" [ label = "Marionette" ]
+}
+--------------------------------------------------------------------------------
+
+目前看似在勢頭上，包括 link:saucelabs/saucelabs.html[Source Labs]、 http://testingbot.com/support/getting-started/appium.html[TestingBot] 等，都已採用 Appium 做為 cloud-based mobile testing 的解決方案。
+
+首先link:install.html[安裝 Appium]、啟動 link:server.html[Appium Server]，接著就可以開始 link:android/start.html[Android]、link:ios/start.html[iOS] 或 link:firefox-os/start.html[Firefox OS] 的測試...
 
 == 延伸閱讀 ==
 
- * link:install.html[Installation]
- * link:start.html[Getting Started]
- * link:android/android.html[Android]
- * link:ios/ios.html[iOS]
- * link:server.html[Appium Server]
- * link:appium-app.html[Appium.app]
  * link:../mobile/test/automation.html[Mobile Test Automation]
+ * link:appium-app.html[Appium.app]
 
 == 參考資料 ==
 
@@ -103,11 +122,4 @@ Appium 唸做 '`æpiәm'。目前看似在勢頭上，因為 Source Labs 跟 Tes
 
  * https://www.3pillarglobal.com/blog/appium-cross-browser-mobile-automation-tool[Appium: A Cross-browser Mobile Automation Tool] (2013-04-14)
 --
-
-////////////////////////////////////////////////////////////////////////////////
-
- * iOS 一樣是透過 `UIAHost.performTaskWithPathArgumentsTimeout()` 來達成。
- * 至於 Android 要求 API Level 17+，應該也是用 UIAutomation
-
-////////////////////////////////////////////////////////////////////////////////
 

@@ -1,0 +1,342 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Appium][Android] Getting Started - 在電梯裡遇見雙胞胎 | 傑洛米 Jeremy</title>
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<script type="text/javascript" src="../../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script>
+<script type="text/javascript">
+  addthis.layers({
+    'theme' : 'transparent',
+    'share' : {
+      'position' : 'right',
+      'numPreferredServices' : 6
+    },
+    'follow' : {
+      'services' : [
+        {'service': 'facebook', 'id': 'jeremy.kao.92'},
+        {'service': 'twitter', 'id': 'imsardine'},
+        {'service': 'google_follow', 'id': '113911398965423340908'}
+      ]
+    }
+  });
+</script>
+</head>
+<body>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description"><a href="../../../index.html">首頁</a> | <a href="../../..//about-me.html">關於我</a> | <a href="../../../note/index.html">筆記</a> // 腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="andorid.html">Appium / Android</a> / Getting Started</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+<a href="../install.html">透過 <code>npm</code> 安裝 Appium</a>。
+</p>
+</li>
+<li>
+<p>
+啟動 <a href="../server.html">Appium server</a>。
+</p>
+<div class="listingblock">
+<div class="content"><div class="highlight"><pre><span class="gp">$</span> appium
+<span class="go">info: Welcome to Appium v0.7.3 (REV 120bb6813272efc128276bd212202e2cda0dea14)</span>
+<span class="go">info: Appium REST http interface listener started on 0.0.0.0:4723</span>
+<span class="go">   info  - socket.io started</span>
+</pre></div></div></div>
+</li>
+<li>
+<p>
+從 source 取得 <a href="../install.html#example-tests">example tests</a>，這裡以 Python 為例。
+</p>
+<div class="openblock">
+<div class="content">
+<div class="listingblock">
+<div class="title"><code>sample-code/examples/python/android.py</code></div>
+<div class="content"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">sleep</span>
+
+<span class="kn">from</span> <span class="nn">selenium</span> <span class="kn">import</span> <span class="n">webdriver</span>
+
+<span class="c"># Returns abs path relative to this file and not cwd</span>
+<span class="n">PATH</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">__file__</span><span class="p">),</span> <span class="n">p</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="n">desired_caps</span> <span class="o">=</span> <span class="p">{}</span> <span class="c"># <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></span>
+<span class="n">desired_caps</span><span class="p">[</span><span class="s">&#39;device&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;Android&#39;</span> <span class="c"># <img src="../../../_asciidoc/images/icons/callouts/4.png" alt="4" /></span>
+<span class="n">desired_caps</span><span class="p">[</span><span class="s">&#39;browserName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+<span class="n">desired_caps</span><span class="p">[</span><span class="s">&#39;version&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;4.2&#39;</span>
+<span class="n">desired_caps</span><span class="p">[</span><span class="s">&#39;app&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">PATH</span><span class="p">(</span>
+    <span class="s">&#39;../../../sample-code/apps/ApiDemos/bin/ApiDemos-debug.apk&#39;</span> <span class="c"># <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></span>
+<span class="p">)</span>
+<span class="n">desired_caps</span><span class="p">[</span><span class="s">&#39;app-package&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;com.example.android.apis&#39;</span>
+<span class="n">desired_caps</span><span class="p">[</span><span class="s">&#39;app-activity&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;ApiDemos&#39;</span>
+
+<span class="n">driver</span> <span class="o">=</span> <span class="n">webdriver</span><span class="o">.</span><span class="n">Remote</span><span class="p">(</span><span class="s">&#39;http://localhost:4723/wd/hub&#39;</span><span class="p">,</span> <span class="n">desired_caps</span><span class="p">)</span> <span class="c"># <img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" /></span>
+
+<span class="k">print</span> <span class="n">driver</span><span class="o">.</span><span class="n">get_window_size</span><span class="p">()</span>
+<span class="n">elem</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">find_element_by_name</span><span class="p">(</span><span class="s">&#39;Graphics&#39;</span><span class="p">)</span> <span class="c"># <img src="../../../_asciidoc/images/icons/callouts/5.png" alt="5" /></span>
+<span class="n">elem</span><span class="o">.</span><span class="n">click</span><span class="p">()</span>
+<span class="n">elem</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">find_element_by_name</span><span class="p">(</span><span class="s">&#39;Arcs&#39;</span><span class="p">)</span>
+<span class="n">elem</span><span class="o">.</span><span class="n">click</span><span class="p">()</span>
+<span class="n">driver</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
+</pre></div></div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+除了 <a href="../api/desired-capabilities.html">desired capabilities</a> 之外，其實看不出來跟一般 Selenium 2/WebDriver 的測試有何不同&#8230;
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+<code>ApiDemos-debug.apk</code> 是<a href="../install.html#source-code">透過 source code 安裝</a>才有的。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+透過 <a href="../../selenium2/drivers/remote.html">Remove WebDriver</a> 跟 <a href="../server.html">Appium server</a> 溝通。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/4.png" alt="4" /></td><td>
+如果要執行在 Android 4.1+ 以前的環境，則要改用 <a href="selendroid-mode.html">Selendroid Mode</a>。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/5.png" alt="5" /></td><td>
+透過 <code>find_element[s]*()</code> <a href="../api/locating-ui-elements.html">定位</a>到要操作的對象（<a href="../../selenium2/python/webelement.html"><code>WebElement</code></a>），就可以對它進行操作。
+</td></tr>
+</table></div>
+</div></div>
+</li>
+<li>
+<p>
+將 API 16+ 的 emulator 或實體機準備好。執行測試：
+</p>
+<div class="openblock">
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre><code>$ python android.py
+{u'width': 1280, u'height': 720}</code></pre>
+</div></div>
+<div class="paragraph"><p>過程中 Appium server 會輸出：（假設 <code>--prefix=~/local</code>）</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>debug: Appium request initiated at /wd/hub/session
+debug: Request received with params: {"sessionId":null,"desiredCapabilities":{"app-package":"com.example.android.apis","app":"/tmp/appium/sample-code/apps/ApiDemos/bin/ApiDemos-debug.apk","browserName":"","version":"4.2","device":"Android","app-activity":"ApiDemos"}}
+info: Using local app from desiredCaps: /tmp/appium/sample-code/apps/ApiDemos/bin/ApiDemos-debug.apk
+info: Creating new appium session e8641c27-ed86-4f82-bac1-43ac2497267a
+info: Starting android appium
+debug: Using fast reset? true
+info: Preparing device for session
+info: Checking whether app is actually present
+info: Checking whether adb is present
+info: [ADB] Using adb from $ANDROID_HOME/platform-tools/adb
+info: Trying to find a connected android device
+info: [ADB] Getting connected devices...
+info: [ADB] 1 device(s) connected
+info: [ADB] Setting device id to 4df10ad5566e8f05
+info: Found device, no need to retry
+info: [ADB] Waiting for device 4df10ad5566e8f05 to be ready and to respond to shell commands (timeout = 5)
+info: Checking whether we need to run fast reset
+debug: Checking app cert for /tmp/com.example.android.apis.clean.apk: java -jar "~/local/lib/node_modules/appium/app/android/verify.jar" "/tmp/com.example.android.apis.clean.apk" <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+debug: App already signed.
+debug: Checking app cert for /tmp/appium/sample-code/apps/ApiDemos/bin/ApiDemos-debug.apk: java -jar "~/local/lib/node_modules/appium/app/android/verify.jar" "/tmp/appium/sample-code/apps/ApiDemos/bin/ApiDemos-debug.apk"
+debug: App not signed with debug cert.
+debug: Resigning apks with: java -jar "~/local/lib/node_modules/appium/app/android/sign.jar" "/tmp/appium/sample-code/apps/ApiDemos/bin/ApiDemos-debug.apk" --override <img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" />
+debug: java -jar "~/local/lib/node_modules/appium/app/android/strings_from_apk.jar" "/tmp/appium/sample-code/apps/ApiDemos/bin/ApiDemos-debug.apk" "/tmp/com.example.android.apis"
+info: [ADB] Not uninstalling app since server started with --full-reset or --no-reset
+info: Determining app install/clean status
+debug: Getting install/clean status for com.example.android.apis
+debug: Running fast reset clean: "$ANDROID_HOME/platform-tools/adb" -s 4df10ad5566e8f05 shell am instrument com.example.android.apis.clean/clean.apk.Clean   <img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" />
+info: [ADB] Forwarding system:4724 to device:4724
+info: [ADB] Pushing appium bootstrap to device...
+info: Running bootstrap
+info: "$ANDROID_HOME/platform-tools/adb" -s 4df10ad5566e8f05 shell uiautomator runtest AppiumBootstrap.jar -c io.appium.android.bootstrap.Bootstrap <img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" />
+info: [ADB STDOUT] INSTRUMENTATION_STATUS: current=1
+info: [ADB STDOUT] INSTRUMENTATION_STATUS: id=UiAutomatorTestRunner
+info: [ADB STDOUT] INSTRUMENTATION_STATUS: class=io.appium.android.bootstrap.Bootstrap
+info: [ADB STDOUT] INSTRUMENTATION_STATUS: stream=
+info: [ADB STDOUT] io.appium.android.bootstrap.Bootstrap:
+info: [ADB STDOUT] INSTRUMENTATION_STATUS: numtests=1
+info: [ADB STDOUT] INSTRUMENTATION_STATUS: test=testRunServer
+info: [ADB STDOUT] INSTRUMENTATION_STATUS_CODE: 1
+info: [ANDROID] [info] Socket opened on port 4724
+info: [ADB] Connecting to server on device...
+info: [ANDROID] [info] Appium Socket Server Ready
+info: [ANDROID] [info] Loading json...
+info: [ADB] Connected!
+info: [ADB] Waking up device if it's not alive <img src="../../../_asciidoc/images/icons/callouts/4.png" alt="4" />
+info: Pushing command to appium work queue: ["wake",{}]
+info: [ADB] Sending command to android: {"cmd":"action","action":"wake","params":{}}
+info: [ANDROID] [info] json loading complete.
+info: [ANDROID] [info] Client connected
+info: [ANDROID] [info] Got data from client: {"cmd":"action","action":"wake","params":{}}
+info: [ANDROID] [info] Got command of type ACTION
+info: [ANDROID] [debug] Got command action: wake
+info: [ANDROID] [info] Returning result: {"value":true,"status":0}
+info: [ADB] Received command result from bootstrap
+info: [ADB] Attempting to unlock screen
+info: Starting app
+info: [ADB] Starting app com.example.android.apis/com.example.android.apis.ApiDemos
+info: Waiting for app's activity to become focused
+info: Getting focused package and activity
+info: ADB launched! Ready for commands (will time out in 60secs)
+info: Appium session started with sessionId e8641c27-ed86-4f82-bac1-43ac2497267a
+POST /wd/hub/session 303 12240ms - 9
+debug: Appium request initiated at /wd/hub/session/e8641c27-ed86-4f82-bac1-43ac2497267a
+info: Responding to client with success: {"status":0,"value":{"platform":"LINUX","browserName":"Android","version":"4.1","webStorageEnabled":false,"takesScreenshots":true,"javascriptEnabled":true,"databaseEnabled":false},"sessionId":"e8641c27-ed86-4f82-bac1-43ac2497267a"}
+GET /wd/hub/session/e8641c27-ed86-4f82-bac1-43ac2497267a 200 30ms - 289
+debug: Appium request initiated at /wd/hub/session/e8641c27-ed86-4f82-bac1-43ac2497267a/window/current/size
+info: Pushing command to appium work queue: ["getDeviceSize"]
+info: [ADB] Sending command to android: {"cmd":"action","action":"getDeviceSize","params":{}}
+info: [ANDROID] [info] Got data from client: {"cmd":"action","action":"getDeviceSize","params":{}}
+info: [ANDROID] [info] Got command of type ACTION
+info: [ANDROID] [debug] Got command action: getDeviceSize
+info: [ANDROID] [info] Returning result: {"value":{"height":720,"width":1280},"status":0}
+info: [ADB] Received command result from bootstrap
+info: Responding to client with success: {"status":0,"value":{"height":720,"width":1280},"sessionId":"e8641c27-ed86-4f82-bac1-43ac2497267a"}
+GET /wd/hub/session/e8641c27-ed86-4f82-bac1-43ac2497267a/window/current/size 200 11ms - 127
+debug: Appium request initiated at /wd/hub/session/e8641c27-ed86-4f82-bac1-43ac2497267a/element
+debug: Request received with params: {"using":"name","sessionId":"e8641c27-ed86-4f82-bac1-43ac2497267a","value":"Graphics"}
+info: Pushing command to appium work queue: ["find",{"strategy":"name","selector":"Graphics","context":"","multiple":false}]
+info: [ADB] Sending command to android: {"cmd":"action","action":"find","params":{"strategy":"name","selector":"Graphics","context":"","multiple":false}}
+info: [ANDROID] [info] Got data from client: {"cmd":"action","action":"find","params":{"strategy":"name","selector":"Graphics","context":"","multiple":false}}
+info: [ANDROID] [info] Got command of type ACTION
+info: [ANDROID] [debug] Got command action: find
+info: [ANDROID] [debug] Finding Graphics using NAME with the contextId:
+info: [ANDROID] [info] Returning result: {"value":{"ELEMENT":"1"},"status":0}
+info: [ADB] Received command result from bootstrap
+info: Responding to client with success: {"status":0,"value":{"ELEMENT":"1"},"sessionId":"e8641c27-ed86-4f82-bac1-43ac2497267a"}
+POST /wd/hub/session/e8641c27-ed86-4f82-bac1-43ac2497267a/element 200 640ms - 109
+debug: Appium request initiated at /wd/hub/session/e8641c27-ed86-4f82-bac1-43ac2497267a/element/1/click
+debug: Request received with params: {"sessionId":"e8641c27-ed86-4f82-bac1-43ac2497267a","id":"1"}
+info: Pushing command to appium work queue: ["element:click",{"elementId":"1"}]
+info: [ADB] Sending command to android: {"cmd":"action","action":"element:click","params":{"elementId":"1"}}
+info: [ANDROID] [info] Got data from client: {"cmd":"action","action":"element:click","params":{"elementId":"1"}}
+info: [ANDROID] [info] Got command of type ACTION
+info: [ANDROID] [debug] Got command action: click
+info: [ANDROID] [info] Returning result: {"value":true,"status":0}
+info: [ADB] Received command result from bootstrap
+info: Responding to client with success: {"status":0,"value":true,"sessionId":"e8641c27-ed86-4f82-bac1-43ac2497267a"}
+POST /wd/hub/session/e8641c27-ed86-4f82-bac1-43ac2497267a/element/1/click 200 154ms - 89
+debug: Appium request initiated at /wd/hub/session/e8641c27-ed86-4f82-bac1-43ac2497267a/element
+debug: Request received with params: {"using":"name","sessionId":"e8641c27-ed86-4f82-bac1-43ac2497267a","value":"Arcs"}
+info: Pushing command to appium work queue: ["find",{"strategy":"name","selector":"Arcs","context":"","multiple":false}]
+info: [ADB] Sending command to android: {"cmd":"action","action":"find","params":{"strategy":"name","selector":"Arcs","context":"","multiple":false}}
+info: [ANDROID] [info] Got data from client: {"cmd":"action","action":"find","params":{"strategy":"name","selector":"Arcs","context":"","multiple":false}}
+info: [ANDROID] [info] Got command of type ACTION
+info: [ANDROID] [debug] Got command action: find
+info: [ANDROID] [debug] Finding Arcs using NAME with the contextId:
+info: [ANDROID] [info] Returning result: {"value":{"ELEMENT":"2"},"status":0}
+info: [ADB] Received command result from bootstrap
+info: Responding to client with success: {"status":0,"value":{"ELEMENT":"2"},"sessionId":"e8641c27-ed86-4f82-bac1-43ac2497267a"}
+POST /wd/hub/session/e8641c27-ed86-4f82-bac1-43ac2497267a/element 200 1390ms - 109
+debug: Appium request initiated at /wd/hub/session/e8641c27-ed86-4f82-bac1-43ac2497267a/element/2/click
+debug: Request received with params: {"sessionId":"e8641c27-ed86-4f82-bac1-43ac2497267a","id":"2"}
+info: Pushing command to appium work queue: ["element:click",{"elementId":"2"}]
+info: [ADB] Sending command to android: {"cmd":"action","action":"element:click","params":{"elementId":"2"}}
+info: [ANDROID] [info] Got data from client: {"cmd":"action","action":"element:click","params":{"elementId":"2"}}
+info: [ANDROID] [info] Got command of type ACTION
+info: [ANDROID] [debug] Got command action: click
+info: [ANDROID] [info] Returning result: {"value":true,"status":0}
+info: [ADB] Received command result from bootstrap
+info: Responding to client with success: {"status":0,"value":true,"sessionId":"e8641c27-ed86-4f82-bac1-43ac2497267a"}
+POST /wd/hub/session/e8641c27-ed86-4f82-bac1-43ac2497267a/element/2/click 200 162ms - 89
+debug: Appium request initiated at /wd/hub/session/e8641c27-ed86-4f82-bac1-43ac2497267a
+info: Shutting down appium session...
+info: [ADB] Pressing the HOME button
+info: [ADB] Sending command to android: {"cmd":"shutdown"}
+info: [ANDROID] [info] Got data from client: {"cmd":"shutdown"}
+info: [ANDROID] [info] Got command of type SHUTDOWN
+info: [ANDROID] [info] Returning result: {"value":"OK, shutting down","status":0}
+info: [ADB] Received command result from bootstrap
+info: Sent shutdown command, waiting for ADB to stop...
+info: [ANDROID] [info] Closed client connection
+info: [ADB STDOUT] INSTRUMENTATION_STATUS: current=1
+info: [ADB STDOUT] INSTRUMENTATION_STATUS: id=UiAutomatorTestRunner
+info: [ADB STDOUT] INSTRUMENTATION_STATUS: class=io.appium.android.bootstrap.Bootstrap
+info: [ADB STDOUT] INSTRUMENTATION_STATUS: stream=.
+info: [ADB STDOUT] INSTRUMENTATION_STATUS: numtests=1
+info: [ADB STDOUT] INSTRUMENTATION_STATUS: test=testRunServer
+info: [ADB STDOUT] INSTRUMENTATION_STATUS_CODE: 0
+info: [ADB STDOUT] INSTRUMENTATION_STATUS: stream=
+info: [ADB STDOUT] Test results for UiAutomatorTestRunner=.
+info: [ADB STDOUT] Time: 5.394
+info: [ADB STDOUT] OK (1 test)
+info: [ADB STDOUT] INSTRUMENTATION_STATUS_CODE: -1
+info: [ADB] Not uninstalling app since server started with --full-reset or --no-reset
+info: Clearing out appium devices
+info: Responding to client with success: {"status":0,"value":null,"sessionId":"e8641c27-ed86-4f82-bac1-43ac2497267a"}</code></pre>
+</div></div>
+<div class="colist arabic"><table>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/1.png" alt="1" /></td><td>
+要求 API 16+ 不就是為了 <a href="../../android/uiautomator/uiautomator.html">UI Automator</a>，為什麼最後還是走 instrumentation，利用 <code>clean.apk</code> 做為跳板??
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/2.png" alt="2" /></td><td>
+自動用 debug cert 對受測的 app 重新 re-sign 過。
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/3.png" alt="3" /></td><td>
+原來 bootstrap 跟 UI Automator 有關??
+</td></tr>
+<tr><td><img src="../../../_asciidoc/images/icons/callouts/4.png" alt="4" /></td><td>
+自動喚醒 device。
+</td></tr>
+</table></div>
+</div></div>
+</li>
+</ol></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_參考資料">參考資料</h2>
+<div class="sectionbody">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://appium.io/getting-started.html">Getting started</a>
+</p>
+</li>
+<li>
+<p>
+<a href="https://github.com/appium/appium/tree/master/sample-code/examples">Example tests</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<!--div id="footer-text">
+Last updated 2013-10-13 20:49:18 CST
+</div-->
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>

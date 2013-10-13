@@ -1,0 +1,21 @@
+= link:ec2.html[EC2] / Elastic IP Addresses (EIPs) =
+:title: [EC2] Elastic IP Addresses (EIPs)
+
+// Elastic IP > Allocate New Address > Associate Address
+
+== 參考資料 ==
+
+ * http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/elastic-ip-addresses-eip.html[Elastic IP Addresses (EIP) - Amazon Elastic Compute Cloud]
+
+////////////////////////////////////////////////////////////////////////////////
+** An Elastic IP address (EIP) is a static IP address designed for dynamic cloud computing. With an EIP, you can mask the failure of an instance by rapidly remapping the address to another instance. Your EIP is associated with your AWS account, not a particular instance, and it remains associated with your account until you choose to explicitly release it. 發現本機上 `/etc/network/interfaces` 是走 DHCP `iface eth0 inet dhcp`，那內部機器如何用固定的 private IP 溝通呢??
+** By default, we assign each instance in EC2-Classic two IP addresses at launch: a private IP address and a public IP address that is mapped to the private IP address through network address translation (NAT). 其中 public IP 在本機上是看不到的。
+** If you use dynamic DNS to map an existing DNS name to a new instance's public IP address, it might take up to 24 hours for the IP address to propagate through the Internet. As a result, new instances might not receive traffic while terminated instances continue to receive requests. To solve this problem, use an EIP. 好像不重新開機 IP 就不會跑掉??
+** When you associate an EIP with an instance, its current public IP address is released to the EC2-Classic public IP address pool. If you disassociate an EIP from the instance, the instance is automatically assigned a new public IP address within a few minutes. In addition, stopping the instance also disassociates the EIP from it.
+** To ensure efficient use of EIPs, we impose a small hourly charge when they are not associated with a running instance, or when they are associated with a stopped instance. 意思是不足 1 小時，也會以 1 小時計費??
+** By default, all AWS accounts are limited to 5 EIPs, because public (IPv4) Internet addresses are a scarce public resource. We strongly encourage you to use an EIP primarily for load balancing use cases, and use DNS hostnames for all other inter-node communication. 這裡的 'DNS hostnames" 做內部溝通，指的是什麼意思??
+** If you feel your architecture warrants additional EIPs, please complete the Amazon EC2 Elastic IP Address Request Form. We will ask you to describe your use case so that we can understand your need for additional addresses.
+////////////////////////////////////////////////////////////////////////////////
+
+ * http://aws.amazon.com/articles/1346[Feature Guide: Amazon EC2 Elastic IP Addresses : Articles & Tutorials : Amazon Web Services]
+

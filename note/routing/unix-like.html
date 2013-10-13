@@ -1,0 +1,180 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
+<title>[Routing] Unix-like - 在電梯裡遇見雙胞胎 | 傑洛米 Jeremy</title>
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/asciidoc.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/layout2.css" type="text/css" />
+<link rel="stylesheet" href="../../_asciidoc/stylesheets/pygments.css" type="text/css" />
+<script type="text/javascript" src="../../_asciidoc/javascripts/asciidoc.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+asciidoc.install();
+/*]]>*/
+</script>
+<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-50d9b63d0e6d1b63"></script>
+<script type="text/javascript">
+  addthis.layers({
+    'theme' : 'transparent',
+    'share' : {
+      'position' : 'right',
+      'numPreferredServices' : 6
+    },
+    'follow' : {
+      'services' : [
+        {'service': 'facebook', 'id': 'jeremy.kao.92'},
+        {'service': 'twitter', 'id': 'imsardine'},
+        {'service': 'google_follow', 'id': '113911398965423340908'}
+      ]
+    }
+  });
+</script>
+</head>
+<body>
+<div id="layout-content-box">
+<div id="layout-banner">
+  <div id="layout-title">在電梯裡遇見雙胞胎</div>
+  <div id="layout-description"><a href="../../index.html">首頁</a> | <a href="../..//about-me.html">關於我</a> | <a href="../../note/index.html">筆記</a> // 腦袋不是用來裝東西，而是用來思考問題的；所以我把懶得記的、記不住的，通通寫在這裡...</div>
+</div>
+<div id="layout-content">
+<div id="header">
+<h1><a href="link:routing.html">Routing</a> / Unix-like</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>Routing table 由多個 static route (path) 組成，每個 route 都在說明要將 packets 送往某個 destination network/host 時，要走哪個 interface，需要不要用到 gateway 等。區分為：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+Network Route - 設定某個 network 的 routing。
+</p>
+</li>
+<li>
+<p>
+Host Route - 可以針對個別 host 的 routing 做最佳化。
+</p>
+</li>
+<li>
+<p>
+Default Route - 當 destination 都不符合其他 network/host routes 的條件時，default route 才會作用。
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p><code>netstat -r -n</code> 或 <code>route -n</code> 都可以顯示 kernel routing table 的內容，只是欄位有些差異。</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>$ route -n
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+0.0.0.0         192.168.1.254   0.0.0.0         UG    0      0        0 wlan0
+169.254.0.0     0.0.0.0         255.255.0.0     U     1000   0        0 wlan0
+192.168.1.0     0.0.0.0         255.255.255.0   U     2      0        0 wlan0
+$
+$ netstat -r -n
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags   MSS Window  irtt Iface
+0.0.0.0         192.168.1.254   0.0.0.0         UG        0 0          0 wlan0
+169.254.0.0     0.0.0.0         255.255.0.0     U         0 0          0 wlan0
+192.168.1.0     0.0.0.0         255.255.255.0   U         0 0          0 wlan0</code></pre>
+</div></div>
+<div class="paragraph"><p>簡單說明幾個不同欄位的意義：</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+Destination - destination network/host。如果這是個 default route，顯示 0.0.0.0。
+</p>
+</li>
+<li>
+<p>
+Gateway - 如果這是個 default route，表示 gateway 的 IP，否則顯示 0.0.0.0。
+</p>
+</li>
+<li>
+<p>
+Genmask - destination network 的 netmask。如果是 host route，會顯示 255.255.255.255，如果是 default route 的話，則顯示 0.0.0.0。
+</p>
+</li>
+<li>
+<p>
+Flags - U 代表 Up，表示這個 route 在作用中；G 表示需要用到 gateway；H 則表示這是個 host route。
+</p>
+</li>
+<li>
+<p>
+Metric - 到 destination network/host 要經過幾個 hop。
+</p>
+</li>
+<li>
+<p>
+Iface (Interface) - 符合這個 route 的 packets 要走哪個 interface 出去。
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p><code>route</code> 可以用來顯示／修改 kernel 的 IP routing table。</p></div>
+<div class="qlist"><ol>
+<li>
+<p><em>
+Your routing table is created automatically, based on the current TCP/IP configuration of your Linux / UNIX computer. 要怎麼修改才會長久
+</em></p>
+<p>
+== 參考資料 ==
+</p>
+</li>
+</ol></div>
+<div class="openblock">
+<div class="title">文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.cyberciti.biz/faq/howto-debian-ubutnu-set-default-gateway-ipaddress/">Debian / Ubuntu Linux Setting a Default Gateway</a> (2008-10-18)
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.cyberciti.biz/faq/what-is-a-routing-table/">Understanding Routing Table</a> (2008-03-13)
+</p>
+</li>
+</ul></div>
+</div></div>
+<div class="openblock">
+<div class="title">其他文件</div>
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://www.adminsehow.com/2011/09/gateway-on-a-different-subnet-on-linux/">Gateway on a different subnet on Linux « Admins eHow</a> (2011-09-26)
+</p>
+</li>
+</ul></div>
+</div></div>
+</div>
+</div>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = 'imsardine'; // required: replace example with your forum shortname
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<!--div id="footer-text">
+Last updated 2013-10-13 20:52:56 CST
+</div-->
+</div>
+</div>
+</div>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://s.gravatar.com/js/gprofiles.js?ver=e"></script>
+<script>jQuery(document).ready(function($){ Gravatar.init(); });</script>
+</body>
+</html>
